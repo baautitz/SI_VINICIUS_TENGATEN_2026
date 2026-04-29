@@ -1,0 +1,60 @@
+SET search_path TO projeto_sistemas;
+
+
+CREATE TABLE IF NOT EXISTS categorias (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  categoria VARCHAR(120) NOT NULL UNIQUE,
+  descricao VARCHAR(255),
+  ativo BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS marcas (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  marca VARCHAR(120) NOT NULL UNIQUE,
+  descricao VARCHAR(255),
+  ativo BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS produtos (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  produto VARCHAR(255) NOT NULL,
+  descricao VARCHAR(255) NOT NULL,
+  categoria_id INTEGER NOT NULL,
+  marca_id INTEGER NOT NULL,
+  unidade_medida_id INTEGER NOT NULL,
+  ativo BOOLEAN NOT NULL DEFAULT TRUE,
+  CONSTRAINT produtos_categoria_fk
+    FOREIGN KEY (categoria_id)
+    REFERENCES categorias (id)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT produtos_marca_fk
+    FOREIGN KEY (marca_id)
+    REFERENCES marcas (id)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT produtos_unidade_fk
+    FOREIGN KEY (unidade_medida_id)
+    REFERENCES unidades_medida (id)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION
+);
+
+CREATE TABLE IF NOT EXISTS skus (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  produto_id INTEGER NOT NULL,
+  variante VARCHAR(255) NOT NULL,
+  caracteristicas VARCHAR(500),
+  sku VARCHAR(100) UNIQUE,
+  gtin_ean VARCHAR(14),
+  preco NUMERIC(14, 4) NOT NULL,
+  estoque NUMERIC(14, 4) NOT NULL DEFAULT 0,
+  ativo BOOLEAN NOT NULL DEFAULT TRUE,
+  CONSTRAINT skus_produto_fk
+    FOREIGN KEY (produto_id)
+    REFERENCES produtos (id)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT skus_preco_ck
+    CHECK (preco >= 0)
+);

@@ -1,0 +1,14 @@
+SET search_path TO projeto_sistemas;
+
+CREATE TABLE IF NOT EXISTS usuarios (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  nome VARCHAR(255) NOT NULL,
+  cpf_cnpj VARCHAR(40) NOT NULL UNIQUE,
+  email VARCHAR(320) NOT NULL,
+  telefone VARCHAR(45),
+  usuario VARCHAR(100) NOT NULL UNIQUE,
+  senha VARCHAR(255) NOT NULL,
+  ativo BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS usuarios_usuario_lower_unique ON usuarios (LOWER(usuario));
