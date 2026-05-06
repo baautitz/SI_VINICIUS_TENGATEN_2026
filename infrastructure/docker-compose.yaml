@@ -30,7 +30,7 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "${BACKEND_HTTP_PORT:-5050}:8080"
+      - "${BACKEND_HTTP_PORT:-8000}:8080"
 
 volumes:
   postgres_data:
