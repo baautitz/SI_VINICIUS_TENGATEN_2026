@@ -4,7 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>back_end</RootNamespace>
+    <RootNamespace>backend</RootNamespace>
     <UserSecretsId>3de3058c-58d8-4789-a602-9c9f79e6fce2</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>.</DockerfileContext>
