@@ -1,12 +1,17 @@
 SET search_path TO projeto_sistemas;
 
 
-CREATE TYPE IF NOT EXISTS projeto_sistemas.tipo_movimentacao_estoque_enum AS ENUM (
-  'ENTRADA',
-  'SAIDA',
-  'AJUSTE',
-  'VENDA'
-);
+DO $$
+BEGIN
+  CREATE TYPE projeto_sistemas.tipo_movimentacao_estoque_enum AS ENUM (
+    'ENTRADA',
+    'SAIDA',
+    'AJUSTE',
+    'VENDA'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS movimentacoes_estoque (
   id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -77,11 +82,6 @@ CREATE TABLE IF NOT EXISTS vendas (
   CONSTRAINT vendas_movimentacao_fk
     FOREIGN KEY (movimentacao_estoque_id)
     REFERENCES movimentacoes_estoque (id)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT vendas_conta_receber_fk
-    FOREIGN KEY (conta_receber_id)
-    REFERENCES contas_receber (id)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT vendas_nfe_fk
