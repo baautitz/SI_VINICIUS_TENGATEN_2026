@@ -1,0 +1,8 @@
+SET search_path TO projeto_sistemas;
+
+CREATE TABLE IF NOT EXISTS categorias (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  categoria VARCHAR(120) NOT NULL UNIQUE,
+  descricao VARCHAR(255),
+  ativo BOOLEAN NOT NULL DEFAULT TRUE
+);

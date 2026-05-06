@@ -1,0 +1,10 @@
+SET search_path TO projeto_sistemas;
+
+CREATE TABLE IF NOT EXISTS paises (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  ddi VARCHAR(5) NOT NULL,
+  sigla_iso CHAR(3) NOT NULL UNIQUE,
+  moeda CHAR(3) NOT NULL,
+  simbolo_moeda VARCHAR(10) NOT NULL,
+  pais VARCHAR(255) NOT NULL UNIQUE
+);

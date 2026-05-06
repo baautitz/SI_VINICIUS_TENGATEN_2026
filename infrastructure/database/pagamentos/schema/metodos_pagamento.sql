@@ -1,0 +1,8 @@
+SET search_path TO projeto_sistemas;
+
+CREATE TABLE IF NOT EXISTS metodos_pagamento (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  codigo VARCHAR(4) NOT NULL UNIQUE,
+  descricao VARCHAR(120) NOT NULL,
+  ativo BOOLEAN NOT NULL DEFAULT TRUE
+);
