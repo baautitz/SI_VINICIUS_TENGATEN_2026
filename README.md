@@ -55,7 +55,7 @@ Ajuste as variáveis conforme necessário.
 Com o arquivo `.env` configurado, execute:
 
 ```bash
-docker compose up
+docker compose --env-file .env -f infrastructure/docker-compose.yaml up
 ```
 
 Esse comando irá iniciar:
@@ -82,7 +82,7 @@ O banco é provisionado automaticamente durante a inicialização.
 Os scripts estão localizados em:
 
 ```
-backend/sqls
+infrastructure/database
 ```
 
 Esses scripts são aplicados automaticamente ao subir os containers, sem necessidade de configuração manual.
