@@ -1,0 +1,13 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS development
+
+WORKDIR /app
+
+# Ativar polling para que o dotnet watch perceba mudanças através do volume mapeado
+ENV DOTNET_USE_POLLING_FILE_WATCHER=1
+ENV ASPNETCORE_ENVIRONMENT=Development
+
+# Vamos expor a porta padrão do .NET
+EXPOSE 8080
+
+# Usamos o dotnet watch para hot-reload e redirecionamos as pastas bin e obj para fora de /app
+ENTRYPOINT ["dotnet", "watch", "run", "--property:BaseOutputPath=/tmp/bin/", "--property:BaseIntermediateOutputPath=/tmp/obj/", "--project", "backend.csproj", "--urls", "http://0.0.0.0:8080"]
