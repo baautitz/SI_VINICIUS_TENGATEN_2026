@@ -20,8 +20,11 @@ public class Program
                 config.Path = string.Empty;
             });
         }
+        else
+        {
+            app.UseHttpsRedirection();
+        }
 
-        app.UseHttpsRedirection();
         app.UseAuthorization();
         app.MapControllers();
 

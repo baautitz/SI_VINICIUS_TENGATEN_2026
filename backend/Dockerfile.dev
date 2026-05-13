@@ -9,5 +9,6 @@ ENV ASPNETCORE_ENVIRONMENT=Development
 # Vamos expor a porta padrão do .NET
 EXPOSE 8080
 
-# Usamos o dotnet watch para hot-reload e redirecionamos as pastas bin e obj para fora de /app
-ENTRYPOINT ["dotnet", "watch", "run", "--property:BaseOutputPath=/tmp/bin/", "--property:BaseIntermediateOutputPath=/tmp/obj/", "--project", "backend.csproj", "--urls", "http://0.0.0.0:8080"]
+# Usamos o dotnet watch para hot-reload.
+# Os caminhos de bin e obj são definidos condicionalmente no próprio backend.csproj (quando DOTNET_RUNNING_IN_CONTAINER=true)
+ENTRYPOINT ["dotnet", "watch", "run", "--no-launch-profile", "--project", "backend.csproj"]
