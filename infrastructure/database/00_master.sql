@@ -5,7 +5,7 @@ BEGIN;
 CREATE SCHEMA IF NOT EXISTS projeto_sistemas;
 SET search_path TO projeto_sistemas;
 
-\ir shared/unidades_medida/schema/unidades_medida.sql
+\ir unidades_medida/schema/unidades_medida.sql
 
 \ir localizacao/schema/paises.sql
 \ir localizacao/schema/estados.sql
