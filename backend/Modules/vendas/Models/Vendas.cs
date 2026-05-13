@@ -12,6 +12,6 @@ public class Vendas
   public decimal ValorTotal { get; set; }
   public string? Observacao { get; set; }
 
-  public NFe.Models.Nfes Nfe { get; set; } = null!;
-  public Estoque.Models.MovimentacoesEstoques MovimentacaoEstoque { get; set; } = null!;
+  public required NFe.Models.Nfes Nfe { get; set; }
+  public required Estoque.Models.MovimentacoesEstoques MovimentacaoEstoque { get; set; }
 }

@@ -4,10 +4,10 @@ namespace Modules.ProjetoSistemas.Models
   {
     public int Id { get; set; }
 
-    public string Bairro { get; set; } = null!;
+    public required string Bairro { get; set; }
 
     public int CidadeId { get; set; }
 
-    public Cidades Cidade { get; set; } = null!;
+    public required Cidades Cidade { get; set; }
   }
 }

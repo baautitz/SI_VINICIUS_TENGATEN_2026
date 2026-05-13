@@ -8,5 +8,5 @@ public class CondicoesPagamentosParcelas
   public decimal Percentual { get; set; }
   public int PrazoDias { get; set; }
 
-  public CondicoesPagamentos CondicaoPagamento { get; set; } = null!;
+  public required CondicoesPagamentos CondicaoPagamento { get; set; }
 }

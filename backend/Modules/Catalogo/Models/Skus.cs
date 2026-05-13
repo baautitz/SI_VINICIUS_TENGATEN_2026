@@ -4,7 +4,7 @@ public class Skus
 {
   public int Id { get; set; }
   public int ProdutoId { get; set; }
-  public string Variante { get; set; } = null!;
+  public required string Variante { get; set; }
   public string? Caracteristicas { get; set; }
   public string? Sku { get; set; }
   public string? GtinEan { get; set; }
@@ -12,5 +12,5 @@ public class Skus
   public decimal Estoque { get; set; }
   public bool Ativo { get; set; }
 
-  public Produtos Produto { get; set; } = null!;
+  public required Produtos Produto { get; set; }
 }

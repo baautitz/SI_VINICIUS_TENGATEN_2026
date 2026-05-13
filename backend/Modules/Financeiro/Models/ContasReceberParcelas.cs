@@ -10,5 +10,5 @@ public class ContasReceberParcelas
   public decimal ValorRecebido { get; set; }
   public StatusTituloFinanceiro Status { get; set; }
 
-  public object ContaReceber { get; set; } = null!;
+  public required object ContaReceber { get; set; }
 }

@@ -3,8 +3,8 @@ namespace Modules.Parceiros.Models;
 public class Emitentes
 {
   public int Id { get; set; }
-  public string NomeRazaoSocial { get; set; } = null!;
-  public string CpfCnpj { get; set; } = null!;
+  public required string NomeRazaoSocial { get; set; }
+  public required string CpfCnpj { get; set; }
   public string? ApelidoNomeFantasia { get; set; }
   public string? Endereco { get; set; }
   public string? Bairro { get; set; }

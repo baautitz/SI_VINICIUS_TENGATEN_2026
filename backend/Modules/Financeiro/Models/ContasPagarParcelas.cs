@@ -10,5 +10,5 @@ public class ContasPagarParcelas
   public decimal ValorPago { get; set; }
   public StatusTituloFinanceiro Status { get; set; }
 
-  public ContasPagar ContasPagar { get; set; } = null!;
+  public required ContasPagar ContasPagar { get; set; }
 }

@@ -4,8 +4,8 @@ public class Veiculos
 {
   public int Id { get; set; }
   public int? TransportadoraId { get; set; }
-  public string Placa { get; set; } = null!;
-  public string Uf { get; set; } = null!;
+  public required string Placa { get; set; }
+  public required string Uf { get; set; }
   public string? Rntrc { get; set; }
   public string? Renavam { get; set; }
   public string? TipoVeiculo { get; set; }

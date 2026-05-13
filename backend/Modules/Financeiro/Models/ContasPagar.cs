@@ -5,7 +5,7 @@ public class ContasPagar
   public int Id { get; set; }
   public int FornecedorId { get; set; }
   public int? NfeId { get; set; }
-  public string Descricao { get; set; } = null!;
+  public required string Descricao { get; set; }
   public DateTime? DataEmissao { get; set; }
   public DateTime? DataVencimento { get; set; }
   public decimal ValorOriginal { get; set; }
@@ -16,7 +16,7 @@ public class ContasPagar
   public DateTime CriadoEm { get; set; }
   public DateTime? AtualizadoEm { get; set; }
 
-  public Logistica.Models.Fornecedores Fornecedor { get; set; } = null!;
+  public required Logistica.Models.Fornecedores Fornecedor { get; set; }
   public NFe.Models.Nfes? Nfe { get; set; }
   public Pagamentos.Models.CondicoesPagamentos? CondicaoPagamento { get; set; }
 

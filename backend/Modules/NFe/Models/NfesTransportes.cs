@@ -19,6 +19,6 @@ public class NfesTransportes
   public decimal? PesoBruto { get; set; }
   public decimal? PesoLiquido { get; set; }
 
-  public Nfes Nfe { get; set; } = null!;
+  public required Nfes Nfe { get; set; }
   public Logistica.Models.Veiculos? Veiculo { get; set; }
 }

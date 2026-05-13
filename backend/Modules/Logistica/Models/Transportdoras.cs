@@ -3,8 +3,8 @@ namespace Modules.Logistica.Models;
 public class Transportadoras
 {
   public int Id { get; set; }
-  public string NomeRazaosocial { get; set; } = null!;
-  public string CpfCnpj { get; set; } = null!;
+  public required string NomeRazaosocial { get; set; }
+  public required string CpfCnpj { get; set; }
   public string? RgIe { get; set; }
   public string? ApelidoNomefantasia { get; set; }
   public string? Endereco { get; set; }

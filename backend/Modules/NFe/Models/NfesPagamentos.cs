@@ -8,6 +8,6 @@ public class NfesPagamentos
   public Enums.IndicadorPagamento IndicadorPagamento { get; set; }
   public decimal ValorPagamento { get; set; }
 
-  public Nfes Nfe { get; set; } = null!;
-  public Pagamentos.Models.MetodosPagamentos MetodosPagamento { get; set; } = null!;
+  public required Nfes Nfe { get; set; }
+  public required Pagamentos.Models.MetodosPagamentos MetodosPagamento { get; set; }
 }

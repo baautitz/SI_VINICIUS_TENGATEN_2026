@@ -8,6 +8,6 @@ public class MovimentacoesEstoquesItens
   public decimal Quantidade { get; set; }
   public decimal CustoUnitario { get; set; }
 
-  public MovimentacoesEstoques MovimentacaoEstoque { get; set; } = null!;
-  public Catalogo.Models.Skus Sku { get; set; } = null!;
+  public required MovimentacoesEstoques MovimentacaoEstoque { get; set; }
+  public required Catalogo.Models.Skus Sku { get; set; }
 }

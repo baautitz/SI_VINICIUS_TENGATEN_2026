@@ -4,15 +4,15 @@ namespace Modules.ProjetoSistemas.Models
   {
     public int Id { get; set; }
 
-    public string Ddi { get; set; } = null!;
+    public required string Ddi { get; set; }
 
-    public string SiglaIso { get; set; } = null!;
+    public required string SiglaIso { get; set; }
 
-    public string Moeda { get; set; } = null!;
+    public required string Moeda { get; set; }
 
-    public string SimboloMoeda { get; set; } = null!;
+    public required string SimboloMoeda { get; set; }
 
-    public string Pais { get; set; } = null!;
+    public required string Pais { get; set; }
 
     public ICollection<Estados> Estados { get; set; } = new List<Estados>();
   }

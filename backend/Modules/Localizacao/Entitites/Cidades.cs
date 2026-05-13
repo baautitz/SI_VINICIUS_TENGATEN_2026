@@ -4,13 +4,13 @@ namespace Modules.ProjetoSistemas.Models
   {
     public int Id { get; set; }
 
-    public string Cidade { get; set; } = null!;
+    public required string Cidade { get; set; }
 
     public short Ddd { get; set; }
 
     public int EstadoId { get; set; }
 
-    public Estados Estado { get; set; } = null!;
+    public required Estados Estado { get; set; }
 
     public ICollection<Bairros> Bairros { get; set; } = new List<Bairros>();
   }

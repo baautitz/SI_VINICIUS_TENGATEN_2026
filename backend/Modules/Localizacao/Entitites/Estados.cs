@@ -6,11 +6,11 @@ namespace Modules.ProjetoSistemas.Models
 
     public int PaisId { get; set; }
 
-    public Paises Pais { get; set; } = null!;
+    public required Paises Pais { get; set; }
 
-    public string Estado { get; set; } = null!;
+    public required string Estado { get; set; }
 
-    public string Uf { get; set; } = null!;
+    public required string Uf { get; set; }
 
     public ICollection<Cidades> Cidades { get; set; } = new List<Cidades>();
   }

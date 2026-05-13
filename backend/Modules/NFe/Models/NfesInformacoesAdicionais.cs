@@ -7,5 +7,5 @@ public class NfesInformacoesAdicionais
   public string? InformacoesFisco { get; set; }
   public string? InformacoesComplementares { get; set; }
 
-  public Nfes Nfe { get; set; } = null!;
+  public required Nfes Nfe { get; set; }
 }

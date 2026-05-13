@@ -10,8 +10,8 @@ public class Nfes
   public DateTime? DataSaida { get; set; }
 
   public int EmitenteId { get; set; }
-  public string EmitenteNomeRazaosocial { get; set; } = null!;
-  public string EmitenteCpfCnpj { get; set; } = null!;
+  public required string EmitenteNomeRazaosocial { get; set; }
+  public required string EmitenteCpfCnpj { get; set; }
   public string? EmitenteRgIe { get; set; }
   public string? EmitenteApelidoNomefantasia { get; set; }
   public string? EmitenteEndereco { get; set; }
@@ -20,8 +20,8 @@ public class Nfes
   public string? EmitenteEmail { get; set; }
 
   public int ClienteId { get; set; }
-  public string ClienteNomeRazaosocial { get; set; } = null!;
-  public string ClienteCpfCnpj { get; set; } = null!;
+  public required string ClienteNomeRazaosocial { get; set; }
+  public required string ClienteCpfCnpj { get; set; }
   public string? ClienteRgIe { get; set; }
   public string? ClienteApelidoNomefantasia { get; set; }
   public string? ClienteEndereco { get; set; }
