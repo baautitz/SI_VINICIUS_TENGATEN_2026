@@ -50,7 +50,7 @@ SET search_path TO projeto_sistemas;
 
 \ir auditoria/schema/auditorias.sql
 
-\ir shared/unidades_medida/seeds/seed_unidades_medida.sql
+\ir unidades_medida/seeds/seed_unidades_medida.sql
 \ir localizacao/seeds/seed_brasil.sql
 \ir pagamentos/seeds/seed_metodos_pagamento.sql
 
