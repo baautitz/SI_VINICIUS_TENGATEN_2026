@@ -1,4 +1,4 @@
-namespace Modules.ProjetoSistemas.Entities
+namespace Modules.ProjetoSistemas.Models
 {
   public class Paises
   {

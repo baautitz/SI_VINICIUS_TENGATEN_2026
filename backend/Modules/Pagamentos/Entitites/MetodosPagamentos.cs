@@ -1,4 +1,4 @@
-namespace Modules.Pagamentos.Entities;
+namespace Modules.Pagamentos.Models;
 
 public class MetodosPagamentos
 {
