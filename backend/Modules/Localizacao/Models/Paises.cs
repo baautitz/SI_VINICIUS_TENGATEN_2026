@@ -13,7 +13,5 @@ namespace Modules.ProjetoSistemas.Models
     public required string SimboloMoeda { get; set; }
 
     public required string Pais { get; set; }
-
-    public ICollection<Estados> Estados { get; set; } = new List<Estados>();
   }
 }

@@ -12,6 +12,5 @@ namespace Modules.ProjetoSistemas.Models
 
     public required Estados Estado { get; set; }
 
-    public ICollection<Bairros> Bairros { get; set; } = new List<Bairros>();
   }
 }

@@ -12,6 +12,5 @@ namespace Modules.ProjetoSistemas.Models
 
     public required string Uf { get; set; }
 
-    public ICollection<Cidades> Cidades { get; set; } = new List<Cidades>();
   }
 }
