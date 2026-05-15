@@ -1,4 +1,4 @@
-namespace Modules.Auditoria.Models;
+namespace backend.Modules.Auditoria.Models;
 
 public enum OperacaoAuditoria
 {

@@ -1,4 +1,4 @@
-namespace Modules.Acesso.Models;
+namespace backend.Modules.Acesso.Models;
 
 public class Usuarios
 {
