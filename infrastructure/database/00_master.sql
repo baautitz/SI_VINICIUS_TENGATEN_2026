@@ -35,7 +35,7 @@ SET search_path TO projeto_sistemas;
 \ir nfe/schema/nfes_table.sql
 \ir nfe/schema/nfes_informacoes_adicionais.sql
 \ir nfe/schema/nfes_transportes.sql
-\ir nfe/schema/nfes_produtos.sql
+\ir nfe/schema/nfes_itens.sql
 \ir nfe/schema/nfes_pagamentos.sql
 
 \ir estoque/schema/movimentacoes_estoque.sql

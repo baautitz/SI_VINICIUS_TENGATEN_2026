@@ -1,4 +1,6 @@
-namespace Modules.NFe.Models;
+using backend.Modules.Parceiros.Models;
+
+namespace backend.Modules.NFe.Models;
 
 public class Nfes
 {
@@ -9,7 +11,6 @@ public class Nfes
   public DateTime DataEmissao { get; set; }
   public DateTime? DataSaida { get; set; }
 
-  public int EmitenteId { get; set; }
   public required string EmitenteNomeRazaosocial { get; set; }
   public required string EmitenteCpfCnpj { get; set; }
   public string? EmitenteRgIe { get; set; }
@@ -19,7 +20,6 @@ public class Nfes
   public string? EmitenteTelefone { get; set; }
   public string? EmitenteEmail { get; set; }
 
-  public int ClienteId { get; set; }
   public required string ClienteNomeRazaosocial { get; set; }
   public required string ClienteCpfCnpj { get; set; }
   public string? ClienteRgIe { get; set; }
@@ -29,9 +29,11 @@ public class Nfes
   public string? ClienteTelefone { get; set; }
   public string? ClienteEmail { get; set; }
 
+  public required Emitentes Emitente { get; set; }
+  public required Clientes Cliente { get; set; }
+
   public Enums.TipoOperacao TipoOperacao { get; set; }
   public Enums.StatusNfe StatusNfe { get; set; }
-  public int? TransportadoraId { get; set; }
 
   public decimal ValorProdutos { get; set; }
   public decimal ValorDesconto { get; set; }
@@ -40,7 +42,7 @@ public class Nfes
   public decimal ValorOutrasDespesas { get; set; }
   public decimal ValorTotal { get; set; }
 
-  public ICollection<NfesProdutos> NfesProdutos { get; set; } = new List<NfesProdutos>();
+  public ICollection<NfesItens> NfesItens { get; set; } = new List<NfesItens>();
   public ICollection<NfesPagamentos> NfesPagamentos { get; set; } = new List<NfesPagamentos>();
   public NfesInformacoesAdicionais? NfesInformacoesAdicionais { get; set; }
 }
