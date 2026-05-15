@@ -1,10 +1,9 @@
-namespace Modules.Pagamentos.Models;
+namespace backend.Modules.Pagamentos.Models;
 
 public class CondicoesPagamentos
 {
   public int Id { get; set; }
   public required string Descricao { get; set; }
-  public int MetodoPagamentoId { get; set; }
   public decimal EntradaMinimaPercentual { get; set; }
   public decimal DescontoPercentual { get; set; }
   public decimal AcrescimoPercentual { get; set; }

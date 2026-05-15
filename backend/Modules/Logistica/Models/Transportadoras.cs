@@ -1,4 +1,4 @@
-namespace Modules.Logistica.Models;
+namespace backend.Modules.Logistica.Models;
 
 public class Transportadoras
 {

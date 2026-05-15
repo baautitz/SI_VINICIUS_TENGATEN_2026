@@ -1,4 +1,4 @@
-namespace Modules.Pagamentos.Models;
+namespace backend.Modules.Pagamentos.Models;
 
 public class MetodosPagamentos
 {
@@ -6,6 +6,4 @@ public class MetodosPagamentos
   public required string Codigo { get; set; }
   public required string Descricao { get; set; }
   public bool Ativo { get; set; }
-
-  public ICollection<CondicoesPagamentos> CondicoesPagamentos { get; set; } = new List<CondicoesPagamentos>();
 }

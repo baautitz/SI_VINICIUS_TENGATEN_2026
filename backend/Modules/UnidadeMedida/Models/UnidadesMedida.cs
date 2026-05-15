@@ -1,4 +1,4 @@
-namespace Modules.UnidadeMedida.Models;
+namespace backend.Modules.UnidadeMedida.Models;
 
 public class UnidadesMedida
 {
@@ -7,6 +7,4 @@ public class UnidadesMedida
   public required string Descricao { get; set; }
   public required string Categoria { get; set; }
   public bool Ativo { get; set; }
-
-  public ICollection<Catalogo.Models.Produtos> Produtos { get; set; } = new List<Catalogo.Models.Produtos>();
 }

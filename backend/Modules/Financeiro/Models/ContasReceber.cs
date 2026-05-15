@@ -1,10 +1,10 @@
-using backend.Modules.Logistica.Models;
+using backend.Modules.Parceiros.Models;
 using backend.Modules.NFe.Models;
 using backend.Modules.Pagamentos.Models;
 
 namespace backend.Modules.Financeiro.Models;
 
-public class ContasPagar
+public class ContasReceber
 {
   public int Id { get; set; }
   public required string Descricao { get; set; }
@@ -17,9 +17,9 @@ public class ContasPagar
   public DateTime CriadoEm { get; set; }
   public DateTime? AtualizadoEm { get; set; }
 
-  public required Fornecedores Fornecedor { get; set; }
+  public required Clientes Cliente { get; set; }
   public Nfes? Nfe { get; set; }
   public CondicoesPagamentos? CondicaoPagamento { get; set; }
 
-  public ICollection<ContasPagarParcelas> ContasPagarParcelas { get; set; } = new List<ContasPagarParcelas>();
+  public ICollection<ContasReceberParcelas> ContasReceberParcelas { get; set; } = new List<ContasReceberParcelas>();
 }

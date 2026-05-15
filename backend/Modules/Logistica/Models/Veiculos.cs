@@ -1,9 +1,8 @@
-namespace Modules.Logistica.Models;
+namespace backend.Modules.Logistica.Models;
 
 public class Veiculos
 {
   public int Id { get; set; }
-  public int? TransportadoraId { get; set; }
   public required string Placa { get; set; }
   public required string Uf { get; set; }
   public string? Rntrc { get; set; }
@@ -14,6 +13,4 @@ public class Veiculos
   public DateTime CriadoEm { get; set; }
   public DateTime? AtualizadoEm { get; set; }
   public string? Observacao { get; set; }
-
-  public Transportadoras? Transportadora { get; set; }
 }
