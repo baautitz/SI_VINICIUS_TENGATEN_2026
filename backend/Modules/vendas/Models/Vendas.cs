@@ -1,4 +1,6 @@
-namespace Modules.Vendas.Models;
+namespace backend.Modules.Vendas.Models;
+
+using backend.Modules;
 
 public class Vendas
 {

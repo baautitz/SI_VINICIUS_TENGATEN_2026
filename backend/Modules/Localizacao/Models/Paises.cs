@@ -1,7 +1,7 @@
-namespace Modules.ProjetoSistemas.Models
+namespace backend.Modules.Localizacao.Models;
+
+public class Paises
 {
-  public class Paises
-  {
     public int Id { get; set; }
 
     public required string Ddi { get; set; }
@@ -13,5 +13,4 @@ namespace Modules.ProjetoSistemas.Models
     public required string SimboloMoeda { get; set; }
 
     public required string Pais { get; set; }
-  }
 }
