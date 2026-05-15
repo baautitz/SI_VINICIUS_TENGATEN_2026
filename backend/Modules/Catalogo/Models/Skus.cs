@@ -1,9 +1,8 @@
-namespace Modules.Catalogo.Models;
+namespace backend.Modules.Catalogo.Models;
 
 public class Skus
 {
   public int Id { get; set; }
-  public int ProdutoId { get; set; }
   public required string Variante { get; set; }
   public string? Caracteristicas { get; set; }
   public string? Sku { get; set; }
@@ -11,6 +10,4 @@ public class Skus
   public decimal Preco { get; set; }
   public decimal Estoque { get; set; }
   public bool Ativo { get; set; }
-
-  public required Produtos Produto { get; set; }
 }
