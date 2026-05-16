@@ -1,9 +1,7 @@
 namespace backend.Modules.Catalogo.DTOs;
 
 public record SkusResumo(
-    int Id,
-    string Variante,
-    string? Sku,
+    string Sku,
     string? GtinEan,
     decimal Preco,
     decimal Estoque,

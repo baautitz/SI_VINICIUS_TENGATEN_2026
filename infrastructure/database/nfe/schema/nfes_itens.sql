@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS nfes_itens (
   id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   nfe_id INTEGER NOT NULL,
   numero_item INTEGER NOT NULL,
-  sku_id INTEGER NOT NULL,
+  sku VARCHAR(50) NOT NULL,
   descricao_item VARCHAR(150) NOT NULL,
   unidade_medida_id INTEGER NOT NULL,
   quantidade NUMERIC(14, 4) NOT NULL,
@@ -17,8 +17,8 @@ CREATE TABLE IF NOT EXISTS nfes_itens (
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT nfes_itens_sku_fk
-    FOREIGN KEY (sku_id)
-    REFERENCES skus (id)
+    FOREIGN KEY (sku)
+    REFERENCES skus (sku)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT nfes_itens_unidade_fk

@@ -7,6 +7,7 @@ public interface IProdutosRepository
 {
     public Task<IEnumerable<Produtos>> ObterProdutos();
     public Task<Produtos?> ObterProdutoPorId(int id);
+    public Task<Produtos?> ObterProdutoPorSku(string sku);
     public Task<Produtos> CriarProduto(Produtos produto);
     public Task<Produtos> AtualizarProduto(int id, Produtos produto);
     public Task<bool> DeletarProduto(int id);

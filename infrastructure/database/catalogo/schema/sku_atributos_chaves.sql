@@ -1,0 +1,6 @@
+SET search_path TO projeto_sistemas;
+
+CREATE TABLE IF NOT EXISTS sku_atributos_chaves (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  chave VARCHAR(100) NOT NULL UNIQUE
+);

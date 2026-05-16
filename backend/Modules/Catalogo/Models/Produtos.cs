@@ -13,5 +13,5 @@ public class Produtos
   public required Marcas Marca { get; set; }
   public required UnidadesMedida UnidadeMedida { get; set; }
 
-  public ICollection<Skus> Skus { get; set; } = new List<Skus>();
+  public required ICollection<Skus> Skus { get; set; }
 }

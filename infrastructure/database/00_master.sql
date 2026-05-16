@@ -26,6 +26,8 @@ SET search_path TO projeto_sistemas;
 \ir catalogo/schema/marcas.sql
 \ir catalogo/schema/produtos.sql
 \ir catalogo/schema/skus.sql
+\ir catalogo/schema/sku_atributos_chaves.sql
+\ir catalogo/schema/skus_atributos_valores.sql
 
 \ir pagamentos/schema/metodos_pagamento.sql
 \ir pagamentos/schema/condicoes_pagamentos.sql
