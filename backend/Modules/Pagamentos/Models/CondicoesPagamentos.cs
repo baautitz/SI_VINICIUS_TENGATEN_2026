@@ -12,5 +12,5 @@ public class CondicoesPagamentos
   public bool Ativo { get; set; }
 
   public required MetodosPagamentos MetodoPagamento { get; set; }
-  public ICollection<CondicoesPagamentosParcelas> CondicoesPagamentosParcelas { get; set; } = new List<CondicoesPagamentosParcelas>();
+  public required IEnumerable<CondicoesPagamentosParcelas> CondicoesPagamentosParcelas { get; set; }
 }

@@ -21,5 +21,5 @@ public class ContasPagar
   public Nfes? Nfe { get; set; }
   public CondicoesPagamentos? CondicaoPagamento { get; set; }
 
-  public ICollection<ContasPagarParcelas> ContasPagarParcelas { get; set; } = new List<ContasPagarParcelas>();
+  public required IEnumerable<ContasPagarParcelas> ContasPagarParcelas { get; set; }
 }

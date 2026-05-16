@@ -17,5 +17,5 @@ public class Transportadoras
   public DateTime? AtualizadoEm { get; set; }
   public string? Observacao { get; set; }
 
-  public ICollection<Veiculos> Veiculos { get; set; } = new List<Veiculos>();
+  public required IEnumerable<Veiculos> Veiculos { get; set; }
 }

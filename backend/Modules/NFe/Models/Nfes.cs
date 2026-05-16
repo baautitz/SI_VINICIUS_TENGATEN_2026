@@ -42,7 +42,7 @@ public class Nfes
   public decimal ValorOutrasDespesas { get; set; }
   public decimal ValorTotal { get; set; }
 
-  public ICollection<NfesItens> NfesItens { get; set; } = new List<NfesItens>();
-  public ICollection<NfesPagamentos> NfesPagamentos { get; set; } = new List<NfesPagamentos>();
+  public required IEnumerable<NfesItens> NfesItens { get; set; }
+  public required IEnumerable<NfesPagamentos> NfesPagamentos { get; set; }
   public NfesInformacoesAdicionais? NfesInformacoesAdicionais { get; set; }
 }

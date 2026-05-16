@@ -11,5 +11,5 @@ public class Usuarios
   public required string Senha { get; set; }
   public bool Ativo { get; set; }
 
-  public ICollection<Sessoes> Sessoes { get; set; } = new List<Sessoes>();
+  public required IEnumerable<Sessoes> Sessoes { get; set; }
 }

@@ -8,5 +8,5 @@ public class Skus
   public decimal Estoque { get; set; }
   public bool Ativo { get; set; }
 
-  public required ICollection<SkusAtributosValores> SkusAtributosValores { get; set; }
+  public required IEnumerable<SkusAtributosValores> SkusAtributosValores { get; set; }
 }

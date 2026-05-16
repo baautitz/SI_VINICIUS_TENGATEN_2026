@@ -13,5 +13,5 @@ public class MovimentacoesEstoques
     public Usuarios? Usuario { get; set; }
     public Nfes? Nfe { get; set; }
 
-    public ICollection<MovimentacoesEstoquesItens> MovimentacoesEstoquesItens { get; set; } = new List<MovimentacoesEstoquesItens>();
+    public required IEnumerable<MovimentacoesEstoquesItens> MovimentacoesEstoquesItens { get; set; }
 }
