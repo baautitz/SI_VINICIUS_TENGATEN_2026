@@ -3,8 +3,8 @@ SET search_path TO projeto_sistemas;
 
 CREATE TABLE IF NOT EXISTS produtos (
   id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  produto VARCHAR(255) NOT NULL,
-  descricao VARCHAR(255) NOT NULL,
+  produto VARCHAR(150) NOT NULL,
+  descricao TEXT NOT NULL,
   categoria_id INTEGER NOT NULL,
   marca_id INTEGER NOT NULL,
   unidade_medida_id INTEGER NOT NULL,

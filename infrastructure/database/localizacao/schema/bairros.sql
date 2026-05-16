@@ -2,7 +2,7 @@ SET search_path TO projeto_sistemas;
 
 CREATE TABLE IF NOT EXISTS bairros (
   id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  bairro VARCHAR(255) NOT NULL,
+  bairro VARCHAR(100) NOT NULL,
   cidade_id INTEGER NOT NULL,
   CONSTRAINT bairros_cidade_fk
     FOREIGN KEY (cidade_id)

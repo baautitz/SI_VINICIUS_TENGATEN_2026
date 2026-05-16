@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS contas_pagar (
   id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   fornecedor_id INTEGER NOT NULL,
   nfe_id INTEGER,
-  descricao VARCHAR(255) NOT NULL,
+  descricao VARCHAR(150) NOT NULL,
   data_emissao DATE,
   data_vencimento DATE,
   valor_original NUMERIC(14, 2) NOT NULL,

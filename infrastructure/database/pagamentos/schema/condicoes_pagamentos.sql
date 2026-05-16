@@ -2,7 +2,7 @@ SET search_path TO projeto_sistemas;
 
 CREATE TABLE IF NOT EXISTS condicoes_pagamentos (
   id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  descricao VARCHAR(255) NOT NULL UNIQUE,
+  descricao VARCHAR(150) NOT NULL UNIQUE,
   metodo_pagamento_id INTEGER NOT NULL,
   entrada_minima_percentual NUMERIC(7, 4) NOT NULL DEFAULT 0,
   desconto_percentual NUMERIC(7, 4) NOT NULL DEFAULT 0,

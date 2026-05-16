@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS nfes_itens (
   nfe_id INTEGER NOT NULL,
   numero_item INTEGER NOT NULL,
   sku_id INTEGER NOT NULL,
-  descricao_item VARCHAR(255) NOT NULL,
+  descricao_item VARCHAR(150) NOT NULL,
   unidade_medida_id INTEGER NOT NULL,
   quantidade NUMERIC(14, 4) NOT NULL,
   valor_unitario NUMERIC(14, 4) NOT NULL,

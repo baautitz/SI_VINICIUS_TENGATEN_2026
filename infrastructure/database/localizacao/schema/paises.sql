@@ -5,6 +5,6 @@ CREATE TABLE IF NOT EXISTS paises (
   ddi VARCHAR(5) NOT NULL,
   sigla_iso CHAR(3) NOT NULL UNIQUE,
   moeda CHAR(3) NOT NULL,
-  simbolo_moeda VARCHAR(10) NOT NULL,
-  pais VARCHAR(255) NOT NULL UNIQUE
+  simbolo_moeda VARCHAR(5) NOT NULL,
+  pais VARCHAR(60) NOT NULL UNIQUE
 );

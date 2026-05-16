@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS contas_receber (
   cliente_id INTEGER NOT NULL,
   venda_id INTEGER,
   nfe_id INTEGER,
-  descricao VARCHAR(255) NOT NULL,
+  descricao VARCHAR(150) NOT NULL,
   data_emissao DATE,
   data_vencimento DATE,
   valor_original NUMERIC(14, 2) NOT NULL,
