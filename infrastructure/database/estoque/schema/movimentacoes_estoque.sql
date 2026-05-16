@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS movimentacoes_estoque (
   tipo_movimentacao tipo_movimentacao_estoque_enum NOT NULL,
   usuario_id INTEGER,
   nfe_id INTEGER,
+  venda_id INTEGER,
   observacao TEXT,
   CONSTRAINT movimentacoes_estoque_usuario_fk
     FOREIGN KEY (usuario_id)
@@ -19,9 +20,14 @@ CREATE TABLE IF NOT EXISTS movimentacoes_estoque (
     REFERENCES nfes (id)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
+  CONSTRAINT movimentacoes_estoque_venda_fk
+    FOREIGN KEY (venda_id)
+    REFERENCES vendas (id)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
   CONSTRAINT movimentacoes_estoque_venda_nfe_ck
     CHECK (
       (tipo_movimentacao <> 'VENDA') OR
-      (tipo_movimentacao = 'VENDA' AND nfe_id IS NOT NULL)
+      (tipo_movimentacao = 'VENDA' AND venda_id IS NOT NULL)
     )
 );

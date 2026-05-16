@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS nfes (
   tipo_operacao tipo_operacao_enum NOT NULL,
   status_nfe status_nfe_enum NOT NULL DEFAULT 'RASCUNHO',
   transportadora_id INTEGER,
+  venda_id INTEGER,
   valor_produtos NUMERIC(14, 2) NOT NULL DEFAULT 0,
   valor_desconto NUMERIC(14, 2) NOT NULL DEFAULT 0,
   valor_frete NUMERIC(14, 2) NOT NULL DEFAULT 0,
@@ -35,9 +36,7 @@ CREATE TABLE IF NOT EXISTS nfes (
   valor_outras_despesas NUMERIC(14, 2) NOT NULL DEFAULT 0,
   valor_total NUMERIC(14, 2) NOT NULL DEFAULT 0,
   CONSTRAINT nfes_emitente_fk FOREIGN KEY (emitente_id) REFERENCES emitentes (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT nfes_emitente_snapshot_fk FOREIGN KEY (emitente_id, emitente_cpf_cnpj, emitente_nome_razaosocial) REFERENCES emitentes (id, cpf_cnpj, nome_razaosocial) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT nfes_cliente_fk FOREIGN KEY (cliente_id) REFERENCES clientes (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT nfes_cliente_snapshot_fk FOREIGN KEY (cliente_id, cliente_cpf_cnpj, cliente_nome_razaosocial) REFERENCES clientes (id, cpf_cnpj, nome_razaosocial) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT nfes_transportadora_fk FOREIGN KEY (transportadora_id) REFERENCES transportadoras (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT nfes_emitente_serie_numero_unique UNIQUE (emitente_id, serie, numero),
   CONSTRAINT nfes_emitente_nome_not_empty_ck CHECK (LENGTH(TRIM(emitente_nome_razaosocial)) > 0),
@@ -53,5 +52,6 @@ CREATE TABLE IF NOT EXISTS nfes (
   CONSTRAINT nfes_valor_frete_ck CHECK (valor_frete >= 0),
   CONSTRAINT nfes_valor_seguro_ck CHECK (valor_seguro >= 0),
   CONSTRAINT nfes_valor_outras_ck CHECK (valor_outras_despesas >= 0),
-  CONSTRAINT nfes_valor_total_ck CHECK (valor_total >= 0)
+  CONSTRAINT nfes_valor_total_ck CHECK (valor_total >= 0),
+  CONSTRAINT nfes_venda_fk FOREIGN KEY (venda_id) REFERENCES vendas (id) ON DELETE NO ACTION ON UPDATE NO ACTION
 );

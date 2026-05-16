@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS auditoria (
   sessao_id BIGINT,
   
   CONSTRAINT fk_auditoria_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
-  CONSTRAINT fk_auditoria_sessao FOREIGN KEY (sessao_id) REFERENCES sessao(id),
+  CONSTRAINT fk_auditoria_sessao FOREIGN KEY (sessao_id) REFERENCES sessoes(id),
   CONSTRAINT ck_auditoria_operacao CHECK (operacao IN ('INSERT', 'UPDATE', 'DELETE'))
 );
 
