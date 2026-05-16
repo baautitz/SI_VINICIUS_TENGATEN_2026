@@ -1,4 +1,4 @@
-namespace Modules.Estoque.Models.Enums;
+namespace backend.Modules.Estoque.Models.Enums;
 
 public enum TipoMovimentacaoEstoque
 {

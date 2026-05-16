@@ -1,4 +1,4 @@
-namespace Modules.NFe.Models.Enums;
+namespace backend.Modules.NFe.Models.Enums;
 
 public enum ModalidadeFrete
 {

@@ -1,3 +1,5 @@
+using backend.Modules.Localizacao.Models;
+
 namespace backend.Modules.Logistica.Models;
 
 public class Fornecedores
@@ -8,7 +10,7 @@ public class Fornecedores
   public string? RgIe { get; set; }
   public string? ApelidoNomefantasia { get; set; }
   public string? Endereco { get; set; }
-  public string? Bairro { get; set; }
+  public Bairros? Bairro { get; set; }
   public string? Telefone { get; set; }
   public string? Email { get; set; }
   public bool Ativo { get; set; }

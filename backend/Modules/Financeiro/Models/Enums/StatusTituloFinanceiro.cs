@@ -1,4 +1,4 @@
-namespace Modules.Financeiro.Models;
+namespace backend.Modules.Financeiro.Models.Enums;
 
 public enum StatusTituloFinanceiro
 {

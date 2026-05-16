@@ -12,7 +12,7 @@ public class ContasPagar
   public DateTime? DataVencimento { get; set; }
   public decimal ValorOriginal { get; set; }
   public decimal ValorSaldo { get; set; }
-  public StatusTituloFinanceiro Status { get; set; }
+  public Enums.StatusTituloFinanceiro Status { get; set; }
   public string? Observacao { get; set; }
   public DateTime CriadoEm { get; set; }
   public DateTime? AtualizadoEm { get; set; }

@@ -1,3 +1,5 @@
+using backend.Modules.Localizacao.Models;
+
 namespace backend.Modules.Logistica.Models;
 
 public class Transportadoras
@@ -8,7 +10,7 @@ public class Transportadoras
   public string? RgIe { get; set; }
   public string? ApelidoNomefantasia { get; set; }
   public string? Endereco { get; set; }
-  public string? Bairro { get; set; }
+  public Bairros? Bairro { get; set; }
   public string? Telefone { get; set; }
   public string? Email { get; set; }
   public string? Rntrc { get; set; }

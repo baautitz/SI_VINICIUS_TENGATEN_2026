@@ -7,5 +7,5 @@ public class ContasReceberParcelas
   public DateTime? DataVencimento { get; set; }
   public decimal ValorParcela { get; set; }
   public decimal ValorRecebido { get; set; }
-  public StatusTituloFinanceiro Status { get; set; }
+  public Enums.StatusTituloFinanceiro Status { get; set; }
 }
