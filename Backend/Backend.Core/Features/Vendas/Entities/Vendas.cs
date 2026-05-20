@@ -11,4 +11,6 @@ public class Venda
 
     public required Emitentes Emitente { get; set; }
     public required Clientes Cliente { get; set; }
+
+    public required IEnumerable<VendaItens> Itens { get; set; }
 }

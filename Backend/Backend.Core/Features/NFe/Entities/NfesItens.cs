@@ -6,6 +6,7 @@ namespace Backend.Core.Features.NFe.Entities;
 public class NfesItens
 {
     public int Id { get; set; }
+    public int NfeId { get; set; }
     public int NumeroItem { get; set; }
     public required string DescricaoItem { get; set; }
     public decimal Quantidade { get; set; }

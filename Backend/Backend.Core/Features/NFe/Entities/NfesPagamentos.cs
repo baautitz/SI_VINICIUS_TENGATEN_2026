@@ -6,6 +6,7 @@ namespace Backend.Core.Features.NFe.Entities;
 public class NfesPagamentos
 {
     public int Id { get; set; }
+    public int NfeId { get; set; }
     public IndicadorPagamento IndicadorPagamento { get; set; }
     public decimal ValorPagamento { get; set; }
 
