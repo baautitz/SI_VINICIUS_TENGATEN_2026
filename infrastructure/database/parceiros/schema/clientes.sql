@@ -3,8 +3,8 @@ SET search_path TO projeto_sistemas;
 CREATE TABLE IF NOT EXISTS clientes (
   id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   nome_razaosocial VARCHAR(150) NOT NULL,
-  cpf_cnpj VARCHAR(20) NOT NULL,
-  rg_ie VARCHAR(20),
+  cpf_cnpj VARCHAR(14) NOT NULL,
+  rg_ie VARCHAR(15),
   apelido_nomefantasia VARCHAR(100),
   endereco VARCHAR(150),
   bairro_id INTEGER,
