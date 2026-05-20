@@ -1,7 +1,7 @@
 {
 	"folders": [
 		{
-			"path": "backend"
+			"path": "Backend"
 		},
 		{
 			"path": "."
@@ -9,7 +9,7 @@
 	],
 	"settings": {
 		"files.exclude": {
-			"backend": true
+			"Backend": true
 		}
 	}
 }
