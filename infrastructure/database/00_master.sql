@@ -34,6 +34,7 @@ SET search_path TO projeto_sistemas;
 \ir pagamentos/schema/condicoes_pagamentos_parcelas.sql
 
 \ir vendas/schema/vendas.sql
+\ir vendas/schema/vendas_itens.sql
 
 \ir nfe/schema/nfe_tipos.sql
 \ir nfe/schema/nfes_table.sql
