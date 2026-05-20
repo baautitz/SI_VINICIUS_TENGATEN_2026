@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="Backend.Core/Backend.Core.csproj" Id="274ebf43-3fdb-41c3-834c-0932d47268e4" />
+  <Project Path="Backend.Infrastructure.PostgreSQL/Backend.Infrastructure.PostgreSQL.csproj" />
   <Project Path="Backend.Web/Backend.Web.csproj" />
 </Solution>
