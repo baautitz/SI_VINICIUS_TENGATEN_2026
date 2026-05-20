@@ -24,9 +24,9 @@ public class ContasReceberRepository : IContasReceberRepository
         const string countSql = "SELECT COUNT(*) FROM contas_receber;";
 
         const string querySql = @"
-            SELECT cr.id, cr.descricao, cr.data_emissao, cr.data_vencimento, cr.valor_original,
+            SELECT cr.id AS Id, cr.descricao, cr.data_emissao, cr.data_vencimento, cr.valor_original,
                    cr.valor_saldo, cr.status, cr.observacao, cr.criado_em, cr.atualizado_em,
-                   c.id, c.nome_razao_social, c.cpf_cnpj, c.rg_ie, c.apelido_nome_fantasia,
+                   c.id AS ClienteId, c.nome_razao_social, c.cpf_cnpj, c.rg_ie, c.apelido_nome_fantasia,
                    c.endereco, c.telefone, c.email, c.limite_credito, c.ativo, c.criado_em,
                    c.atualizado_em, c.observacao
             FROM contas_receber cr
@@ -47,7 +47,7 @@ public class ContasReceberRepository : IContasReceberRepository
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "id")).ToList();
+            splitOn: "ClienteId")).ToList();
 
         if (contas.Count > 0)
         {
@@ -80,9 +80,9 @@ public class ContasReceberRepository : IContasReceberRepository
     public async Task<ContasReceber?> ObterContaReceberPorId(int id)
     {
         const string contaSql = @"
-            SELECT cr.id, cr.descricao, cr.data_emissao, cr.data_vencimento, cr.valor_original,
+            SELECT cr.id AS Id, cr.descricao, cr.data_emissao, cr.data_vencimento, cr.valor_original,
                    cr.valor_saldo, cr.status, cr.observacao, cr.criado_em, cr.atualizado_em,
-                   c.id, c.nome_razao_social, c.cpf_cnpj, c.rg_ie, c.apelido_nome_fantasia,
+                   c.id AS ClienteId, c.nome_razao_social, c.cpf_cnpj, c.rg_ie, c.apelido_nome_fantasia,
                    c.endereco, c.telefone, c.email, c.limite_credito, c.ativo, c.criado_em,
                    c.atualizado_em, c.observacao
             FROM contas_receber cr
@@ -106,7 +106,7 @@ public class ContasReceberRepository : IContasReceberRepository
             },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "id")).SingleOrDefault();
+            splitOn: "ClienteId")).SingleOrDefault();
 
         if (conta is null) return null;
 
@@ -129,8 +129,13 @@ public class ContasReceberRepository : IContasReceberRepository
             sql,
             new
             {
-                conta.Descricao, conta.DataEmissao, conta.DataVencimento,
-                conta.ValorOriginal, conta.ValorSaldo, conta.Status, conta.Observacao,
+                conta.Descricao,
+                conta.DataEmissao,
+                conta.DataVencimento,
+                conta.ValorOriginal,
+                conta.ValorSaldo,
+                conta.Status,
+                conta.Observacao,
                 CriadoEm = DateTime.UtcNow,
                 ClienteId = conta.Cliente.Id,
                 NfeId = conta.Nfe?.Id,
@@ -158,8 +163,14 @@ public class ContasReceberRepository : IContasReceberRepository
             sql,
             new
             {
-                Id = id, conta.Descricao, conta.DataEmissao, conta.DataVencimento,
-                conta.ValorOriginal, conta.ValorSaldo, conta.Status, conta.Observacao,
+                Id = id,
+                conta.Descricao,
+                conta.DataEmissao,
+                conta.DataVencimento,
+                conta.ValorOriginal,
+                conta.ValorSaldo,
+                conta.Status,
+                conta.Observacao,
                 AtualizadoEm = DateTime.UtcNow,
                 ClienteId = conta.Cliente.Id,
                 NfeId = conta.Nfe?.Id,
@@ -249,7 +260,11 @@ public class ContasReceberRepository : IContasReceberRepository
             sql,
             parcelas.Select(p => new
             {
-                p.NumeroParcela, p.DataVencimento, p.ValorParcela, p.ValorRecebido, p.Status,
+                p.NumeroParcela,
+                p.DataVencimento,
+                p.ValorParcela,
+                p.ValorRecebido,
+                p.Status,
                 ContaId = contaId
             }),
             transaction: _session.Transaction);

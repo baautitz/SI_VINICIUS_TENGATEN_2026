@@ -18,8 +18,8 @@ public class SessoesRepository : ISessoesRepository
     public async Task<Sessoes?> ObterSessaoPorToken(string token)
     {
         const string sql = @"
-            SELECT s.id, s.token, s.data_criacao, s.data_expiracao, s.ativo,
-                   u.id, u.nome, u.cpf_cnpj, u.email, u.telefone, u.usuario, u.senha, u.ativo
+            SELECT s.id AS Id, s.token, s.data_criacao, s.data_expiracao, s.ativo,
+                   u.id AS UsuarioId, u.nome, u.cpf_cnpj, u.email, u.telefone, u.usuario, u.senha, u.ativo
             FROM sessoes s
             JOIN usuarios u ON u.id = s.usuario_id
             WHERE s.token = @Token;";
@@ -34,7 +34,7 @@ public class SessoesRepository : ISessoesRepository
             },
             new { Token = token },
             transaction: _session.Transaction,
-            splitOn: "id"
+            splitOn: "UsuarioId"
         );
 
         return result.SingleOrDefault();
@@ -88,8 +88,8 @@ public class SessoesRepository : ISessoesRepository
         const string countSql = "SELECT COUNT(*) FROM sessoes WHERE usuario_id = @UsuarioId;";
 
         const string querySql = @"
-            SELECT s.id, s.token, s.data_criacao, s.data_expiracao, s.ativo,
-                   u.id, u.nome, u.cpf_cnpj, u.email, u.telefone, u.usuario, u.senha, u.ativo
+            SELECT s.id AS Id, s.token, s.data_criacao, s.data_expiracao, s.ativo,
+                   u.id AS UsuarioId, u.nome, u.cpf_cnpj, u.email, u.telefone, u.usuario, u.senha, u.ativo
             FROM sessoes s
             JOIN usuarios u ON u.id = s.usuario_id
             WHERE s.usuario_id = @UsuarioId
@@ -109,7 +109,7 @@ public class SessoesRepository : ISessoesRepository
             },
             new { UsuarioId = usuarioId, TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "id"
+            splitOn: "UsuarioId"
         );
 
         return new ResultadoPaginado<Sessoes>(itens, total, pagina, tamanhoDaPagina);

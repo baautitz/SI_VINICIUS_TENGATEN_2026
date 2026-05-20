@@ -47,7 +47,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
             var rawIds = rawMovimentacoes.Select(m => m.Id).ToArray();
 
             const string usuariosSql = @"
-                SELECT me.id, u.id, u.nome, u.cpf_cnpj, u.email, u.telefone, u.usuario, u.senha, u.ativo
+                SELECT me.id AS Id, u.id AS UsuarioId, u.nome, u.cpf_cnpj, u.email, u.telefone, u.usuario, u.senha, u.ativo
                 FROM movimentacoes_estoque me
                 LEFT JOIN usuarios u ON u.id = me.usuario_id
                 WHERE me.id = ANY(@Ids);";
@@ -61,7 +61,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
                 },
                 new { Ids = rawIds },
                 transaction: _session.Transaction,
-                splitOn: "id"))
+                splitOn: "UsuarioId"))
                 .ToDictionary(x => x.Id, x => x.Usuario);
 
             foreach (var m in rawMovimentacoes)
@@ -112,8 +112,8 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
     public async Task<MovimentacoesEstoques?> ObterMovimentacaoPorId(int id)
     {
         const string movimentacaoSql = @"
-            SELECT me.id, me.data_movimentacao, me.tipo_movimentacao, me.observacao,
-                   u.id, u.nome, u.cpf_cnpj, u.email, u.telefone, u.usuario, u.senha, u.ativo
+            SELECT me.id AS Id, me.data_movimentacao, me.tipo_movimentacao, me.observacao,
+                   u.id AS UsuarioId, u.nome, u.cpf_cnpj, u.email, u.telefone, u.usuario, u.senha, u.ativo
             FROM movimentacoes_estoque me
             LEFT JOIN usuarios u ON u.id = me.usuario_id
             WHERE me.id = @Id;";
@@ -135,7 +135,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
             },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "id")).SingleOrDefault();
+            splitOn: "UsuarioId")).SingleOrDefault();
 
         if (movimentacao is null) return null;
 

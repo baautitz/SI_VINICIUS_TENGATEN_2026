@@ -25,9 +25,9 @@ public class VendasRepository : IVendasRepository
         const string countSql = "SELECT COUNT(*) FROM vendas;";
 
         const string querySql = @"
-            SELECT v.id, v.data_venda, v.valor_total, v.observacao,
-                   e.id, e.nome_razao_social, e.cpf_cnpj, e.ativo,
-                   c.id, c.nome_razao_social, c.cpf_cnpj, c.ativo
+            SELECT v.id AS Id, v.data_venda, v.valor_total, v.observacao,
+                   e.id AS EmitenteId, e.nome_razao_social, e.cpf_cnpj, e.ativo,
+                   c.id AS ClienteId, c.nome_razao_social, c.cpf_cnpj, c.ativo
             FROM vendas v
             JOIN emitentes e ON e.id = v.emitente_id
             JOIN clientes c ON c.id = v.cliente_id
@@ -48,7 +48,7 @@ public class VendasRepository : IVendasRepository
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "id,id")).ToList();
+            splitOn: "EmitenteId,ClienteId")).ToList();
 
         if (vendas.Count > 0)
         {
@@ -91,11 +91,11 @@ public class VendasRepository : IVendasRepository
     public async Task<Venda?> ObterVendaPorId(int id)
     {
         const string vendaSql = @"
-            SELECT v.id, v.data_venda, v.valor_total, v.observacao,
-                   e.id, e.nome_razao_social, e.cpf_cnpj, e.apelido_nome_fantasia,
+            SELECT v.id AS Id, v.data_venda, v.valor_total, v.observacao,
+                   e.id AS EmitenteId, e.nome_razao_social, e.cpf_cnpj, e.apelido_nome_fantasia,
                    e.endereco, e.telefone, e.email, e.rg_ie, e.inscricao_municipal,
                    e.regime_tributario, e.ativo, e.criado_em, e.atualizado_em, e.observacao,
-                   c.id, c.nome_razao_social, c.cpf_cnpj, c.rg_ie, c.apelido_nome_fantasia,
+                   c.id AS ClienteId, c.nome_razao_social, c.cpf_cnpj, c.rg_ie, c.apelido_nome_fantasia,
                    c.endereco, c.telefone, c.email, c.limite_credito, c.ativo, c.criado_em,
                    c.atualizado_em, c.observacao
             FROM vendas v
@@ -122,7 +122,7 @@ public class VendasRepository : IVendasRepository
             },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "id,id")).SingleOrDefault();
+            splitOn: "EmitenteId,ClienteId")).SingleOrDefault();
 
         if (venda is null) return null;
 
@@ -152,7 +152,9 @@ public class VendasRepository : IVendasRepository
             sql,
             new
             {
-                venda.DataVenda, venda.ValorTotal, venda.Observacao,
+                venda.DataVenda,
+                venda.ValorTotal,
+                venda.Observacao,
                 EmitenteId = venda.Emitente.Id,
                 ClienteId = venda.Cliente.Id
             },
@@ -176,7 +178,10 @@ public class VendasRepository : IVendasRepository
             sql,
             new
             {
-                Id = id, venda.DataVenda, venda.ValorTotal, venda.Observacao,
+                Id = id,
+                venda.DataVenda,
+                venda.ValorTotal,
+                venda.Observacao,
                 EmitenteId = venda.Emitente.Id,
                 ClienteId = venda.Cliente.Id
             },
@@ -261,7 +266,10 @@ public class VendasRepository : IVendasRepository
             sql,
             itens.Select(i => new
             {
-                i.Quantidade, i.ValorUnitario, i.ValorDesconto, i.ValorTotal,
+                i.Quantidade,
+                i.ValorUnitario,
+                i.ValorDesconto,
+                i.ValorTotal,
                 SkuCodigo = i.Sku.Sku,
                 VendaId = vendaId
             }),

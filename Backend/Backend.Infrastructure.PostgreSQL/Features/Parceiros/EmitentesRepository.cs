@@ -44,13 +44,13 @@ public class EmitentesRepository : IEmitentesRepository
     public async Task<Emitentes?> ObterEmitentePorId(int id)
     {
         const string sql = @"
-            SELECT e.id, e.nome_razao_social, e.cpf_cnpj, e.apelido_nome_fantasia,
+            SELECT e.id AS Id, e.nome_razao_social, e.cpf_cnpj, e.apelido_nome_fantasia,
                    e.endereco, e.telefone, e.email, e.rg_ie, e.inscricao_municipal,
                    e.regime_tributario, e.ativo, e.criado_em, e.atualizado_em, e.observacao,
-                   b.id, b.bairro,
-                   c.id, c.cidade, c.ddd,
-                   st.id, st.estado, st.uf,
-                   p.id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+                   b.id AS BairroId, b.bairro,
+                   c.id AS CidadeId, c.cidade, c.ddd,
+                   st.id AS EstadoId, st.estado, st.uf,
+                   p.id AS PaisId, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM emitentes e
             LEFT JOIN bairros b ON b.id = e.bairro_id
             LEFT JOIN cidades c ON c.id = b.cidade_id
@@ -73,7 +73,7 @@ public class EmitentesRepository : IEmitentesRepository
             },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "id,id,id,id"
+            splitOn: "BairroId,CidadeId,EstadoId,PaisId"
         );
 
         return result.SingleOrDefault();
@@ -94,11 +94,19 @@ public class EmitentesRepository : IEmitentesRepository
             sql,
             new
             {
-                emitente.NomeRazaoSocial, emitente.CpfCnpj, emitente.ApelidoNomeFantasia,
-                emitente.Endereco, BairroId = emitente.Bairro?.Id,
-                emitente.Telefone, emitente.Email, emitente.RgIe,
-                emitente.InscricaoMunicipal, emitente.RegimeTributario, emitente.Ativo,
-                CriadoEm = DateTime.UtcNow, emitente.Observacao
+                emitente.NomeRazaoSocial,
+                emitente.CpfCnpj,
+                emitente.ApelidoNomeFantasia,
+                emitente.Endereco,
+                BairroId = emitente.Bairro?.Id,
+                emitente.Telefone,
+                emitente.Email,
+                emitente.RgIe,
+                emitente.InscricaoMunicipal,
+                emitente.RegimeTributario,
+                emitente.Ativo,
+                CriadoEm = DateTime.UtcNow,
+                emitente.Observacao
             },
             transaction: _session.Transaction
         );
@@ -123,12 +131,20 @@ public class EmitentesRepository : IEmitentesRepository
             sql,
             new
             {
-                Id = id, emitente.NomeRazaoSocial, emitente.CpfCnpj,
-                emitente.ApelidoNomeFantasia, emitente.Endereco,
+                Id = id,
+                emitente.NomeRazaoSocial,
+                emitente.CpfCnpj,
+                emitente.ApelidoNomeFantasia,
+                emitente.Endereco,
                 BairroId = emitente.Bairro?.Id,
-                emitente.Telefone, emitente.Email, emitente.RgIe,
-                emitente.InscricaoMunicipal, emitente.RegimeTributario, emitente.Ativo,
-                AtualizadoEm = DateTime.UtcNow, emitente.Observacao
+                emitente.Telefone,
+                emitente.Email,
+                emitente.RgIe,
+                emitente.InscricaoMunicipal,
+                emitente.RegimeTributario,
+                emitente.Ativo,
+                AtualizadoEm = DateTime.UtcNow,
+                emitente.Observacao
             },
             transaction: _session.Transaction
         );

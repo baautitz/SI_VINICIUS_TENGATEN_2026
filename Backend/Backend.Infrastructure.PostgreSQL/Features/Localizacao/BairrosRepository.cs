@@ -23,10 +23,10 @@ public class BairrosRepository : IBairrosRepository
         const string countSql = "SELECT COUNT(*) FROM bairros;";
 
         const string querySql = @"
-            SELECT b.id, b.bairro,
-                   c.id, c.cidade, c.ddd,
-                   e.id, e.estado, e.uf,
-                   p.id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            SELECT b.id AS Id, b.bairro,
+                   c.id AS CidadeId, c.cidade, c.ddd,
+                   e.id AS EstadoId, e.estado, e.uf,
+                   p.id AS PaisId, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM bairros b
             JOIN cidades c ON c.id = b.cidade_id
             JOIN estados e ON e.id = c.estado_id
@@ -48,7 +48,7 @@ public class BairrosRepository : IBairrosRepository
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "id,id,id"
+            splitOn: "CidadeId,EstadoId,PaisId"
         );
 
         return new ResultadoPaginado<Bairros>(itens, total, pagina, tamanhoDaPagina);
@@ -57,10 +57,10 @@ public class BairrosRepository : IBairrosRepository
     public async Task<Bairros?> ObterBairroPorId(int id)
     {
         const string sql = @"
-            SELECT b.id, b.bairro,
-                   c.id, c.cidade, c.ddd,
-                   e.id, e.estado, e.uf,
-                   p.id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            SELECT b.id AS Id, b.bairro,
+                   c.id AS CidadeId, c.cidade, c.ddd,
+                   e.id AS EstadoId, e.estado, e.uf,
+                   p.id AS PaisId, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM bairros b
             JOIN cidades c ON c.id = b.cidade_id
             JOIN estados e ON e.id = c.estado_id
@@ -78,7 +78,7 @@ public class BairrosRepository : IBairrosRepository
             },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "id,id,id"
+            splitOn: "CidadeId,EstadoId,PaisId"
         );
 
         return result.SingleOrDefault();

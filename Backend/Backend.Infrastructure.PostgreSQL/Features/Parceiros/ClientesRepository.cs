@@ -46,13 +46,13 @@ public class ClientesRepository : IClientesRepository
     public async Task<Clientes?> ObterClientePorId(int id)
     {
         const string sql = @"
-            SELECT c.id, c.nome_razao_social, c.cpf_cnpj, c.rg_ie, c.apelido_nome_fantasia,
+            SELECT c.id AS Id, c.nome_razao_social, c.cpf_cnpj, c.rg_ie, c.apelido_nome_fantasia,
                    c.endereco, c.telefone, c.email, c.limite_credito, c.ativo, c.criado_em,
                    c.atualizado_em, c.observacao,
-                   b.id, b.bairro,
-                   ci.id, ci.cidade, ci.ddd,
-                   e.id, e.estado, e.uf,
-                   p.id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+                   b.id AS BairroId, b.bairro,
+                   ci.id AS CidadeId, ci.cidade, ci.ddd,
+                   e.id AS EstadoId, e.estado, e.uf,
+                   p.id AS PaisId, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM clientes c
             LEFT JOIN bairros b ON b.id = c.bairro_id
             LEFT JOIN cidades ci ON ci.id = b.cidade_id
@@ -75,7 +75,7 @@ public class ClientesRepository : IClientesRepository
             },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "id,id,id,id"
+            splitOn: "BairroId,CidadeId,EstadoId,PaisId"
         );
 
         return result.SingleOrDefault();
@@ -96,11 +96,18 @@ public class ClientesRepository : IClientesRepository
             sql,
             new
             {
-                cliente.NomeRazaoSocial, cliente.CpfCnpj, cliente.RgIe,
-                cliente.ApelidoNomeFantasia, cliente.Endereco,
+                cliente.NomeRazaoSocial,
+                cliente.CpfCnpj,
+                cliente.RgIe,
+                cliente.ApelidoNomeFantasia,
+                cliente.Endereco,
                 BairroId = cliente.Bairro?.Id,
-                cliente.Telefone, cliente.Email, cliente.LimiteCredito,
-                cliente.Ativo, CriadoEm = DateTime.UtcNow, cliente.Observacao
+                cliente.Telefone,
+                cliente.Email,
+                cliente.LimiteCredito,
+                cliente.Ativo,
+                CriadoEm = DateTime.UtcNow,
+                cliente.Observacao
             },
             transaction: _session.Transaction
         );
@@ -124,11 +131,19 @@ public class ClientesRepository : IClientesRepository
             sql,
             new
             {
-                Id = id, cliente.NomeRazaoSocial, cliente.CpfCnpj, cliente.RgIe,
-                cliente.ApelidoNomeFantasia, cliente.Endereco,
+                Id = id,
+                cliente.NomeRazaoSocial,
+                cliente.CpfCnpj,
+                cliente.RgIe,
+                cliente.ApelidoNomeFantasia,
+                cliente.Endereco,
                 BairroId = cliente.Bairro?.Id,
-                cliente.Telefone, cliente.Email, cliente.LimiteCredito, cliente.Ativo,
-                AtualizadoEm = DateTime.UtcNow, cliente.Observacao
+                cliente.Telefone,
+                cliente.Email,
+                cliente.LimiteCredito,
+                cliente.Ativo,
+                AtualizadoEm = DateTime.UtcNow,
+                cliente.Observacao
             },
             transaction: _session.Transaction
         );

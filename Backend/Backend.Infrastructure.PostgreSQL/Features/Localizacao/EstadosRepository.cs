@@ -23,8 +23,8 @@ public class EstadosRepository : IEstadosRepository
         const string countSql = "SELECT COUNT(*) FROM estados;";
 
         const string querySql = @"
-            SELECT e.id, e.estado, e.uf,
-                   p.id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            SELECT e.id AS Id, e.estado, e.uf,
+                   p.id AS PaisId, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM estados e
             JOIN paises p ON p.id = e.pais_id
             ORDER BY e.estado
@@ -42,7 +42,7 @@ public class EstadosRepository : IEstadosRepository
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "id"
+            splitOn: "PaisId"
         );
 
         return new ResultadoPaginado<Estados>(itens, total, pagina, tamanhoDaPagina);
@@ -51,8 +51,8 @@ public class EstadosRepository : IEstadosRepository
     public async Task<Estados?> ObterEstadoPorId(int id)
     {
         const string sql = @"
-            SELECT e.id, e.estado, e.uf,
-                   p.id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            SELECT e.id AS Id, e.estado, e.uf,
+                   p.id AS PaisId, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM estados e
             JOIN paises p ON p.id = e.pais_id
             WHERE e.id = @Id;";
@@ -66,7 +66,7 @@ public class EstadosRepository : IEstadosRepository
             },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "id"
+            splitOn: "PaisId"
         );
 
         return result.SingleOrDefault();

@@ -23,9 +23,9 @@ public class CidadesRepository : ICidadesRepository
         const string countSql = "SELECT COUNT(*) FROM cidades;";
 
         const string querySql = @"
-            SELECT c.id, c.cidade, c.ddd,
-                   e.id, e.estado, e.uf,
-                   p.id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            SELECT c.id AS Id, c.cidade, c.ddd,
+                   e.id AS EstadoId, e.estado, e.uf,
+                   p.id AS PaisId, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM cidades c
             JOIN estados e ON e.id = c.estado_id
             JOIN paises p ON p.id = e.pais_id
@@ -45,7 +45,7 @@ public class CidadesRepository : ICidadesRepository
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "id,id"
+            splitOn: "EstadoId,PaisId"
         );
 
         return new ResultadoPaginado<Cidades>(itens, total, pagina, tamanhoDaPagina);
@@ -54,9 +54,9 @@ public class CidadesRepository : ICidadesRepository
     public async Task<Cidades?> ObterCidadePorId(int id)
     {
         const string sql = @"
-            SELECT c.id, c.cidade, c.ddd,
-                   e.id, e.estado, e.uf,
-                   p.id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            SELECT c.id AS Id, c.cidade, c.ddd,
+                   e.id AS EstadoId, e.estado, e.uf,
+                   p.id AS PaisId, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM cidades c
             JOIN estados e ON e.id = c.estado_id
             JOIN paises p ON p.id = e.pais_id
@@ -72,7 +72,7 @@ public class CidadesRepository : ICidadesRepository
             },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "id,id"
+            splitOn: "EstadoId,PaisId"
         );
 
         return result.SingleOrDefault();

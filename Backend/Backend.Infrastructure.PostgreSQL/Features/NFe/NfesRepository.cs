@@ -27,7 +27,7 @@ public class NfesRepository : INfesRepository
         const string countSql = "SELECT COUNT(*) FROM nfes;";
 
         const string querySql = @"
-            SELECT n.id, n.chave_acesso, n.numero, n.serie, n.data_emissao, n.data_saida,
+            SELECT n.id AS Id, n.chave_acesso, n.numero, n.serie, n.data_emissao, n.data_saida,
                    n.emitente_nome_razaosocial, n.emitente_cpf_cnpj, n.emitente_rg_ie,
                    n.emitente_apelido_nomefantasia, n.emitente_endereco, n.emitente_bairro,
                    n.emitente_telefone, n.emitente_email,
@@ -37,8 +37,8 @@ public class NfesRepository : INfesRepository
                    n.tipo_operacao, n.status_nfe,
                    n.valor_produtos, n.valor_desconto, n.valor_frete, n.valor_seguro,
                    n.valor_outras_despesas, n.valor_total,
-                   e.id, e.nome_razao_social, e.cpf_cnpj, e.ativo,
-                   c.id, c.nome_razao_social, c.cpf_cnpj, c.ativo
+                   e.id AS EmitenteId, e.nome_razao_social, e.cpf_cnpj, e.ativo,
+                   c.id AS ClienteId, c.nome_razao_social, c.cpf_cnpj, c.ativo
             FROM nfes n
             JOIN emitentes e ON e.id = n.emitente_id
             JOIN clientes c ON c.id = n.cliente_id
@@ -60,17 +60,17 @@ public class NfesRepository : INfesRepository
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "id,id")).ToList();
+            splitOn: "EmitenteId,ClienteId")).ToList();
 
         if (nfes.Count > 0)
         {
             var ids = nfes.Select(n => n.Id).ToArray();
 
             const string itensSql = @"
-                SELECT ni.id, ni.numero_item, ni.descricao_item, ni.quantidade, ni.valor_unitario,
+                SELECT ni.id AS Id, ni.numero_item, ni.descricao_item, ni.quantidade, ni.valor_unitario,
                        ni.valor_desconto, ni.valor_total, ni.nfe_id,
-                       s.sku, s.gtin_ean, s.preco, s.estoque, s.ativo,
-                       u.id, u.sigla, u.descricao, u.categoria, u.ativo
+                       s.sku AS Sku, s.gtin_ean, s.preco, s.estoque, s.ativo,
+                       u.id AS UnidadeMedidaId, u.sigla, u.descricao, u.categoria, u.ativo
                 FROM nfes_itens ni
                 JOIN skus s ON s.sku = ni.sku
                 JOIN unidades_medida u ON u.id = ni.unidade_medida_id
@@ -78,8 +78,8 @@ public class NfesRepository : INfesRepository
                 ORDER BY ni.nfe_id, ni.numero_item;";
 
             const string pagamentosSql = @"
-                SELECT np.id, np.indicador_pagamento, np.valor_pagamento, np.nfe_id,
-                       mp.id, mp.codigo, mp.descricao, mp.ativo
+                SELECT np.id AS Id, np.indicador_pagamento, np.valor_pagamento, np.nfe_id,
+                       mp.id AS MetodosPagamentoId, mp.codigo, mp.descricao, mp.ativo
                 FROM nfes_pagamentos np
                 JOIN metodos_pagamento mp ON mp.id = np.metodo_pagamento_id
                 WHERE np.nfe_id = ANY(@Ids);";
@@ -95,7 +95,7 @@ public class NfesRepository : INfesRepository
                 },
                 new { Ids = ids },
                 transaction: _session.Transaction,
-                splitOn: "sku,id")).ToList();
+                splitOn: "Sku,UnidadeMedidaId")).ToList();
 
             var pagamentos = (await _session.Connection.QueryAsync<NfesPagamentos, MetodosPagamentos, NfesPagamentos>(
                 pagamentosSql,
@@ -106,7 +106,7 @@ public class NfesRepository : INfesRepository
                 },
                 new { Ids = ids },
                 transaction: _session.Transaction,
-                splitOn: "id")).ToList();
+                splitOn: "MetodosPagamentoId")).ToList();
 
             var itensPorNfe = itens.GroupBy(i => i.NfeId).ToDictionary(g => g.Key, g => g.AsEnumerable());
             var pagamentosPorNfe = pagamentos.GroupBy(p => p.NfeId).ToDictionary(g => g.Key, g => g.AsEnumerable());
@@ -124,7 +124,7 @@ public class NfesRepository : INfesRepository
     public async Task<Nfes?> ObterNfePorId(int id)
     {
         const string nfeSql = @"
-            SELECT n.id, n.chave_acesso, n.numero, n.serie, n.data_emissao, n.data_saida,
+            SELECT n.id AS Id, n.chave_acesso, n.numero, n.serie, n.data_emissao, n.data_saida,
                    n.emitente_nome_razaosocial, n.emitente_cpf_cnpj, n.emitente_rg_ie,
                    n.emitente_apelido_nomefantasia, n.emitente_endereco, n.emitente_bairro,
                    n.emitente_telefone, n.emitente_email,
@@ -134,10 +134,10 @@ public class NfesRepository : INfesRepository
                    n.tipo_operacao, n.status_nfe,
                    n.valor_produtos, n.valor_desconto, n.valor_frete, n.valor_seguro,
                    n.valor_outras_despesas, n.valor_total,
-                   e.id, e.nome_razao_social, e.cpf_cnpj, e.apelido_nome_fantasia, e.endereco,
+                   e.id AS EmitenteId, e.nome_razao_social, e.cpf_cnpj, e.apelido_nome_fantasia, e.endereco,
                    e.telefone, e.email, e.rg_ie, e.inscricao_municipal, e.regime_tributario,
                    e.ativo, e.criado_em, e.atualizado_em, e.observacao,
-                   c.id, c.nome_razao_social, c.cpf_cnpj, c.rg_ie, c.apelido_nome_fantasia,
+                   c.id AS ClienteId, c.nome_razao_social, c.cpf_cnpj, c.rg_ie, c.apelido_nome_fantasia,
                    c.endereco, c.telefone, c.email, c.limite_credito, c.ativo, c.criado_em,
                    c.atualizado_em, c.observacao
             FROM nfes n
@@ -146,10 +146,10 @@ public class NfesRepository : INfesRepository
             WHERE n.id = @Id;";
 
         const string itensSql = @"
-            SELECT ni.id, ni.numero_item, ni.descricao_item, ni.quantidade, ni.valor_unitario,
+            SELECT ni.id AS Id, ni.numero_item, ni.descricao_item, ni.quantidade, ni.valor_unitario,
                    ni.valor_desconto, ni.valor_total,
-                   s.sku, s.gtin_ean, s.preco, s.estoque, s.ativo,
-                   u.id, u.sigla, u.descricao, u.categoria, u.ativo
+                   s.sku AS Sku, s.gtin_ean, s.preco, s.estoque, s.ativo,
+                   u.id AS UnidadeMedidaId, u.sigla, u.descricao, u.categoria, u.ativo
             FROM nfes_itens ni
             JOIN skus s ON s.sku = ni.sku
             JOIN unidades_medida u ON u.id = ni.unidade_medida_id
@@ -157,8 +157,8 @@ public class NfesRepository : INfesRepository
             ORDER BY ni.numero_item;";
 
         const string pagamentosSql = @"
-            SELECT np.id, np.indicador_pagamento, np.valor_pagamento,
-                   mp.id, mp.codigo, mp.descricao, mp.ativo
+            SELECT np.id AS Id, np.indicador_pagamento, np.valor_pagamento,
+                   mp.id AS MetodosPagamentoId, mp.codigo, mp.descricao, mp.ativo
             FROM nfes_pagamentos np
             JOIN metodos_pagamento mp ON mp.id = np.metodo_pagamento_id
             WHERE np.nfe_id = @Id;";
@@ -180,7 +180,7 @@ public class NfesRepository : INfesRepository
             },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "id,id")).SingleOrDefault();
+            splitOn: "EmitenteId,ClienteId")).SingleOrDefault();
 
         if (nfe is null) return null;
 
@@ -195,14 +195,14 @@ public class NfesRepository : INfesRepository
             },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "sku,id");
+            splitOn: "Sku,UnidadeMedidaId");
 
         nfe.NfesPagamentos = await _session.Connection.QueryAsync<NfesPagamentos, MetodosPagamentos, NfesPagamentos>(
             pagamentosSql,
             (pag, metodo) => { pag.MetodosPagamento = metodo; return pag; },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "id");
+            splitOn: "MetodosPagamentoId");
 
         nfe.NfesInformacoesAdicionais = await _session.Connection.QuerySingleOrDefaultAsync<NfesInformacoesAdicionais>(
             infoSql, new { Id = id }, transaction: _session.Transaction);
@@ -243,16 +243,35 @@ public class NfesRepository : INfesRepository
             sql,
             new
             {
-                nfe.ChaveAcesso, nfe.Numero, nfe.Serie, nfe.DataEmissao, nfe.DataSaida,
-                nfe.EmitenteNomeRazaosocial, nfe.EmitenteCpfCnpj, nfe.EmitenteRgIe,
-                nfe.EmitenteApelidoNomefantasia, nfe.EmitenteEndereco, nfe.EmitenteBairro,
-                nfe.EmitenteTelefone, nfe.EmitenteEmail,
-                nfe.ClienteNomeRazaosocial, nfe.ClienteCpfCnpj, nfe.ClienteRgIe,
-                nfe.ClienteApelidoNomefantasia, nfe.ClienteEndereco, nfe.ClienteBairro,
-                nfe.ClienteTelefone, nfe.ClienteEmail,
-                nfe.TipoOperacao, nfe.StatusNfe,
-                nfe.ValorProdutos, nfe.ValorDesconto, nfe.ValorFrete, nfe.ValorSeguro,
-                nfe.ValorOutrasDespesas, nfe.ValorTotal,
+                nfe.ChaveAcesso,
+                nfe.Numero,
+                nfe.Serie,
+                nfe.DataEmissao,
+                nfe.DataSaida,
+                nfe.EmitenteNomeRazaosocial,
+                nfe.EmitenteCpfCnpj,
+                nfe.EmitenteRgIe,
+                nfe.EmitenteApelidoNomefantasia,
+                nfe.EmitenteEndereco,
+                nfe.EmitenteBairro,
+                nfe.EmitenteTelefone,
+                nfe.EmitenteEmail,
+                nfe.ClienteNomeRazaosocial,
+                nfe.ClienteCpfCnpj,
+                nfe.ClienteRgIe,
+                nfe.ClienteApelidoNomefantasia,
+                nfe.ClienteEndereco,
+                nfe.ClienteBairro,
+                nfe.ClienteTelefone,
+                nfe.ClienteEmail,
+                nfe.TipoOperacao,
+                nfe.StatusNfe,
+                nfe.ValorProdutos,
+                nfe.ValorDesconto,
+                nfe.ValorFrete,
+                nfe.ValorSeguro,
+                nfe.ValorOutrasDespesas,
+                nfe.ValorTotal,
                 EmitenteId = nfe.Emitente.Id,
                 ClienteId = nfe.Cliente.Id
             },
@@ -286,10 +305,19 @@ public class NfesRepository : INfesRepository
             new
             {
                 Id = id,
-                nfe.ChaveAcesso, nfe.Numero, nfe.Serie, nfe.DataEmissao, nfe.DataSaida,
-                nfe.TipoOperacao, nfe.StatusNfe,
-                nfe.ValorProdutos, nfe.ValorDesconto, nfe.ValorFrete, nfe.ValorSeguro,
-                nfe.ValorOutrasDespesas, nfe.ValorTotal,
+                nfe.ChaveAcesso,
+                nfe.Numero,
+                nfe.Serie,
+                nfe.DataEmissao,
+                nfe.DataSaida,
+                nfe.TipoOperacao,
+                nfe.StatusNfe,
+                nfe.ValorProdutos,
+                nfe.ValorDesconto,
+                nfe.ValorFrete,
+                nfe.ValorSeguro,
+                nfe.ValorOutrasDespesas,
+                nfe.ValorTotal,
                 EmitenteId = nfe.Emitente.Id,
                 ClienteId = nfe.Cliente.Id
             },

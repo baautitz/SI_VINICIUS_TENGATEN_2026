@@ -28,7 +28,7 @@ public class SkusRepository : ISkusRepository
 
         const string atributosSql = @"
             SELECT sav.sku, sav.chave_id, sav.valor,
-                   sak.id, sak.chave
+                   sak.id AS Id, sak.chave
             FROM skus_atributos_valores sav
             JOIN sku_atributos_chaves sak ON sak.id = sav.chave_id
             WHERE sav.sku IN (SELECT sku FROM skus WHERE produto_id = @ProdutoId);";
@@ -53,7 +53,7 @@ public class SkusRepository : ISkusRepository
                 },
                 new { ProdutoId = produtoId },
                 transaction: _session.Transaction,
-                splitOn: "id")).ToList();
+                splitOn: "Id")).ToList();
 
             var atributosPorSku = atributos
                 .GroupBy(a => a.Sku)
@@ -75,7 +75,7 @@ public class SkusRepository : ISkusRepository
 
         const string atributosSql = @"
             SELECT sav.sku, sav.chave_id, sav.valor,
-                   sak.id, sak.chave
+                   sak.id AS Id, sak.chave
             FROM skus_atributos_valores sav
             JOIN sku_atributos_chaves sak ON sak.id = sav.chave_id
             WHERE sav.sku = @Sku;";
@@ -95,7 +95,7 @@ public class SkusRepository : ISkusRepository
             },
             new { Sku = sku },
             transaction: _session.Transaction,
-            splitOn: "id");
+            splitOn: "Id");
 
         return skuEntity;
     }
@@ -110,8 +110,11 @@ public class SkusRepository : ISkusRepository
             sql,
             new
             {
-                skuData.Sku, skuData.GtinEan, skuData.Preco,
-                skuData.Estoque, skuData.Ativo,
+                skuData.Sku,
+                skuData.GtinEan,
+                skuData.Preco,
+                skuData.Estoque,
+                skuData.Ativo,
                 ProdutoId = produtoId
             },
             transaction: _session.Transaction);

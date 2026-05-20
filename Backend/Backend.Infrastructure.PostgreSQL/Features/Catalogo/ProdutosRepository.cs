@@ -24,10 +24,10 @@ public class ProdutosRepository : IProdutosRepository
         const string countSql = "SELECT COUNT(*) FROM produtos;";
 
         const string querySql = @"
-            SELECT p.id, p.produto, p.descricao, p.ativo,
-                   c.id, c.categoria, c.descricao, c.ativo,
-                   m.id, m.marca, m.descricao, m.ativo,
-                   u.id, u.sigla, u.descricao, u.categoria, u.ativo
+            SELECT p.id AS Id, p.produto, p.descricao, p.ativo,
+                   c.id AS CategoriaId, c.categoria, c.descricao, c.ativo,
+                   m.id AS MarcaId, m.marca, m.descricao, m.ativo,
+                   u.id AS UnidadeMedidaId, u.sigla, u.descricao, u.categoria, u.ativo
             FROM produtos p
             JOIN categorias c ON c.id = p.categoria_id
             JOIN marcas m ON m.id = p.marca_id
@@ -50,7 +50,7 @@ public class ProdutosRepository : IProdutosRepository
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "id,id,id"
+            splitOn: "CategoriaId,MarcaId,UnidadeMedidaId"
         )).ToList();
 
         return new ResultadoPaginado<Produtos>(itens, total, pagina, tamanhoDaPagina);
@@ -59,10 +59,10 @@ public class ProdutosRepository : IProdutosRepository
     public async Task<Produtos?> ObterProdutoPorId(int id)
     {
         const string produtoSql = @"
-            SELECT p.id, p.produto, p.descricao, p.ativo,
-                   c.id, c.categoria, c.descricao, c.ativo,
-                   m.id, m.marca, m.descricao, m.ativo,
-                   u.id, u.sigla, u.descricao, u.categoria, u.ativo
+            SELECT p.id AS Id, p.produto, p.descricao, p.ativo,
+                   c.id AS CategoriaId, c.categoria, c.descricao, c.ativo,
+                   m.id AS MarcaId, m.marca, m.descricao, m.ativo,
+                   u.id AS UnidadeMedidaId, u.sigla, u.descricao, u.categoria, u.ativo
             FROM produtos p
             JOIN categorias c ON c.id = p.categoria_id
             JOIN marcas m ON m.id = p.marca_id
@@ -86,7 +86,7 @@ public class ProdutosRepository : IProdutosRepository
             },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "id,id,id"
+            splitOn: "CategoriaId,MarcaId,UnidadeMedidaId"
         )).SingleOrDefault();
 
         if (produto is null) return null;
@@ -103,10 +103,10 @@ public class ProdutosRepository : IProdutosRepository
     public async Task<Produtos?> ObterProdutoPorSku(string sku)
     {
         const string sql = @"
-            SELECT p.id, p.produto, p.descricao, p.ativo,
-                   c.id, c.categoria, c.descricao, c.ativo,
-                   m.id, m.marca, m.descricao, m.ativo,
-                   u.id, u.sigla, u.descricao, u.categoria, u.ativo
+            SELECT p.id AS Id, p.produto, p.descricao, p.ativo,
+                   c.id AS CategoriaId, c.categoria, c.descricao, c.ativo,
+                   m.id AS MarcaId, m.marca, m.descricao, m.ativo,
+                   u.id AS UnidadeMedidaId, u.sigla, u.descricao, u.categoria, u.ativo
             FROM produtos p
             JOIN categorias c ON c.id = p.categoria_id
             JOIN marcas m ON m.id = p.marca_id
@@ -126,7 +126,7 @@ public class ProdutosRepository : IProdutosRepository
             },
             new { Sku = sku },
             transaction: _session.Transaction,
-            splitOn: "id,id,id"
+            splitOn: "CategoriaId,MarcaId,UnidadeMedidaId"
         );
 
         return result.SingleOrDefault();

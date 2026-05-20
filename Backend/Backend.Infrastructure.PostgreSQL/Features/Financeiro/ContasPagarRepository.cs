@@ -24,9 +24,9 @@ public class ContasPagarRepository : IContasPagarRepository
         const string countSql = "SELECT COUNT(*) FROM contas_pagar;";
 
         const string querySql = @"
-            SELECT cp.id, cp.descricao, cp.data_emissao, cp.data_vencimento, cp.valor_original,
+            SELECT cp.id AS Id, cp.descricao, cp.data_emissao, cp.data_vencimento, cp.valor_original,
                    cp.valor_saldo, cp.status, cp.observacao, cp.criado_em, cp.atualizado_em,
-                   f.id, f.nome_razaosocial, f.cpf_cnpj, f.rg_ie, f.apelido_nomefantasia,
+                   f.id AS FornecedorId, f.nome_razaosocial, f.cpf_cnpj, f.rg_ie, f.apelido_nomefantasia,
                    f.endereco, f.telefone, f.email, f.ativo, f.criado_em, f.atualizado_em, f.observacao
             FROM contas_pagar cp
             JOIN fornecedores f ON f.id = cp.fornecedor_id
@@ -46,7 +46,7 @@ public class ContasPagarRepository : IContasPagarRepository
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "id")).ToList();
+            splitOn: "FornecedorId")).ToList();
 
         if (contas.Count > 0)
         {
@@ -78,9 +78,9 @@ public class ContasPagarRepository : IContasPagarRepository
     public async Task<ContasPagar?> ObterContaPagarPorId(int id)
     {
         const string contaSql = @"
-            SELECT cp.id, cp.descricao, cp.data_emissao, cp.data_vencimento, cp.valor_original,
+            SELECT cp.id AS Id, cp.descricao, cp.data_emissao, cp.data_vencimento, cp.valor_original,
                    cp.valor_saldo, cp.status, cp.observacao, cp.criado_em, cp.atualizado_em,
-                   f.id, f.nome_razaosocial, f.cpf_cnpj, f.rg_ie, f.apelido_nomefantasia,
+                   f.id AS FornecedorId, f.nome_razaosocial, f.cpf_cnpj, f.rg_ie, f.apelido_nomefantasia,
                    f.endereco, f.telefone, f.email, f.ativo, f.criado_em, f.atualizado_em, f.observacao
             FROM contas_pagar cp
             JOIN fornecedores f ON f.id = cp.fornecedor_id
@@ -102,7 +102,7 @@ public class ContasPagarRepository : IContasPagarRepository
             },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "id")).SingleOrDefault();
+            splitOn: "FornecedorId")).SingleOrDefault();
 
         if (conta is null) return null;
 
@@ -125,8 +125,13 @@ public class ContasPagarRepository : IContasPagarRepository
             sql,
             new
             {
-                conta.Descricao, conta.DataEmissao, conta.DataVencimento,
-                conta.ValorOriginal, conta.ValorSaldo, conta.Status, conta.Observacao,
+                conta.Descricao,
+                conta.DataEmissao,
+                conta.DataVencimento,
+                conta.ValorOriginal,
+                conta.ValorSaldo,
+                conta.Status,
+                conta.Observacao,
                 CriadoEm = DateTime.UtcNow,
                 FornecedorId = conta.Fornecedor.Id,
                 NfeId = conta.Nfe?.Id,
@@ -154,8 +159,14 @@ public class ContasPagarRepository : IContasPagarRepository
             sql,
             new
             {
-                Id = id, conta.Descricao, conta.DataEmissao, conta.DataVencimento,
-                conta.ValorOriginal, conta.ValorSaldo, conta.Status, conta.Observacao,
+                Id = id,
+                conta.Descricao,
+                conta.DataEmissao,
+                conta.DataVencimento,
+                conta.ValorOriginal,
+                conta.ValorSaldo,
+                conta.Status,
+                conta.Observacao,
                 AtualizadoEm = DateTime.UtcNow,
                 FornecedorId = conta.Fornecedor.Id,
                 NfeId = conta.Nfe?.Id,
@@ -245,7 +256,11 @@ public class ContasPagarRepository : IContasPagarRepository
             sql,
             parcelas.Select(p => new
             {
-                p.NumeroParcela, p.DataVencimento, p.ValorParcela, p.ValorPago, p.Status,
+                p.NumeroParcela,
+                p.DataVencimento,
+                p.ValorParcela,
+                p.ValorPago,
+                p.Status,
                 ContaId = contaId
             }),
             transaction: _session.Transaction);
