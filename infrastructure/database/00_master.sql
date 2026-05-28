@@ -18,7 +18,7 @@ SET search_path TO projeto_sistemas;
 \ir parceiros/schema/clientes.sql
 \ir parceiros/schema/emitentes.sql
 
-\ir logistica/schema/fornecedores.sql
+\ir parceiros/schema/fornecedores.sql
 \ir logistica/schema/transportadoras.sql
 \ir logistica/schema/veiculos.sql
 
