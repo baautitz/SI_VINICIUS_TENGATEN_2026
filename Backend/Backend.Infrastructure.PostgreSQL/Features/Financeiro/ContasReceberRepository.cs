@@ -1,6 +1,8 @@
+using System.Linq;
 using Backend.Core.Common;
 using Backend.Core.Features.Financeiro.DTOs;
 using Backend.Core.Features.Financeiro.Entities;
+using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.Financeiro.Repositories;
 using Backend.Core.Features.Parceiros.Entities;
 using Backend.Infrastructure.PostgreSQL.Common;
@@ -24,11 +26,12 @@ public class ContasReceberRepository : IContasReceberRepository
         const string countSql = "SELECT COUNT(*) FROM contas_receber;";
 
         const string querySql = @"
-            SELECT cr.id AS Id, cr.descricao, cr.data_emissao, cr.data_vencimento, cr.valor_original,
-                   cr.valor_saldo, cr.status, cr.observacao, cr.criado_em, cr.atualizado_em,
-                   c.id AS ClienteId, c.nome_razao_social, c.cpf_cnpj, c.rg_ie, c.apelido_nome_fantasia,
-                   c.endereco, c.telefone, c.email, c.limite_credito, c.ativo, c.criado_em,
-                   c.atualizado_em, c.observacao
+            SELECT cr.id AS Id, cr.descricao AS Descricao, cr.data_emissao AS DataEmissao, cr.data_vencimento AS DataVencimento,
+                   cr.valor_original AS ValorOriginal, cr.valor_saldo AS ValorSaldo, cr.status AS Status, cr.observacao AS Observacao, cr.criado_em AS CriadoEm,
+                   c.id AS ClienteId, c.nome_razao_social AS ClienteNomeRazaoSocial, c.cpf_cnpj AS ClienteCpfCnpj,
+                   c.rg_ie AS ClienteRgIe, c.apelido_nome_fantasia AS ClienteApelidoNomeFantasia, c.endereco AS ClienteEndereco,
+                   c.telefone AS ClienteTelefone, c.email AS ClienteEmail, c.limite_credito AS ClienteLimiteCredito,
+                   c.ativo AS ClienteAtivo, c.criado_em AS ClienteCriadoEm, c.observacao AS ClienteObservacao
             FROM contas_receber cr
             JOIN clientes c ON c.id = cr.cliente_id
             ORDER BY cr.data_vencimento
@@ -37,40 +40,42 @@ public class ContasReceberRepository : IContasReceberRepository
         var total = await _session.Connection.ExecuteScalarAsync<int>(
             countSql, transaction: _session.Transaction);
 
-        var contas = (await _session.Connection.QueryAsync<ContasReceber, Clientes, ContasReceber>(
+        var contasDto = (await _session.Connection.QueryAsync<ContaReceberDto>(
             querySql,
-            (conta, cliente) =>
-            {
-                conta.Cliente = cliente;
-                conta.ContasReceberParcelas = [];
-                return conta;
-            },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
-            transaction: _session.Transaction,
-            splitOn: "ClienteId")).ToList();
+            transaction: _session.Transaction)).ToList();
 
-        if (contas.Count > 0)
+        var contas = new List<ContasReceber>();
+        if (contasDto.Count > 0)
         {
-            var ids = contas.Select(c => c.Id).ToArray();
+            var ids = contasDto.Select(c => c.Id).ToArray();
 
             const string parcelasSql = @"
-                SELECT id, conta_receber_id, numero_parcela, data_vencimento,
-                       valor_parcela, valor_recebido, status
+                SELECT id, conta_receber_id AS ContaReceberId, numero_parcela AS NumeroParcela, data_vencimento AS DataVencimento,
+                       valor_parcela AS ValorParcela, valor_recebido AS ValorRecebido, status AS Status
                 FROM contas_receber_parcelas
                 WHERE conta_receber_id = ANY(@Ids)
                 ORDER BY conta_receber_id, numero_parcela;";
 
-            var parcelas = (await _session.Connection.QueryAsync<ContasReceberParcelas>(
+            var parcelas = (await _session.Connection.QueryAsync<ParcelaReceberDto>(
                 parcelasSql, new { Ids = ids }, transaction: _session.Transaction)).ToList();
 
             var parcelasPorConta = parcelas
                 .GroupBy(p => p.ContaReceberId)
                 .ToDictionary(g => g.Key, g => g.AsEnumerable());
 
-            foreach (var conta in contas)
+            foreach (var dto in contasDto)
             {
-                if (parcelasPorConta.TryGetValue(conta.Id, out var sub))
-                    conta.ContasReceberParcelas = sub;
+                var conta = BuildContaReceber(dto);
+                if (parcelasPorConta.TryGetValue(dto.Id, out var sub))
+                {
+                    foreach (var parcelaDto in sub)
+                    {
+                        conta.AdicionarParcelaExistente(BuildParcelaReceber(parcelaDto));
+                    }
+                }
+
+                contas.Add(conta);
             }
         }
 
@@ -80,38 +85,38 @@ public class ContasReceberRepository : IContasReceberRepository
     public async Task<ContasReceber?> ObterContaReceberPorId(int id)
     {
         const string contaSql = @"
-            SELECT cr.id AS Id, cr.descricao, cr.data_emissao, cr.data_vencimento, cr.valor_original,
-                   cr.valor_saldo, cr.status, cr.observacao, cr.criado_em, cr.atualizado_em,
-                   c.id AS ClienteId, c.nome_razao_social, c.cpf_cnpj, c.rg_ie, c.apelido_nome_fantasia,
-                   c.endereco, c.telefone, c.email, c.limite_credito, c.ativo, c.criado_em,
-                   c.atualizado_em, c.observacao
+            SELECT cr.id AS Id, cr.descricao AS Descricao, cr.data_emissao AS DataEmissao, cr.data_vencimento AS DataVencimento,
+                   cr.valor_original AS ValorOriginal, cr.valor_saldo AS ValorSaldo, cr.status AS Status, cr.observacao AS Observacao, cr.criado_em AS CriadoEm,
+                   c.id AS ClienteId, c.nome_razao_social AS ClienteNomeRazaoSocial, c.cpf_cnpj AS ClienteCpfCnpj,
+                   c.rg_ie AS ClienteRgIe, c.apelido_nome_fantasia AS ClienteApelidoNomeFantasia, c.endereco AS ClienteEndereco,
+                   c.telefone AS ClienteTelefone, c.email AS ClienteEmail, c.limite_credito AS ClienteLimiteCredito,
+                   c.ativo AS ClienteAtivo, c.criado_em AS ClienteCriadoEm, c.observacao AS ClienteObservacao
             FROM contas_receber cr
             JOIN clientes c ON c.id = cr.cliente_id
             WHERE cr.id = @Id;";
 
         const string parcelasSql = @"
-            SELECT id, conta_receber_id, numero_parcela, data_vencimento,
-                   valor_parcela, valor_recebido, status
+            SELECT id, conta_receber_id AS ContaReceberId, numero_parcela AS NumeroParcela, data_vencimento AS DataVencimento,
+                   valor_parcela AS ValorParcela, valor_recebido AS ValorRecebido, status AS Status
             FROM contas_receber_parcelas
             WHERE conta_receber_id = @Id
             ORDER BY numero_parcela;";
 
-        var conta = (await _session.Connection.QueryAsync<ContasReceber, Clientes, ContasReceber>(
+        var dto = await _session.Connection.QuerySingleOrDefaultAsync<ContaReceberDto>(
             contaSql,
-            (c, cliente) =>
-            {
-                c.Cliente = cliente;
-                c.ContasReceberParcelas = [];
-                return c;
-            },
             new { Id = id },
-            transaction: _session.Transaction,
-            splitOn: "ClienteId")).SingleOrDefault();
+            transaction: _session.Transaction);
 
-        if (conta is null) return null;
+        if (dto is null) return null;
 
-        conta.ContasReceberParcelas = await _session.Connection.QueryAsync<ContasReceberParcelas>(
+        var conta = BuildContaReceber(dto);
+        var parcelas = await _session.Connection.QueryAsync<ParcelaReceberDto>(
             parcelasSql, new { Id = id }, transaction: _session.Transaction);
+
+        foreach (var parcelaDto in parcelas)
+        {
+            conta.AdicionarParcelaExistente(BuildParcelaReceber(parcelaDto));
+        }
 
         return conta;
     }
@@ -143,10 +148,15 @@ public class ContasReceberRepository : IContasReceberRepository
             },
             transaction: _session.Transaction);
 
-        conta.Id = idGerado;
         await InserirParcelas(idGerado, conta.ContasReceberParcelas);
 
-        return conta;
+        var created = new ContasReceber(idGerado, conta.Descricao, conta.ValorOriginal, conta.Cliente, conta.DataEmissao, conta.DataVencimento, conta.CondicaoPagamento, conta.Nfe, conta.Observacao, conta.CriadoEm, conta.Status);
+        foreach (var parcela in conta.ContasReceberParcelas)
+        {
+            created.AdicionarParcelaExistente(new ContasReceberParcelas(parcela.Id, idGerado, parcela.NumeroParcela, parcela.DataVencimento, parcela.ValorParcela, parcela.ValorRecebido, parcela.Status));
+        }
+
+        return created;
     }
 
     public async Task<ContasReceber> AtualizarContaReceber(int id, ContasReceber conta)
@@ -155,7 +165,7 @@ public class ContasReceberRepository : IContasReceberRepository
             UPDATE contas_receber
             SET descricao = @Descricao, data_emissao = @DataEmissao, data_vencimento = @DataVencimento,
                 valor_original = @ValorOriginal, valor_saldo = @ValorSaldo, status = @Status,
-                observacao = @Observacao, atualizado_em = @AtualizadoEm,
+                observacao = @Observacao,
                 cliente_id = @ClienteId, nfe_id = @NfeId, condicao_pagamento_id = @CondicaoPagamentoId
             WHERE id = @Id;";
 
@@ -171,7 +181,6 @@ public class ContasReceberRepository : IContasReceberRepository
                 conta.ValorSaldo,
                 conta.Status,
                 conta.Observacao,
-                AtualizadoEm = DateTime.UtcNow,
                 ClienteId = conta.Cliente.Id,
                 NfeId = conta.Nfe?.Id,
                 CondicaoPagamentoId = conta.CondicaoPagamento?.Id
@@ -180,8 +189,13 @@ public class ContasReceberRepository : IContasReceberRepository
 
         await ReplacerParcelas(id, conta.ContasReceberParcelas);
 
-        conta.Id = id;
-        return conta;
+        var updated = new ContasReceber(id, conta.Descricao, conta.ValorOriginal, conta.Cliente, conta.DataEmissao, conta.DataVencimento, conta.CondicaoPagamento, conta.Nfe, conta.Observacao, conta.CriadoEm, conta.Status);
+        foreach (var parcela in conta.ContasReceberParcelas)
+        {
+            updated.AdicionarParcelaExistente(new ContasReceberParcelas(parcela.Id, id, parcela.NumeroParcela, parcela.DataVencimento, parcela.ValorParcela, parcela.ValorRecebido, parcela.Status));
+        }
+
+        return updated;
     }
 
     public async Task<bool> DeletarContaReceber(int id)
@@ -278,4 +292,72 @@ public class ContasReceberRepository : IContasReceberRepository
 
         await InserirParcelas(contaId, parcelas);
     }
+
+    private static ContasReceber BuildContaReceber(ContaReceberDto dto)
+    {
+        var cliente = new Clientes(
+            dto.ClienteId,
+            dto.ClienteNomeRazaoSocial,
+            dto.ClienteCpfCnpj,
+            dto.ClienteRgIe,
+            dto.ClienteApelidoNomeFantasia,
+            dto.ClienteEndereco,
+            null,
+            dto.ClienteTelefone,
+            dto.ClienteEmail,
+            dto.ClienteLimiteCredito,
+            dto.ClienteObservacao,
+            dto.ClienteAtivo,
+            dto.ClienteCriadoEm);
+
+        return new ContasReceber(
+            dto.Id,
+            dto.Descricao,
+            dto.ValorOriginal,
+            cliente,
+            dto.DataEmissao,
+            dto.DataVencimento,
+            null,
+            null,
+            dto.Observacao,
+            dto.CriadoEm,
+            dto.Status);
+    }
+
+    private static ContasReceberParcelas BuildParcelaReceber(ParcelaReceberDto dto)
+    {
+        return new ContasReceberParcelas(dto.Id, dto.ContaReceberId, dto.NumeroParcela, dto.DataVencimento, dto.ValorParcela, dto.ValorRecebido, dto.Status);
+    }
+
+    private sealed record ContaReceberDto(
+        int Id,
+        string Descricao,
+        DateTime? DataEmissao,
+        DateTime? DataVencimento,
+        decimal ValorOriginal,
+        decimal ValorSaldo,
+        StatusTituloFinanceiro Status,
+        string? Observacao,
+        DateTime CriadoEm,
+        int ClienteId,
+        string ClienteNomeRazaoSocial,
+        string ClienteCpfCnpj,
+        string? ClienteRgIe,
+        string? ClienteApelidoNomeFantasia,
+        string? ClienteEndereco,
+        string? ClienteTelefone,
+        string? ClienteEmail,
+        decimal ClienteLimiteCredito,
+        bool ClienteAtivo,
+        DateTime ClienteCriadoEm,
+        string? ClienteObservacao);
+
+    private sealed record ParcelaReceberDto(
+        int Id,
+        int ContaReceberId,
+        int NumeroParcela,
+        DateTime DataVencimento,
+        decimal ValorParcela,
+        decimal ValorRecebido,
+        StatusTituloFinanceiro Status);
 }

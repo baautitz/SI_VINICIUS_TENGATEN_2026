@@ -26,7 +26,7 @@ public class ClientesRepository : IClientesRepository
 
             SELECT id, nome_razao_social, cpf_cnpj, rg_ie, apelido_nome_fantasia,
                    endereco, telefone, email, limite_credito, ativo, criado_em,
-                   atualizado_em, observacao
+                   observacao
             FROM clientes
             ORDER BY nome_razao_social
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
@@ -66,10 +66,10 @@ public class ClientesRepository : IClientesRepository
             {
                 if (bairro is not null)
                 {
-                    if (pais is not null && estado is not null) estado.Pais = pais;
-                    if (estado is not null && cidade is not null) cidade.Estado = estado;
-                    if (cidade is not null) bairro.Cidade = cidade;
-                    cliente.Bairro = bairro;
+                    if (pais is not null && estado is not null) estado.Atualizar(estado.Estado, estado.Uf, pais);
+                    if (estado is not null && cidade is not null) cidade.Atualizar(cidade.Cidade, cidade.Ddd, estado);
+                    if (cidade is not null) bairro.Atualizar(bairro.Bairro, cidade);
+                    cliente.AtualizarDados(cliente.NomeRazaoSocial, cliente.CpfCnpj, cliente.RgIe, cliente.ApelidoNomeFantasia, cliente.Endereco, bairro, cliente.Telefone, cliente.Email, cliente.LimiteCredito, cliente.Observacao);
                 }
                 return cliente;
             },
@@ -142,7 +142,6 @@ public class ClientesRepository : IClientesRepository
                 cliente.Email,
                 cliente.LimiteCredito,
                 cliente.Ativo,
-                AtualizadoEm = DateTime.UtcNow,
                 cliente.Observacao
             },
             transaction: _session.Transaction

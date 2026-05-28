@@ -63,8 +63,7 @@ public class PaisesRepository : IPaisesRepository
             transaction: _session.Transaction
         );
 
-        pais.Id = idGerado;
-        return pais;
+        return new Paises(idGerado, pais.Ddi, pais.SiglaIso, pais.Moeda, pais.SimboloMoeda, pais.Pais);
     }
 
     public async Task<Paises> AtualizarPais(int id, Paises pais)
@@ -90,8 +89,7 @@ public class PaisesRepository : IPaisesRepository
 
         await _session.Connection.ExecuteAsync(sql, parametros, transaction: _session.Transaction);
 
-        pais.Id = id;
-        return pais;
+        return new Paises(id, pais.Ddi, pais.SiglaIso, pais.Moeda, pais.SimboloMoeda, pais.Pais);
     }
 
     public async Task<bool> DeletarPais(int id)

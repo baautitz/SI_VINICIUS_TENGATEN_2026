@@ -41,9 +41,9 @@ public class BairrosRepository : IBairrosRepository
             querySql,
             (bairro, cidade, estado, pais) =>
             {
-                estado.Pais = pais;
-                cidade.Estado = estado;
-                bairro.Cidade = cidade;
+                estado.Atualizar(estado.Estado, estado.Uf, pais);
+                cidade.Atualizar(cidade.Cidade, cidade.Ddd, estado);
+                bairro.Atualizar(bairro.Bairro, cidade);
                 return bairro;
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
@@ -71,9 +71,9 @@ public class BairrosRepository : IBairrosRepository
             sql,
             (bairro, cidade, estado, pais) =>
             {
-                estado.Pais = pais;
-                cidade.Estado = estado;
-                bairro.Cidade = cidade;
+                estado.Atualizar(estado.Estado, estado.Uf, pais);
+                cidade.Atualizar(cidade.Cidade, cidade.Ddd, estado);
+                bairro.Atualizar(bairro.Bairro, cidade);
                 return bairro;
             },
             new { Id = id },
@@ -97,8 +97,7 @@ public class BairrosRepository : IBairrosRepository
             transaction: _session.Transaction
         );
 
-        bairro.Id = idGerado;
-        return bairro;
+        return new Bairros(idGerado, bairro.Bairro, bairro.Cidade);
     }
 
     public async Task<Bairros> AtualizarBairro(int id, Bairros bairro)
@@ -115,8 +114,7 @@ public class BairrosRepository : IBairrosRepository
             transaction: _session.Transaction
         );
 
-        bairro.Id = id;
-        return bairro;
+        return new Bairros(id, bairro.Bairro, bairro.Cidade);
     }
 
     public async Task<bool> DeletarBairro(int id)

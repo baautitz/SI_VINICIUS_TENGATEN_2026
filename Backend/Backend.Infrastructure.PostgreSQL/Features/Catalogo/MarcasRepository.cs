@@ -64,8 +64,7 @@ public class MarcasRepository : IMarcasRepository
             transaction: _session.Transaction
         );
 
-        marca.Id = idGerado;
-        return marca;
+        return new Marcas(idGerado, marca.Marca, marca.Descricao);
     }
 
     public async Task<Marcas> AtualizarMarca(int id, Marcas marca)
@@ -83,8 +82,7 @@ public class MarcasRepository : IMarcasRepository
             transaction: _session.Transaction
         );
 
-        marca.Id = id;
-        return marca;
+        return new Marcas(id, marca.Marca, marca.Descricao);
     }
 
     public async Task<bool> DeletarMarca(int id)

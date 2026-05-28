@@ -41,9 +41,9 @@ public class VendasRepository : IVendasRepository
             querySql,
             (venda, emitente, cliente) =>
             {
-                venda.Emitente = emitente;
-                venda.Cliente = cliente;
-                venda.Itens = [];
+                venda.AtualizarEmitente(emitente);
+                venda.AtualizarCliente(cliente);
+                venda.DefinirItens(new List<VendaItens>());
                 return venda;
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
@@ -66,8 +66,8 @@ public class VendasRepository : IVendasRepository
                 itensSql,
                 (item, sku) =>
                 {
-                    sku.SkusAtributosValores = [];
-                    item.Sku = sku;
+                    sku.DefinirAtributos(new List<SkusAtributosValores>());
+                    item.AtualizarSku(sku);
                     return item;
                 },
                 new { Ids = ids },
@@ -81,7 +81,7 @@ public class VendasRepository : IVendasRepository
             foreach (var venda in vendas)
             {
                 if (itensPorVenda.TryGetValue(venda.Id, out var sub))
-                    venda.Itens = sub;
+                    venda.DefinirItens(sub.ToList());
             }
         }
 
@@ -94,10 +94,10 @@ public class VendasRepository : IVendasRepository
             SELECT v.id AS Id, v.data_venda, v.valor_total, v.observacao,
                    e.id AS EmitenteId, e.nome_razao_social, e.cpf_cnpj, e.apelido_nome_fantasia,
                    e.endereco, e.telefone, e.email, e.rg_ie, e.inscricao_municipal,
-                   e.regime_tributario, e.ativo, e.criado_em, e.atualizado_em, e.observacao,
+                   e.regime_tributario, e.ativo, e.criado_em, e.observacao,
                    c.id AS ClienteId, c.nome_razao_social, c.cpf_cnpj, c.rg_ie, c.apelido_nome_fantasia,
                    c.endereco, c.telefone, c.email, c.limite_credito, c.ativo, c.criado_em,
-                   c.atualizado_em, c.observacao
+                   c.observacao
             FROM vendas v
             JOIN emitentes e ON e.id = v.emitente_id
             JOIN clientes c ON c.id = v.cliente_id
@@ -115,9 +115,9 @@ public class VendasRepository : IVendasRepository
             vendaSql,
             (v, emitente, cliente) =>
             {
-                v.Emitente = emitente;
-                v.Cliente = cliente;
-                v.Itens = [];
+                v.AtualizarEmitente(emitente);
+                v.AtualizarCliente(cliente);
+                v.DefinirItens(new List<VendaItens>());
                 return v;
             },
             new { Id = id },
@@ -126,18 +126,19 @@ public class VendasRepository : IVendasRepository
 
         if (venda is null) return null;
 
-        venda.Itens = await _session.Connection.QueryAsync<VendaItens, Skus, VendaItens>(
+        var vendaItens = await _session.Connection.QueryAsync<VendaItens, Skus, VendaItens>(
             itensSql,
             (item, sku) =>
             {
-                sku.SkusAtributosValores = [];
-                item.Sku = sku;
+                sku.DefinirAtributos(new List<SkusAtributosValores>());
+                item.AtualizarSku(sku);
                 return item;
             },
             new { Id = id },
             transaction: _session.Transaction,
             splitOn: "sku");
 
+        venda.DefinirItens(vendaItens.ToList());
         return venda;
     }
 

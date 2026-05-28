@@ -26,7 +26,7 @@ public class EmitentesRepository : IEmitentesRepository
 
             SELECT id, nome_razao_social, cpf_cnpj, apelido_nome_fantasia, endereco,
                    telefone, email, rg_ie, inscricao_municipal, regime_tributario,
-                   ativo, criado_em, atualizado_em, observacao
+                   ativo, criado_em, observacao
             FROM emitentes
             ORDER BY nome_razao_social
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
@@ -46,7 +46,7 @@ public class EmitentesRepository : IEmitentesRepository
         const string sql = @"
             SELECT e.id AS Id, e.nome_razao_social, e.cpf_cnpj, e.apelido_nome_fantasia,
                    e.endereco, e.telefone, e.email, e.rg_ie, e.inscricao_municipal,
-                   e.regime_tributario, e.ativo, e.criado_em, e.atualizado_em, e.observacao,
+                   e.regime_tributario, e.ativo, e.criado_em, e.observacao,
                    b.id AS BairroId, b.bairro,
                    c.id AS CidadeId, c.cidade, c.ddd,
                    st.id AS EstadoId, st.estado, st.uf,
@@ -64,10 +64,10 @@ public class EmitentesRepository : IEmitentesRepository
             {
                 if (bairro is not null)
                 {
-                    if (pais is not null && estado is not null) estado.Pais = pais;
-                    if (estado is not null && cidade is not null) cidade.Estado = estado;
-                    if (cidade is not null) bairro.Cidade = cidade;
-                    emitente.Bairro = bairro;
+                    if (pais is not null && estado is not null) estado.Atualizar(estado.Estado, estado.Uf, pais);
+                    if (estado is not null && cidade is not null) cidade.Atualizar(cidade.Cidade, cidade.Ddd, estado);
+                    if (cidade is not null) bairro.Atualizar(bairro.Bairro, cidade);
+                    emitente.AtualizarDados(emitente.NomeRazaoSocial, emitente.CpfCnpj, emitente.ApelidoNomeFantasia, emitente.Endereco, bairro, emitente.Telefone, emitente.Email, emitente.RgIe, emitente.InscricaoMunicipal, emitente.RegimeTributario, emitente.Observacao);
                 }
                 return emitente;
             },
@@ -143,7 +143,6 @@ public class EmitentesRepository : IEmitentesRepository
                 emitente.InscricaoMunicipal,
                 emitente.RegimeTributario,
                 emitente.Ativo,
-                AtualizadoEm = DateTime.UtcNow,
                 emitente.Observacao
             },
             transaction: _session.Transaction

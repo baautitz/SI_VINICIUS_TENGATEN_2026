@@ -52,10 +52,10 @@ public class NfesRepository : INfesRepository
             querySql,
             (nfe, emitente, cliente) =>
             {
-                nfe.Emitente = emitente;
-                nfe.Cliente = cliente;
-                nfe.NfesItens = [];
-                nfe.NfesPagamentos = [];
+                nfe.AtualizarEmitente(emitente);
+                nfe.AtualizarCliente(cliente);
+                nfe.DefinirItens(new List<NfesItens>());
+                nfe.DefinirPagamentos(new List<NfesPagamentos>());
                 return nfe;
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
@@ -88,9 +88,9 @@ public class NfesRepository : INfesRepository
                 itensSql,
                 (item, sku, unidade) =>
                 {
-                    sku.SkusAtributosValores = [];
-                    item.Sku = sku;
-                    item.UnidadeMedida = unidade;
+                    sku.DefinirAtributos(new List<SkusAtributosValores>());
+                    item.AtualizarSku(sku);
+                    item.AtualizarUnidadeMedida(unidade);
                     return item;
                 },
                 new { Ids = ids },
@@ -101,7 +101,7 @@ public class NfesRepository : INfesRepository
                 pagamentosSql,
                 (pag, metodo) =>
                 {
-                    pag.MetodosPagamento = metodo;
+                    pag.AtualizarMetodosPagamento(metodo);
                     return pag;
                 },
                 new { Ids = ids },
@@ -113,8 +113,8 @@ public class NfesRepository : INfesRepository
 
             foreach (var nfe in nfes)
             {
-                if (itensPorNfe.TryGetValue(nfe.Id, out var sub)) nfe.NfesItens = sub;
-                if (pagamentosPorNfe.TryGetValue(nfe.Id, out var pags)) nfe.NfesPagamentos = pags;
+                if (itensPorNfe.TryGetValue(nfe.Id, out var sub)) nfe.DefinirItens(sub.ToList());
+                if (pagamentosPorNfe.TryGetValue(nfe.Id, out var pags)) nfe.DefinirPagamentos(pags.ToList());
             }
         }
 
@@ -136,10 +136,10 @@ public class NfesRepository : INfesRepository
                    n.valor_outras_despesas, n.valor_total,
                    e.id AS EmitenteId, e.nome_razao_social, e.cpf_cnpj, e.apelido_nome_fantasia, e.endereco,
                    e.telefone, e.email, e.rg_ie, e.inscricao_municipal, e.regime_tributario,
-                   e.ativo, e.criado_em, e.atualizado_em, e.observacao,
+                   e.ativo, e.criado_em, e.observacao,
                    c.id AS ClienteId, c.nome_razao_social, c.cpf_cnpj, c.rg_ie, c.apelido_nome_fantasia,
                    c.endereco, c.telefone, c.email, c.limite_credito, c.ativo, c.criado_em,
-                   c.atualizado_em, c.observacao
+                   c.observacao
             FROM nfes n
             JOIN emitentes e ON e.id = n.emitente_id
             JOIN clientes c ON c.id = n.cliente_id
@@ -172,10 +172,10 @@ public class NfesRepository : INfesRepository
             nfeSql,
             (n, emitente, cliente) =>
             {
-                n.Emitente = emitente;
-                n.Cliente = cliente;
-                n.NfesItens = [];
-                n.NfesPagamentos = [];
+                n.AtualizarEmitente(emitente);
+                n.AtualizarCliente(cliente);
+                n.DefinirItens(new List<NfesItens>());
+                n.DefinirPagamentos(new List<NfesPagamentos>());
                 return n;
             },
             new { Id = id },
@@ -184,28 +184,35 @@ public class NfesRepository : INfesRepository
 
         if (nfe is null) return null;
 
-        nfe.NfesItens = await _session.Connection.QueryAsync<NfesItens, Skus, UnidadesMedida, NfesItens>(
+        var itens = await _session.Connection.QueryAsync<NfesItens, Skus, UnidadesMedida, NfesItens>(
             itensSql,
             (item, sku, unidade) =>
             {
-                sku.SkusAtributosValores = [];
-                item.Sku = sku;
-                item.UnidadeMedida = unidade;
+                sku.DefinirAtributos(new List<SkusAtributosValores>());
+                item.AtualizarSku(sku);
+                item.AtualizarUnidadeMedida(unidade);
                 return item;
             },
             new { Id = id },
             transaction: _session.Transaction,
             splitOn: "Sku,UnidadeMedidaId");
 
-        nfe.NfesPagamentos = await _session.Connection.QueryAsync<NfesPagamentos, MetodosPagamentos, NfesPagamentos>(
+        nfe.DefinirItens(itens.ToList());
+
+        var pagamentos = await _session.Connection.QueryAsync<NfesPagamentos, MetodosPagamentos, NfesPagamentos>(
             pagamentosSql,
-            (pag, metodo) => { pag.MetodosPagamento = metodo; return pag; },
+            (pag, metodo) => { pag.AtualizarMetodosPagamento(metodo); return pag; },
             new { Id = id },
             transaction: _session.Transaction,
             splitOn: "MetodosPagamentoId");
 
-        nfe.NfesInformacoesAdicionais = await _session.Connection.QuerySingleOrDefaultAsync<NfesInformacoesAdicionais>(
+        nfe.DefinirPagamentos(pagamentos.ToList());
+
+        var informacoesAdicionais = await _session.Connection.QuerySingleOrDefaultAsync<NfesInformacoesAdicionais>(
             infoSql, new { Id = id }, transaction: _session.Transaction);
+
+        if (informacoesAdicionais is not null)
+            nfe.AtualizarInformacoesAdicionais(informacoesAdicionais);
 
         return nfe;
     }

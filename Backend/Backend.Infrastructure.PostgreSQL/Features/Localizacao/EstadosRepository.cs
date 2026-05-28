@@ -37,7 +37,7 @@ public class EstadosRepository : IEstadosRepository
             querySql,
             (estado, pais) =>
             {
-                estado.Pais = pais;
+                estado.Atualizar(estado.Estado, estado.Uf, pais);
                 return estado;
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
@@ -61,7 +61,7 @@ public class EstadosRepository : IEstadosRepository
             sql,
             (estado, pais) =>
             {
-                estado.Pais = pais;
+                estado.Atualizar(estado.Estado, estado.Uf, pais);
                 return estado;
             },
             new { Id = id },
@@ -85,8 +85,7 @@ public class EstadosRepository : IEstadosRepository
             transaction: _session.Transaction
         );
 
-        estado.Id = idGerado;
-        return estado;
+        return new Estados(idGerado, estado.Estado, estado.Uf, estado.Pais);
     }
 
     public async Task<Estados> AtualizarEstado(int id, Estados estado)
@@ -104,8 +103,7 @@ public class EstadosRepository : IEstadosRepository
             transaction: _session.Transaction
         );
 
-        estado.Id = id;
-        return estado;
+        return new Estados(id, estado.Estado, estado.Uf, estado.Pais);
     }
 
     public async Task<bool> DeletarEstado(int id)

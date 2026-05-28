@@ -64,8 +64,7 @@ public class CategoriasRepository : ICategoriasRepository
             transaction: _session.Transaction
         );
 
-        categoria.Id = idGerado;
-        return categoria;
+        return new Categorias(idGerado, categoria.Categoria, categoria.Descricao);
     }
 
     public async Task<Categorias> AtualizarCategoria(int id, Categorias categoria)
@@ -83,8 +82,7 @@ public class CategoriasRepository : ICategoriasRepository
             transaction: _session.Transaction
         );
 
-        categoria.Id = id;
-        return categoria;
+        return new Categorias(id, categoria.Categoria, categoria.Descricao);
     }
 
     public async Task<bool> DeletarCategoria(int id)

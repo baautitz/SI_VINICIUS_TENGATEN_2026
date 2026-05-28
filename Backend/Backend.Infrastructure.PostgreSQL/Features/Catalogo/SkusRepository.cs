@@ -1,3 +1,4 @@
+using System.Linq;
 using Backend.Core.Common;
 using Backend.Core.Features.Catalogo.DTOs;
 using Backend.Core.Features.Catalogo.Entities;
@@ -21,14 +22,14 @@ public class SkusRepository : ISkusRepository
         const string countSql = "SELECT COUNT(*) FROM skus WHERE produto_id = @ProdutoId;";
 
         const string skusSql = @"
-            SELECT sku, gtin_ean, preco, estoque, ativo
+            SELECT sku, gtin_ean AS GtinEan, preco AS Preco, estoque AS Estoque, ativo AS Ativo
             FROM skus
             WHERE produto_id = @ProdutoId
             ORDER BY sku;";
 
         const string atributosSql = @"
-            SELECT sav.sku, sav.chave_id, sav.valor,
-                   sak.id AS Id, sak.chave
+            SELECT sav.sku AS Sku, sav.chave_id AS ChaveId, sav.valor AS Valor,
+                   sak.id AS Id, sak.chave AS Chave
             FROM skus_atributos_valores sav
             JOIN sku_atributos_chaves sak ON sak.id = sav.chave_id
             WHERE sav.sku IN (SELECT sku FROM skus WHERE produto_id = @ProdutoId);";
@@ -36,24 +37,17 @@ public class SkusRepository : ISkusRepository
         var total = await _session.Connection.ExecuteScalarAsync<int>(
             countSql, new { ProdutoId = produtoId }, transaction: _session.Transaction);
 
-        var skus = (await _session.Connection.QueryAsync<Skus>(
-            skusSql, new { ProdutoId = produtoId }, transaction: _session.Transaction))
-            .Select(s => { s.SkusAtributosValores = []; return s; })
-            .ToList();
+        var skusDto = (await _session.Connection.QueryAsync<SkuDto>(
+            skusSql, new { ProdutoId = produtoId }, transaction: _session.Transaction)).ToList();
+
+        var skus = skusDto.Select(BuildSku).ToList();
 
         if (skus.Count > 0)
         {
-            var atributos = (await _session.Connection.QueryAsync<SkusAtributosValores, SkuAtributosChaves, SkusAtributosValores>(
+            var atributos = (await _session.Connection.QueryAsync<AtributoDto>(
                 atributosSql,
-                (valor, chave) =>
-                {
-                    chave.SkusAtributosValores = [];
-                    valor.SkuAtributoChave = chave;
-                    return valor;
-                },
                 new { ProdutoId = produtoId },
-                transaction: _session.Transaction,
-                splitOn: "Id")).ToList();
+                transaction: _session.Transaction)).ToList();
 
             var atributosPorSku = atributos
                 .GroupBy(a => a.Sku)
@@ -62,7 +56,13 @@ public class SkusRepository : ISkusRepository
             foreach (var sku in skus)
             {
                 if (atributosPorSku.TryGetValue(sku.Sku, out var sub))
-                    sku.SkusAtributosValores = sub;
+                {
+                    foreach (var atributoDto in sub)
+                    {
+                        var atributo = BuildAtributo(atributoDto, sku);
+                        sku.AdicionarAtributo(atributo);
+                    }
+                }
             }
         }
 
@@ -71,31 +71,32 @@ public class SkusRepository : ISkusRepository
 
     public async Task<Skus?> ObterSkuPorSku(string sku)
     {
-        const string skuSql = "SELECT sku, gtin_ean, preco, estoque, ativo FROM skus WHERE sku = @Sku;";
+        const string skuSql = "SELECT sku, gtin_ean AS GtinEan, preco AS Preco, estoque AS Estoque, ativo AS Ativo FROM skus WHERE sku = @Sku;";
 
         const string atributosSql = @"
-            SELECT sav.sku, sav.chave_id, sav.valor,
-                   sak.id AS Id, sak.chave
+            SELECT sav.sku AS Sku, sav.chave_id AS ChaveId, sav.valor AS Valor,
+                   sak.id AS Id, sak.chave AS Chave
             FROM skus_atributos_valores sav
             JOIN sku_atributos_chaves sak ON sak.id = sav.chave_id
             WHERE sav.sku = @Sku;";
 
-        var skuEntity = await _session.Connection.QuerySingleOrDefaultAsync<Skus>(
+        var skuDto = await _session.Connection.QuerySingleOrDefaultAsync<SkuDto>(
             skuSql, new { Sku = sku }, transaction: _session.Transaction);
 
-        if (skuEntity is null) return null;
+        if (skuDto is null) return null;
 
-        skuEntity.SkusAtributosValores = await _session.Connection.QueryAsync<SkusAtributosValores, SkuAtributosChaves, SkusAtributosValores>(
+        var skuEntity = BuildSku(skuDto);
+
+        var atributos = await _session.Connection.QueryAsync<AtributoDto>(
             atributosSql,
-            (valor, chave) =>
-            {
-                chave.SkusAtributosValores = [];
-                valor.SkuAtributoChave = chave;
-                return valor;
-            },
             new { Sku = sku },
-            transaction: _session.Transaction,
-            splitOn: "Id");
+            transaction: _session.Transaction);
+
+        foreach (var atributoDto in atributos)
+        {
+            var atributo = BuildAtributo(atributoDto, skuEntity);
+            skuEntity.AdicionarAtributo(atributo);
+        }
 
         return skuEntity;
     }
@@ -163,7 +164,7 @@ public class SkusRepository : ISkusRepository
             FROM skus
             WHERE sku ILIKE @Termo OR gtin_ean ILIKE @Termo;
 
-            SELECT sku, gtin_ean, preco, estoque, ativo
+            SELECT sku, gtin_ean AS GtinEan, preco AS Preco, estoque AS Estoque, ativo AS Ativo
             FROM skus
             WHERE sku ILIKE @Termo OR gtin_ean ILIKE @Termo
             ORDER BY sku
@@ -205,4 +206,18 @@ public class SkusRepository : ISkusRepository
 
         await InserirAtributos(skuCodigo, atributos);
     }
+
+    private static Skus BuildSku(SkuDto dto)
+    {
+        return new Skus(dto.Sku, dto.Preco, dto.Estoque, dto.Ativo, dto.GtinEan);
+    }
+
+    private static SkusAtributosValores BuildAtributo(AtributoDto dto, Skus sku)
+    {
+        var chave = new SkuAtributosChaves(dto.Id, dto.Chave);
+        return new SkusAtributosValores(dto.Sku, dto.ChaveId, dto.Valor, sku, chave);
+    }
+
+    private sealed record SkuDto(string Sku, string? GtinEan, decimal Preco, decimal Estoque, bool Ativo);
+    private sealed record AtributoDto(string Sku, int ChaveId, string Valor, int Id, string Chave);
 }

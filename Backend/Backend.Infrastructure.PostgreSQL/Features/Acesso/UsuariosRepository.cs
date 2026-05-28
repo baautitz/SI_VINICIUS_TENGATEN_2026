@@ -1,3 +1,4 @@
+using System.Linq;
 using Backend.Core.Common;
 using Backend.Core.Features.Acesso.DTOs;
 using Backend.Core.Features.Acesso.Entities;
@@ -35,8 +36,8 @@ public class UsuariosRepository : IUsuariosRepository
         );
 
         var total = await multi.ReadSingleAsync<int>();
-        var itens = (await multi.ReadAsync<Usuarios>())
-            .Select(u => { u.Sessoes = []; return u; });
+        var itens = (await multi.ReadAsync<UsuarioDto>())
+            .Select(dto => BuildUsuario(dto));
 
         return new ResultadoPaginado<Usuarios>(itens, total, pagina, tamanhoDaPagina);
     }
@@ -58,11 +59,15 @@ public class UsuariosRepository : IUsuariosRepository
             transaction: _session.Transaction
         );
 
-        var usuario = await multi.ReadSingleOrDefaultAsync<Usuarios>();
-        if (usuario is null) return null;
+        var usuarioDto = await multi.ReadSingleOrDefaultAsync<UsuarioDto>();
+        if (usuarioDto is null) return null;
 
-        var sessoes = await multi.ReadAsync<Sessoes>();
-        usuario.Sessoes = sessoes;
+        var usuario = BuildUsuario(usuarioDto);
+        var sessoesDto = await multi.ReadAsync<SessaoDto>();
+        foreach (var sessao in sessoesDto.Select(dto => BuildSessao(dto, usuario)))
+        {
+            usuario.AdicionarSessao(sessao);
+        }
 
         return usuario;
     }
@@ -80,8 +85,7 @@ public class UsuariosRepository : IUsuariosRepository
             transaction: _session.Transaction
         );
 
-        usuario.Id = idGerado;
-        return usuario;
+        return new Usuarios(idGerado, usuario.Nome, usuario.CpfCnpj, usuario.Email, usuario.Usuario, usuario.Senha, usuario.Telefone, usuario.Ativo);
     }
 
     public async Task<Usuarios> AtualizarUsuario(int id, Usuarios usuario)
@@ -111,8 +115,7 @@ public class UsuariosRepository : IUsuariosRepository
 
         await _session.Connection.ExecuteAsync(sql, parametros, transaction: _session.Transaction);
 
-        usuario.Id = id;
-        return usuario;
+        return new Usuarios(id, usuario.Nome, usuario.CpfCnpj, usuario.Email, usuario.Usuario, usuario.Senha, usuario.Telefone, usuario.Ativo);
     }
 
     public async Task<bool> DeletarUsuario(int id)
@@ -178,4 +181,26 @@ public class UsuariosRepository : IUsuariosRepository
 
         return new ResultadoPaginado<UsuariosResumo>(itens, total, pagina, tamanhoDaPagina);
     }
+
+    private static Sessoes BuildSessao(SessaoDto dto, Usuarios usuario)
+    {
+        return new Sessoes(dto.Id, usuario, dto.Token, dto.DataCriacao, dto.DataExpiracao, dto.Ativo);
+    }
+
+    private static Usuarios BuildUsuario(UsuarioDto dto, IEnumerable<Sessoes>? sessoes = null)
+    {
+        var usuario = new Usuarios(dto.Id, dto.Nome, dto.CpfCnpj, dto.Email, dto.Usuario, dto.Senha, dto.Telefone, dto.Ativo);
+        if (sessoes is not null)
+        {
+            foreach (var sessao in sessoes)
+            {
+                usuario.AdicionarSessao(sessao);
+            }
+        }
+
+        return usuario;
+    }
+
+    private sealed record UsuarioDto(int Id, string Nome, string CpfCnpj, string Email, string Telefone, string Usuario, string Senha, bool Ativo);
+    private sealed record SessaoDto(long Id, string Token, DateTime DataCriacao, DateTime? DataExpiracao, bool Ativo);
 }

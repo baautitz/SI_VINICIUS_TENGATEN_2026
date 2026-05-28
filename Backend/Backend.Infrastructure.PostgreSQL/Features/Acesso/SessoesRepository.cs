@@ -1,3 +1,4 @@
+using System.Linq;
 using Backend.Core.Common;
 using Backend.Core.Features.Acesso.Entities;
 using Backend.Core.Features.Acesso.Repositories;
@@ -18,26 +19,23 @@ public class SessoesRepository : ISessoesRepository
     public async Task<Sessoes?> ObterSessaoPorToken(string token)
     {
         const string sql = @"
-            SELECT s.id AS Id, s.token, s.data_criacao, s.data_expiracao, s.ativo,
+            SELECT s.id, s.token, s.data_criacao, s.data_expiracao, s.ativo,
                    u.id AS UsuarioId, u.nome, u.cpf_cnpj, u.email, u.telefone, u.usuario, u.senha, u.ativo
             FROM sessoes s
             JOIN usuarios u ON u.id = s.usuario_id
             WHERE s.token = @Token;";
 
-        var result = await _session.Connection.QueryAsync<Sessoes, Usuarios, Sessoes>(
+        var item = await _session.Connection.QuerySingleOrDefaultAsync<SessionUsuarioDto>(
             sql,
-            (sessao, usuario) =>
-            {
-                usuario.Sessoes = [];
-                sessao.Usuario = usuario;
-                return sessao;
-            },
             new { Token = token },
-            transaction: _session.Transaction,
-            splitOn: "UsuarioId"
+            transaction: _session.Transaction
         );
 
-        return result.SingleOrDefault();
+        if (item is null) return null;
+
+        var usuario = BuildUsuario(new UsuarioDto(item.UsuarioId, item.UsuarioNome, item.UsuarioCpfCnpj, item.UsuarioEmail, item.UsuarioTelefone, item.UsuarioUsuario, item.UsuarioSenha, item.UsuarioAtivo));
+        var sessao = new SessaoDto(item.Id, item.Token, item.DataCriacao, item.DataExpiracao, item.Ativo);
+        return BuildSessao(sessao, usuario);
     }
 
     public async Task<Sessoes> CriarSessao(Sessoes sessao)
@@ -60,8 +58,7 @@ public class SessoesRepository : ISessoesRepository
             transaction: _session.Transaction
         );
 
-        sessao.Id = idGerado;
-        return sessao;
+        return new Sessoes(idGerado, sessao.Usuario, sessao.Token, sessao.DataCriacao, sessao.DataExpiracao, sessao.Ativo);
     }
 
     public async Task<bool> EncerrarSessao(long id)
@@ -88,7 +85,7 @@ public class SessoesRepository : ISessoesRepository
         const string countSql = "SELECT COUNT(*) FROM sessoes WHERE usuario_id = @UsuarioId;";
 
         const string querySql = @"
-            SELECT s.id AS Id, s.token, s.data_criacao, s.data_expiracao, s.ativo,
+            SELECT s.id, s.token, s.data_criacao, s.data_expiracao, s.ativo,
                    u.id AS UsuarioId, u.nome, u.cpf_cnpj, u.email, u.telefone, u.usuario, u.senha, u.ativo
             FROM sessoes s
             JOIN usuarios u ON u.id = s.usuario_id
@@ -99,19 +96,46 @@ public class SessoesRepository : ISessoesRepository
         var total = await _session.Connection.ExecuteScalarAsync<int>(
             countSql, new { UsuarioId = usuarioId }, transaction: _session.Transaction);
 
-        var itens = await _session.Connection.QueryAsync<Sessoes, Usuarios, Sessoes>(
+        var itens = await _session.Connection.QueryAsync<SessionUsuarioDto>(
             querySql,
-            (sessao, usuario) =>
-            {
-                usuario.Sessoes = [];
-                sessao.Usuario = usuario;
-                return sessao;
-            },
             new { UsuarioId = usuarioId, TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
-            transaction: _session.Transaction,
-            splitOn: "UsuarioId"
+            transaction: _session.Transaction
         );
 
-        return new ResultadoPaginado<Sessoes>(itens, total, pagina, tamanhoDaPagina);
+        var sessoes = itens.Select(item =>
+        {
+            var usuario = BuildUsuario(new UsuarioDto(item.UsuarioId, item.UsuarioNome, item.UsuarioCpfCnpj, item.UsuarioEmail, item.UsuarioTelefone, item.UsuarioUsuario, item.UsuarioSenha, item.UsuarioAtivo));
+            var sessao = new SessaoDto(item.Id, item.Token, item.DataCriacao, item.DataExpiracao, item.Ativo);
+            return BuildSessao(sessao, usuario);
+        });
+
+        return new ResultadoPaginado<Sessoes>(sessoes, total, pagina, tamanhoDaPagina);
     }
+
+    private static Usuarios BuildUsuario(UsuarioDto dto)
+    {
+        return new Usuarios(dto.Id, dto.Nome, dto.CpfCnpj, dto.Email, dto.Usuario, dto.Senha, dto.Telefone, dto.Ativo);
+    }
+
+    private static Sessoes BuildSessao(SessaoDto dto, Usuarios usuario)
+    {
+        return new Sessoes(dto.Id, usuario, dto.Token, dto.DataCriacao, dto.DataExpiracao, dto.Ativo);
+    }
+
+    private sealed record UsuarioDto(int Id, string Nome, string CpfCnpj, string Email, string Telefone, string Usuario, string Senha, bool Ativo);
+    private sealed record SessaoDto(long Id, string Token, DateTime DataCriacao, DateTime? DataExpiracao, bool Ativo);
+    private sealed record SessionUsuarioDto(
+        long Id,
+        string Token,
+        DateTime DataCriacao,
+        DateTime? DataExpiracao,
+        bool Ativo,
+        int UsuarioId,
+        string UsuarioNome,
+        string UsuarioCpfCnpj,
+        string UsuarioEmail,
+        string UsuarioTelefone,
+        string UsuarioUsuario,
+        string UsuarioSenha,
+        bool UsuarioAtivo);
 }

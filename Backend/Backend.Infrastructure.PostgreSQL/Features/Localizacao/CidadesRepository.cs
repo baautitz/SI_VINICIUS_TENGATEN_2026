@@ -39,8 +39,8 @@ public class CidadesRepository : ICidadesRepository
             querySql,
             (cidade, estado, pais) =>
             {
-                estado.Pais = pais;
-                cidade.Estado = estado;
+                estado.Atualizar(estado.Estado, estado.Uf, pais);
+                cidade.Atualizar(cidade.Cidade, cidade.Ddd, estado);
                 return cidade;
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
@@ -66,8 +66,8 @@ public class CidadesRepository : ICidadesRepository
             sql,
             (cidade, estado, pais) =>
             {
-                estado.Pais = pais;
-                cidade.Estado = estado;
+                estado.Atualizar(estado.Estado, estado.Uf, pais);
+                cidade.Atualizar(cidade.Cidade, cidade.Ddd, estado);
                 return cidade;
             },
             new { Id = id },
@@ -91,8 +91,7 @@ public class CidadesRepository : ICidadesRepository
             transaction: _session.Transaction
         );
 
-        cidade.Id = idGerado;
-        return cidade;
+        return new Cidades(idGerado, cidade.Cidade, cidade.Ddd, cidade.Estado);
     }
 
     public async Task<Cidades> AtualizarCidade(int id, Cidades cidade)
@@ -110,8 +109,7 @@ public class CidadesRepository : ICidadesRepository
             transaction: _session.Transaction
         );
 
-        cidade.Id = id;
-        return cidade;
+        return new Cidades(id, cidade.Cidade, cidade.Ddd, cidade.Estado);
     }
 
     public async Task<bool> DeletarCidade(int id)
