@@ -1,14 +1,68 @@
+using Backend.Core.Common;
 using Backend.Core.Features.Financeiro.Entities.Enums;
 
 namespace Backend.Core.Features.Financeiro.Entities;
 
 public class ContasReceberParcelas
 {
-    public int Id { get; set; }
-    public int ContaReceberId { get; set; }
-    public int NumeroParcela { get; set; }
-    public DateTime? DataVencimento { get; set; }
-    public decimal ValorParcela { get; set; }
-    public decimal ValorRecebido { get; set; }
-    public StatusTituloFinanceiro Status { get; set; }
+    public int Id { get; private set; }
+    public int ContaReceberId { get; private set; }
+    public int NumeroParcela { get; private set; }
+    public DateTime DataVencimento { get; private set; }
+    public decimal ValorParcela { get; private set; }
+    public decimal ValorRecebido { get; private set; }
+    public StatusTituloFinanceiro Status { get; private set; }
+
+    public ContasReceberParcelas(int numeroParcela, DateTime dataVencimento, decimal valorParcela)
+    {
+        if (numeroParcela <= 0)
+            throw new DomainException("Número da parcela deve ser maior que zero.");
+
+        if (dataVencimento <= DateTime.UtcNow.Date)
+            throw new DomainException("Data de vencimento deve ser futura.");
+
+        if (valorParcela <= 0)
+            throw new DomainException("Valor da parcela deve ser maior que zero.");
+
+        NumeroParcela = numeroParcela;
+        DataVencimento = dataVencimento;
+        ValorParcela = valorParcela;
+        ValorRecebido = 0;
+        Status = StatusTituloFinanceiro.ABERTO;
+    }
+
+    public ContasReceberParcelas(int id, int contaReceberId, int numeroParcela, DateTime dataVencimento, decimal valorParcela, decimal valorRecebido, StatusTituloFinanceiro status)
+        : this(numeroParcela, dataVencimento, valorParcela)
+    {
+        Id = id;
+        ContaReceberId = contaReceberId;
+        ValorRecebido = valorRecebido;
+        Status = status;
+    }
+
+    public void RegistrarRecebimento(decimal valor)
+    {
+        if (valor <= 0)
+            throw new DomainException("Valor de recebimento deve ser maior que zero.");
+
+        if (Status == StatusTituloFinanceiro.CANCELADO)
+            throw new DomainException("Não é possível receber uma parcela cancelada.");
+
+        ValorRecebido += valor;
+
+        if (ValorRecebido >= ValorParcela)
+        {
+            Status = StatusTituloFinanceiro.PAGO;
+            ValorRecebido = ValorParcela;
+        }
+        else
+        {
+            Status = StatusTituloFinanceiro.PARCIAL;
+        }
+    }
+
+    public void Cancelar()
+    {
+        Status = StatusTituloFinanceiro.CANCELADO;
+    }
 }

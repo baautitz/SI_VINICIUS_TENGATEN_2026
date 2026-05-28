@@ -1,12 +1,92 @@
+using Backend.Core.Common;
+using System.Collections.ObjectModel;
+
 namespace Backend.Core.Features.Catalogo.Entities;
 
 public class Skus
 {
-    public required string Sku { get; set; }
-    public string? GtinEan { get; set; }
-    public decimal Preco { get; set; }
-    public decimal Estoque { get; set; }
-    public bool Ativo { get; set; }
+    private readonly List<SkusAtributosValores> _atributos = new();
 
-    public required IEnumerable<SkusAtributosValores> SkusAtributosValores { get; set; }
+    public string Sku { get; private set; }
+    public string? GtinEan { get; private set; }
+    public decimal Preco { get; private set; }
+    public decimal Estoque { get; private set; }
+    public bool Ativo { get; private set; }
+    public IReadOnlyCollection<SkusAtributosValores> SkusAtributosValores => _atributos.AsReadOnly();
+
+    public Skus(string sku, decimal preco, decimal estoque = 0, string? gtinEan = null)
+    {
+        sku = TextNormalization.Normalize(sku);
+        gtinEan = TextNormalization.NormalizeOrNull(gtinEan);
+
+        if (string.IsNullOrWhiteSpace(sku))
+            throw new DomainException("SKU é obrigatório.");
+
+        if (preco < 0)
+            throw new DomainException("Preço não pode ser negativo.");
+
+        if (estoque < 0)
+            throw new DomainException("Estoque não pode ser negativo.");
+
+        Sku = sku;
+        Preco = preco;
+        Estoque = estoque;
+        GtinEan = gtinEan;
+        Ativo = true;
+    }
+
+    public Skus(string sku, decimal preco, decimal estoque, bool ativo, string? gtinEan = null)
+        : this(sku, preco, estoque, gtinEan)
+    {
+        if (!ativo)
+            Desativar();
+    }
+
+    public void AtualizarPreco(decimal preco)
+    {
+        if (preco < 0)
+            throw new DomainException("Preço não pode ser negativo.");
+
+        Preco = preco;
+    }
+
+    public void AjustarEstoque(decimal quantidade)
+    {
+        if (Estoque + quantidade < 0)
+            throw new DomainException("Estoque não pode ficar negativo.");
+
+        Estoque += quantidade;
+    }
+
+    public void Ativar() => Ativo = true;
+
+    public void Desativar() => Ativo = false;
+
+    public void AdicionarAtributo(SkusAtributosValores atributo)
+    {
+        if (atributo == null)
+            throw new DomainException("Atributo é obrigatório.");
+
+        if (_atributos.Any(x => x.ChaveId == atributo.ChaveId && x.Valor == atributo.Valor))
+            throw new DomainException("Atributo duplicado para este SKU.");
+
+        _atributos.Add(atributo);
+    }
+
+    public void RemoverAtributo(SkusAtributosValores atributo)
+    {
+        if (atributo == null)
+            throw new DomainException("Atributo é obrigatório.");
+
+        _atributos.Remove(atributo);
+    }
+
+    public void DefinirAtributos(IEnumerable<SkusAtributosValores> atributos)
+    {
+        if (atributos == null)
+            throw new DomainException("Atributos são obrigatórios.");
+
+        _atributos.Clear();
+        _atributos.AddRange(atributos);
+    }
 }

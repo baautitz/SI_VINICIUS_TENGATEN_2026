@@ -1,4 +1,4 @@
-namespace Backend.Core.Features.Logistica.DTOs;
+namespace Backend.Core.Features.Parceiros.DTOs;
 
 public record FornecedoresResumo(
     int Id,

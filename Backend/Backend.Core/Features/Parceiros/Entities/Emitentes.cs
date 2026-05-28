@@ -1,3 +1,4 @@
+using Backend.Core.Common;
 using Backend.Core.Features.Localizacao.Entities;
 
 namespace Backend.Core.Features.Parceiros.Entities;
@@ -5,18 +6,99 @@ namespace Backend.Core.Features.Parceiros.Entities;
 public class Emitentes
 {
     public int Id { get; set; }
-    public required string NomeRazaoSocial { get; set; }
-    public required string CpfCnpj { get; set; }
-    public string? ApelidoNomeFantasia { get; set; }
-    public string? Endereco { get; set; }
-    public Bairros? Bairro { get; set; }
-    public string? Telefone { get; set; }
-    public string? Email { get; set; }
-    public string? RgIe { get; set; }
-    public string? InscricaoMunicipal { get; set; }
-    public string? RegimeTributario { get; set; }
-    public bool Ativo { get; set; }
-    public DateTime CriadoEm { get; set; }
-    public DateTime? AtualizadoEm { get; set; }
-    public string? Observacao { get; set; }
+    public string NomeRazaoSocial { get; private set; }
+    public string CpfCnpj { get; private set; }
+    public string? ApelidoNomeFantasia { get; private set; }
+    public string? Endereco { get; private set; }
+    public Bairros? Bairro { get; private set; }
+    public string? Telefone { get; private set; }
+    public string? Email { get; private set; }
+    public string? RgIe { get; private set; }
+    public string? InscricaoMunicipal { get; private set; }
+    public string? RegimeTributario { get; private set; }
+    public bool Ativo { get; private set; }
+    public DateTime CriadoEm { get; private set; }
+    public string? Observacao { get; private set; }
+
+    public Emitentes(
+        string nomeRazaoSocial,
+        string cpfCnpj,
+        string? apelidoNomeFantasia = null,
+        string? endereco = null,
+        Bairros? bairro = null,
+        string? telefone = null,
+        string? email = null,
+        string? rgIe = null,
+        string? inscricaoMunicipal = null,
+        string? regimeTributario = null,
+        string? observacao = null,
+        bool ativo = true)
+    {
+        nomeRazaoSocial = TextNormalization.Normalize(nomeRazaoSocial);
+        cpfCnpj = TextNormalization.Normalize(cpfCnpj);
+
+        if (string.IsNullOrWhiteSpace(nomeRazaoSocial))
+            throw new DomainException("Nome ou razão social do emitente é obrigatório.");
+
+        if (string.IsNullOrWhiteSpace(cpfCnpj))
+            throw new DomainException("CPF/CNPJ do emitente é obrigatório.");
+
+        NomeRazaoSocial = nomeRazaoSocial;
+        CpfCnpj = cpfCnpj;
+        ApelidoNomeFantasia = TextNormalization.NormalizeOrNull(apelidoNomeFantasia);
+        Endereco = TextNormalization.NormalizeOrNull(endereco);
+        Bairro = bairro;
+        Telefone = TextNormalization.NormalizeOrNull(telefone);
+        Email = TextNormalization.NormalizeOrNull(email);
+        RgIe = TextNormalization.NormalizeOrNull(rgIe);
+        InscricaoMunicipal = TextNormalization.NormalizeOrNull(inscricaoMunicipal);
+        RegimeTributario = TextNormalization.NormalizeOrNull(regimeTributario);
+        Observacao = TextNormalization.NormalizeOrNull(observacao);
+        Ativo = ativo;
+        CriadoEm = DateTime.UtcNow;
+    }
+
+    public void AtualizarDados(
+        string nomeRazaoSocial,
+        string cpfCnpj,
+        string? apelidoNomeFantasia = null,
+        string? endereco = null,
+        Bairros? bairro = null,
+        string? telefone = null,
+        string? email = null,
+        string? rgIe = null,
+        string? inscricaoMunicipal = null,
+        string? regimeTributario = null,
+        string? observacao = null)
+    {
+        nomeRazaoSocial = TextNormalization.Normalize(nomeRazaoSocial);
+        cpfCnpj = TextNormalization.Normalize(cpfCnpj);
+
+        if (string.IsNullOrWhiteSpace(nomeRazaoSocial))
+            throw new DomainException("Nome ou razão social do emitente é obrigatório.");
+
+        if (string.IsNullOrWhiteSpace(cpfCnpj))
+            throw new DomainException("CPF/CNPJ do emitente é obrigatório.");
+
+        NomeRazaoSocial = nomeRazaoSocial;
+        CpfCnpj = cpfCnpj;
+        ApelidoNomeFantasia = TextNormalization.NormalizeOrNull(apelidoNomeFantasia);
+        Endereco = TextNormalization.NormalizeOrNull(endereco);
+        Bairro = bairro;
+        Telefone = TextNormalization.NormalizeOrNull(telefone);
+        Email = TextNormalization.NormalizeOrNull(email);
+        RgIe = TextNormalization.NormalizeOrNull(rgIe);
+        InscricaoMunicipal = TextNormalization.NormalizeOrNull(inscricaoMunicipal);
+        RegimeTributario = TextNormalization.NormalizeOrNull(regimeTributario);
+        Observacao = TextNormalization.NormalizeOrNull(observacao);
+    }
+
+    public void DefinirBairro(Bairros? bairro)
+    {
+        Bairro = bairro;
+    }
+
+    public void Ativar() => Ativo = true;
+
+    public void Desativar() => Ativo = false;
 }

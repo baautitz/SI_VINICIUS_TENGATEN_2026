@@ -1,26 +1,125 @@
+using Backend.Core.Common;
 using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.NFe.Entities;
 using Backend.Core.Features.Pagamentos.Entities;
 using Backend.Core.Features.Parceiros.Entities;
+using System.Collections.ObjectModel;
 
 namespace Backend.Core.Features.Financeiro.Entities;
 
 public class ContasReceber
 {
-    public int Id { get; set; }
-    public required string Descricao { get; set; }
-    public DateTime? DataEmissao { get; set; }
-    public DateTime? DataVencimento { get; set; }
-    public decimal ValorOriginal { get; set; }
-    public decimal ValorSaldo { get; set; }
-    public StatusTituloFinanceiro Status { get; set; }
-    public string? Observacao { get; set; }
-    public DateTime CriadoEm { get; set; }
-    public DateTime? AtualizadoEm { get; set; }
+    private readonly List<ContasReceberParcelas> _parcelas = new();
 
-    public required Clientes Cliente { get; set; }
-    public Nfes? Nfe { get; set; }
-    public CondicoesPagamentos? CondicaoPagamento { get; set; }
+    public int Id { get; private set; }
+    public string Descricao { get; private set; }
+    public DateTime? DataEmissao { get; private set; }
+    public DateTime? DataVencimento { get; private set; }
+    public decimal ValorOriginal { get; private set; }
+    public decimal ValorSaldo { get; private set; }
+    public StatusTituloFinanceiro Status { get; private set; }
+    public string? Observacao { get; private set; }
+    public DateTime CriadoEm { get; private set; }
 
-    public required IEnumerable<ContasReceberParcelas> ContasReceberParcelas { get; set; }
+    public Clientes Cliente { get; private set; }
+    public Nfes? Nfe { get; private set; }
+    public CondicoesPagamentos? CondicaoPagamento { get; private set; }
+
+    public IReadOnlyCollection<ContasReceberParcelas> ContasReceberParcelas => _parcelas.AsReadOnly();
+
+    public ContasReceber(string descricao, decimal valorOriginal, Clientes cliente, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, Nfes? nfe = null, string? observacao = null)
+    {
+        descricao = TextNormalization.Normalize(descricao);
+        observacao = TextNormalization.NormalizeOrNull(observacao);
+
+        if (string.IsNullOrWhiteSpace(descricao))
+            throw new DomainException("Descrição da conta a receber é obrigatória.");
+
+        if (valorOriginal <= 0)
+            throw new DomainException("Valor original deve ser maior que zero.");
+
+        Cliente = cliente ?? throw new DomainException("Cliente é obrigatório para contas a receber.");
+
+        Descricao = descricao;
+        ValorOriginal = valorOriginal;
+        ValorSaldo = valorOriginal;
+        Cliente = cliente;
+        DataEmissao = dataEmissao;
+        DataVencimento = dataVencimento;
+        CondicaoPagamento = condicaoPagamento;
+        Nfe = nfe;
+        Observacao = observacao;
+        CriadoEm = DateTime.UtcNow;
+        Status = StatusTituloFinanceiro.ABERTO;
+    }
+
+    public ContasReceber(int id, string descricao, decimal valorOriginal, Clientes cliente, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, Nfes? nfe = null, string? observacao = null, DateTime? criadoEm = null, StatusTituloFinanceiro status = StatusTituloFinanceiro.ABERTO)
+        : this(descricao, valorOriginal, cliente, dataEmissao, dataVencimento, condicaoPagamento, nfe, observacao)
+    {
+        Id = id;
+        CriadoEm = criadoEm ?? DateTime.UtcNow;
+        Status = status;
+    }
+
+    public void AdicionarParcelaExistente(ContasReceberParcelas parcela)
+    {
+        if (parcela == null)
+            throw new DomainException("Parcela é obrigatória.");
+
+        _parcelas.Add(parcela);
+        AtualizarSaldo();
+    }
+
+    public void AdicionarParcela(int numeroParcela, DateTime dataVencimento, decimal valorParcela)
+    {
+        if (_parcelas.Any(p => p.NumeroParcela == numeroParcela))
+            throw new DomainException("Já existe parcela com esse número.");
+
+        var parcela = new ContasReceberParcelas(numeroParcela, dataVencimento, valorParcela);
+        _parcelas.Add(parcela);
+        AtualizarSaldo();
+    }
+
+    public void RegistrarRecebimento(int numeroParcela, decimal valorRecebido)
+    {
+        var parcela = _parcelas.SingleOrDefault(p => p.NumeroParcela == numeroParcela)
+            ?? throw new DomainException("Parcela não encontrada.");
+
+        parcela.RegistrarRecebimento(valorRecebido);
+        AtualizarSaldo();
+    }
+
+    public void Atualizar(string descricao, decimal valorOriginal, Clientes cliente, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, Nfes? nfe = null, string? observacao = null)
+    {
+        descricao = TextNormalization.Normalize(descricao);
+        observacao = TextNormalization.NormalizeOrNull(observacao);
+
+        if (string.IsNullOrWhiteSpace(descricao))
+            throw new DomainException("Descrição da conta a receber é obrigatória.");
+
+        if (valorOriginal <= 0)
+            throw new DomainException("Valor original deve ser maior que zero.");
+
+        Cliente = cliente ?? throw new DomainException("Cliente é obrigatório para contas a receber.");
+        Descricao = descricao;
+        ValorOriginal = valorOriginal;
+        DataEmissao = dataEmissao;
+        DataVencimento = dataVencimento;
+        CondicaoPagamento = condicaoPagamento;
+        Nfe = nfe;
+        Observacao = observacao;
+        AtualizarSaldo();
+    }
+
+    private void AtualizarSaldo()
+    {
+        var recebido = _parcelas.Sum(p => p.ValorRecebido);
+        ValorSaldo = Math.Max(0, ValorOriginal - recebido);
+        Status = ValorSaldo == 0 ? StatusTituloFinanceiro.PAGO : StatusTituloFinanceiro.PARCIAL;
+
+        if (_parcelas.All(p => p.Status == StatusTituloFinanceiro.CANCELADO))
+        {
+            Status = StatusTituloFinanceiro.CANCELADO;
+        }
+    }
 }

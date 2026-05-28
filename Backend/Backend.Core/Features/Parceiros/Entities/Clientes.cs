@@ -1,3 +1,4 @@
+using Backend.Core.Common;
 using Backend.Core.Features.Localizacao.Entities;
 
 namespace Backend.Core.Features.Parceiros.Entities;
@@ -5,17 +6,119 @@ namespace Backend.Core.Features.Parceiros.Entities;
 public class Clientes
 {
     public int Id { get; set; }
-    public required string NomeRazaoSocial { get; set; }
-    public required string CpfCnpj { get; set; }
-    public string? RgIe { get; set; }
-    public string? ApelidoNomeFantasia { get; set; }
-    public string? Endereco { get; set; }
-    public Bairros? Bairro { get; set; }
-    public string? Telefone { get; set; }
-    public string? Email { get; set; }
-    public decimal LimiteCredito { get; set; }
-    public bool Ativo { get; set; }
-    public DateTime CriadoEm { get; set; }
-    public DateTime? AtualizadoEm { get; set; }
-    public string? Observacao { get; set; }
+    public string NomeRazaoSocial { get; private set; }
+    public string CpfCnpj { get; private set; }
+    public string? RgIe { get; private set; }
+    public string? ApelidoNomeFantasia { get; private set; }
+    public string? Endereco { get; private set; }
+    public Bairros? Bairro { get; private set; }
+    public string? Telefone { get; private set; }
+    public string? Email { get; private set; }
+    public decimal LimiteCredito { get; private set; }
+    public bool Ativo { get; private set; }
+    public DateTime CriadoEm { get; private set; }
+    public string? Observacao { get; private set; }
+
+    public Clientes(
+        string nomeRazaoSocial,
+        string cpfCnpj,
+        string? rgIe = null,
+        string? apelidoNomeFantasia = null,
+        string? endereco = null,
+        Bairros? bairro = null,
+        string? telefone = null,
+        string? email = null,
+        decimal limiteCredito = 0m,
+        string? observacao = null,
+        bool ativo = true)
+    {
+        nomeRazaoSocial = TextNormalization.Normalize(nomeRazaoSocial);
+        cpfCnpj = TextNormalization.Normalize(cpfCnpj);
+
+        if (string.IsNullOrWhiteSpace(nomeRazaoSocial))
+            throw new DomainException("Nome ou razão social do cliente é obrigatório.");
+
+        if (string.IsNullOrWhiteSpace(cpfCnpj))
+            throw new DomainException("CPF/CNPJ do cliente é obrigatório.");
+
+        if (limiteCredito < 0)
+            throw new DomainException("Limite de crédito não pode ser negativo.");
+
+        NomeRazaoSocial = nomeRazaoSocial;
+        CpfCnpj = cpfCnpj;
+        RgIe = TextNormalization.NormalizeOrNull(rgIe);
+        ApelidoNomeFantasia = TextNormalization.NormalizeOrNull(apelidoNomeFantasia);
+        Endereco = TextNormalization.NormalizeOrNull(endereco);
+        Bairro = bairro;
+        Telefone = TextNormalization.NormalizeOrNull(telefone);
+        Email = TextNormalization.NormalizeOrNull(email);
+        LimiteCredito = limiteCredito;
+        Ativo = ativo;
+        CriadoEm = DateTime.UtcNow;
+        Observacao = TextNormalization.NormalizeOrNull(observacao);
+    }
+
+    public Clientes(int id,
+        string nomeRazaoSocial,
+        string cpfCnpj,
+        string? rgIe = null,
+        string? apelidoNomeFantasia = null,
+        string? endereco = null,
+        Bairros? bairro = null,
+        string? telefone = null,
+        string? email = null,
+        decimal limiteCredito = 0m,
+        string? observacao = null,
+        bool ativo = true,
+        DateTime? criadoEm = null)
+        : this(nomeRazaoSocial, cpfCnpj, rgIe, apelidoNomeFantasia, endereco, bairro, telefone, email, limiteCredito, observacao, ativo)
+    {
+        Id = id;
+        CriadoEm = criadoEm ?? DateTime.UtcNow;
+    }
+
+    public void AtualizarDados(
+        string nomeRazaoSocial,
+        string cpfCnpj,
+        string? rgIe = null,
+        string? apelidoNomeFantasia = null,
+        string? endereco = null,
+        Bairros? bairro = null,
+        string? telefone = null,
+        string? email = null,
+        decimal limiteCredito = 0m,
+        string? observacao = null)
+    {
+        nomeRazaoSocial = TextNormalization.Normalize(nomeRazaoSocial);
+        cpfCnpj = TextNormalization.Normalize(cpfCnpj);
+
+        if (string.IsNullOrWhiteSpace(nomeRazaoSocial))
+            throw new DomainException("Nome ou razão social do cliente é obrigatório.");
+
+        if (string.IsNullOrWhiteSpace(cpfCnpj))
+            throw new DomainException("CPF/CNPJ do cliente é obrigatório.");
+
+        if (limiteCredito < 0)
+            throw new DomainException("Limite de crédito não pode ser negativo.");
+
+        NomeRazaoSocial = nomeRazaoSocial;
+        CpfCnpj = cpfCnpj;
+        RgIe = TextNormalization.NormalizeOrNull(rgIe);
+        ApelidoNomeFantasia = TextNormalization.NormalizeOrNull(apelidoNomeFantasia);
+        Endereco = TextNormalization.NormalizeOrNull(endereco);
+        Bairro = bairro;
+        Telefone = TextNormalization.NormalizeOrNull(telefone);
+        Email = TextNormalization.NormalizeOrNull(email);
+        LimiteCredito = limiteCredito;
+        Observacao = TextNormalization.NormalizeOrNull(observacao);
+    }
+
+    public void DefinirBairro(Bairros? bairro)
+    {
+        Bairro = bairro;
+    }
+
+    public void Ativar() => Ativo = true;
+
+    public void Desativar() => Ativo = false;
 }
