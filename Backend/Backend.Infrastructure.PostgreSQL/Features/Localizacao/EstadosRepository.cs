@@ -119,7 +119,7 @@ public class EstadosRepository : IEstadosRepository
         return linhasAfetadas > 0;
     }
 
-    public async Task<ResultadoPaginado<EstadosResumo>> ObterEstadosResumo(int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<EstadoResumoDto>> ObterEstadosResumo(int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
@@ -138,12 +138,12 @@ public class EstadosRepository : IEstadosRepository
         );
 
         var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<EstadosResumo>();
+        var itens = await multi.ReadAsync<EstadoResumoDto>();
 
-        return new ResultadoPaginado<EstadosResumo>(itens, total, pagina, tamanhoDaPagina);
+        return new ResultadoPaginado<EstadoResumoDto>(itens, total, pagina, tamanhoDaPagina);
     }
 
-    public async Task<ResultadoPaginado<EstadosResumo>> PesquisarEstados(string termo, int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<EstadoResumoDto>> PesquisarEstados(string termo, int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
@@ -165,8 +165,9 @@ public class EstadosRepository : IEstadosRepository
         );
 
         var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<EstadosResumo>();
+        var itens = await multi.ReadAsync<EstadoResumoDto>();
 
-        return new ResultadoPaginado<EstadosResumo>(itens, total, pagina, tamanhoDaPagina);
+        return new ResultadoPaginado<EstadoResumoDto>(itens, total, pagina, tamanhoDaPagina);
     }
 }
+

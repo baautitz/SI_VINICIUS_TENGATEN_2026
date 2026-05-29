@@ -11,6 +11,7 @@ public interface IBairrosRepository
     public Task<Bairros> CriarBairro(Bairros cidade);
     public Task<Bairros> AtualizarBairro(int id, Bairros cidade);
     public Task<bool> DeletarBairro(int id);
-    public Task<ResultadoPaginado<BairrosResumo>> ObterBairrosResumo(int pagina = 1, int tamanhoDaPagina = 20);
-    public Task<ResultadoPaginado<BairrosResumo>> PesquisarBairros(string termo, int pagina = 1, int tamanhoDaPagina = 20);
+    public Task<ResultadoPaginado<BairroResumoDto>> ObterBairrosResumo(int pagina = 1, int tamanhoDaPagina = 20);
+    public Task<ResultadoPaginado<BairroResumoDto>> PesquisarBairros(string termo, int pagina = 1, int tamanhoDaPagina = 20);
 }
+

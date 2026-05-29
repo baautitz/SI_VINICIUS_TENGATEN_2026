@@ -11,6 +11,7 @@ public interface IEstadosRepository
     public Task<Estados> CriarEstado(Estados estado);
     public Task<Estados> AtualizarEstado(int id, Estados estado);
     public Task<bool> DeletarEstado(int id);
-    public Task<ResultadoPaginado<EstadosResumo>> ObterEstadosResumo(int pagina = 1, int tamanhoDaPagina = 20);
-    public Task<ResultadoPaginado<EstadosResumo>> PesquisarEstados(string termo, int pagina = 1, int tamanhoDaPagina = 20);
+    public Task<ResultadoPaginado<EstadoResumoDto>> ObterEstadosResumo(int pagina = 1, int tamanhoDaPagina = 20);
+    public Task<ResultadoPaginado<EstadoResumoDto>> PesquisarEstados(string termo, int pagina = 1, int tamanhoDaPagina = 20);
 }
+

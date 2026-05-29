@@ -1,6 +1,6 @@
-﻿namespace Backend.Core.Features.Localizacao.DTOs;
+namespace Backend.Core.Features.Localizacao.DTOs;
 
-public record PaisesResumo(
+public record PaisResumoDto(
     int Id,
     string Pais,
     string SiglaIso,
@@ -8,3 +8,4 @@ public record PaisesResumo(
     string Moeda,
     string SimboloMoeda
 );
+

@@ -125,7 +125,7 @@ public class CidadesRepository : ICidadesRepository
         return linhasAfetadas > 0;
     }
 
-    public async Task<ResultadoPaginado<CidadesResumo>> ObterCidadesResumo(int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<CidadeResumoDto>> ObterCidadesResumo(int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
@@ -144,12 +144,12 @@ public class CidadesRepository : ICidadesRepository
         );
 
         var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<CidadesResumo>();
+        var itens = await multi.ReadAsync<CidadeResumoDto>();
 
-        return new ResultadoPaginado<CidadesResumo>(itens, total, pagina, tamanhoDaPagina);
+        return new ResultadoPaginado<CidadeResumoDto>(itens, total, pagina, tamanhoDaPagina);
     }
 
-    public async Task<ResultadoPaginado<CidadesResumo>> PesquisarCidades(string termo, int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<CidadeResumoDto>> PesquisarCidades(string termo, int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
@@ -171,8 +171,9 @@ public class CidadesRepository : ICidadesRepository
         );
 
         var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<CidadesResumo>();
+        var itens = await multi.ReadAsync<CidadeResumoDto>();
 
-        return new ResultadoPaginado<CidadesResumo>(itens, total, pagina, tamanhoDaPagina);
+        return new ResultadoPaginado<CidadeResumoDto>(itens, total, pagina, tamanhoDaPagina);
     }
 }
+

@@ -1,4 +1,4 @@
-﻿using Backend.Core.Common;
+using Backend.Core.Common;
 using Backend.Core.Features.Localizacao.DTOs;
 using Backend.Core.Features.Localizacao.Entities;
 using Backend.Core.Features.Localizacao.Repositories;
@@ -105,7 +105,7 @@ public class PaisesRepository : IPaisesRepository
         return linhasAfetadas > 0;
     }
 
-    public async Task<ResultadoPaginado<PaisesResumo>> ObterPaisesResumo(int pagina = 1, int tamanhoPagina = 20)
+    public async Task<ResultadoPaginado<PaisResumoDto>> ObterPaisesResumo(int pagina = 1, int tamanhoPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoPagina;
 
@@ -124,12 +124,12 @@ public class PaisesRepository : IPaisesRepository
         );
 
         var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<PaisesResumo>();
+        var itens = await multi.ReadAsync<PaisResumoDto>();
 
-        return new ResultadoPaginado<PaisesResumo>(itens, total, pagina, tamanhoPagina);
+        return new ResultadoPaginado<PaisResumoDto>(itens, total, pagina, tamanhoPagina);
     }
 
-    public async Task<ResultadoPaginado<PaisesResumo>> PesquisarPaises(string termo, int pagina = 1, int tamanhoPagina = 20)
+    public async Task<ResultadoPaginado<PaisResumoDto>> PesquisarPaises(string termo, int pagina = 1, int tamanhoPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoPagina;
 
@@ -151,8 +151,8 @@ public class PaisesRepository : IPaisesRepository
         );
 
         var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<PaisesResumo>();
+        var itens = await multi.ReadAsync<PaisResumoDto>();
 
-        return new ResultadoPaginado<PaisesResumo>(itens, total, pagina, tamanhoPagina);
+        return new ResultadoPaginado<PaisResumoDto>(itens, total, pagina, tamanhoPagina);
     }
 }

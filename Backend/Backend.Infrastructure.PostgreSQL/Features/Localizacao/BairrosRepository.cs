@@ -130,7 +130,7 @@ public class BairrosRepository : IBairrosRepository
         return linhasAfetadas > 0;
     }
 
-    public async Task<ResultadoPaginado<BairrosResumo>> ObterBairrosResumo(int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<BairroResumoDto>> ObterBairrosResumo(int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
@@ -149,12 +149,12 @@ public class BairrosRepository : IBairrosRepository
         );
 
         var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<BairrosResumo>();
+        var itens = await multi.ReadAsync<BairroResumoDto>();
 
-        return new ResultadoPaginado<BairrosResumo>(itens, total, pagina, tamanhoDaPagina);
+        return new ResultadoPaginado<BairroResumoDto>(itens, total, pagina, tamanhoDaPagina);
     }
 
-    public async Task<ResultadoPaginado<BairrosResumo>> PesquisarBairros(string termo, int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<BairroResumoDto>> PesquisarBairros(string termo, int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
@@ -176,8 +176,9 @@ public class BairrosRepository : IBairrosRepository
         );
 
         var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<BairrosResumo>();
+        var itens = await multi.ReadAsync<BairroResumoDto>();
 
-        return new ResultadoPaginado<BairrosResumo>(itens, total, pagina, tamanhoDaPagina);
+        return new ResultadoPaginado<BairroResumoDto>(itens, total, pagina, tamanhoDaPagina);
     }
 }
+

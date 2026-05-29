@@ -4,6 +4,7 @@ using Backend.Core.Features.Catalogo.Repositories;
 using Backend.Core.Features.Estoque.Repositories;
 using Backend.Core.Features.Financeiro.Repositories;
 using Backend.Core.Features.Localizacao.Repositories;
+using Backend.Core.Features.Localizacao.Services;
 using Backend.Core.Features.NFe.Repositories;
 using Backend.Core.Features.Parceiros.Repositories;
 using Backend.Core.Features.Vendas.Repositories;
@@ -34,6 +35,11 @@ public static class DependencyInjection
         services.AddScoped<IEstadosRepository, EstadosRepository>();
         services.AddScoped<ICidadesRepository, CidadesRepository>();
         services.AddScoped<IBairrosRepository, BairrosRepository>();
+
+        services.AddScoped<PaisesService>();
+        services.AddScoped<EstadosService>();
+        services.AddScoped<CidadesService>();
+        services.AddScoped<BairrosService>();
 
         services.AddScoped<IUsuariosRepository, UsuariosRepository>();
         services.AddScoped<ISessoesRepository, SessoesRepository>();
