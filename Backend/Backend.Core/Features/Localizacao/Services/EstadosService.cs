@@ -24,31 +24,44 @@ public sealed class EstadosService
   public Task<Estados?> ObterEstadoPorId(int id)
       => _estadosRepository.ObterEstadoPorId(id);
 
-  public async Task<Estados> CriarEstado(CreateEstadoDto dto)
+  public async Task<Resultado<Estados>> CriarEstado(CreateEstadoDto dto)
   {
-    new CreateEstadoDtoValidator().ValidateAndThrow(dto);
+    var validation = new CreateEstadoDtoValidator().Validate(dto);
+    if (!validation.IsValid)
+      return Resultado<Estados>.Falha(validation.ToResultadoErros());
 
     var pais = await _paisesRepository.ObterPaisPorId(dto.PaisId);
     if (pais is null)
-      throw new DomainException("País não encontrado.");
+      return Resultado<Estados>.Falha(new ResultadoErro("PAIS_NAO_ENCONTRADO", "País não encontrado."));
 
-    return await _estadosRepository.CriarEstado(new Estados(dto.Estado, dto.Uf, pais));
+    var entidadeResult = Estados.Criar(dto.Estado, dto.Uf, pais);
+    if (!entidadeResult.Success)
+      return entidadeResult;
+
+    var criado = await _estadosRepository.CriarEstado(entidadeResult.Data!);
+    return Resultado<Estados>.Sucesso(criado);
   }
 
-  public async Task<Estados> AtualizarEstado(int id, UpdateEstadoDto dto)
+  public async Task<Resultado<Estados>> AtualizarEstado(int id, UpdateEstadoDto dto)
   {
-    new UpdateEstadoDtoValidator().ValidateAndThrow(dto);
+    var validation = new UpdateEstadoDtoValidator().Validate(dto);
+    if (!validation.IsValid)
+      return Resultado<Estados>.Falha(validation.ToResultadoErros());
 
     var existente = await _estadosRepository.ObterEstadoPorId(id);
     if (existente is null)
-      throw new DomainException("Estado não encontrado.");
+      return Resultado<Estados>.Falha(new ResultadoErro("ESTADO_NAO_ENCONTRADO", "Estado não encontrado."));
 
     var pais = await _paisesRepository.ObterPaisPorId(dto.PaisId);
     if (pais is null)
-      throw new DomainException("País não encontrado.");
+      return Resultado<Estados>.Falha(new ResultadoErro("PAIS_NAO_ENCONTRADO", "País não encontrado."));
 
-    existente.Atualizar(dto.Estado, dto.Uf, pais);
-    return await _estadosRepository.AtualizarEstado(id, existente);
+    var updateResult = existente.AtualizarResultado(dto.Estado, dto.Uf, pais);
+    if (!updateResult.Success)
+      return updateResult;
+
+    var atualizado = await _estadosRepository.AtualizarEstado(id, existente);
+    return Resultado<Estados>.Sucesso(atualizado);
   }
 
   public Task<bool> DeletarEstado(int id)

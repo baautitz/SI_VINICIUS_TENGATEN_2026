@@ -22,22 +22,36 @@ public sealed class PaisesService
   public Task<Paises?> ObterPaisPorId(int id)
       => _paisesRepository.ObterPaisPorId(id);
 
-  public Task<Paises> CriarPais(CreatePaisDto dto)
+  public async Task<Resultado<Paises>> CriarPais(CreatePaisDto dto)
   {
-    new CreatePaisDtoValidator().ValidateAndThrow(dto);
-    return _paisesRepository.CriarPais(new Paises(dto.Ddi, dto.SiglaIso, dto.Moeda, dto.SimboloMoeda, dto.Pais));
+    var validation = new CreatePaisDtoValidator().Validate(dto);
+    if (!validation.IsValid)
+      return Resultado<Paises>.Falha(validation.ToResultadoErros());
+
+    var entidadeResult = Paises.Criar(dto.Ddi, dto.SiglaIso, dto.Moeda, dto.SimboloMoeda, dto.Pais);
+    if (!entidadeResult.Success)
+      return entidadeResult;
+
+    var criado = await _paisesRepository.CriarPais(entidadeResult.Data!);
+    return Resultado<Paises>.Sucesso(criado);
   }
 
-  public async Task<Paises> AtualizarPais(int id, UpdatePaisDto dto)
+  public async Task<Resultado<Paises>> AtualizarPais(int id, UpdatePaisDto dto)
   {
-    new UpdatePaisDtoValidator().ValidateAndThrow(dto);
+    var validation = new UpdatePaisDtoValidator().Validate(dto);
+    if (!validation.IsValid)
+      return Resultado<Paises>.Falha(validation.ToResultadoErros());
 
     var existente = await _paisesRepository.ObterPaisPorId(id);
     if (existente is null)
-      throw new DomainException("País não encontrado.");
+      return Resultado<Paises>.Falha(new ResultadoErro("PAIS_NAO_ENCONTRADO", "País não encontrado."));
 
-    existente.Atualizar(dto.Ddi, dto.SiglaIso, dto.Moeda, dto.SimboloMoeda, dto.Pais);
-    return await _paisesRepository.AtualizarPais(id, existente);
+    var updateResult = existente.AtualizarResultado(dto.Ddi, dto.SiglaIso, dto.Moeda, dto.SimboloMoeda, dto.Pais);
+    if (!updateResult.Success)
+      return updateResult;
+
+    var atualizado = await _paisesRepository.AtualizarPais(id, existente);
+    return Resultado<Paises>.Sucesso(atualizado);
   }
 
   public Task<bool> DeletarPais(int id)

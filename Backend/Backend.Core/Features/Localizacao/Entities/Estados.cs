@@ -21,6 +21,31 @@ public class Estados
         Id = id;
     }
 
+    public static Resultado<Estados> Criar(string estado, string uf, Paises pais)
+    {
+        try
+        {
+            return Resultado<Estados>.Sucesso(new Estados(estado, uf, pais));
+        }
+        catch (DomainException ex)
+        {
+            return Resultado<Estados>.Falha(new ResultadoErro("ESTADO_INVALIDO", ex.Message));
+        }
+    }
+
+    public Resultado<Estados> AtualizarResultado(string estado, string uf, Paises pais)
+    {
+        try
+        {
+            Atualizar(estado, uf, pais);
+            return Resultado<Estados>.Sucesso(this);
+        }
+        catch (DomainException ex)
+        {
+            return Resultado<Estados>.Falha(new ResultadoErro("ESTADO_INVALIDO", ex.Message));
+        }
+    }
+
     public void Atualizar(string estado, string uf, Paises pais)
     {
         DefinirDados(estado, uf, pais);

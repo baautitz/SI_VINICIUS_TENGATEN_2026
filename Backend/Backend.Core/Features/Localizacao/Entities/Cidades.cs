@@ -21,6 +21,31 @@ public class Cidades
         Id = id;
     }
 
+    public static Resultado<Cidades> Criar(string cidade, short ddd, Estados estado)
+    {
+        try
+        {
+            return Resultado<Cidades>.Sucesso(new Cidades(cidade, ddd, estado));
+        }
+        catch (DomainException ex)
+        {
+            return Resultado<Cidades>.Falha(new ResultadoErro("CIDADE_INVALIDA", ex.Message));
+        }
+    }
+
+    public Resultado<Cidades> AtualizarResultado(string cidade, short ddd, Estados estado)
+    {
+        try
+        {
+            Atualizar(cidade, ddd, estado);
+            return Resultado<Cidades>.Sucesso(this);
+        }
+        catch (DomainException ex)
+        {
+            return Resultado<Cidades>.Falha(new ResultadoErro("CIDADE_INVALIDA", ex.Message));
+        }
+    }
+
     public void Atualizar(string cidade, short ddd, Estados estado)
     {
         DefinirDados(cidade, ddd, estado);

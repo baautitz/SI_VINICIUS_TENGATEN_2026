@@ -24,31 +24,44 @@ public sealed class CidadesService
   public Task<Cidades?> ObterCidadePorId(int id)
       => _cidadesRepository.ObterCidadePorId(id);
 
-  public async Task<Cidades> CriarCidade(CreateCidadeDto dto)
+  public async Task<Resultado<Cidades>> CriarCidade(CreateCidadeDto dto)
   {
-    new CreateCidadeDtoValidator().ValidateAndThrow(dto);
+    var validation = new CreateCidadeDtoValidator().Validate(dto);
+    if (!validation.IsValid)
+      return Resultado<Cidades>.Falha(validation.ToResultadoErros());
 
     var estado = await _estadosRepository.ObterEstadoPorId(dto.EstadoId);
     if (estado is null)
-      throw new DomainException("Estado não encontrado.");
+      return Resultado<Cidades>.Falha(new ResultadoErro("ESTADO_NAO_ENCONTRADO", "Estado não encontrado."));
 
-    return await _cidadesRepository.CriarCidade(new Cidades(dto.Cidade, dto.Ddd, estado));
+    var entidadeResult = Cidades.Criar(dto.Cidade, dto.Ddd, estado);
+    if (!entidadeResult.Success)
+      return entidadeResult;
+
+    var criado = await _cidadesRepository.CriarCidade(entidadeResult.Data!);
+    return Resultado<Cidades>.Sucesso(criado);
   }
 
-  public async Task<Cidades> AtualizarCidade(int id, UpdateCidadeDto dto)
+  public async Task<Resultado<Cidades>> AtualizarCidade(int id, UpdateCidadeDto dto)
   {
-    new UpdateCidadeDtoValidator().ValidateAndThrow(dto);
+    var validation = new UpdateCidadeDtoValidator().Validate(dto);
+    if (!validation.IsValid)
+      return Resultado<Cidades>.Falha(validation.ToResultadoErros());
 
     var existente = await _cidadesRepository.ObterCidadePorId(id);
     if (existente is null)
-      throw new DomainException("Cidade não encontrada.");
+      return Resultado<Cidades>.Falha(new ResultadoErro("CIDADE_NAO_ENCONTRADA", "Cidade não encontrada."));
 
     var estado = await _estadosRepository.ObterEstadoPorId(dto.EstadoId);
     if (estado is null)
-      throw new DomainException("Estado não encontrado.");
+      return Resultado<Cidades>.Falha(new ResultadoErro("ESTADO_NAO_ENCONTRADO", "Estado não encontrado."));
 
-    existente.Atualizar(dto.Cidade, dto.Ddd, estado);
-    return await _cidadesRepository.AtualizarCidade(id, existente);
+    var updateResult = existente.AtualizarResultado(dto.Cidade, dto.Ddd, estado);
+    if (!updateResult.Success)
+      return updateResult;
+
+    var atualizado = await _cidadesRepository.AtualizarCidade(id, existente);
+    return Resultado<Cidades>.Sucesso(atualizado);
   }
 
   public Task<bool> DeletarCidade(int id)

@@ -24,31 +24,44 @@ public sealed class BairrosService
   public Task<Bairros?> ObterBairroPorId(int id)
       => _bairrosRepository.ObterBairroPorId(id);
 
-  public async Task<Bairros> CriarBairro(CreateBairroDto dto)
+  public async Task<Resultado<Bairros>> CriarBairro(CreateBairroDto dto)
   {
-    new CreateBairroDtoValidator().ValidateAndThrow(dto);
+    var validation = new CreateBairroDtoValidator().Validate(dto);
+    if (!validation.IsValid)
+      return Resultado<Bairros>.Falha(validation.ToResultadoErros());
 
     var cidade = await _cidadesRepository.ObterCidadePorId(dto.CidadeId);
     if (cidade is null)
-      throw new DomainException("Cidade não encontrada.");
+      return Resultado<Bairros>.Falha(new ResultadoErro("CIDADE_NAO_ENCONTRADA", "Cidade não encontrada."));
 
-    return await _bairrosRepository.CriarBairro(new Bairros(dto.Bairro, cidade));
+    var entidadeResult = Bairros.Criar(dto.Bairro, cidade);
+    if (!entidadeResult.Success)
+      return entidadeResult;
+
+    var criado = await _bairrosRepository.CriarBairro(entidadeResult.Data!);
+    return Resultado<Bairros>.Sucesso(criado);
   }
 
-  public async Task<Bairros> AtualizarBairro(int id, UpdateBairroDto dto)
+  public async Task<Resultado<Bairros>> AtualizarBairro(int id, UpdateBairroDto dto)
   {
-    new UpdateBairroDtoValidator().ValidateAndThrow(dto);
+    var validation = new UpdateBairroDtoValidator().Validate(dto);
+    if (!validation.IsValid)
+      return Resultado<Bairros>.Falha(validation.ToResultadoErros());
 
     var existente = await _bairrosRepository.ObterBairroPorId(id);
     if (existente is null)
-      throw new DomainException("Bairro não encontrado.");
+      return Resultado<Bairros>.Falha(new ResultadoErro("BAIRRO_NAO_ENCONTRADO", "Bairro não encontrado."));
 
     var cidade = await _cidadesRepository.ObterCidadePorId(dto.CidadeId);
     if (cidade is null)
-      throw new DomainException("Cidade não encontrada.");
+      return Resultado<Bairros>.Falha(new ResultadoErro("CIDADE_NAO_ENCONTRADA", "Cidade não encontrada."));
 
-    existente.Atualizar(dto.Bairro, cidade);
-    return await _bairrosRepository.AtualizarBairro(id, existente);
+    var updateResult = existente.AtualizarResultado(dto.Bairro, cidade);
+    if (!updateResult.Success)
+      return updateResult;
+
+    var atualizado = await _bairrosRepository.AtualizarBairro(id, existente);
+    return Resultado<Bairros>.Sucesso(atualizado);
   }
 
   public Task<bool> DeletarBairro(int id)

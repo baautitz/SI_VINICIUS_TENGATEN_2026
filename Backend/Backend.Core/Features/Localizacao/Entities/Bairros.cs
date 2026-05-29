@@ -20,6 +20,31 @@ public class Bairros
         Id = id;
     }
 
+    public static Resultado<Bairros> Criar(string bairro, Cidades cidade)
+    {
+        try
+        {
+            return Resultado<Bairros>.Sucesso(new Bairros(bairro, cidade));
+        }
+        catch (DomainException ex)
+        {
+            return Resultado<Bairros>.Falha(new ResultadoErro("BAIRRO_INVALIDO", ex.Message));
+        }
+    }
+
+    public Resultado<Bairros> AtualizarResultado(string bairro, Cidades cidade)
+    {
+        try
+        {
+            Atualizar(bairro, cidade);
+            return Resultado<Bairros>.Sucesso(this);
+        }
+        catch (DomainException ex)
+        {
+            return Resultado<Bairros>.Falha(new ResultadoErro("BAIRRO_INVALIDO", ex.Message));
+        }
+    }
+
     public void Atualizar(string bairro, Cidades cidade)
     {
         DefinirDados(bairro, cidade);

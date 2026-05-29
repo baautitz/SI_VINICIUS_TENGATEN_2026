@@ -22,6 +22,31 @@ public class Paises
         Id = id;
     }
 
+    public static Resultado<Paises> Criar(string ddi, string siglaIso, string moeda, string simboloMoeda, string pais)
+    {
+        try
+        {
+            return Resultado<Paises>.Sucesso(new Paises(ddi, siglaIso, moeda, simboloMoeda, pais));
+        }
+        catch (DomainException ex)
+        {
+            return Resultado<Paises>.Falha(new ResultadoErro("PAIS_INVALIDO", ex.Message));
+        }
+    }
+
+    public Resultado<Paises> AtualizarResultado(string ddi, string siglaIso, string moeda, string simboloMoeda, string pais)
+    {
+        try
+        {
+            Atualizar(ddi, siglaIso, moeda, simboloMoeda, pais);
+            return Resultado<Paises>.Sucesso(this);
+        }
+        catch (DomainException ex)
+        {
+            return Resultado<Paises>.Falha(new ResultadoErro("PAIS_INVALIDO", ex.Message));
+        }
+    }
+
     public void Atualizar(string ddi, string siglaIso, string moeda, string simboloMoeda, string pais)
     {
         DefinirDados(ddi, siglaIso, moeda, simboloMoeda, pais);

@@ -8,14 +8,19 @@ public sealed class UpdateEstadoDtoValidator : AbstractValidator<UpdateEstadoDto
   public UpdateEstadoDtoValidator()
   {
     RuleFor(x => x.Estado)
-        .NotEmpty().WithMessage("Estado é obrigatório.");
+        .NotEmpty().WithMessage("Estado é obrigatório.")
+        .WithErrorCode("ESTADO_OBRIGATORIO");
 
     RuleFor(x => x.Uf)
         .NotEmpty().WithMessage("UF é obrigatório.")
+        .WithErrorCode("UF_OBRIGATORIO")
         .Length(2).WithMessage("UF deve ter 2 caracteres.")
-        .Matches("^[A-Z]+$").WithMessage("UF deve conter apenas letras maiúsculas.");
+        .WithErrorCode("UF_TAMANHO_INVALIDO")
+        .Matches("^[A-Z]+$").WithMessage("UF deve conter apenas letras maiúsculas.")
+        .WithErrorCode("UF_FORMATO_INVALIDO");
 
     RuleFor(x => x.PaisId)
-        .GreaterThan(0).WithMessage("País é obrigatório.");
+        .GreaterThan(0).WithMessage("País é obrigatório.")
+        .WithErrorCode("PAIS_OBRIGATORIO");
   }
 }
