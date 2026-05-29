@@ -1,6 +1,4 @@
 using Backend.Core.Common;
-using System.Collections.ObjectModel;
-using System.Linq;
 
 namespace Backend.Core.Features.Pagamentos.Entities;
 

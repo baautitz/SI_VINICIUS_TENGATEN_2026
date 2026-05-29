@@ -1,6 +1,5 @@
 using Backend.Core.Common;
 using Backend.Core.Features.UnidadeMedida.Entities;
-using System.Collections.ObjectModel;
 
 namespace Backend.Core.Features.Catalogo.Entities;
 

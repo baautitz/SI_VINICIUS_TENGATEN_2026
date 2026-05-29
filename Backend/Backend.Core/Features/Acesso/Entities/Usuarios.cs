@@ -1,5 +1,4 @@
 using Backend.Core.Common;
-using System.Collections.ObjectModel;
 
 namespace Backend.Core.Features.Acesso.Entities;
 

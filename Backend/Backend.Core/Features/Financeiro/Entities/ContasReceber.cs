@@ -3,7 +3,6 @@ using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.NFe.Entities;
 using Backend.Core.Features.Pagamentos.Entities;
 using Backend.Core.Features.Parceiros.Entities;
-using System.Collections.ObjectModel;
 
 namespace Backend.Core.Features.Financeiro.Entities;
 
