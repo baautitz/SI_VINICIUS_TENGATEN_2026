@@ -1,5 +1,4 @@
 using Backend.Core.Common;
-using Backend.Core.Features.Localizacao.Entities;
 
 namespace Backend.Core.Features.Localizacao.Entities;
 
@@ -10,9 +9,11 @@ public class Cidades
     public short Ddd { get; private set; }
     public Estados Estado { get; private set; } = null!;
 
-    public Cidades(string cidade, short ddd, Estados estado)
+    private Cidades(string cidade, short ddd, Estados estado)
     {
-        DefinirDados(cidade, ddd, estado);
+        Cidade = cidade;
+        Ddd = ddd;
+        Estado = estado;
     }
 
     public Cidades(int id, string cidade, short ddd, Estados estado)
@@ -23,52 +24,40 @@ public class Cidades
 
     public static Resultado<Cidades> Criar(string cidade, short ddd, Estados estado)
     {
-        try
-        {
-            return Resultado<Cidades>.Sucesso(new Cidades(cidade, ddd, estado));
-        }
-        catch (DomainException ex)
-        {
-            return Resultado<Cidades>.Falha(new ResultadoErro("CIDADE_INVALIDA", ex.Message));
-        }
+        var validation = ValidarDados(cidade, ddd, estado, out var normalizedCidade, out var normalizedEstado);
+        if (!validation.Success)
+            return Resultado<Cidades>.Falha(validation.Errors!);
+
+        return Resultado<Cidades>.Sucesso(new Cidades(normalizedCidade, ddd, normalizedEstado!));
     }
 
     public Resultado<Cidades> AtualizarResultado(string cidade, short ddd, Estados estado)
     {
-        try
-        {
-            Atualizar(cidade, ddd, estado);
-            return Resultado<Cidades>.Sucesso(this);
-        }
-        catch (DomainException ex)
-        {
-            return Resultado<Cidades>.Falha(new ResultadoErro("CIDADE_INVALIDA", ex.Message));
-        }
+        var validation = ValidarDados(cidade, ddd, estado, out var normalizedCidade, out var normalizedEstado);
+        if (!validation.Success)
+            return Resultado<Cidades>.Falha(validation.Errors!);
+
+        Cidade = normalizedCidade;
+        Ddd = ddd;
+        Estado = normalizedEstado!;
+
+        return Resultado<Cidades>.Sucesso(this);
     }
 
-    public void Atualizar(string cidade, short ddd, Estados estado)
+    private static Resultado ValidarDados(string cidade, short ddd, Estados estado, out string normalizedCidade, out Estados? normalizedEstado)
     {
-        DefinirDados(cidade, ddd, estado);
-    }
+        normalizedCidade = TextNormalization.Normalize(cidade);
+        normalizedEstado = estado;
 
-    public void DefinirEstado(Estados estado)
-    {
-        Estado = estado ?? throw new DomainException("Estado é obrigatório para cidade.");
-    }
-
-    private void DefinirDados(string cidade, short ddd, Estados estado)
-    {
-        cidade = TextNormalization.Normalize(cidade);
-
-        if (string.IsNullOrWhiteSpace(cidade))
-            throw new DomainException("Cidade é obrigatória.");
+        if (string.IsNullOrWhiteSpace(normalizedCidade))
+            return Resultado.Falha(new ResultadoErro("CIDADE_OBRIGATORIA", "Cidade é obrigatória.", "Cidade"));
 
         if (ddd <= 0)
-            throw new DomainException("DDD deve ser maior que zero.");
+            return Resultado.Falha(new ResultadoErro("DDD_INVALIDO", "DDD deve ser maior que zero.", "Ddd"));
 
-        Estado = estado ?? throw new DomainException("Estado é obrigatório para cidade.");
+        if (normalizedEstado is null)
+            return Resultado.Falha(new ResultadoErro("ESTADO_OBRIGATORIO", "Estado é obrigatório para cidade.", "Estado"));
 
-        Cidade = cidade;
-        Ddd = ddd;
+        return Resultado.Sucesso();
     }
 }

@@ -11,9 +11,13 @@ public class Paises
     public string SimboloMoeda { get; private set; } = null!;
     public string Pais { get; private set; } = null!;
 
-    public Paises(string ddi, string siglaIso, string moeda, string simboloMoeda, string pais)
+    private Paises(string ddi, string siglaIso, string moeda, string simboloMoeda, string pais)
     {
-        DefinirDados(ddi, siglaIso, moeda, simboloMoeda, pais);
+        Ddi = ddi;
+        SiglaIso = siglaIso;
+        Moeda = moeda;
+        SimboloMoeda = simboloMoeda;
+        Pais = pais;
     }
 
     public Paises(int id, string ddi, string siglaIso, string moeda, string simboloMoeda, string pais)
@@ -24,66 +28,73 @@ public class Paises
 
     public static Resultado<Paises> Criar(string ddi, string siglaIso, string moeda, string simboloMoeda, string pais)
     {
-        try
-        {
-            return Resultado<Paises>.Sucesso(new Paises(ddi, siglaIso, moeda, simboloMoeda, pais));
-        }
-        catch (DomainException ex)
-        {
-            return Resultado<Paises>.Falha(new ResultadoErro("PAIS_INVALIDO", ex.Message));
-        }
+        var validation = ValidarDados(ddi, siglaIso, moeda, simboloMoeda, pais,
+            out var normalizedDdi,
+            out var normalizedSiglaIso,
+            out var normalizedMoeda,
+            out var normalizedSimboloMoeda,
+            out var normalizedPais);
+
+        if (!validation.Success)
+            return Resultado<Paises>.Falha(validation.Errors!);
+
+        return Resultado<Paises>.Sucesso(new Paises(normalizedDdi, normalizedSiglaIso, normalizedMoeda, normalizedSimboloMoeda, normalizedPais));
     }
 
     public Resultado<Paises> AtualizarResultado(string ddi, string siglaIso, string moeda, string simboloMoeda, string pais)
     {
-        try
-        {
-            Atualizar(ddi, siglaIso, moeda, simboloMoeda, pais);
-            return Resultado<Paises>.Sucesso(this);
-        }
-        catch (DomainException ex)
-        {
-            return Resultado<Paises>.Falha(new ResultadoErro("PAIS_INVALIDO", ex.Message));
-        }
+        var validation = ValidarDados(ddi, siglaIso, moeda, simboloMoeda, pais,
+            out var normalizedDdi,
+            out var normalizedSiglaIso,
+            out var normalizedMoeda,
+            out var normalizedSimboloMoeda,
+            out var normalizedPais);
+
+        if (!validation.Success)
+            return Resultado<Paises>.Falha(validation.Errors!);
+
+        Ddi = normalizedDdi;
+        SiglaIso = normalizedSiglaIso;
+        Moeda = normalizedMoeda;
+        SimboloMoeda = normalizedSimboloMoeda;
+        Pais = normalizedPais;
+
+        return Resultado<Paises>.Sucesso(this);
     }
 
-    public void Atualizar(string ddi, string siglaIso, string moeda, string simboloMoeda, string pais)
-    {
-        DefinirDados(ddi, siglaIso, moeda, simboloMoeda, pais);
-    }
-
-    private void DefinirDados(
+    private static Resultado ValidarDados(
         string ddi,
         string siglaIso,
         string moeda,
         string simboloMoeda,
-        string pais)
+        string pais,
+        out string normalizedDdi,
+        out string normalizedSiglaIso,
+        out string normalizedMoeda,
+        out string normalizedSimboloMoeda,
+        out string normalizedPais)
     {
-        ddi = TextNormalization.Normalize(ddi);
-        siglaIso = TextNormalization.Normalize(siglaIso);
-        moeda = TextNormalization.Normalize(moeda);
-        simboloMoeda = TextNormalization.Normalize(simboloMoeda);
-        pais = TextNormalization.Normalize(pais);
+        normalizedDdi = TextNormalization.Normalize(ddi);
+        normalizedSiglaIso = TextNormalization.Normalize(siglaIso);
+        normalizedMoeda = TextNormalization.Normalize(moeda);
+        normalizedSimboloMoeda = TextNormalization.Normalize(simboloMoeda);
+        normalizedPais = TextNormalization.Normalize(pais);
 
-        if (string.IsNullOrWhiteSpace(ddi))
-            throw new DomainException("DDI é obrigatório.");
+        if (string.IsNullOrWhiteSpace(normalizedDdi))
+            return Resultado.Falha(new ResultadoErro("DDI_OBRIGATORIO", "DDI é obrigatório.", "Ddi"));
 
-        if (string.IsNullOrWhiteSpace(siglaIso))
-            throw new DomainException("Sigla ISO é obrigatória.");
+        if (string.IsNullOrWhiteSpace(normalizedSiglaIso))
+            return Resultado.Falha(new ResultadoErro("SIGLAISO_OBRIGATORIO", "Sigla ISO é obrigatória.", "SiglaIso"));
 
-        if (string.IsNullOrWhiteSpace(moeda))
-            throw new DomainException("Moeda é obrigatória.");
+        if (string.IsNullOrWhiteSpace(normalizedMoeda))
+            return Resultado.Falha(new ResultadoErro("MOEDA_OBRIGATORIA", "Moeda é obrigatória.", "Moeda"));
 
-        if (string.IsNullOrWhiteSpace(simboloMoeda))
-            throw new DomainException("Símbolo da moeda é obrigatório.");
+        if (string.IsNullOrWhiteSpace(normalizedSimboloMoeda))
+            return Resultado.Falha(new ResultadoErro("SIMBOLO_MOEDA_OBRIGATORIO", "Símbolo da moeda é obrigatório.", "SimboloMoeda"));
 
-        if (string.IsNullOrWhiteSpace(pais))
-            throw new DomainException("País é obrigatório.");
+        if (string.IsNullOrWhiteSpace(normalizedPais))
+            return Resultado.Falha(new ResultadoErro("PAIS_OBRIGATORIO", "País é obrigatório.", "Pais"));
 
-        Ddi = ddi;
-        SiglaIso = siglaIso;
-        Moeda = moeda;
-        SimboloMoeda = simboloMoeda;
-        Pais = pais;
+        return Resultado.Sucesso();
     }
 }

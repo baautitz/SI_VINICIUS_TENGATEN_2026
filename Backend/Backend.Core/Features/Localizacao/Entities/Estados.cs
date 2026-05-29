@@ -1,5 +1,4 @@
 using Backend.Core.Common;
-using Backend.Core.Features.Localizacao.Entities;
 
 namespace Backend.Core.Features.Localizacao.Entities;
 
@@ -10,9 +9,11 @@ public class Estados
     public string Uf { get; private set; } = null!;
     public Paises Pais { get; private set; } = null!;
 
-    public Estados(string estado, string uf, Paises pais)
+    private Estados(string estado, string uf, Paises pais)
     {
-        DefinirDados(estado, uf, pais);
+        Estado = estado;
+        Uf = uf;
+        Pais = pais;
     }
 
     public Estados(int id, string estado, string uf, Paises pais)
@@ -23,53 +24,41 @@ public class Estados
 
     public static Resultado<Estados> Criar(string estado, string uf, Paises pais)
     {
-        try
-        {
-            return Resultado<Estados>.Sucesso(new Estados(estado, uf, pais));
-        }
-        catch (DomainException ex)
-        {
-            return Resultado<Estados>.Falha(new ResultadoErro("ESTADO_INVALIDO", ex.Message));
-        }
+        var validation = ValidarDados(estado, uf, pais, out var normalizedEstado, out var normalizedUf, out var normalizedPais);
+        if (!validation.Success)
+            return Resultado<Estados>.Falha(validation.Errors!);
+
+        return Resultado<Estados>.Sucesso(new Estados(normalizedEstado, normalizedUf, normalizedPais!));
     }
 
     public Resultado<Estados> AtualizarResultado(string estado, string uf, Paises pais)
     {
-        try
-        {
-            Atualizar(estado, uf, pais);
-            return Resultado<Estados>.Sucesso(this);
-        }
-        catch (DomainException ex)
-        {
-            return Resultado<Estados>.Falha(new ResultadoErro("ESTADO_INVALIDO", ex.Message));
-        }
+        var validation = ValidarDados(estado, uf, pais, out var normalizedEstado, out var normalizedUf, out var normalizedPais);
+        if (!validation.Success)
+            return Resultado<Estados>.Falha(validation.Errors!);
+
+        Estado = normalizedEstado;
+        Uf = normalizedUf;
+        Pais = normalizedPais!;
+
+        return Resultado<Estados>.Sucesso(this);
     }
 
-    public void Atualizar(string estado, string uf, Paises pais)
+    private static Resultado ValidarDados(string estado, string uf, Paises pais, out string normalizedEstado, out string normalizedUf, out Paises? normalizedPais)
     {
-        DefinirDados(estado, uf, pais);
-    }
+        normalizedEstado = TextNormalization.Normalize(estado);
+        normalizedUf = TextNormalization.Normalize(uf);
+        normalizedPais = pais;
 
-    public void DefinirPais(Paises pais)
-    {
-        Pais = pais ?? throw new DomainException("País é obrigatório para estado.");
-    }
+        if (string.IsNullOrWhiteSpace(normalizedEstado))
+            return Resultado.Falha(new ResultadoErro("ESTADO_OBRIGATORIO", "Estado é obrigatório.", "Estado"));
 
-    private void DefinirDados(string estado, string uf, Paises pais)
-    {
-        estado = TextNormalization.Normalize(estado);
-        uf = TextNormalization.Normalize(uf);
+        if (string.IsNullOrWhiteSpace(normalizedUf))
+            return Resultado.Falha(new ResultadoErro("UF_OBRIGATORIO", "UF é obrigatório.", "Uf"));
 
-        if (string.IsNullOrWhiteSpace(estado))
-            throw new DomainException("Estado é obrigatório.");
+        if (normalizedPais is null)
+            return Resultado.Falha(new ResultadoErro("PAIS_OBRIGATORIO", "País é obrigatório para estado.", "Pais"));
 
-        if (string.IsNullOrWhiteSpace(uf))
-            throw new DomainException("UF é obrigatório.");
-
-        Pais = pais ?? throw new DomainException("País é obrigatório para estado.");
-
-        Estado = estado;
-        Uf = uf;
+        return Resultado.Sucesso();
     }
 }

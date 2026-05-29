@@ -1,5 +1,4 @@
 using Backend.Core.Common;
-using Backend.Core.Features.Localizacao.Entities;
 
 namespace Backend.Core.Features.Localizacao.Entities;
 
@@ -9,9 +8,10 @@ public class Bairros
     public string Bairro { get; private set; } = null!;
     public Cidades Cidade { get; private set; } = null!;
 
-    public Bairros(string bairro, Cidades cidade)
+    private Bairros(string bairro, Cidades cidade)
     {
-        DefinirDados(bairro, cidade);
+        Bairro = bairro;
+        Cidade = cidade;
     }
 
     public Bairros(int id, string bairro, Cidades cidade)
@@ -22,48 +22,36 @@ public class Bairros
 
     public static Resultado<Bairros> Criar(string bairro, Cidades cidade)
     {
-        try
-        {
-            return Resultado<Bairros>.Sucesso(new Bairros(bairro, cidade));
-        }
-        catch (DomainException ex)
-        {
-            return Resultado<Bairros>.Falha(new ResultadoErro("BAIRRO_INVALIDO", ex.Message));
-        }
+        var validation = ValidarDados(bairro, cidade, out var normalizedBairro, out var normalizedCidade);
+        if (!validation.Success)
+            return Resultado<Bairros>.Falha(validation.Errors!);
+
+        return Resultado<Bairros>.Sucesso(new Bairros(normalizedBairro, normalizedCidade!));
     }
 
     public Resultado<Bairros> AtualizarResultado(string bairro, Cidades cidade)
     {
-        try
-        {
-            Atualizar(bairro, cidade);
-            return Resultado<Bairros>.Sucesso(this);
-        }
-        catch (DomainException ex)
-        {
-            return Resultado<Bairros>.Falha(new ResultadoErro("BAIRRO_INVALIDO", ex.Message));
-        }
+        var validation = ValidarDados(bairro, cidade, out var normalizedBairro, out var normalizedCidade);
+        if (!validation.Success)
+            return Resultado<Bairros>.Falha(validation.Errors!);
+
+        Bairro = normalizedBairro;
+        Cidade = normalizedCidade!;
+
+        return Resultado<Bairros>.Sucesso(this);
     }
 
-    public void Atualizar(string bairro, Cidades cidade)
+    private static Resultado ValidarDados(string bairro, Cidades cidade, out string normalizedBairro, out Cidades? normalizedCidade)
     {
-        DefinirDados(bairro, cidade);
-    }
+        normalizedBairro = TextNormalization.Normalize(bairro);
+        normalizedCidade = cidade;
 
-    public void DefinirCidade(Cidades cidade)
-    {
-        Cidade = cidade ?? throw new DomainException("Cidade é obrigatória para bairro.");
-    }
+        if (string.IsNullOrWhiteSpace(normalizedBairro))
+            return Resultado.Falha(new ResultadoErro("BAIRRO_OBRIGATORIO", "Bairro é obrigatório.", "Bairro"));
 
-    private void DefinirDados(string bairro, Cidades cidade)
-    {
-        bairro = TextNormalization.Normalize(bairro);
+        if (normalizedCidade is null)
+            return Resultado.Falha(new ResultadoErro("CIDADE_OBRIGATORIA", "Cidade é obrigatória para bairro.", "Cidade"));
 
-        if (string.IsNullOrWhiteSpace(bairro))
-            throw new DomainException("Bairro é obrigatório.");
-
-        Cidade = cidade ?? throw new DomainException("Cidade é obrigatória para bairro.");
-
-        Bairro = bairro;
+        return Resultado.Sucesso();
     }
 }
