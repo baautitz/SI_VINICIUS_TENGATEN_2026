@@ -1,14 +1,11 @@
 using Backend.Core.Common;
-
-using Backend.Core.Common;
-
 using Backend.Core.Features.Localizacao.DTOs;
-
 using Backend.Core.Features.Localizacao.Entities;
 
-namespace Backend.Core.Features.Localizacao.Repositories; 
+namespace Backend.Core.Features.Localizacao.Repositories;
 
-public interface IEstadosRepository {
+public interface IEstadosRepository
+{
     public Task<ResultadoPaginado<Estados>> ObterEstados(int pagina = 1, int tamanhoDaPagina = 20);
     public Task<Estados?> ObterEstadoPorId(int id);
     public Task<Estados> CriarEstado(Estados estado);

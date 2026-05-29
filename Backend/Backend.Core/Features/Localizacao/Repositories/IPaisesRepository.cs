@@ -1,7 +1,5 @@
 using Backend.Core.Common;
-
 using Backend.Core.Features.Localizacao.DTOs;
-
 using Backend.Core.Features.Localizacao.Entities;
 
 namespace Backend.Core.Features.Localizacao.Repositories;
