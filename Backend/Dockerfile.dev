@@ -1,14 +1,16 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS deps
+WORKDIR /src
+COPY ["backend.slnx", "."]
+COPY ["Backend.Core/Backend.Core.csproj", "Backend.Core/"]
+COPY ["Backend.Infrastructure.PostgreSQL/Backend.Infrastructure.PostgreSQL.csproj", "Backend.Infrastructure.PostgreSQL/"]
+COPY ["Backend.Web/Backend.Web.csproj", "Backend.Web/"]
+RUN dotnet restore "backend.slnx"
+
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS development
-
 WORKDIR /app
-
-# Ativar polling para que o dotnet watch perceba mudanças através do volume mapeado
 ENV DOTNET_USE_POLLING_FILE_WATCHER=1
 ENV ASPNETCORE_ENVIRONMENT=Development
-
-# Vamos expor a porta padrão do .NET
+ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
-
-# Usamos o dotnet watch para hot-reload.
-# Os caminhos de bin e obj são definidos condicionalmente no próprio backend.csproj (quando DOTNET_RUNNING_IN_CONTAINER=true)
-ENTRYPOINT ["dotnet", "watch", "run", "--no-launch-profile", "--project", "backend.csproj"]
+COPY --from=deps /root/.nuget /root/.nuget
+ENTRYPOINT ["dotnet", "watch", "run", "--no-launch-profile", "--project", "Backend.Web/Backend.Web.csproj"]

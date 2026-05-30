@@ -23,15 +23,14 @@ services:
       context: ../backend
       dockerfile: Dockerfile
     restart: unless-stopped
+    ports:
+      - "8080:8080"
     environment:
-      ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
     depends_on:
       postgres:
         condition: service_healthy
-    expose:
-      - "8080"
-
 
 volumes:
   postgres_data:
