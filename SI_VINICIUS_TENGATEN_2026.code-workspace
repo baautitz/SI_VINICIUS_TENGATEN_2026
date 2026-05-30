@@ -4,12 +4,16 @@
 			"path": "Backend"
 		},
 		{
+			"path": "frontend"
+		},
+		{
 			"path": "."
 		}
 	],
 	"settings": {
 		"files.exclude": {
-			"Backend": true
+			"Backend": true,
+			"frontend": true
 		}
 	}
 }
