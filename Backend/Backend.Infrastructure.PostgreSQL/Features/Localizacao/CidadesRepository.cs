@@ -39,8 +39,8 @@ public class CidadesRepository : ICidadesRepository
             querySql,
             (cidade, estado, pais) =>
             {
-                estado.Atualizar(estado.Estado, estado.Uf, pais);
-                cidade.Atualizar(cidade.Cidade, cidade.Ddd, estado);
+                estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
+                cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
                 return cidade;
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
@@ -66,8 +66,8 @@ public class CidadesRepository : ICidadesRepository
             sql,
             (cidade, estado, pais) =>
             {
-                estado.Atualizar(estado.Estado, estado.Uf, pais);
-                cidade.Atualizar(cidade.Cidade, cidade.Ddd, estado);
+                estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
+                cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
                 return cidade;
             },
             new { Id = id },

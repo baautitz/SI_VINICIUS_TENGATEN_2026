@@ -37,7 +37,7 @@ public class EstadosRepository : IEstadosRepository
             querySql,
             (estado, pais) =>
             {
-                estado.Atualizar(estado.Estado, estado.Uf, pais);
+                estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
                 return estado;
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
@@ -61,7 +61,7 @@ public class EstadosRepository : IEstadosRepository
             sql,
             (estado, pais) =>
             {
-                estado.Atualizar(estado.Estado, estado.Uf, pais);
+                estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
                 return estado;
             },
             new { Id = id },

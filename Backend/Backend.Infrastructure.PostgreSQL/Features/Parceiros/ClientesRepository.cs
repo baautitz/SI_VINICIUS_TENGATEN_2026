@@ -66,9 +66,9 @@ public class ClientesRepository : IClientesRepository
             {
                 if (bairro is not null)
                 {
-                    if (pais is not null && estado is not null) estado.Atualizar(estado.Estado, estado.Uf, pais);
-                    if (estado is not null && cidade is not null) cidade.Atualizar(cidade.Cidade, cidade.Ddd, estado);
-                    if (cidade is not null) bairro.Atualizar(bairro.Bairro, cidade);
+                    if (pais is not null && estado is not null) estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
+                    if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
+                    if (cidade is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
                     cliente.AtualizarDados(cliente.NomeRazaoSocial, cliente.CpfCnpj, cliente.RgIe, cliente.ApelidoNomeFantasia, cliente.Endereco, bairro, cliente.Telefone, cliente.Email, cliente.LimiteCredito, cliente.Observacao);
                 }
                 return cliente;

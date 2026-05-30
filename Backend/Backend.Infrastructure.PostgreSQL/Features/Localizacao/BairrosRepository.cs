@@ -41,9 +41,9 @@ public class BairrosRepository : IBairrosRepository
             querySql,
             (bairro, cidade, estado, pais) =>
             {
-                estado.Atualizar(estado.Estado, estado.Uf, pais);
-                cidade.Atualizar(cidade.Cidade, cidade.Ddd, estado);
-                bairro.Atualizar(bairro.Bairro, cidade);
+                estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
+                cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
+                bairro.AtualizarResultado(bairro.Bairro, cidade);
                 return bairro;
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
@@ -71,9 +71,9 @@ public class BairrosRepository : IBairrosRepository
             sql,
             (bairro, cidade, estado, pais) =>
             {
-                estado.Atualizar(estado.Estado, estado.Uf, pais);
-                cidade.Atualizar(cidade.Cidade, cidade.Ddd, estado);
-                bairro.Atualizar(bairro.Bairro, cidade);
+                estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
+                cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
+                bairro.AtualizarResultado(bairro.Bairro, cidade);
                 return bairro;
             },
             new { Id = id },
