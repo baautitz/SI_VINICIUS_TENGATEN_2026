@@ -16,143 +16,61 @@ public class PaisesRepository : IPaisesRepository
         _session = session;
     }
 
-    public async Task<ResultadoPaginado<Paises>> ObterPaises(int pagina = 1, int tamanhoPagina = 20)
+    public async Task<ResultadoPaginado<PaisResumoDto>> ObterPaises(string? search, int pagina = 1, int tamanhoPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoPagina;
 
-        const string sql = @"
-            SELECT COUNT(*) FROM paises;
+        string sql;
+        object parametros;
 
-            SELECT * FROM paises 
-            ORDER BY pais 
-            LIMIT @TamanhoPagina OFFSET @Offset;";
+        if (string.IsNullOrWhiteSpace(search))
+        {
+            sql = @"
+                SELECT COUNT(*) FROM paises;
+                SELECT id, pais AS Pais, sigla_iso AS SiglaIso, ddi AS Ddi, moeda AS Moeda, simbolo_moeda AS SimboloMoeda
+                FROM paises ORDER BY pais LIMIT @TamanhoPagina OFFSET @Offset;";
+            parametros = new { TamanhoPagina = tamanhoPagina, Offset = offset };
+        }
+        else
+        {
+            sql = @"
+                SELECT COUNT(*) FROM paises WHERE unaccent(pais::text) ILIKE unaccent(@Termo::text) OR unaccent(sigla_iso::text) ILIKE unaccent(@Termo::text);
+                SELECT id, pais AS Pais, sigla_iso AS SiglaIso, ddi AS Ddi, moeda AS Moeda, simbolo_moeda AS SimboloMoeda
+                FROM paises WHERE unaccent(pais::text) ILIKE unaccent(@Termo::text) OR unaccent(sigla_iso::text) ILIKE unaccent(@Termo::text)
+                ORDER BY pais LIMIT @TamanhoPagina OFFSET @Offset;";
+            parametros = new { Termo = "%" + search + "%", TamanhoPagina = tamanhoPagina, Offset = offset };
+        }
 
-        using var multi = await _session.Connection.QueryMultipleAsync(
-            sql,
-            new { TamanhoPagina = tamanhoPagina, Offset = offset },
-            transaction: _session.Transaction
-        );
-
+        using var multi = await _session.Connection.QueryMultipleAsync(sql, parametros, transaction: _session.Transaction);
         var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<Paises>();
-
-        return new ResultadoPaginado<Paises>(itens, total, pagina, tamanhoPagina);
+        var itens = await multi.ReadAsync<PaisResumoDto>();
+        return new ResultadoPaginado<PaisResumoDto>(itens, total, pagina, tamanhoPagina);
     }
 
     public async Task<Paises?> ObterPaisPorId(int id)
     {
-        const string sql = "SELECT * FROM paises WHERE id = @Id;";
-
-        return await _session.Connection.QuerySingleOrDefaultAsync<Paises>(
-            sql,
-            new { Id = id },
-            transaction: _session.Transaction
-        );
+        const string sql = "SELECT id, pais, sigla_iso AS SiglaIso, ddi, moeda, simbolo_moeda AS SimboloMoeda FROM paises WHERE id = @Id;";
+        return await _session.Connection.QuerySingleOrDefaultAsync<Paises>(sql, new { Id = id }, transaction: _session.Transaction);
     }
 
     public async Task<Paises> CriarPais(Paises pais)
     {
-        const string sql = @"
-            INSERT INTO paises (ddi, sigla_iso, moeda, simbolo_moeda, pais) 
-            VALUES (@Ddi, @SiglaIso, @Moeda, @SimboloMoeda, @Pais) 
-            RETURNING id;";
-
-        var idGerado = await _session.Connection.ExecuteScalarAsync<int>(
-            sql,
-            pais,
-            transaction: _session.Transaction
-        );
-
+        const string sql = "INSERT INTO paises (ddi, sigla_iso, moeda, simbolo_moeda, pais) VALUES (@Ddi, @SiglaIso, @Moeda, @SimboloMoeda, @Pais) RETURNING id;";
+        var idGerado = await _session.Connection.ExecuteScalarAsync<int>(sql, new { pais.Ddi, pais.SiglaIso, pais.Moeda, pais.SimboloMoeda, pais.Pais }, transaction: _session.Transaction);
         return new Paises(idGerado, pais.Ddi, pais.SiglaIso, pais.Moeda, pais.SimboloMoeda, pais.Pais);
     }
 
     public async Task<Paises> AtualizarPais(int id, Paises pais)
     {
-        const string sql = @"
-            UPDATE paises 
-            SET ddi = @Ddi, 
-                sigla_iso = @SiglaIso, 
-                moeda = @Moeda, 
-                simbolo_moeda = @SimboloMoeda, 
-                pais = @Pais 
-            WHERE id = @Id;";
-
-        var parametros = new
-        {
-            Id = id,
-            pais.Ddi,
-            pais.SiglaIso,
-            pais.Moeda,
-            pais.SimboloMoeda,
-            pais.Pais
-        };
-
-        await _session.Connection.ExecuteAsync(sql, parametros, transaction: _session.Transaction);
-
+        const string sql = "UPDATE paises SET ddi = @Ddi, sigla_iso = @SiglaIso, moeda = @Moeda, simbolo_moeda = @SimboloMoeda, pais = @Pais WHERE id = @Id;";
+        await _session.Connection.ExecuteAsync(sql, new { Id = id, pais.Ddi, pais.SiglaIso, pais.Moeda, pais.SimboloMoeda, pais.Pais }, transaction: _session.Transaction);
         return new Paises(id, pais.Ddi, pais.SiglaIso, pais.Moeda, pais.SimboloMoeda, pais.Pais);
     }
 
     public async Task<bool> DeletarPais(int id)
     {
         const string sql = "DELETE FROM paises WHERE id = @Id;";
-
-        var linhasAfetadas = await _session.Connection.ExecuteAsync(
-            sql,
-            new { Id = id },
-            transaction: _session.Transaction
-        );
-
-        return linhasAfetadas > 0;
-    }
-
-    public async Task<ResultadoPaginado<PaisResumoDto>> ObterPaisesResumo(int pagina = 1, int tamanhoPagina = 20)
-    {
-        var offset = (pagina - 1) * tamanhoPagina;
-
-        const string sql = @"
-            SELECT COUNT(*) FROM paises;
-
-            SELECT id, pais, sigla_iso, ddi, moeda, simbolo_moeda 
-            FROM paises 
-            ORDER BY pais 
-            LIMIT @TamanhoPagina OFFSET @Offset;";
-
-        using var multi = await _session.Connection.QueryMultipleAsync(
-            sql,
-            new { TamanhoPagina = tamanhoPagina, Offset = offset },
-            transaction: _session.Transaction
-        );
-
-        var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<PaisResumoDto>();
-
-        return new ResultadoPaginado<PaisResumoDto>(itens, total, pagina, tamanhoPagina);
-    }
-
-    public async Task<ResultadoPaginado<PaisResumoDto>> PesquisarPaises(string termo, int pagina = 1, int tamanhoPagina = 20)
-    {
-        var offset = (pagina - 1) * tamanhoPagina;
-
-        const string sql = @"
-            SELECT COUNT(*) 
-            FROM paises 
-            WHERE pais ILIKE @Termo OR sigla_iso ILIKE @Termo;
-
-            SELECT id, pais, sigla_iso, ddi, moeda, simbolo_moeda 
-            FROM paises 
-            WHERE pais ILIKE @Termo OR sigla_iso ILIKE @Termo 
-            ORDER BY pais 
-            LIMIT @TamanhoPagina OFFSET @Offset;";
-
-        using var multi = await _session.Connection.QueryMultipleAsync(
-            sql,
-            new { Termo = $"%{termo}%", TamanhoPagina = tamanhoPagina, Offset = offset },
-            transaction: _session.Transaction
-        );
-
-        var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<PaisResumoDto>();
-
-        return new ResultadoPaginado<PaisResumoDto>(itens, total, pagina, tamanhoPagina);
+        var rows = await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+        return rows > 0;
     }
 }
