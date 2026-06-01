@@ -85,7 +85,6 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4 h-full flex flex-col">
-      {/* Toolbar */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex flex-1 items-center gap-2">
           {onGlobalFilterChange && (
@@ -103,7 +102,6 @@ export function DataTable<TData, TValue>({
         </div>
       </div>
 
-      {/* Table */}
       <div className="rounded-xl border bg-card relative overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <Table>
@@ -178,7 +176,6 @@ export function DataTable<TData, TValue>({
         </div>
       </div>
 
-      {/* Footer / Pagination */}
       <div className="flex items-center justify-between mt-auto">
         <div className="flex-1 text-sm text-muted-foreground font-medium">
           {Object.keys(rowSelection).length} de{" "}
