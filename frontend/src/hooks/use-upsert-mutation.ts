@@ -1,23 +1,23 @@
-import React from "react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { extractApiErrors } from "@/utils/api-error"
+import React from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { extractApiErrors } from "@/utils/api-error";
 
 interface UseUpsertMutationOptions<TValue, TResponse> {
-  mutationFn: (value: TValue) => Promise<TResponse>
-  queryKey: string[]
-  onSuccessCallback?: (data?: TResponse) => void
-  onClose?: () => void
+  mutationFn: (value: TValue) => Promise<TResponse>;
+  queryKey: string[];
+  onSuccessCallback?: (data?: TResponse) => void;
+  onClose?: () => void;
 }
 
 export interface BackendError {
-  field?: string
-  message?: string
+  field?: string;
+  message?: string;
 }
 
 export interface BackendResult<TData = unknown> {
-  success?: boolean
-  errors?: BackendError[]
-  value?: TData
+  success?: boolean;
+  errors?: BackendError[];
+  value?: TData;
 }
 
 export function useUpsertMutation<TValue, TResponse = BackendResult>({
@@ -26,44 +26,45 @@ export function useUpsertMutation<TValue, TResponse = BackendResult>({
   onSuccessCallback,
   onClose,
 }: UseUpsertMutationOptions<TValue, TResponse>) {
-  const [backendFieldErrors, setBackendFieldErrors] = React.useState<Record<string, string>>({})
-  const [globalError, setGlobalError] = React.useState<string | null>(null)
-  
-  const queryClient = useQueryClient()
+  const [backendFieldErrors, setBackendFieldErrors] = React.useState<
+    Record<string, string>
+  >({});
+  const [globalError, setGlobalError] = React.useState<string | null>(null);
+
+  const queryClient = useQueryClient();
 
   const mutation = useMutation<TResponse, unknown, TValue>({
     mutationFn,
     onSuccess: (res) => {
-      // NSwag Result pattern fallback
-      const typedRes = res as BackendResult<unknown>
+      const typedRes = res as BackendResult<unknown>;
       if (!typedRes || typedRes.success || typedRes.success === undefined) {
-        queryClient.invalidateQueries({ queryKey })
-        onSuccessCallback?.(res)
-        onClose?.()
+        queryClient.invalidateQueries({ queryKey });
+        onSuccessCallback?.(res);
+        onClose?.();
       } else if (typedRes.errors) {
-        const apiErrors = extractApiErrors(res)
-        setBackendFieldErrors(apiErrors.fieldErrors)
-        if (apiErrors.globalError) setGlobalError(apiErrors.globalError)
+        const apiErrors = extractApiErrors(res);
+        setBackendFieldErrors(apiErrors.fieldErrors);
+        if (apiErrors.globalError) setGlobalError(apiErrors.globalError);
       }
     },
     onError: (e: unknown) => {
-      const apiErrors = extractApiErrors(e)
-      setBackendFieldErrors(apiErrors.fieldErrors)
-      if (apiErrors.globalError) setGlobalError(apiErrors.globalError)
-    }
-  })
+      const apiErrors = extractApiErrors(e);
+      setBackendFieldErrors(apiErrors.fieldErrors);
+      if (apiErrors.globalError) setGlobalError(apiErrors.globalError);
+    },
+  });
 
   const resetErrors = () => {
-    setBackendFieldErrors({})
-    setGlobalError(null)
-  }
+    setBackendFieldErrors({});
+    setGlobalError(null);
+  };
 
   const getFieldError = (name: string, formErrors: unknown[]) => {
-    const formError = formErrors?.[0]
+    const formError = formErrors?.[0];
     return formError
       ? (formError as { message?: string })?.message || String(formError)
-      : backendFieldErrors[name.toLowerCase()] || undefined
-  }
+      : backendFieldErrors[name.toLowerCase()] || undefined;
+  };
 
   return {
     mutation,
@@ -71,5 +72,5 @@ export function useUpsertMutation<TValue, TResponse = BackendResult>({
     globalError,
     getFieldError,
     resetErrors,
-  }
+  };
 }

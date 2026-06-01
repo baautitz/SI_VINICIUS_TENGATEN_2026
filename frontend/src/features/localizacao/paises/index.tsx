@@ -1,26 +1,26 @@
-"use client"
+"use client";
 
-import React from "react"
-import { PaisesClient } from "@/api/client"
-import { API_URL } from "@/api/url"
-import { PaisesList } from "./list"
-import { PaisesUpsert } from "./upsert"
-import { PaisDto } from "./types"
-import { DeleteDialog } from "@/components/ui/delete-dialog"
-import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator"
+import React from "react";
+import { PaisesClient } from "@/api/client";
+import { API_URL } from "@/api/url";
+import { PaisesList } from "./list";
+import { PaisesUpsert } from "./upsert";
+import { PaisDto } from "./types";
+import { DeleteDialog } from "@/components/ui/delete-dialog";
+import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
 
-export type { PaisDto }
+export type { PaisDto };
 
 interface PaisesFeatureProps {
-  selectionMode?: boolean
-  onSelect?: (pais: PaisDto) => void
-  initialSearchTerm?: string
+  selectionMode?: boolean;
+  onSelect?: (pais: PaisDto) => void;
+  initialSearchTerm?: string;
 }
 
-export function PaisesFeature({ 
-  selectionMode = false, 
+export function PaisesFeature({
+  selectionMode = false,
   onSelect,
-  initialSearchTerm = "" 
+  initialSearchTerm = "",
 }: PaisesFeatureProps) {
   const {
     listProps,
@@ -32,18 +32,15 @@ export function PaisesFeature({
     initialSearchTerm,
     fetchPage: async (searchTerm, page, pageSize) => {
       const client = new PaisesClient(API_URL);
-      const res = await client.getPaises(searchTerm || undefined, page, pageSize);
+      const res = await client.getPaises(
+        searchTerm || undefined,
+        page,
+        pageSize,
+      );
       if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
-      
+
       return {
-        itens: res.itens.map((item) => ({
-          id: item.id ?? 0,
-          pais: item.pais ?? "",
-          ddi: item.ddi ?? "",
-          siglaIso: item.siglaIso ?? "",
-          moeda: item.moeda ?? "",
-          simboloMoeda: item.simboloMoeda ?? "",
-        })),
+        itens: res.itens as unknown as PaisDto[],
         totalPages: Math.ceil((res.totalDeItens ?? 0) / pageSize),
         totalItems: res.totalDeItens ?? 0,
       };
@@ -55,7 +52,11 @@ export function PaisesFeature({
 
   return (
     <>
-      <PaisesList {...listProps} selectionMode={selectionMode} onSelect={onSelect} />
+      <PaisesList
+        {...listProps}
+        selectionMode={selectionMode}
+        onSelect={onSelect}
+      />
 
       {list.isUpsertOpen && (
         <PaisesUpsert key={list.editingItem?.id ?? "new"} {...upsertProps} />
@@ -66,11 +67,12 @@ export function PaisesFeature({
         title="Excluir País"
         description={
           <p>
-            Deseja realmente excluir o país <strong>{list.itemToDelete?.pais}</strong> ({list.itemToDelete?.siglaIso})? 
-            Esta ação não poderá ser desfeita.
+            Deseja realmente excluir o país{" "}
+            <strong>{list.itemToDelete?.pais}</strong> (
+            {list.itemToDelete?.siglaIso})? Esta ação não poderá ser desfeita.
           </p>
         }
       />
     </>
-  )
+  );
 }

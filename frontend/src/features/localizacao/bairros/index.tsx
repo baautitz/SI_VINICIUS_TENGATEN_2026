@@ -31,17 +31,15 @@ export function BairrosFeature({
     initialSearchTerm,
     fetchPage: async (searchTerm, page, pageSize) => {
       const client = new BairrosClient(API_URL);
-      const res = await client.getBairros(searchTerm || undefined, page, pageSize);
+      const res = await client.getBairros(
+        searchTerm || undefined,
+        page,
+        pageSize,
+      );
       if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
-      
+
       return {
-        itens: res.itens.map((item) => ({
-          id: item.id ?? 0,
-          bairro: item.bairro ?? "",
-          cidadeId: item.cidadeId ?? 0,
-          cidadeNome: item.cidadeNome ?? "",
-          uf: item.uf ?? "",
-        })),
+        itens: res.itens as unknown as BairroDto[],
         totalPages: Math.ceil((res.totalDeItens ?? 0) / pageSize),
         totalItems: res.totalDeItens ?? 0,
       };
@@ -53,7 +51,11 @@ export function BairrosFeature({
 
   return (
     <>
-      <BairrosList {...listProps} selectionMode={selectionMode} onSelect={onSelect} />
+      <BairrosList
+        {...listProps}
+        selectionMode={selectionMode}
+        onSelect={onSelect}
+      />
 
       {list.isUpsertOpen && (
         <BairrosUpsert key={list.editingItem?.id ?? "new"} {...upsertProps} />
