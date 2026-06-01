@@ -11,8 +11,9 @@ interface UpsertDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  children: React.ReactNode;
-  footer: React.ReactNode;
+  children?: React.ReactNode;
+  footer?: React.ReactNode;
+  loading?: boolean;
 }
 
 export function UpsertDialog({
@@ -21,6 +22,7 @@ export function UpsertDialog({
   title,
   children,
   footer,
+  loading = false,
 }: UpsertDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -33,12 +35,21 @@ export function UpsertDialog({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto p-4 flex flex-col justify-start relative">
-          {children}
+          {loading ? (
+            <div className="flex flex-col items-center justify-center h-full gap-4 py-20">
+              <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              <p className="text-muted-foreground font-medium">Carregando dados...</p>
+            </div>
+          ) : (
+            children
+          )}
         </div>
 
-        <DialogFooter className="m-0 p-4 mt-auto shrink-0 border-t bg-muted/50">
-          {footer}
-        </DialogFooter>
+        {!loading && footer && (
+          <DialogFooter className="m-0 p-4 mt-auto shrink-0 border-t bg-muted/50">
+            {footer}
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

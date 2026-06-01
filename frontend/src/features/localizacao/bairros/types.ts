@@ -1,7 +1,7 @@
 import { z } from "zod"
-import { Bairros } from "@/api/client"
+import type { Cidade } from "../cidades/types"
 
-export interface BairroDto extends Omit<Bairros, "init" | "toJSON"> {
+export interface BairroResumo {
   id: number
   bairro: string
   cidadeId: number
@@ -9,11 +9,33 @@ export interface BairroDto extends Omit<Bairros, "init" | "toJSON"> {
   uf: string
 }
 
+export interface Bairro {
+  id: number
+  bairro: string
+  cidade: Cidade
+}
+
+export function formatBairroLabel(bairro?: Bairro | null): string {
+  if (!bairro) return "";
+  const { bairro: nome, cidade } = bairro;
+  if (!cidade) return nome;
+  const cidadeNome = cidade.cidade;
+  const uf = cidade.estado?.uf;
+
+  if (cidadeNome && uf) {
+    return `${nome} (${cidadeNome}/${uf})`;
+  }
+  if (cidadeNome) {
+    return `${nome} (${cidadeNome})`;
+  }
+  return nome;
+}
+
+export type BairroDto = BairroResumo;
+
 export const bairroSchema = z.object({
   bairro: z.string().min(1, "Bairro é obrigatório."),
-  cidadeId: z
-    .number({ required_error: "Cidade é obrigatória." })
-    .min(1, "Cidade é obrigatória."),
+  cidadeId: z.number({ required_error: "Cidade é obrigatória." }).nullable(),
 })
 
 export type BairroFormValues = z.infer<typeof bairroSchema>

@@ -1,16 +1,15 @@
 "use client"
 import React from "react"
 import { EntityInput } from "@/components/ui/entity-input"
-import { EstadosClient } from "@/api/client"
-import { API_URL } from "@/api/url"
-import { EstadosFeature, EstadoDto } from "@/features/localizacao/estados"
+import { EstadosFeature, Estado, EstadoResumo, formatEstadoLabel } from "@/features/localizacao/estados"
+import { estadosApi } from "@/api/localizacao"
 
 interface EstadoInputProps {
   name: string
   label?: string
   error?: string
-  initialDisplayValue?: string
-  onSelectId: (id: number | undefined) => void
+  initialItem?: Estado | EstadoResumo | null
+  onSelectId: (id: number | null) => void
   inputSize?: "small" | "medium" | "large" | "full"
 }
 
@@ -18,37 +17,31 @@ export function EstadoInput({
   name,
   label = "Estado",
   error,
-  initialDisplayValue,
+  initialItem,
   onSelectId,
   inputSize
 }: EstadoInputProps) {
-  const client = React.useMemo(() => new EstadosClient(API_URL), [])
-  
   return (
-    <EntityInput<EstadoDto>
+    <EntityInput<Estado, EstadoResumo>
       name={name}
       label={label}
       error={error}
-      initialDisplayValue={initialDisplayValue}
+      initialItem={initialItem}
       onSelectId={onSelectId}
       inputSize={inputSize}
       modalTitle="Selecionar Estado"
-      getDisplayLabel={(item) => `${item.estado} (${item.uf})`}
+      getDisplayLabel={formatEstadoLabel}
+      getSearchTerm={(item) => item.estado}
       getId={(item) => item.id}
       fetchById={async (id) => {
         try {
-          const res = await client.getEstado(id)
-          return res ? ({ 
-            id: res.id ?? 0, 
-            estado: res.estado ?? "", 
-            uf: res.uf ?? "",
-            paisId: res.pais?.id ?? 0,
-            paisNome: res.pais?.pais ?? ""
-          } as EstadoDto) : null
+          return await estadosApi.getById(id)
         } catch { return null }
       }}
       fetchList={async (term) => {
-        return await client.getEstados(term.trim() || undefined, 1, 10)
+        try {
+          return await estadosApi.list(term.trim() || undefined, 1, 10)
+        } catch { return null }
       }}
       renderFeature={(props) => <EstadosFeature {...props} />}
     />

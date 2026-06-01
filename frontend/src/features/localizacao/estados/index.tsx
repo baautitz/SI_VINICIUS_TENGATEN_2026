@@ -1,19 +1,18 @@
 "use client";
 
 import React from "react";
-import { EstadosClient } from "@/api/client";
-import { API_URL } from "@/api/url";
 import { EstadosList } from "./list";
 import { EstadosUpsert } from "./upsert";
-import { EstadoDto } from "./types";
+import { EstadoResumo } from "./types";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
+import { estadosApi } from "@/api/localizacao";
 
-export type { EstadoDto };
+export * from "./types";
 
 interface EstadosFeatureProps {
   selectionMode?: boolean;
-  onSelect?: (estado: EstadoDto) => void;
+  onSelect?: (estado: EstadoResumo) => void;
   initialSearchTerm?: string;
 }
 
@@ -27,26 +26,21 @@ export function EstadosFeature({
     upsertProps,
     deleteDialogProps,
     featureList: list,
-  } = useFeatureOrchestrator<EstadoDto>({
+  } = useFeatureOrchestrator<EstadoResumo>({
     queryKey: "estados",
     initialSearchTerm,
     fetchPage: async (searchTerm, page, pageSize) => {
-      const client = new EstadosClient(API_URL);
-      const res = await client.getEstados(
-        searchTerm || undefined,
-        page,
-        pageSize,
-      );
+      const res = await estadosApi.list(searchTerm || undefined, page, pageSize);
       if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
 
       return {
-        itens: res.itens as unknown as EstadoDto[],
+        itens: res.itens,
         totalPages: res.totalDePaginas ?? 1,
         totalItems: res.totalDeItens ?? 0,
       };
     },
     deleteItem: async (id) => {
-      await new EstadosClient(API_URL).deleteEstado(id);
+      await estadosApi.delete(id);
     },
   });
 

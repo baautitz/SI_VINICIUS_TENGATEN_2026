@@ -8,26 +8,65 @@ import { FieldGroup } from "@/components/ui/field"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { FormFieldUI } from "@/components/ui/form-field-ui"
 import { CidadeInput } from "@/components/entity-inputs/cidade-input"
-import { BairrosClient, CreateBairroDto, UpdateBairroDto } from "@/api/client"
-import { API_URL } from "@/api/url"
 import { useForm } from "@tanstack/react-form"
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation"
-import { bairroSchema, BairroDto } from "./types"
+import { bairroSchema, BairroResumo, Bairro, BairroFormValues } from "./types"
+import { useQuery } from "@tanstack/react-query"
+import { bairrosApi } from "@/api/localizacao"
 
 interface BairrosUpsertProps {
   open: boolean
-  editingItem: BairroDto | null
+  editingItem: BairroResumo | null
   onClose: () => void
   onSuccess: () => void
 }
 
-export function BairrosUpsert({ open, editingItem, onClose, onSuccess }: BairrosUpsertProps) {
+interface BairrosUpsertFormProps {
+  open: boolean
+  editingItem: Bairro | null
+  onClose: () => void
+  onSuccess: () => void
+}
+
+export function BairrosUpsert(props: BairrosUpsertProps) {
+  const { open, editingItem, onClose, onSuccess } = props
+  const isEditMode = !!editingItem
+
+  const { data: fullItem, isLoading } = useQuery({
+    queryKey: ["bairros", "detail", editingItem?.id],
+    queryFn: () => bairrosApi.getById(editingItem!.id),
+    enabled: isEditMode,
+  })
+
+  if (isEditMode && isLoading) {
+    return (
+      <UpsertDialog
+        open={open}
+        onOpenChange={(o) => {
+          if (!o) onClose()
+        }}
+        title="Editar Bairro"
+        loading={true}
+      />
+    )
+  }
+
+  return (
+    <BairrosUpsertForm
+      open={open}
+      editingItem={isEditMode ? fullItem ?? null : null}
+      onClose={onClose}
+      onSuccess={onSuccess}
+    />
+  )
+}
+
+function BairrosUpsertForm({ open, editingItem, onClose, onSuccess }: BairrosUpsertFormProps) {
   const { mutation, globalError, getFieldError, resetErrors } = useUpsertMutation({
-    mutationFn: async (value: { bairro: string; cidadeId: number }) => {
-      const client = new BairrosClient(API_URL)
+    mutationFn: async (value: BairroFormValues) => {
       return editingItem
-        ? await client.updateBairro(editingItem.id, new UpdateBairroDto(value))
-        : await client.createBairro(new CreateBairroDto(value))
+        ? await bairrosApi.update(editingItem.id, value)
+        : await bairrosApi.create(value)
     },
     queryKey: ['bairros'],
     onSuccessCallback: onSuccess,
@@ -37,11 +76,15 @@ export function BairrosUpsert({ open, editingItem, onClose, onSuccess }: Bairros
   const form = useForm({
     defaultValues: {
       bairro: editingItem?.bairro ?? "",
-      cidadeId: editingItem?.cidadeId ?? (undefined as unknown as number),
-    },
+      cidadeId: editingItem?.cidade?.id ?? null,
+    } as BairroFormValues,
     onSubmit: async ({ value }) => {
       resetErrors()
-      mutation.mutate(value)
+      const payload = {
+        ...value,
+        cidadeId: value.cidadeId || null,
+      }
+      mutation.mutate(payload as BairroFormValues)
     },
   })
 
@@ -102,8 +145,8 @@ export function BairrosUpsert({ open, editingItem, onClose, onSuccess }: Bairros
                 <CidadeInput
                   name={field.name}
                   error={error}
-                  initialDisplayValue={editingItem ? `${editingItem.cidadeNome} (${editingItem.uf})` : ""}
-                  onSelectId={(id) => field.handleChange(id as number)}
+                  initialItem={editingItem?.cidade}
+                  onSelectId={(id) => field.handleChange(id)}
                 />
               )
             }}
@@ -119,4 +162,3 @@ export function BairrosUpsert({ open, editingItem, onClose, onSuccess }: Bairros
     </UpsertDialog>
   )
 }
-

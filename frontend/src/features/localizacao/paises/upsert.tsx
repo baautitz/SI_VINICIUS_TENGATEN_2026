@@ -7,11 +7,11 @@ import { DialogClose } from "@/components/ui/dialog"
 import { FieldGroup } from "@/components/ui/field"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { FormFieldUI } from "@/components/ui/form-field-ui"
-import { PaisesClient, CreatePaisDto, UpdatePaisDto } from "@/api/client"
-import { API_URL } from "@/api/url"
 import { useForm } from "@tanstack/react-form"
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation"
 import { paisSchema, PaisDto } from "./types"
+import { useQuery } from "@tanstack/react-query"
+import { paisesApi } from "@/api/localizacao"
 
 interface PaisesUpsertProps {
   open: boolean
@@ -20,13 +20,43 @@ interface PaisesUpsertProps {
   onSuccess: () => void
 }
 
-export function PaisesUpsert({ open, editingItem, onClose, onSuccess }: PaisesUpsertProps) {
+export function PaisesUpsert(props: PaisesUpsertProps) {
+  const { open, editingItem, onClose } = props
+  const isEditMode = !!editingItem
+
+  const { data: fullItem, isLoading } = useQuery({
+    queryKey: ["paises", "detail", editingItem?.id],
+    queryFn: () => paisesApi.getById(editingItem!.id),
+    enabled: isEditMode,
+  })
+
+  if (isEditMode && isLoading) {
+    return (
+      <UpsertDialog
+        open={open}
+        onOpenChange={(o) => {
+          if (!o) onClose()
+        }}
+        title="Editar País"
+        loading={true}
+      />
+    )
+  }
+
+  return (
+    <PaisesUpsertForm
+      {...props}
+      editingItem={isEditMode ? fullItem ?? null : null}
+    />
+  )
+}
+
+function PaisesUpsertForm({ open, editingItem, onClose, onSuccess }: PaisesUpsertProps) {
   const { mutation, globalError, getFieldError, resetErrors } = useUpsertMutation({
     mutationFn: async (value: { pais: string; siglaIso: string; ddi: string; moeda: string; simboloMoeda: string }) => {
-      const client = new PaisesClient(API_URL)
       return editingItem
-        ? await client.updatePais(editingItem.id, new UpdatePaisDto(value))
-        : await client.createPais(new CreatePaisDto(value))
+        ? await paisesApi.update(editingItem.id, value)
+        : await paisesApi.create(value)
     },
     queryKey: ['paises'],
     onSuccessCallback: onSuccess,

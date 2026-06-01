@@ -7,63 +7,79 @@ import { Input } from "@/components/ui/input";
 import { ListDialog } from "@/components/ui/list-dialog";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 
-interface EntityInputProps<T> {
+interface EntityInputProps<T, TResumo = T> {
   name: string;
   label: string;
   placeholder?: string;
   error?: string;
-  initialDisplayValue?: string;
+  initialItem?: T | TResumo | null;
 
-  onSelectId: (id: number | undefined) => void;
+  onSelectId: (id: number | null) => void;
 
-  // APIs abstraídas
   fetchById: (id: number) => Promise<T | null>;
   fetchList: (term: string) => Promise<{ itens?: unknown[] } | null>;
   getDisplayLabel: (item: T) => string;
-  getId: (item: T) => number;
+  getSearchTerm: (item: TResumo) => string;
+  getId: (item: T | TResumo) => number;
 
-  // UI
   modalTitle: string;
   renderFeature: (props: {
     selectionMode: boolean;
-    onSelect: (item: T) => void;
+    onSelect: (item: TResumo) => void;
     initialSearchTerm: string;
   }) => React.ReactNode;
 
-  // Variantes do Input
   inputSize?: "small" | "medium" | "large" | "full";
 }
 
-export function EntityInput<T>({
+export function EntityInput<T, TResumo = T>({
   name,
   label,
   placeholder = "Digite o código, nome ou clique na lupa...",
   error,
-  initialDisplayValue = "",
+  initialItem = null,
   onSelectId,
   fetchById,
   fetchList,
   getDisplayLabel,
+  getSearchTerm,
   getId,
   modalTitle,
   renderFeature,
   inputSize = "full",
-}: EntityInputProps<T>) {
+}: EntityInputProps<T, TResumo>) {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchText, setSearchText] = useState(initialDisplayValue);
-  const [selectedLabel, setSelectedLabel] = useState(initialDisplayValue);
-  const [prevInitialValue, setPrevInitialValue] = useState(initialDisplayValue);
+  const [selectedItem, setSelectedItem] = useState<TResumo | null>(
+    (initialItem as TResumo) ?? null,
+  );
+
+  const getLabel = (item: TResumo | T | null) => {
+    if (!item) return "";
+    try {
+      return getDisplayLabel(item as unknown as T);
+    } catch {
+      return "";
+    }
+  };
+
+  const initialLabel = getLabel(initialItem);
+  const [searchText, setSearchText] = useState(initialLabel ?? "");
+  const [selectedLabel, setSelectedLabel] = useState(initialLabel ?? "");
+  const [prevInitialItem, setPrevInitialItem] = useState(initialItem);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  if (initialDisplayValue !== prevInitialValue) {
-    setPrevInitialValue(initialDisplayValue);
-    setSearchText(initialDisplayValue);
-    setSelectedLabel(initialDisplayValue);
+  if (initialItem !== prevInitialItem) {
+    setPrevInitialItem(initialItem);
+    const newLabel = getLabel(initialItem);
+    setSelectedItem((initialItem as TResumo) ?? null);
+    setSearchText(newLabel ?? "");
+    setSelectedLabel(newLabel ?? "");
   }
 
   const handleSearch = async (text: string, isBlur = false) => {
     if (!text.trim()) {
-      onSelectId(undefined);
+      onSelectId(null);
+      setSelectedItem(null);
       setSearchText("");
       setSelectedLabel("");
       return;
@@ -71,27 +87,22 @@ export function EntityInput<T>({
     if (isBlur && selectedLabel === text) return;
 
     try {
-      // 1. Busca por ID (se numérico)
       const numericId = parseInt(text, 10);
       if (!isNaN(numericId) && /^\d+$/.test(text.trim())) {
         try {
           const matched = await fetchById(numericId);
           if (matched) {
-            applySelection(matched);
+            applySelection(matched as unknown as TResumo);
             return;
           }
-        } catch {
-          // Fallback para nome
-        }
+        } catch {}
       }
 
-      // 2. Busca Autofill Mágica por Nome
       const listRes = await fetchList(text);
       if (listRes?.itens && listRes.itens.length === 1) {
-        // Encontrou exatamente um! Fazemos o getById para garantir os dados completos
-        const matched = await fetchById(getId(listRes.itens[0] as T));
+        const matched = await fetchById(getId(listRes.itens[0] as TResumo));
         if (matched) {
-          applySelection(matched);
+          applySelection(listRes.itens[0] as TResumo);
           return;
         }
       }
@@ -110,29 +121,27 @@ export function EntityInput<T>({
     }
   };
 
-  const applySelection = (item: T) => {
-    const newLabel = getDisplayLabel(item);
-    onSelectId(getId(item));
-    setSearchText(newLabel);
-    setSelectedLabel(newLabel);
+  const applySelection = async (item: TResumo) => {
+    const itemId = getId(item);
+    const fullItem = await fetchById(itemId);
+    if (fullItem) {
+      const newLabel = getDisplayLabel(fullItem);
+      onSelectId(itemId);
+      setSelectedItem(item);
+      setSearchText(newLabel);
+      setSelectedLabel(newLabel);
+    }
     setIsOpen(false);
     setTimeout(() => {
       document.getElementById(name)?.focus();
     }, 100);
   };
 
-  const getCleanSearchTerm = (text: string) => {
-    if (text === selectedLabel) {
-      return text.replace(/\s*\([^)]*\)$/, "").trim();
-    }
-    return text;
-  };
-
   return (
     <>
       <Field data-invalid={!!error}>
         <FieldLabel htmlFor={name}>{label}</FieldLabel>
-        <div className="relative flex-1">
+        <div className={`relative w-full`}>
           <Input
             ref={inputRef}
             id={name}
@@ -147,7 +156,7 @@ export function EntityInput<T>({
               }
             }}
             onBlur={() => {
-              if (searchText !== selectedLabel && searchText.trim() !== "") {
+              if (searchText !== selectedLabel) {
                 handleSearch(searchText, true);
               }
             }}
@@ -182,7 +191,7 @@ export function EntityInput<T>({
         {renderFeature({
           selectionMode: true,
           onSelect: applySelection,
-          initialSearchTerm: getCleanSearchTerm(searchText),
+          initialSearchTerm: selectedItem ? getSearchTerm(selectedItem) : searchText,
         })}
       </ListDialog>
     </>

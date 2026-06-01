@@ -9,7 +9,11 @@ import {
   MapPin,
   MapPinned,
   Milestone,
-  LayoutDashboard
+  LayoutDashboard,
+  Users,
+  Truck,
+  UserCircle,
+  BriefcaseBusiness
 } from "lucide-react"
 
 import {
@@ -53,6 +57,24 @@ const localizationItems = [
     title: "Bairros",
     url: "/localizacao/bairros",
     icon: Milestone,
+  },
+]
+
+const parceirosItems = [
+  {
+    title: "Clientes",
+    url: "/parceiros/clientes",
+    icon: Users,
+  },
+  {
+    title: "Fornecedores",
+    url: "/parceiros/fornecedores",
+    icon: Truck,
+  },
+  {
+    title: "Emitentes",
+    url: "/parceiros/emitentes",
+    icon: UserCircle,
   },
 ]
 
@@ -103,6 +125,52 @@ export function AppSidebar() {
                   <CollapsibleContent>
                     <SidebarMenuSub>
                       {localizationItems.map((item) => {
+                        const Icon = item.icon
+                        const active = pathname === item.url
+                        return (
+                          <SidebarMenuSubItem key={item.title}>
+                            <SidebarMenuSubButton
+                              asChild
+                              isActive={active}
+                            >
+                              <Link href={item.url}>
+                                <Icon />
+                                <span>{item.title}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        )
+                      })}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <Collapsible
+                asChild
+                defaultOpen={pathname.startsWith("/parceiros")}
+                className="group/collapsible"
+              >
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton
+                      tooltip="Parceiros"
+                      isActive={pathname.startsWith("/parceiros")}
+                    >
+                      <BriefcaseBusiness />
+                      <span>Parceiros</span>
+                      <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {parceirosItems.map((item) => {
                         const Icon = item.icon
                         const active = pathname === item.url
                         return (

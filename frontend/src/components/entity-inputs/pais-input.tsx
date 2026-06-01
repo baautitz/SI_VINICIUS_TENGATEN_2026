@@ -1,16 +1,15 @@
 "use client"
 import React from "react"
 import { EntityInput } from "@/components/ui/entity-input"
-import { PaisesClient } from "@/api/client"
-import { API_URL } from "@/api/url"
-import { PaisesFeature, PaisDto } from "@/features/localizacao/paises"
+import { PaisesFeature, Pais, PaisResumo, formatPaisLabel } from "@/features/localizacao/paises"
+import { paisesApi } from "@/api/localizacao"
 
 interface PaisInputProps {
   name: string
   label?: string
   error?: string
-  initialDisplayValue?: string
-  onSelectId: (id: number | undefined) => void
+  initialItem?: Pais | PaisResumo | null
+  onSelectId: (id: number | null) => void
   inputSize?: "small" | "medium" | "large" | "full"
 }
 
@@ -18,38 +17,31 @@ export function PaisInput({
   name,
   label = "País",
   error,
-  initialDisplayValue,
+  initialItem,
   onSelectId,
   inputSize
 }: PaisInputProps) {
-  const client = React.useMemo(() => new PaisesClient(API_URL), [])
-  
   return (
-    <EntityInput<PaisDto>
+    <EntityInput<Pais, PaisResumo>
       name={name}
       label={label}
       error={error}
-      initialDisplayValue={initialDisplayValue}
+      initialItem={initialItem}
       onSelectId={onSelectId}
       inputSize={inputSize}
       modalTitle="Selecionar País"
-      getDisplayLabel={(item) => `${item.pais} (${item.siglaIso})`}
+      getDisplayLabel={formatPaisLabel}
+      getSearchTerm={(item) => item.pais}
       getId={(item) => item.id}
       fetchById={async (id) => {
         try {
-          const res = await client.getPais(id)
-          return res ? ({ 
-            id: res.id ?? 0, 
-            pais: res.pais ?? "", 
-            siglaIso: res.siglaIso ?? "",
-            ddi: res.ddi ?? "",
-            moeda: res.moeda ?? "",
-            simboloMoeda: res.simboloMoeda ?? ""
-          } as PaisDto) : null
+          return await paisesApi.getById(id)
         } catch { return null }
       }}
       fetchList={async (term) => {
-        return await client.getPaises(term.trim() || undefined, 1, 10)
+        try {
+          return await paisesApi.list(term.trim() || undefined, 1, 10)
+        } catch { return null }
       }}
       renderFeature={(props) => <PaisesFeature {...props} />}
     />

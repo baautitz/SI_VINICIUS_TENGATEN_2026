@@ -1,16 +1,15 @@
 "use client"
 import React from "react"
 import { EntityInput } from "@/components/ui/entity-input"
-import { CidadesClient } from "@/api/client"
-import { API_URL } from "@/api/url"
-import { CidadesFeature, CidadeDto } from "@/features/localizacao/cidades"
+import { CidadesFeature, Cidade, CidadeResumo, formatCidadeLabel } from "@/features/localizacao/cidades"
+import { cidadesApi } from "@/api/localizacao"
 
 interface CidadeInputProps {
   name: string
   label?: string
   error?: string
-  initialDisplayValue?: string
-  onSelectId: (id: number | undefined) => void
+  initialItem?: Cidade | CidadeResumo | null
+  onSelectId: (id: number | null) => void
   inputSize?: "small" | "medium" | "large" | "full"
 }
 
@@ -18,38 +17,31 @@ export function CidadeInput({
   name,
   label = "Cidade",
   error,
-  initialDisplayValue,
+  initialItem,
   onSelectId,
   inputSize
 }: CidadeInputProps) {
-  const client = React.useMemo(() => new CidadesClient(API_URL), [])
-  
   return (
-    <EntityInput<CidadeDto>
+    <EntityInput<Cidade, CidadeResumo>
       name={name}
       label={label}
       error={error}
-      initialDisplayValue={initialDisplayValue}
+      initialItem={initialItem}
       onSelectId={onSelectId}
       inputSize={inputSize}
       modalTitle="Selecionar Cidade"
-      getDisplayLabel={(item) => `${item.cidade} (${item.uf})`}
+      getDisplayLabel={formatCidadeLabel}
+      getSearchTerm={(item) => item.cidade}
       getId={(item) => item.id}
       fetchById={async (id) => {
         try {
-          const res = await client.getCidade(id)
-          return res ? ({ 
-            id: res.id ?? 0, 
-            cidade: res.cidade ?? "",
-            ddd: res.ddd ?? 0,
-            estadoId: res.estado?.id ?? 0,
-            estadoNome: res.estado?.estado ?? "",
-            uf: res.estado?.uf ?? ""
-          } as CidadeDto) : null
+          return await cidadesApi.getById(id)
         } catch { return null }
       }}
       fetchList={async (term) => {
-        return await client.getCidades(term.trim() || undefined, 1, 10)
+        try {
+          return await cidadesApi.list(term.trim() || undefined, 1, 10)
+        } catch { return null }
       }}
       renderFeature={(props) => <CidadesFeature {...props} />}
     />

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export interface PaisDto {
+export interface Pais {
   id: number;
   pais: string;
   siglaIso: string;
@@ -8,6 +8,18 @@ export interface PaisDto {
   moeda: string;
   simboloMoeda: string;
 }
+
+export function formatPaisLabel(pais?: Pais | null): string {
+  if (!pais) return "";
+  const { pais: nome, siglaIso } = pais;
+  if (siglaIso) {
+    return `${nome} (${siglaIso})`;
+  }
+  return nome;
+}
+
+export type PaisResumo = Pais;
+export type PaisDto = Pais;
 
 export const paisSchema = z.object({
   pais: z.string().min(1, "País é obrigatório."),

@@ -8,26 +8,65 @@ import { FieldGroup } from "@/components/ui/field"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { FormFieldUI } from "@/components/ui/form-field-ui"
 import { PaisInput } from "@/components/entity-inputs/pais-input"
-import { EstadosClient, CreateEstadoDto, UpdateEstadoDto } from "@/api/client"
-import { API_URL } from "@/api/url"
 import { useForm } from "@tanstack/react-form"
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation"
-import { estadoSchema, EstadoDto } from "./types"
+import { estadoSchema, EstadoResumo, Estado, EstadoFormValues } from "./types"
+import { useQuery } from "@tanstack/react-query"
+import { estadosApi } from "@/api/localizacao"
 
 interface EstadosUpsertProps {
   open: boolean
-  editingItem: EstadoDto | null
+  editingItem: EstadoResumo | null
   onClose: () => void
   onSuccess: () => void
 }
 
-export function EstadosUpsert({ open, editingItem, onClose, onSuccess }: EstadosUpsertProps) {
+interface EstadosUpsertFormProps {
+  open: boolean
+  editingItem: Estado | null
+  onClose: () => void
+  onSuccess: () => void
+}
+
+export function EstadosUpsert(props: EstadosUpsertProps) {
+  const { open, editingItem, onClose, onSuccess } = props
+  const isEditMode = !!editingItem
+
+  const { data: fullItem, isLoading } = useQuery({
+    queryKey: ["estados", "detail", editingItem?.id],
+    queryFn: () => estadosApi.getById(editingItem!.id),
+    enabled: isEditMode,
+  })
+
+  if (isEditMode && isLoading) {
+    return (
+      <UpsertDialog
+        open={open}
+        onOpenChange={(o) => {
+          if (!o) onClose()
+        }}
+        title="Editar Estado"
+        loading={true}
+      />
+    )
+  }
+
+  return (
+    <EstadosUpsertForm
+      open={open}
+      editingItem={isEditMode ? fullItem ?? null : null}
+      onClose={onClose}
+      onSuccess={onSuccess}
+    />
+  )
+}
+
+function EstadosUpsertForm({ open, editingItem, onClose, onSuccess }: EstadosUpsertFormProps) {
   const { mutation, globalError, getFieldError, resetErrors } = useUpsertMutation({
-    mutationFn: async (value: { estado: string; uf: string; paisId: number }) => {
-      const client = new EstadosClient(API_URL)
+    mutationFn: async (value: EstadoFormValues) => {
       return editingItem
-        ? await client.updateEstado(editingItem.id, new UpdateEstadoDto(value))
-        : await client.createEstado(new CreateEstadoDto(value))
+        ? await estadosApi.update(editingItem.id, value)
+        : await estadosApi.create(value)
     },
     queryKey: ['estados'],
     onSuccessCallback: onSuccess,
@@ -38,11 +77,15 @@ export function EstadosUpsert({ open, editingItem, onClose, onSuccess }: Estados
     defaultValues: {
       estado: editingItem?.estado ?? "",
       uf: editingItem?.uf ?? "",
-      paisId: editingItem?.paisId ?? (undefined as unknown as number),
-    },
+      paisId: editingItem?.pais?.id ?? null,
+    } as EstadoFormValues,
     onSubmit: async ({ value }) => {
       resetErrors()
-      mutation.mutate(value)
+      const payload = {
+        ...value,
+        paisId: value.paisId || null,
+      }
+      mutation.mutate(payload as EstadoFormValues)
     },
   })
 
@@ -119,8 +162,8 @@ export function EstadosUpsert({ open, editingItem, onClose, onSuccess }: Estados
                 <PaisInput
                   name={field.name}
                   error={error}
-                  initialDisplayValue={editingItem ? `${editingItem.paisNome}` : ""}
-                  onSelectId={(id) => field.handleChange(id as number)}
+                  initialItem={editingItem?.pais}
+                  onSelectId={(id) => field.handleChange(id)}
                 />
               )
             }}

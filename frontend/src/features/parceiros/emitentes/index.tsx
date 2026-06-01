@@ -1,36 +1,34 @@
 "use client";
 
 import React from "react";
-import { PaisesList } from "./list";
-import { PaisesUpsert } from "./upsert";
-import { PaisDto, PaisResumo } from "./types";
+import { EmitentesList } from "./list";
+import { EmitentesUpsert } from "./upsert";
+import { EmitenteResumo } from "./types";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
-import { paisesApi } from "@/api/localizacao";
+import { emitentesApi } from "@/api/parceiros";
 
-export * from "./types";
-
-interface PaisesFeatureProps {
+interface EmitentesFeatureProps {
   selectionMode?: boolean;
-  onSelect?: (pais: PaisDto) => void;
+  onSelect?: (emitente: EmitenteResumo) => void;
   initialSearchTerm?: string;
 }
 
-export function PaisesFeature({
+export function EmitentesFeature({
   selectionMode = false,
   onSelect,
   initialSearchTerm = "",
-}: PaisesFeatureProps) {
+}: EmitentesFeatureProps) {
   const {
     listProps,
     upsertProps,
     deleteDialogProps,
     featureList: list,
-  } = useFeatureOrchestrator<PaisResumo>({
-    queryKey: "paises",
+  } = useFeatureOrchestrator<EmitenteResumo>({
+    queryKey: "emitentes",
     initialSearchTerm,
     fetchPage: async (searchTerm, page, pageSize) => {
-      const res = await paisesApi.list(searchTerm || undefined, page, pageSize);
+      const res = await emitentesApi.list(searchTerm || undefined, page, pageSize);
       if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
 
       return {
@@ -40,30 +38,29 @@ export function PaisesFeature({
       };
     },
     deleteItem: async (id) => {
-      await paisesApi.delete(id);
+      await emitentesApi.delete(id);
     },
   });
 
   return (
     <>
-      <PaisesList
+      <EmitentesList
         {...listProps}
         selectionMode={selectionMode}
         onSelect={onSelect}
       />
 
       {list.isUpsertOpen && (
-        <PaisesUpsert key={list.editingItem?.id ?? "new"} {...upsertProps} />
+        <EmitentesUpsert key={list.editingItem?.id ?? "new"} {...upsertProps} />
       )}
 
       <DeleteDialog
         {...deleteDialogProps}
-        title="Excluir País"
+        title="Excluir Emitente"
         description={
           <p>
-            Deseja realmente excluir o país{" "}
-            <strong>{list.itemToDelete?.pais}</strong> (
-            {list.itemToDelete?.siglaIso})? Esta ação não poderá ser desfeita.
+            Deseja realmente excluir o emitente{" "}
+            <strong>{list.itemToDelete?.nomeRazaoSocial}</strong>? Esta ação não poderá ser desfeita.
           </p>
         }
       />

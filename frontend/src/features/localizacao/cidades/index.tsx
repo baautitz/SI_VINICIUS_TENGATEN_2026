@@ -1,19 +1,18 @@
 "use client";
 
 import React from "react";
-import { CidadesClient } from "@/api/client";
-import { API_URL } from "@/api/url";
 import { CidadesList } from "./list";
 import { CidadesUpsert } from "./upsert";
-import { CidadeDto } from "./types";
+import { CidadeResumo } from "./types";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
+import { cidadesApi } from "@/api/localizacao";
 
-export type { CidadeDto };
+export * from "./types";
 
 interface CidadesFeatureProps {
   selectionMode?: boolean;
-  onSelect?: (cidade: CidadeDto) => void;
+  onSelect?: (cidade: CidadeResumo) => void;
   initialSearchTerm?: string;
 }
 
@@ -27,26 +26,21 @@ export function CidadesFeature({
     upsertProps,
     deleteDialogProps,
     featureList: list,
-  } = useFeatureOrchestrator<CidadeDto>({
+  } = useFeatureOrchestrator<CidadeResumo>({
     queryKey: "cidades",
     initialSearchTerm,
     fetchPage: async (searchTerm, page, pageSize) => {
-      const client = new CidadesClient(API_URL);
-      const res = await client.getCidades(
-        searchTerm || undefined,
-        page,
-        pageSize,
-      );
+      const res = await cidadesApi.list(searchTerm || undefined, page, pageSize);
       if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
 
       return {
-        itens: res.itens as unknown as CidadeDto[],
+        itens: res.itens,
         totalPages: res.totalDePaginas ?? 1,
         totalItems: res.totalDeItens ?? 0,
       };
     },
     deleteItem: async (id) => {
-      await new CidadesClient(API_URL).deleteCidade(id);
+      await cidadesApi.delete(id);
     },
   });
 

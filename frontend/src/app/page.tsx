@@ -1,7 +1,15 @@
-import React from "react"
-import Link from "next/link"
-import { Globe, Map, MapPin, Milestone, LayoutGrid } from "lucide-react"
-import { Card, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link";
+import {
+  Globe,
+  Map,
+  MapPin,
+  Milestone,
+  LayoutGrid,
+  Users,
+  Truck,
+  UserCircle,
+} from "lucide-react";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 
 const systemModules = [
   {
@@ -13,7 +21,15 @@ const systemModules = [
       { name: "Bairros", url: "/localizacao/bairros", icon: Milestone },
     ],
   },
-]
+  {
+    name: "Parceiros",
+    entities: [
+      { name: "Clientes", url: "/parceiros/clientes", icon: Users },
+      { name: "Fornecedores", url: "/parceiros/fornecedores", icon: Truck },
+      { name: "Emitentes", url: "/parceiros/emitentes", icon: UserCircle },
+    ],
+  },
+];
 
 export default function Home() {
   return (
@@ -22,12 +38,14 @@ export default function Home() {
         <div key={module.name} className="space-y-3">
           <div className="flex items-center gap-2">
             <LayoutGrid className="size-5 text-muted-foreground" />
-            <h2 className="text-2xl font-semibold tracking-tight">{module.name}</h2>
+            <h2 className="text-2xl font-semibold tracking-tight">
+              {module.name}
+            </h2>
           </div>
-          
+
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {module.entities.map((entity) => {
-              const Icon = entity.icon
+              const Icon = entity.icon;
               return (
                 <Link key={entity.name} href={entity.url}>
                   <Card className="hover:bg-muted/50 transition-colors border-muted shadow-sm">
@@ -41,11 +59,11 @@ export default function Home() {
                     </CardHeader>
                   </Card>
                 </Link>
-              )
+              );
             })}
           </div>
         </div>
       ))}
     </div>
-  )
+  );
 }

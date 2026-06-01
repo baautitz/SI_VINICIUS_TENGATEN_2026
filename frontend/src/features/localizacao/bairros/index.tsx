@@ -1,18 +1,17 @@
 "use client";
 
-import { BairrosClient } from "@/api/client";
-import { API_URL } from "@/api/url";
 import { BairrosList } from "./list";
 import { BairrosUpsert } from "./upsert";
-import { BairroDto } from "./types";
+import { BairroResumo } from "./types";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
+import { bairrosApi } from "@/api/localizacao";
 
-export type { BairroDto };
+export * from "./types";
 
 interface BairrosFeatureProps {
   selectionMode?: boolean;
-  onSelect?: (bairro: BairroDto) => void;
+  onSelect?: (bairro: BairroResumo) => void;
   initialSearchTerm?: string;
 }
 
@@ -26,26 +25,21 @@ export function BairrosFeature({
     upsertProps,
     deleteDialogProps,
     featureList: list,
-  } = useFeatureOrchestrator<BairroDto>({
+  } = useFeatureOrchestrator<BairroResumo>({
     queryKey: "bairros",
     initialSearchTerm,
     fetchPage: async (searchTerm, page, pageSize) => {
-      const client = new BairrosClient(API_URL);
-      const res = await client.getBairros(
-        searchTerm || undefined,
-        page,
-        pageSize,
-      );
+      const res = await bairrosApi.list(searchTerm || undefined, page, pageSize);
       if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
 
       return {
-        itens: res.itens as unknown as BairroDto[],
+        itens: res.itens,
         totalPages: res.totalDePaginas ?? 1,
         totalItems: res.totalDeItens ?? 0,
       };
     },
     deleteItem: async (id) => {
-      await new BairrosClient(API_URL).deleteBairro(id);
+      await bairrosApi.delete(id);
     },
   });
 
