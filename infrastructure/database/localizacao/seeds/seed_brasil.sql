@@ -1,37 +1,62 @@
 SET search_path TO projeto_sistemas;
 
-
 INSERT INTO paises (ddi, sigla_iso, moeda, simbolo_moeda, pais)
 VALUES
-  ('55', 'BRA', 'BRL', 'R$', 'Brasil')
+  ('55', 'BRA', 'BRL', 'R$', 'BRASIL')
 ON CONFLICT (sigla_iso) DO NOTHING;
 
 INSERT INTO estados (pais_id, estado, uf)
-SELECT id, 'Acre', 'AC' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Alagoas', 'AL' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Amapá', 'AP' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Amazonas', 'AM' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Bahia', 'BA' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Ceará', 'CE' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Distrito Federal', 'DF' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Espírito Santo', 'ES' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Goiás', 'GO' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Maranhão', 'MA' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Mato Grosso', 'MT' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Mato Grosso do Sul', 'MS' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Minas Gerais', 'MG' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Pará', 'PA' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Paraíba', 'PB' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Paraná', 'PR' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Pernambuco', 'PE' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Piauí', 'PI' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Rio de Janeiro', 'RJ' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Rio Grande do Norte', 'RN' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Rio Grande do Sul', 'RS' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Rondônia', 'RO' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Roraima', 'RR' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Santa Catarina', 'SC' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'São Paulo', 'SP' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Sergipe', 'SE' FROM paises WHERE pais = 'Brasil' UNION ALL
-SELECT id, 'Tocantins', 'TO' FROM paises WHERE pais = 'Brasil'
+SELECT id, 'ACRE', 'AC' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'ALAGOAS', 'AL' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'AMAPÁ', 'AP' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'AMAZONAS', 'AM' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'BAHIA', 'BA' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'CEARÁ', 'CE' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'DISTRITO FEDERAL', 'DF' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'ESPÍRITO SANTO', 'ES' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'GOIÁS', 'GO' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'MARANHÃO', 'MA' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'MATO GROSSO', 'MT' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'MATO GROSSO DO SUL', 'MS' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'MINAS GERAIS', 'MG' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'PARÁ', 'PA' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'PARAÍBA', 'PB' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'PARANÁ', 'PR' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'PERNAMBUCO', 'PE' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'PIAUÍ', 'PI' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'RIO DE JANEIRO', 'RJ' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'RIO GRANDE DO NORTE', 'RN' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'RIO GRANDE DO SUL', 'RS' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'RONDÔNIA', 'RO' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'RORAIMA', 'RR' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'SANTA CATARINA', 'SC' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'SÃO PAULO', 'SP' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'SERGIPE', 'SE' FROM paises WHERE pais = 'BRASIL'
+UNION ALL
+SELECT id, 'TOCANTINS', 'TO' FROM paises WHERE pais = 'BRASIL'
 ON CONFLICT (pais_id, uf) DO NOTHING;

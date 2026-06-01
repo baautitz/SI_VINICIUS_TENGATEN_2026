@@ -2,8 +2,10 @@
 
 BEGIN;
 
+CREATE EXTENSION IF NOT EXISTS unaccent;
+
 CREATE SCHEMA IF NOT EXISTS projeto_sistemas;
-SET search_path TO projeto_sistemas;
+SET search_path TO projeto_sistemas, public;
 
 \ir unidades_medida/schema/unidades_medida.sql
 

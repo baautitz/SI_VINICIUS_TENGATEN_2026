@@ -20,7 +20,7 @@ services:
 
   backend:
     build:
-      context: ../backend
+      context: ../Backend
       dockerfile: Dockerfile.dev
     ports:
       - "${BACKEND_HTTP_PORT:-8080}:8080"
@@ -33,7 +33,13 @@ services:
       postgres:
         condition: service_healthy
     volumes:
-      - ../backend:/app:delegated
+      - ../Backend:/app:delegated
+      - /app/Backend.Core/obj
+      - /app/Backend.Core/bin
+      - /app/Backend.Infrastructure.PostgreSQL/obj
+      - /app/Backend.Infrastructure.PostgreSQL/bin
+      - /app/Backend.Web/obj
+      - /app/Backend.Web/bin
 
   frontend:
     build:
@@ -50,6 +56,7 @@ services:
     volumes:
       - ../frontend:/app:delegated
       - /app/node_modules
+      - /app/.next
 
 volumes:
   postgres_data:
