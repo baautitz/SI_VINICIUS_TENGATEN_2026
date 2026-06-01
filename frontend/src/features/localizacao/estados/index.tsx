@@ -41,7 +41,7 @@ export function EstadosFeature({
 
       return {
         itens: res.itens as unknown as EstadoDto[],
-        totalPages: Math.ceil((res.totalDeItens ?? 0) / pageSize),
+        totalPages: res.totalDePaginas ?? 1,
         totalItems: res.totalDeItens ?? 0,
       };
     },

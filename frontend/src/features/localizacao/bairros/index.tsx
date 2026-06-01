@@ -40,7 +40,7 @@ export function BairrosFeature({
 
       return {
         itens: res.itens as unknown as BairroDto[],
-        totalPages: Math.ceil((res.totalDeItens ?? 0) / pageSize),
+        totalPages: res.totalDePaginas ?? 1,
         totalItems: res.totalDeItens ?? 0,
       };
     },

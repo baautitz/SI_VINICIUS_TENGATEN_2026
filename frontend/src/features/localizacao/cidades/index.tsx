@@ -41,7 +41,7 @@ export function CidadesFeature({
 
       return {
         itens: res.itens as unknown as CidadeDto[],
-        totalPages: Math.ceil((res.totalDeItens ?? 0) / pageSize),
+        totalPages: res.totalDePaginas ?? 1,
         totalItems: res.totalDeItens ?? 0,
       };
     },
