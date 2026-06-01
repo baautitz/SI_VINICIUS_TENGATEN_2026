@@ -21,8 +21,8 @@ public class Fornecedores
     public Fornecedores(string nomeRazaosocial, string cpfCnpj, string? rgIe = null, string? apelidoNomefantasia = null, string? endereco = null, Bairros? bairro = null, string? telefone = null, string? email = null, string? observacao = null)
     {
         nomeRazaosocial = TextNormalization.Normalize(nomeRazaosocial);
-        cpfCnpj = TextNormalization.Normalize(cpfCnpj);
-        rgIe = TextNormalization.NormalizeOrNull(rgIe);
+        cpfCnpj = TextNormalization.NormalizeDocument(cpfCnpj);
+        rgIe = TextNormalization.NormalizeDocumentOrNull(rgIe);
         apelidoNomefantasia = TextNormalization.NormalizeOrNull(apelidoNomefantasia);
         endereco = TextNormalization.NormalizeOrNull(endereco);
         telefone = TextNormalization.NormalizeOrNull(telefone);
@@ -59,8 +59,8 @@ public class Fornecedores
     public void Atualizar(string nomeRazaosocial, string cpfCnpj, string? rgIe = null, string? apelidoNomefantasia = null, string? endereco = null, Bairros? bairro = null, string? telefone = null, string? email = null, string? observacao = null)
     {
         nomeRazaosocial = TextNormalization.Normalize(nomeRazaosocial);
-        cpfCnpj = TextNormalization.Normalize(cpfCnpj);
-        rgIe = TextNormalization.NormalizeOrNull(rgIe);
+        cpfCnpj = TextNormalization.NormalizeDocument(cpfCnpj);
+        rgIe = TextNormalization.NormalizeDocumentOrNull(rgIe);
         apelidoNomefantasia = TextNormalization.NormalizeOrNull(apelidoNomefantasia);
         endereco = TextNormalization.NormalizeOrNull(endereco);
         telefone = TextNormalization.NormalizeOrNull(telefone);

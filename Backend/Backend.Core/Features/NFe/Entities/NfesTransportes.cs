@@ -39,8 +39,8 @@ public class NfesTransportes
         Veiculos? veiculo = null)
     {
         TransportadoraNomeRazaosocial = TextNormalization.NormalizeOrNull(transportadoraNomeRazaosocial);
-        TransportadoraCpfCnpj = TextNormalization.NormalizeOrNull(transportadoraCpfCnpj);
-        TransportadoraRgIe = TextNormalization.NormalizeOrNull(transportadoraRgIe);
+        TransportadoraCpfCnpj = TextNormalization.NormalizeDocumentOrNull(transportadoraCpfCnpj);
+        TransportadoraRgIe = TextNormalization.NormalizeDocumentOrNull(transportadoraRgIe);
         VeiculoPlaca = TextNormalization.NormalizeOrNull(veiculoPlaca);
         VeiculoUf = TextNormalization.NormalizeOrNull(veiculoUf);
         VeiculoRntrc = TextNormalization.NormalizeOrNull(veiculoRntrc);

@@ -42,7 +42,7 @@ public class Emitentes
         bool ativo = true)
     {
         nomeRazaoSocial = TextNormalization.Normalize(nomeRazaoSocial);
-        cpfCnpj = TextNormalization.Normalize(cpfCnpj);
+        cpfCnpj = TextNormalization.NormalizeDocument(cpfCnpj);
 
         if (string.IsNullOrWhiteSpace(nomeRazaoSocial))
             throw new DomainException("Nome ou razão social do emitente é obrigatório.");
@@ -57,7 +57,7 @@ public class Emitentes
         Bairro = bairro;
         Telefone = TextNormalization.NormalizeOrNull(telefone);
         Email = TextNormalization.NormalizeOrNull(email);
-        RgIe = TextNormalization.NormalizeOrNull(rgIe);
+        RgIe = TextNormalization.NormalizeDocumentOrNull(rgIe);
         InscricaoMunicipal = TextNormalization.NormalizeOrNull(inscricaoMunicipal);
         RegimeTributario = TextNormalization.NormalizeOrNull(regimeTributario);
         Observacao = TextNormalization.NormalizeOrNull(observacao);
@@ -99,7 +99,7 @@ public class Emitentes
         string? observacao = null)
     {
         nomeRazaoSocial = TextNormalization.Normalize(nomeRazaoSocial);
-        cpfCnpj = TextNormalization.Normalize(cpfCnpj);
+        cpfCnpj = TextNormalization.NormalizeDocument(cpfCnpj);
 
         if (string.IsNullOrWhiteSpace(nomeRazaoSocial))
             throw new DomainException("Nome ou razão social do emitente é obrigatório.");
@@ -114,7 +114,7 @@ public class Emitentes
         Bairro = bairro;
         Telefone = TextNormalization.NormalizeOrNull(telefone);
         Email = TextNormalization.NormalizeOrNull(email);
-        RgIe = TextNormalization.NormalizeOrNull(rgIe);
+        RgIe = TextNormalization.NormalizeDocumentOrNull(rgIe);
         InscricaoMunicipal = TextNormalization.NormalizeOrNull(inscricaoMunicipal);
         RegimeTributario = TextNormalization.NormalizeOrNull(regimeTributario);
         Observacao = TextNormalization.NormalizeOrNull(observacao);

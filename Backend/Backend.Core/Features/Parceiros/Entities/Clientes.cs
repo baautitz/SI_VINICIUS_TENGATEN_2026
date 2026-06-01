@@ -40,7 +40,7 @@ public class Clientes
         bool ativo = true)
     {
         nomeRazaoSocial = TextNormalization.Normalize(nomeRazaoSocial);
-        cpfCnpj = TextNormalization.Normalize(cpfCnpj);
+        cpfCnpj = TextNormalization.NormalizeDocument(cpfCnpj);
 
         if (string.IsNullOrWhiteSpace(nomeRazaoSocial))
             throw new DomainException("Nome ou razão social do cliente é obrigatório.");
@@ -53,7 +53,7 @@ public class Clientes
 
         NomeRazaoSocial = nomeRazaoSocial;
         CpfCnpj = cpfCnpj;
-        RgIe = TextNormalization.NormalizeOrNull(rgIe);
+        RgIe = TextNormalization.NormalizeDocumentOrNull(rgIe);
         ApelidoNomeFantasia = TextNormalization.NormalizeOrNull(apelidoNomeFantasia);
         Endereco = TextNormalization.NormalizeOrNull(endereco);
         Bairro = bairro;
@@ -97,7 +97,7 @@ public class Clientes
         string? observacao = null)
     {
         nomeRazaoSocial = TextNormalization.Normalize(nomeRazaoSocial);
-        cpfCnpj = TextNormalization.Normalize(cpfCnpj);
+        cpfCnpj = TextNormalization.NormalizeDocument(cpfCnpj);
 
         if (string.IsNullOrWhiteSpace(nomeRazaoSocial))
             throw new DomainException("Nome ou razão social do cliente é obrigatório.");
@@ -110,7 +110,7 @@ public class Clientes
 
         NomeRazaoSocial = nomeRazaoSocial;
         CpfCnpj = cpfCnpj;
-        RgIe = TextNormalization.NormalizeOrNull(rgIe);
+        RgIe = TextNormalization.NormalizeDocumentOrNull(rgIe);
         ApelidoNomeFantasia = TextNormalization.NormalizeOrNull(apelidoNomeFantasia);
         Endereco = TextNormalization.NormalizeOrNull(endereco);
         Bairro = bairro;

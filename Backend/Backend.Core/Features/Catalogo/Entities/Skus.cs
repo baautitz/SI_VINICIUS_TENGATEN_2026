@@ -16,7 +16,7 @@ public class Skus
     public Skus(string sku, decimal preco, decimal estoque = 0, string? gtinEan = null)
     {
         sku = TextNormalization.Normalize(sku);
-        gtinEan = TextNormalization.NormalizeOrNull(gtinEan);
+        gtinEan = TextNormalization.NormalizeDocumentOrNull(gtinEan);
 
         if (string.IsNullOrWhiteSpace(sku))
             throw new DomainException("SKU é obrigatório.");

@@ -41,14 +41,16 @@ public sealed class ClientesService : BaseService
             paisId = bairro.Cidade?.Estado?.Pais?.Id;
         }
 
-        if (await _clientesRepository.ExisteClienteCpfCnpj(dto.CpfCnpj, paisId))
+        var cpfCnpjNormalizado = TextNormalization.NormalizeDocument(dto.CpfCnpj);
+
+        if (await _clientesRepository.ExisteClienteCpfCnpj(cpfCnpjNormalizado, paisId))
             return Resultado<Clientes>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe um cliente com este CPF ou CNPJ.", "CpfCnpj"));
 
         return await ExecuteResultAsync(async () =>
         {
             var cliente = new Clientes(
                 dto.NomeRazaoSocial,
-                dto.CpfCnpj,
+                cpfCnpjNormalizado,
                 dto.RgIe,
                 dto.ApelidoNomeFantasia,
                 dto.Endereco,
@@ -91,14 +93,16 @@ public sealed class ClientesService : BaseService
         if (siglaIso == "BRA" && !CpfCnpjValidatorUtils.IsValid(dto.CpfCnpj))
             return Resultado<Clientes>.Falha(new ResultadoErro("DOCUMENTO_INVALIDO", "CPF ou CNPJ inválido para o Brasil.", "CpfCnpj"));
 
-        if (await _clientesRepository.ExisteClienteCpfCnpj(dto.CpfCnpj, paisId, id))
+        var cpfCnpjNormalizado = TextNormalization.NormalizeDocument(dto.CpfCnpj);
+
+        if (await _clientesRepository.ExisteClienteCpfCnpj(cpfCnpjNormalizado, paisId, id))
             return Resultado<Clientes>.Falha(new ResultadoErro("DUPLICIDADE", siglaIso == "BRA" ? "Já existe outro cliente com este CPF ou CNPJ." : "Já existe outro cliente com este Documento.", "CpfCnpj"));
 
         return await ExecuteResultAsync(async () =>
         {
             existente.AtualizarDados(
                 dto.NomeRazaoSocial,
-                dto.CpfCnpj,
+                cpfCnpjNormalizado,
                 dto.RgIe,
                 dto.ApelidoNomeFantasia,
                 dto.Endereco,
@@ -108,6 +112,7 @@ public sealed class ClientesService : BaseService
                 dto.LimiteCredito,
                 dto.Observacao
             );
+
 
             if (dto.Ativo) existente.Ativar();
             else existente.Desativar();

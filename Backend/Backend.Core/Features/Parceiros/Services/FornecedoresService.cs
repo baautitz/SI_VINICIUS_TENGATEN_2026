@@ -41,14 +41,16 @@ public sealed class FornecedoresService : BaseService
             paisId = bairro.Cidade?.Estado?.Pais?.Id;
         }
 
-        if (await _fornecedoresRepository.ExisteFornecedorCpfCnpj(dto.CpfCnpj, paisId))
+        var cpfCnpjNormalizado = TextNormalization.NormalizeDocument(dto.CpfCnpj);
+
+        if (await _fornecedoresRepository.ExisteFornecedorCpfCnpj(cpfCnpjNormalizado, paisId))
             return Resultado<Fornecedores>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe um fornecedor com este CPF ou CNPJ.", "CpfCnpj"));
 
         return await ExecuteResultAsync(async () =>
         {
             var fornecedor = new Fornecedores(
                 dto.NomeRazaosocial,
-                dto.CpfCnpj,
+                cpfCnpjNormalizado,
                 dto.RgIe,
                 dto.ApelidoNomefantasia,
                 dto.Endereco,
@@ -89,14 +91,16 @@ public sealed class FornecedoresService : BaseService
         if (siglaIso == "BRA" && !CpfCnpjValidatorUtils.IsValid(dto.CpfCnpj))
             return Resultado<Fornecedores>.Falha(new ResultadoErro("DOCUMENTO_INVALIDO", "CPF ou CNPJ inválido para o Brasil.", "CpfCnpj"));
 
-        if (await _fornecedoresRepository.ExisteFornecedorCpfCnpj(dto.CpfCnpj, paisId, id))
+        var cpfCnpjNormalizado = TextNormalization.NormalizeDocument(dto.CpfCnpj);
+
+        if (await _fornecedoresRepository.ExisteFornecedorCpfCnpj(cpfCnpjNormalizado, paisId, id))
             return Resultado<Fornecedores>.Falha(new ResultadoErro("DUPLICIDADE", siglaIso == "BRA" ? "Já existe outro fornecedor com este CPF ou CNPJ." : "Já existe outro fornecedor com este Documento.", "CpfCnpj"));
 
         return await ExecuteResultAsync(async () =>
         {
             existente.Atualizar(
                 dto.NomeRazaosocial,
-                dto.CpfCnpj,
+                cpfCnpjNormalizado,
                 dto.RgIe,
                 dto.ApelidoNomefantasia,
                 dto.Endereco,

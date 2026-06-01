@@ -41,14 +41,16 @@ public sealed class EmitentesService : BaseService
             paisId = bairro.Cidade?.Estado?.Pais?.Id;
         }
 
-        if (await _emitentesRepository.ExisteEmitenteCpfCnpj(dto.CpfCnpj, paisId))
+        var cpfCnpjNormalizado = TextNormalization.NormalizeDocument(dto.CpfCnpj);
+
+        if (await _emitentesRepository.ExisteEmitenteCpfCnpj(cpfCnpjNormalizado, paisId))
             return Resultado<Emitentes>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe um emitente com este CPF ou CNPJ.", "CpfCnpj"));
 
         return await ExecuteResultAsync(async () =>
         {
             var emitente = new Emitentes(
                 dto.NomeRazaoSocial,
-                dto.CpfCnpj,
+                cpfCnpjNormalizado,
                 dto.ApelidoNomeFantasia,
                 dto.Endereco,
                 bairro,
@@ -92,14 +94,16 @@ public sealed class EmitentesService : BaseService
         if (siglaIso == "BRA" && !CpfCnpjValidatorUtils.IsValid(dto.CpfCnpj))
             return Resultado<Emitentes>.Falha(new ResultadoErro("DOCUMENTO_INVALIDO", "CPF ou CNPJ inválido para o Brasil.", "CpfCnpj"));
 
-        if (await _emitentesRepository.ExisteEmitenteCpfCnpj(dto.CpfCnpj, paisId, id))
+        var cpfCnpjNormalizado = TextNormalization.NormalizeDocument(dto.CpfCnpj);
+
+        if (await _emitentesRepository.ExisteEmitenteCpfCnpj(cpfCnpjNormalizado, paisId, id))
             return Resultado<Emitentes>.Falha(new ResultadoErro("DUPLICIDADE", siglaIso == "BRA" ? "Já existe outro emitente com este CPF ou CNPJ." : "Já existe outro emitente com este Documento.", "CpfCnpj"));
 
         return await ExecuteResultAsync(async () =>
         {
             existente.AtualizarDados(
                 dto.NomeRazaoSocial,
-                dto.CpfCnpj,
+                cpfCnpjNormalizado,
                 dto.ApelidoNomeFantasia,
                 dto.Endereco,
                 bairro,
