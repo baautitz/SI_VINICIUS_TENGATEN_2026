@@ -18,8 +18,8 @@ public sealed class BairrosService
     _cidadesRepository = cidadesRepository;
   }
 
-  public Task<ResultadoPaginado<Bairros>> ObterBairros(int pagina = 1, int tamanhoDaPagina = 20)
-      => _bairrosRepository.ObterBairros(pagina, tamanhoDaPagina);
+  public Task<ResultadoPaginado<BairroResumoDto>> ObterBairros(string? search, int pagina = 1, int tamanhoDaPagina = 20)
+      => _bairrosRepository.ObterBairros(search, pagina, tamanhoDaPagina);
 
   public Task<Bairros?> ObterBairroPorId(int id)
       => _bairrosRepository.ObterBairroPorId(id);
@@ -66,11 +66,5 @@ public sealed class BairrosService
 
   public Task<bool> DeletarBairro(int id)
       => _bairrosRepository.DeletarBairro(id);
-
-  public Task<ResultadoPaginado<BairroResumoDto>> ObterBairrosResumo(int pagina = 1, int tamanhoDaPagina = 20)
-      => _bairrosRepository.ObterBairrosResumo(pagina, tamanhoDaPagina);
-
-  public Task<ResultadoPaginado<BairroResumoDto>> PesquisarBairros(string termo, int pagina = 1, int tamanhoDaPagina = 20)
-      => _bairrosRepository.PesquisarBairros(termo, pagina, tamanhoDaPagina);
 }
 

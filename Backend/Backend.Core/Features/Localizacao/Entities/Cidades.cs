@@ -16,6 +16,9 @@ public class Cidades
         Estado = estado;
     }
 
+    // For Dapper ORM materialization
+    protected Cidades() { }
+
     public Cidades(int id, string cidade, short ddd, Estados estado)
         : this(cidade, ddd, estado)
     {

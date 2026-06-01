@@ -18,8 +18,8 @@ public sealed class CidadesService
     _estadosRepository = estadosRepository;
   }
 
-  public Task<ResultadoPaginado<Cidades>> ObterCidades(int pagina = 1, int tamanhoDaPagina = 20)
-      => _cidadesRepository.ObterCidades(pagina, tamanhoDaPagina);
+  public Task<ResultadoPaginado<CidadeResumoDto>> ObterCidades(string? search, int pagina = 1, int tamanhoDaPagina = 20)
+      => _cidadesRepository.ObterCidades(search, pagina, tamanhoDaPagina);
 
   public Task<Cidades?> ObterCidadePorId(int id)
       => _cidadesRepository.ObterCidadePorId(id);
@@ -66,11 +66,5 @@ public sealed class CidadesService
 
   public Task<bool> DeletarCidade(int id)
       => _cidadesRepository.DeletarCidade(id);
-
-  public Task<ResultadoPaginado<CidadeResumoDto>> ObterCidadesResumo(int pagina = 1, int tamanhoDaPagina = 20)
-      => _cidadesRepository.ObterCidadesResumo(pagina, tamanhoDaPagina);
-
-  public Task<ResultadoPaginado<CidadeResumoDto>> PesquisarCidades(string termo, int pagina = 1, int tamanhoDaPagina = 20)
-      => _cidadesRepository.PesquisarCidades(termo, pagina, tamanhoDaPagina);
 }
 

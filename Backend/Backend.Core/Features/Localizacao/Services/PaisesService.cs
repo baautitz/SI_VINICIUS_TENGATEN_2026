@@ -16,8 +16,8 @@ public sealed class PaisesService
     _paisesRepository = paisesRepository;
   }
 
-  public Task<ResultadoPaginado<Paises>> ObterPaises(int pagina = 1, int tamanhoPagina = 20)
-      => _paisesRepository.ObterPaises(pagina, tamanhoPagina);
+  public Task<ResultadoPaginado<PaisResumoDto>> ObterPaises(string? search, int pagina = 1, int tamanhoPagina = 20)
+      => _paisesRepository.ObterPaises(search, pagina, tamanhoPagina);
 
   public Task<Paises?> ObterPaisPorId(int id)
       => _paisesRepository.ObterPaisPorId(id);
@@ -56,11 +56,5 @@ public sealed class PaisesService
 
   public Task<bool> DeletarPais(int id)
       => _paisesRepository.DeletarPais(id);
-
-  public Task<ResultadoPaginado<PaisResumoDto>> ObterPaisesResumo(int pagina = 1, int tamanhoPagina = 20)
-      => _paisesRepository.ObterPaisesResumo(pagina, tamanhoPagina);
-
-  public Task<ResultadoPaginado<PaisResumoDto>> PesquisarPaises(string termo, int pagina = 1, int tamanhoPagina = 20)
-      => _paisesRepository.PesquisarPaises(termo, pagina, tamanhoPagina);
 }
 

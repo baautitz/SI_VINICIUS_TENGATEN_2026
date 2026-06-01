@@ -16,7 +16,7 @@ public sealed class UpdatePaisDtoValidator : AbstractValidator<UpdatePaisDto>
     RuleFor(x => x.SiglaIso)
         .NotEmpty().WithMessage("Sigla ISO é obrigatória.")
         .WithErrorCode("SIGLAISO_OBRIGATORIO")
-        .Length(2).WithMessage("Sigla ISO deve ter 2 caracteres.")
+        .Length(3).WithMessage("Sigla ISO deve ter 3 caracteres.")
         .WithErrorCode("SIGLAISO_TAMANHO_INVALIDO")
         .Matches("^[A-Z]+$").WithMessage("Sigla ISO deve conter apenas letras maiúsculas.")
         .WithErrorCode("SIGLAISO_FORMATO_INVALIDO");
