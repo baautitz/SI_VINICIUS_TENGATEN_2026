@@ -1,0 +1,14 @@
+namespace Backend.Core.Common;
+
+public sealed class UniqueConstraintException : DomainException
+{
+  public UniqueConstraintException(string message)
+      : base(message)
+  {
+  }
+
+  public UniqueConstraintException(string message, Exception innerException)
+      : base(message, innerException)
+  {
+  }
+}

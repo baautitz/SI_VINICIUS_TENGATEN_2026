@@ -42,29 +42,6 @@ public class GlobalExceptionMiddleware
             context.Response.Clear();
             context.Response.ContentType = "application/json";
 
-            var isPostgresException = exception.GetType().Name == "PostgresException";
-            
-            if (isPostgresException)
-            {
-                var sqlStateProperty = exception.GetType().GetProperty("SqlState");
-                var sqlState = sqlStateProperty?.GetValue(exception)?.ToString();
-
-                // 23505 = Unique Constraint Violation
-                if (sqlState == "23505")
-                {
-                    context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                    
-                    var resultadoDuplicidade = Resultado.Falha(
-                        new ResultadoErro("DUPLICIDADE", "Este registro já existe (dados duplicados).")
-                    );
-
-                    var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-                    await context.Response.WriteAsync(JsonSerializer.Serialize(resultadoDuplicidade, options));
-                    return;
-                }
-            }
-
-            // Para outras exceções, retorna 500 formatado como Result Pattern
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
             var resultadoGenerico = Resultado.Falha(
                 new ResultadoErro("ERRO_INTERNO", "Ocorreu um erro inesperado no servidor.")
@@ -74,7 +51,6 @@ public class GlobalExceptionMiddleware
         }
         catch (Exception ex)
         {
-            // Fallback absoluto para evitar vazar a stack trace original
             _logger.LogCritical(ex, "Falha crítica no GlobalExceptionMiddleware ao processar outra exceção.");
             if (!context.Response.HasStarted)
             {

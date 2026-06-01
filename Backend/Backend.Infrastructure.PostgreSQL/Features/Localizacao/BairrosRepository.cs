@@ -80,18 +80,31 @@ public class BairrosRepository : IBairrosRepository
         return result.SingleOrDefault();
     }
 
-    public async Task<Bairros> CriarBairro(Bairros bairro)
+    public Task<Bairros> CriarBairro(Bairros bairro)
     {
-        const string sql = "INSERT INTO bairros (bairro, cidade_id) VALUES (@Bairro, @CidadeId) RETURNING id;";
-        var idGerado = await _session.Connection.ExecuteScalarAsync<int>(sql, new { bairro.Bairro, CidadeId = bairro.Cidade.Id }, transaction: _session.Transaction);
-        return new Bairros(idGerado, bairro.Bairro, bairro.Cidade);
+        return DbSessionExtensions.ExecuteWithConflictCheckAsync(async () =>
+        {
+            const string sql = "INSERT INTO bairros (bairro, cidade_id) VALUES (@Bairro, @CidadeId) RETURNING id;";
+            var idGerado = await _session.Connection.ExecuteScalarAsync<int>(sql, new { bairro.Bairro, CidadeId = bairro.Cidade.Id }, transaction: _session.Transaction);
+            return new Bairros(idGerado, bairro.Bairro, bairro.Cidade);
+        });
     }
 
-    public async Task<Bairros> AtualizarBairro(int id, Bairros bairro)
+    public Task<Bairros> AtualizarBairro(int id, Bairros bairro)
     {
-        const string sql = "UPDATE bairros SET bairro = @Bairro, cidade_id = @CidadeId WHERE id = @Id;";
-        await _session.Connection.ExecuteAsync(sql, new { Id = id, bairro.Bairro, CidadeId = bairro.Cidade.Id }, transaction: _session.Transaction);
-        return new Bairros(id, bairro.Bairro, bairro.Cidade);
+        return DbSessionExtensions.ExecuteWithConflictCheckAsync(async () =>
+        {
+            const string sql = "UPDATE bairros SET bairro = @Bairro, cidade_id = @CidadeId WHERE id = @Id;";
+            await _session.Connection.ExecuteAsync(sql, new { Id = id, bairro.Bairro, CidadeId = bairro.Cidade.Id }, transaction: _session.Transaction);
+            return new Bairros(id, bairro.Bairro, bairro.Cidade);
+        });
+    }
+
+    public async Task<bool> ExisteBairro(int cidadeId, string bairro, int? ignorarId = null)
+    {
+        var sql = "SELECT COUNT(1) FROM bairros WHERE cidade_id = @CidadeId AND bairro = @Bairro";
+        if (ignorarId.HasValue) sql += " AND id != @IgnorarId";
+        return await _session.Connection.ExecuteScalarAsync<int>(sql, new { CidadeId = cidadeId, Bairro = bairro, IgnorarId = ignorarId }, transaction: _session.Transaction) > 0;
     }
 
     public async Task<bool> DeletarBairro(int id)

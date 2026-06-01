@@ -77,18 +77,31 @@ public class CidadesRepository : ICidadesRepository
         return result.SingleOrDefault();
     }
 
-    public async Task<Cidades> CriarCidade(Cidades cidade)
+    public Task<Cidades> CriarCidade(Cidades cidade)
     {
-        const string sql = "INSERT INTO cidades (cidade, ddd, estado_id) VALUES (@Cidade, @Ddd, @EstadoId) RETURNING id;";
-        var idGerado = await _session.Connection.ExecuteScalarAsync<int>(sql, new { cidade.Cidade, cidade.Ddd, EstadoId = cidade.Estado.Id }, transaction: _session.Transaction);
-        return new Cidades(idGerado, cidade.Cidade, cidade.Ddd, cidade.Estado);
+        return DbSessionExtensions.ExecuteWithConflictCheckAsync(async () =>
+        {
+            const string sql = "INSERT INTO cidades (cidade, ddd, estado_id) VALUES (@Cidade, @Ddd, @EstadoId) RETURNING id;";
+            var idGerado = await _session.Connection.ExecuteScalarAsync<int>(sql, new { cidade.Cidade, cidade.Ddd, EstadoId = cidade.Estado.Id }, transaction: _session.Transaction);
+            return new Cidades(idGerado, cidade.Cidade, cidade.Ddd, cidade.Estado);
+        });
     }
 
-    public async Task<Cidades> AtualizarCidade(int id, Cidades cidade)
+    public Task<Cidades> AtualizarCidade(int id, Cidades cidade)
     {
-        const string sql = "UPDATE cidades SET cidade = @Cidade, ddd = @Ddd, estado_id = @EstadoId WHERE id = @Id;";
-        await _session.Connection.ExecuteAsync(sql, new { Id = id, cidade.Cidade, cidade.Ddd, EstadoId = cidade.Estado.Id }, transaction: _session.Transaction);
-        return new Cidades(id, cidade.Cidade, cidade.Ddd, cidade.Estado);
+        return DbSessionExtensions.ExecuteWithConflictCheckAsync(async () =>
+        {
+            const string sql = "UPDATE cidades SET cidade = @Cidade, ddd = @Ddd, estado_id = @EstadoId WHERE id = @Id;";
+            await _session.Connection.ExecuteAsync(sql, new { Id = id, cidade.Cidade, cidade.Ddd, EstadoId = cidade.Estado.Id }, transaction: _session.Transaction);
+            return new Cidades(id, cidade.Cidade, cidade.Ddd, cidade.Estado);
+        });
+    }
+
+    public async Task<bool> ExisteCidade(int estadoId, string cidade, int? ignorarId = null)
+    {
+        var sql = "SELECT COUNT(1) FROM cidades WHERE estado_id = @EstadoId AND cidade = @Cidade";
+        if (ignorarId.HasValue) sql += " AND id != @IgnorarId";
+        return await _session.Connection.ExecuteScalarAsync<int>(sql, new { EstadoId = estadoId, Cidade = cidade, IgnorarId = ignorarId }, transaction: _session.Transaction) > 0;
     }
 
     public async Task<bool> DeletarCidade(int id)

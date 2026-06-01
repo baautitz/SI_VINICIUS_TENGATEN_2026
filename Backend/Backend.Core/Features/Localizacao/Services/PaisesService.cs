@@ -7,7 +7,7 @@ using FluentValidation;
 
 namespace Backend.Core.Features.Localizacao.Services;
 
-public sealed class PaisesService
+public sealed class PaisesService : BaseService
 {
   private readonly IPaisesRepository _paisesRepository;
 
@@ -32,8 +32,14 @@ public sealed class PaisesService
     if (!entidadeResult.Success)
       return entidadeResult;
 
-    var criado = await _paisesRepository.CriarPais(entidadeResult.Data!);
-    return Resultado<Paises>.Sucesso(criado);
+    if (await _paisesRepository.ExistePais(dto.SiglaIso, dto.Pais))
+      return Resultado<Paises>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe um país com este nome ou sigla."));
+
+    return await ExecuteResultAsync(async () =>
+    {
+      var criado = await _paisesRepository.CriarPais(entidadeResult.Data!);
+      return Resultado<Paises>.Sucesso(criado);
+    });
   }
 
   public async Task<Resultado<Paises>> AtualizarPais(int id, UpdatePaisDto dto)
@@ -50,8 +56,14 @@ public sealed class PaisesService
     if (!updateResult.Success)
       return updateResult;
 
-    var atualizado = await _paisesRepository.AtualizarPais(id, existente);
-    return Resultado<Paises>.Sucesso(atualizado);
+    if (await _paisesRepository.ExistePais(dto.SiglaIso, dto.Pais, id))
+      return Resultado<Paises>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe outro país com este nome ou sigla."));
+
+    return await ExecuteResultAsync(async () =>
+    {
+      var atualizado = await _paisesRepository.AtualizarPais(id, existente);
+      return Resultado<Paises>.Sucesso(atualizado);
+    });
   }
 
   public Task<bool> DeletarPais(int id)

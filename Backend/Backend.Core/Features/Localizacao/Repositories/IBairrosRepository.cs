@@ -11,5 +11,6 @@ public interface IBairrosRepository
     public Task<Bairros> CriarBairro(Bairros cidade);
     public Task<Bairros> AtualizarBairro(int id, Bairros cidade);
     public Task<bool> DeletarBairro(int id);
+    public Task<bool> ExisteBairro(int cidadeId, string bairro, int? ignorarId = null);
 }
 

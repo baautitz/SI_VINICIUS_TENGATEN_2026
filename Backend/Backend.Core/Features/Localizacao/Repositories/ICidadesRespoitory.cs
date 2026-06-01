@@ -11,5 +11,6 @@ public interface ICidadesRepository
     public Task<Cidades> CriarCidade(Cidades cidade);
     public Task<Cidades> AtualizarCidade(int id, Cidades cidade);
     public Task<bool> DeletarCidade(int id);
+    public Task<bool> ExisteCidade(int estadoId, string cidade, int? ignorarId = null);
 }
 

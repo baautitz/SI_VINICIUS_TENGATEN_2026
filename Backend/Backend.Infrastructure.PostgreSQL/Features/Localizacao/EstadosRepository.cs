@@ -72,18 +72,31 @@ public class EstadosRepository : IEstadosRepository
         return result.SingleOrDefault();
     }
 
-    public async Task<Estados> CriarEstado(Estados estado)
+    public Task<Estados> CriarEstado(Estados estado)
     {
-        const string sql = "INSERT INTO estados (estado, uf, pais_id) VALUES (@Estado, @Uf, @PaisId) RETURNING id;";
-        var idGerado = await _session.Connection.ExecuteScalarAsync<int>(sql, new { estado.Estado, estado.Uf, PaisId = estado.Pais.Id }, transaction: _session.Transaction);
-        return new Estados(idGerado, estado.Estado, estado.Uf, estado.Pais);
+        return DbSessionExtensions.ExecuteWithConflictCheckAsync(async () =>
+        {
+            const string sql = "INSERT INTO estados (estado, uf, pais_id) VALUES (@Estado, @Uf, @PaisId) RETURNING id;";
+            var idGerado = await _session.Connection.ExecuteScalarAsync<int>(sql, new { estado.Estado, estado.Uf, PaisId = estado.Pais.Id }, transaction: _session.Transaction);
+            return new Estados(idGerado, estado.Estado, estado.Uf, estado.Pais);
+        });
     }
 
-    public async Task<Estados> AtualizarEstado(int id, Estados estado)
+    public Task<Estados> AtualizarEstado(int id, Estados estado)
     {
-        const string sql = "UPDATE estados SET estado = @Estado, uf = @Uf, pais_id = @PaisId WHERE id = @Id;";
-        await _session.Connection.ExecuteAsync(sql, new { Id = id, estado.Estado, estado.Uf, PaisId = estado.Pais.Id }, transaction: _session.Transaction);
-        return new Estados(id, estado.Estado, estado.Uf, estado.Pais);
+        return DbSessionExtensions.ExecuteWithConflictCheckAsync(async () =>
+        {
+            const string sql = "UPDATE estados SET estado = @Estado, uf = @Uf, pais_id = @PaisId WHERE id = @Id;";
+            await _session.Connection.ExecuteAsync(sql, new { Id = id, estado.Estado, estado.Uf, PaisId = estado.Pais.Id }, transaction: _session.Transaction);
+            return new Estados(id, estado.Estado, estado.Uf, estado.Pais);
+        });
+    }
+
+    public async Task<bool> ExisteEstado(int paisId, string uf, int? ignorarId = null)
+    {
+        var sql = "SELECT COUNT(1) FROM estados WHERE pais_id = @PaisId AND uf = @Uf";
+        if (ignorarId.HasValue) sql += " AND id != @IgnorarId";
+        return await _session.Connection.ExecuteScalarAsync<int>(sql, new { PaisId = paisId, Uf = uf, IgnorarId = ignorarId }, transaction: _session.Transaction) > 0;
     }
 
     public async Task<bool> DeletarEstado(int id)

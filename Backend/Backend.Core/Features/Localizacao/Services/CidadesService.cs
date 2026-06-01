@@ -7,7 +7,7 @@ using FluentValidation;
 
 namespace Backend.Core.Features.Localizacao.Services;
 
-public sealed class CidadesService
+public sealed class CidadesService : BaseService
 {
   private readonly ICidadesRepository _cidadesRepository;
   private readonly IEstadosRepository _estadosRepository;
@@ -38,8 +38,14 @@ public sealed class CidadesService
     if (!entidadeResult.Success)
       return entidadeResult;
 
-    var criado = await _cidadesRepository.CriarCidade(entidadeResult.Data!);
-    return Resultado<Cidades>.Sucesso(criado);
+    if (await _cidadesRepository.ExisteCidade(estado.Id, dto.Cidade))
+      return Resultado<Cidades>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe uma cidade com este nome neste estado."));
+
+    return await ExecuteResultAsync(async () =>
+    {
+      var criado = await _cidadesRepository.CriarCidade(entidadeResult.Data!);
+      return Resultado<Cidades>.Sucesso(criado);
+    });
   }
 
   public async Task<Resultado<Cidades>> AtualizarCidade(int id, UpdateCidadeDto dto)
@@ -60,8 +66,14 @@ public sealed class CidadesService
     if (!updateResult.Success)
       return updateResult;
 
-    var atualizado = await _cidadesRepository.AtualizarCidade(id, existente);
-    return Resultado<Cidades>.Sucesso(atualizado);
+    if (await _cidadesRepository.ExisteCidade(estado.Id, dto.Cidade, id))
+      return Resultado<Cidades>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe outra cidade com este nome neste estado."));
+
+    return await ExecuteResultAsync(async () =>
+    {
+      var atualizado = await _cidadesRepository.AtualizarCidade(id, existente);
+      return Resultado<Cidades>.Sucesso(atualizado);
+    });
   }
 
   public Task<bool> DeletarCidade(int id)

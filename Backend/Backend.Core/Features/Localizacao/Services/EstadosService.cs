@@ -7,7 +7,7 @@ using FluentValidation;
 
 namespace Backend.Core.Features.Localizacao.Services;
 
-public sealed class EstadosService
+public sealed class EstadosService : BaseService
 {
   private readonly IEstadosRepository _estadosRepository;
   private readonly IPaisesRepository _paisesRepository;
@@ -38,8 +38,14 @@ public sealed class EstadosService
     if (!entidadeResult.Success)
       return entidadeResult;
 
-    var criado = await _estadosRepository.CriarEstado(entidadeResult.Data!);
-    return Resultado<Estados>.Sucesso(criado);
+    if (await _estadosRepository.ExisteEstado(pais.Id, dto.Uf))
+      return Resultado<Estados>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe um estado com esta UF neste país."));
+
+    return await ExecuteResultAsync(async () =>
+    {
+      var criado = await _estadosRepository.CriarEstado(entidadeResult.Data!);
+      return Resultado<Estados>.Sucesso(criado);
+    });
   }
 
   public async Task<Resultado<Estados>> AtualizarEstado(int id, UpdateEstadoDto dto)
@@ -60,8 +66,14 @@ public sealed class EstadosService
     if (!updateResult.Success)
       return updateResult;
 
-    var atualizado = await _estadosRepository.AtualizarEstado(id, existente);
-    return Resultado<Estados>.Sucesso(atualizado);
+    if (await _estadosRepository.ExisteEstado(pais.Id, dto.Uf, id))
+      return Resultado<Estados>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe outro estado com esta UF neste país."));
+
+    return await ExecuteResultAsync(async () =>
+    {
+      var atualizado = await _estadosRepository.AtualizarEstado(id, existente);
+      return Resultado<Estados>.Sucesso(atualizado);
+    });
   }
 
   public Task<bool> DeletarEstado(int id)

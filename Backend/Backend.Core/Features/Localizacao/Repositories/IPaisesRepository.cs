@@ -11,5 +11,6 @@ public interface IPaisesRepository
   Task<Paises> CriarPais(Paises pais);
   Task<Paises> AtualizarPais(int id, Paises pais); 
   Task<bool> DeletarPais(int id);
+  Task<bool> ExistePais(string siglaIso, string pais, int? ignorarId = null);
 }
 

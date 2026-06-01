@@ -53,18 +53,31 @@ public class PaisesRepository : IPaisesRepository
         return await _session.Connection.QuerySingleOrDefaultAsync<Paises>(sql, new { Id = id }, transaction: _session.Transaction);
     }
 
-    public async Task<Paises> CriarPais(Paises pais)
+    public Task<Paises> CriarPais(Paises pais)
     {
-        const string sql = "INSERT INTO paises (ddi, sigla_iso, moeda, simbolo_moeda, pais) VALUES (@Ddi, @SiglaIso, @Moeda, @SimboloMoeda, @Pais) RETURNING id;";
-        var idGerado = await _session.Connection.ExecuteScalarAsync<int>(sql, new { pais.Ddi, pais.SiglaIso, pais.Moeda, pais.SimboloMoeda, pais.Pais }, transaction: _session.Transaction);
-        return new Paises(idGerado, pais.Ddi, pais.SiglaIso, pais.Moeda, pais.SimboloMoeda, pais.Pais);
+        return DbSessionExtensions.ExecuteWithConflictCheckAsync(async () =>
+        {
+            const string sql = "INSERT INTO paises (ddi, sigla_iso, moeda, simbolo_moeda, pais) VALUES (@Ddi, @SiglaIso, @Moeda, @SimboloMoeda, @Pais) RETURNING id;";
+            var idGerado = await _session.Connection.ExecuteScalarAsync<int>(sql, new { pais.Ddi, pais.SiglaIso, pais.Moeda, pais.SimboloMoeda, pais.Pais }, transaction: _session.Transaction);
+            return new Paises(idGerado, pais.Ddi, pais.SiglaIso, pais.Moeda, pais.SimboloMoeda, pais.Pais);
+        });
     }
 
-    public async Task<Paises> AtualizarPais(int id, Paises pais)
+    public Task<Paises> AtualizarPais(int id, Paises pais)
     {
-        const string sql = "UPDATE paises SET ddi = @Ddi, sigla_iso = @SiglaIso, moeda = @Moeda, simbolo_moeda = @SimboloMoeda, pais = @Pais WHERE id = @Id;";
-        await _session.Connection.ExecuteAsync(sql, new { Id = id, pais.Ddi, pais.SiglaIso, pais.Moeda, pais.SimboloMoeda, pais.Pais }, transaction: _session.Transaction);
-        return new Paises(id, pais.Ddi, pais.SiglaIso, pais.Moeda, pais.SimboloMoeda, pais.Pais);
+        return DbSessionExtensions.ExecuteWithConflictCheckAsync(async () =>
+        {
+            const string sql = "UPDATE paises SET ddi = @Ddi, sigla_iso = @SiglaIso, moeda = @Moeda, simbolo_moeda = @SimboloMoeda, pais = @Pais WHERE id = @Id;";
+            await _session.Connection.ExecuteAsync(sql, new { Id = id, pais.Ddi, pais.SiglaIso, pais.Moeda, pais.SimboloMoeda, pais.Pais }, transaction: _session.Transaction);
+            return new Paises(id, pais.Ddi, pais.SiglaIso, pais.Moeda, pais.SimboloMoeda, pais.Pais);
+        });
+    }
+
+    public async Task<bool> ExistePais(string siglaIso, string pais, int? ignorarId = null)
+    {
+        var sql = "SELECT COUNT(1) FROM paises WHERE (sigla_iso = @SiglaIso OR pais = @Pais)";
+        if (ignorarId.HasValue) sql += " AND id != @IgnorarId";
+        return await _session.Connection.ExecuteScalarAsync<int>(sql, new { SiglaIso = siglaIso, Pais = pais, IgnorarId = ignorarId }, transaction: _session.Transaction) > 0;
     }
 
     public async Task<bool> DeletarPais(int id)

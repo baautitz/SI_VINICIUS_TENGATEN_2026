@@ -7,7 +7,7 @@ using FluentValidation;
 
 namespace Backend.Core.Features.Localizacao.Services;
 
-public sealed class BairrosService
+public sealed class BairrosService : BaseService
 {
   private readonly IBairrosRepository _bairrosRepository;
   private readonly ICidadesRepository _cidadesRepository;
@@ -38,8 +38,14 @@ public sealed class BairrosService
     if (!entidadeResult.Success)
       return entidadeResult;
 
-    var criado = await _bairrosRepository.CriarBairro(entidadeResult.Data!);
-    return Resultado<Bairros>.Sucesso(criado);
+    if (await _bairrosRepository.ExisteBairro(cidade.Id, dto.Bairro))
+      return Resultado<Bairros>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe um bairro com este nome nesta cidade."));
+
+    return await ExecuteResultAsync(async () =>
+    {
+      var criado = await _bairrosRepository.CriarBairro(entidadeResult.Data!);
+      return Resultado<Bairros>.Sucesso(criado);
+    });
   }
 
   public async Task<Resultado<Bairros>> AtualizarBairro(int id, UpdateBairroDto dto)
@@ -60,8 +66,14 @@ public sealed class BairrosService
     if (!updateResult.Success)
       return updateResult;
 
-    var atualizado = await _bairrosRepository.AtualizarBairro(id, existente);
-    return Resultado<Bairros>.Sucesso(atualizado);
+    if (await _bairrosRepository.ExisteBairro(cidade.Id, dto.Bairro, id))
+      return Resultado<Bairros>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe outro bairro com este nome nesta cidade."));
+
+    return await ExecuteResultAsync(async () =>
+    {
+      var atualizado = await _bairrosRepository.AtualizarBairro(id, existente);
+      return Resultado<Bairros>.Sucesso(atualizado);
+    });
   }
 
   public Task<bool> DeletarBairro(int id)
