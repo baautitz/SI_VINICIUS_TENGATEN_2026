@@ -5,7 +5,7 @@ namespace Backend.Core.Features.Parceiros.Entities;
 
 public class Fornecedores
 {
-    public int Id { get; private set; }
+    public int Id { get; set; }
     public string NomeRazaosocial { get; private set; }
     public string CpfCnpj { get; private set; }
     public string? RgIe { get; private set; }

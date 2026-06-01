@@ -72,6 +72,17 @@ public class EstadosRepository : IEstadosRepository
         return result.SingleOrDefault();
     }
 
+    public async Task<EstadoResumoDto?> ObterEstadoDetalhePorId(int id)
+    {
+        const string sql = @"
+            SELECT e.id, e.estado AS Estado, e.uf AS Uf, p.id AS PaisId, p.pais AS PaisNome
+            FROM estados e
+            JOIN paises p ON p.id = e.pais_id
+            WHERE e.id = @Id;";
+        return await _session.Connection.QuerySingleOrDefaultAsync<EstadoResumoDto>(
+            sql, new { Id = id }, transaction: _session.Transaction);
+    }
+
     public Task<Estados> CriarEstado(Estados estado)
     {
         return DbSessionExtensions.ExecuteWithConflictCheckAsync(async () =>

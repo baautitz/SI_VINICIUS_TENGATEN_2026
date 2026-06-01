@@ -24,11 +24,11 @@ public class ClientesRepository : IClientesRepository
         const string sql = @"
             SELECT COUNT(*) FROM clientes;
 
-            SELECT id, nome_razao_social, cpf_cnpj, rg_ie, apelido_nome_fantasia,
-                   endereco, telefone, email, limite_credito, ativo, criado_em,
-                   observacao
+            SELECT id AS Id, nome_razaosocial AS NomeRazaoSocial, cpf_cnpj AS CpfCnpj, rg_ie AS RgIe, apelido_nomefantasia AS ApelidoNomeFantasia,
+                   endereco AS Endereco, telefone AS Telefone, email AS Email, limite_credito AS LimiteCredito, ativo AS Ativo, criado_em AS CriadoEm,
+                   observacao AS Observacao
             FROM clientes
-            ORDER BY nome_razao_social
+            ORDER BY nome_razaosocial
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(
@@ -46,13 +46,13 @@ public class ClientesRepository : IClientesRepository
     public async Task<Clientes?> ObterClientePorId(int id)
     {
         const string sql = @"
-            SELECT c.id AS Id, c.nome_razao_social, c.cpf_cnpj, c.rg_ie, c.apelido_nome_fantasia,
-                   c.endereco, c.telefone, c.email, c.limite_credito, c.ativo, c.criado_em,
-                   c.atualizado_em, c.observacao,
-                   b.id AS BairroId, b.bairro,
-                   ci.id AS CidadeId, ci.cidade, ci.ddd,
-                   e.id AS EstadoId, e.estado, e.uf,
-                   p.id AS PaisId, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            SELECT c.id AS Id, c.nome_razaosocial AS NomeRazaoSocial, c.cpf_cnpj AS CpfCnpj, c.rg_ie AS RgIe, c.apelido_nomefantasia AS ApelidoNomeFantasia,
+                   c.endereco AS Endereco, c.telefone AS Telefone, c.email AS Email, c.limite_credito AS LimiteCredito, c.ativo AS Ativo, c.criado_em AS CriadoEm,
+                   c.observacao AS Observacao,
+                   b.id AS BairroId, b.id AS Id, b.bairro,
+                   ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
+                   e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
+                   p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM clientes c
             LEFT JOIN bairros b ON b.id = c.bairro_id
             LEFT JOIN cidades ci ON ci.id = b.cidade_id
@@ -84,7 +84,7 @@ public class ClientesRepository : IClientesRepository
     public async Task<Clientes> CriarCliente(Clientes cliente)
     {
         const string sql = @"
-            INSERT INTO clientes (nome_razao_social, cpf_cnpj, rg_ie, apelido_nome_fantasia,
+            INSERT INTO clientes (nome_razaosocial, cpf_cnpj, rg_ie, apelido_nomefantasia,
                                   endereco, bairro_id, telefone, email, limite_credito,
                                   ativo, criado_em, observacao)
             VALUES (@NomeRazaoSocial, @CpfCnpj, @RgIe, @ApelidoNomeFantasia,
@@ -120,14 +120,14 @@ public class ClientesRepository : IClientesRepository
     {
         const string sql = @"
             UPDATE clientes
-            SET nome_razao_social = @NomeRazaoSocial, cpf_cnpj = @CpfCnpj,
-                rg_ie = @RgIe, apelido_nome_fantasia = @ApelidoNomeFantasia,
+            SET nome_razaosocial = @NomeRazaoSocial, cpf_cnpj = @CpfCnpj,
+                rg_ie = @RgIe, apelido_nomefantasia = @ApelidoNomeFantasia,
                 endereco = @Endereco, bairro_id = @BairroId, telefone = @Telefone,
                 email = @Email, limite_credito = @LimiteCredito, ativo = @Ativo,
                 atualizado_em = @AtualizadoEm, observacao = @Observacao
             WHERE id = @Id;";
 
-        await _session.Connection.ExecuteAsync(
+        var linhasAfetadas = await _session.Connection.ExecuteAsync(
             sql,
             new
             {
@@ -142,10 +142,14 @@ public class ClientesRepository : IClientesRepository
                 cliente.Email,
                 cliente.LimiteCredito,
                 cliente.Ativo,
+                AtualizadoEm = DateTime.UtcNow,
                 cliente.Observacao
             },
             transaction: _session.Transaction
         );
+
+        if (linhasAfetadas == 0)
+            throw new Exception($"Falha ao atualizar: O cliente com ID {id} não foi encontrado ou não houve mudanças.");
 
         cliente.Id = id;
         return cliente;
@@ -168,8 +172,8 @@ public class ClientesRepository : IClientesRepository
         const string sql = @"
             SELECT COUNT(*) FROM clientes;
 
-            SELECT id, nome_razao_social, cpf_cnpj, apelido_nome_fantasia
-            FROM clientes ORDER BY nome_razao_social
+            SELECT id, nome_razaosocial AS NomeRazaoSocial, cpf_cnpj AS CpfCnpj, apelido_nomefantasia AS ApelidoNomeFantasia
+            FROM clientes ORDER BY nome_razaosocial
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(
@@ -188,14 +192,14 @@ public class ClientesRepository : IClientesRepository
 
         const string sql = @"
             SELECT COUNT(*) FROM clientes
-            WHERE nome_razao_social ILIKE @Termo OR cpf_cnpj ILIKE @Termo
-               OR apelido_nome_fantasia ILIKE @Termo OR email ILIKE @Termo;
+            WHERE nome_razaosocial ILIKE @Termo OR cpf_cnpj ILIKE @Termo
+               OR apelido_nomefantasia ILIKE @Termo OR email ILIKE @Termo;
 
-            SELECT id, nome_razao_social, cpf_cnpj, apelido_nome_fantasia
+            SELECT id, nome_razaosocial AS NomeRazaoSocial, cpf_cnpj AS CpfCnpj, apelido_nomefantasia AS ApelidoNomeFantasia
             FROM clientes
-            WHERE nome_razao_social ILIKE @Termo OR cpf_cnpj ILIKE @Termo
-               OR apelido_nome_fantasia ILIKE @Termo OR email ILIKE @Termo
-            ORDER BY nome_razao_social
+            WHERE nome_razaosocial ILIKE @Termo OR cpf_cnpj ILIKE @Termo
+               OR apelido_nomefantasia ILIKE @Termo OR email ILIKE @Termo
+            ORDER BY nome_razaosocial
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(
@@ -207,5 +211,25 @@ public class ClientesRepository : IClientesRepository
         var itens = await multi.ReadAsync<ClientesResumo>();
 
         return new ResultadoPaginado<ClientesResumo>(itens, total, pagina, tamanhoDaPagina);
+    }
+
+    public async Task<bool> ExisteClienteCpfCnpj(string cpfCnpj, int? paisId, int? ignorarId = null)
+    {
+        var sql = @"
+            SELECT COUNT(1)
+            FROM clientes c
+            WHERE c.cpf_cnpj = @CpfCnpj";
+
+        if (ignorarId.HasValue)
+        {
+            sql += " AND c.id != @IgnorarId";
+        }
+
+        var count = await _session.Connection.ExecuteScalarAsync<int>(
+            sql,
+            new { CpfCnpj = cpfCnpj, IgnorarId = ignorarId },
+            transaction: _session.Transaction);
+
+        return count > 0;
     }
 }

@@ -7,6 +7,7 @@ using Backend.Core.Features.Localizacao.Repositories;
 using Backend.Core.Features.Localizacao.Services;
 using Backend.Core.Features.NFe.Repositories;
 using Backend.Core.Features.Parceiros.Repositories;
+using Backend.Core.Features.Parceiros.Services;
 using Backend.Core.Features.Vendas.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;
 using Backend.Infrastructure.PostgreSQL.Features.Acesso;
@@ -58,6 +59,11 @@ public static class DependencyInjection
 
         services.AddScoped<IClientesRepository, ClientesRepository>();
         services.AddScoped<IEmitentesRepository, EmitentesRepository>();
+        services.AddScoped<IFornecedoresRepository, FornecedoresRepository>();
+
+        services.AddScoped<ClientesService>();
+        services.AddScoped<EmitentesService>();
+        services.AddScoped<FornecedoresService>();
 
         services.AddScoped<IVendasRepository, VendasRepository>();
 

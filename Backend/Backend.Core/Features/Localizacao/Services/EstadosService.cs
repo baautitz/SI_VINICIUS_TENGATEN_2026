@@ -32,14 +32,14 @@ public sealed class EstadosService : BaseService
 
     var pais = await _paisesRepository.ObterPaisPorId(dto.PaisId);
     if (pais is null)
-      return Resultado<Estados>.Falha(new ResultadoErro("PAIS_NAO_ENCONTRADO", "País não encontrado."));
+      return Resultado<Estados>.Falha(new ResultadoErro("PAIS_NAO_ENCONTRADO", "País não encontrado.", "PaisId"));
 
     var entidadeResult = Estados.Criar(dto.Estado, dto.Uf, pais);
     if (!entidadeResult.Success)
       return entidadeResult;
 
     if (await _estadosRepository.ExisteEstado(pais.Id, dto.Uf))
-      return Resultado<Estados>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe um estado com esta UF neste país."));
+      return Resultado<Estados>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe um estado com esta UF neste país.", "Uf"));
 
     return await ExecuteResultAsync(async () =>
     {
@@ -60,14 +60,14 @@ public sealed class EstadosService : BaseService
 
     var pais = await _paisesRepository.ObterPaisPorId(dto.PaisId);
     if (pais is null)
-      return Resultado<Estados>.Falha(new ResultadoErro("PAIS_NAO_ENCONTRADO", "País não encontrado."));
+      return Resultado<Estados>.Falha(new ResultadoErro("PAIS_NAO_ENCONTRADO", "País não encontrado.", "PaisId"));
 
     var updateResult = existente.AtualizarResultado(dto.Estado, dto.Uf, pais);
     if (!updateResult.Success)
       return updateResult;
 
     if (await _estadosRepository.ExisteEstado(pais.Id, dto.Uf, id))
-      return Resultado<Estados>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe outro estado com esta UF neste país."));
+      return Resultado<Estados>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe outro estado com esta UF neste país.", "Uf"));
 
     return await ExecuteResultAsync(async () =>
     {

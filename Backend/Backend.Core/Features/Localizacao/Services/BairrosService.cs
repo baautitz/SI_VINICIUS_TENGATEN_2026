@@ -32,14 +32,14 @@ public sealed class BairrosService : BaseService
 
     var cidade = await _cidadesRepository.ObterCidadePorId(dto.CidadeId);
     if (cidade is null)
-      return Resultado<Bairros>.Falha(new ResultadoErro("CIDADE_NAO_ENCONTRADA", "Cidade não encontrada."));
+      return Resultado<Bairros>.Falha(new ResultadoErro("CIDADE_NAO_ENCONTRADA", "Cidade não encontrada.", "CidadeId"));
 
     var entidadeResult = Bairros.Criar(dto.Bairro, cidade);
     if (!entidadeResult.Success)
       return entidadeResult;
 
     if (await _bairrosRepository.ExisteBairro(cidade.Id, dto.Bairro))
-      return Resultado<Bairros>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe um bairro com este nome nesta cidade."));
+      return Resultado<Bairros>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe um bairro com este nome nesta cidade.", "Bairro"));
 
     return await ExecuteResultAsync(async () =>
     {
@@ -60,14 +60,14 @@ public sealed class BairrosService : BaseService
 
     var cidade = await _cidadesRepository.ObterCidadePorId(dto.CidadeId);
     if (cidade is null)
-      return Resultado<Bairros>.Falha(new ResultadoErro("CIDADE_NAO_ENCONTRADA", "Cidade não encontrada."));
+      return Resultado<Bairros>.Falha(new ResultadoErro("CIDADE_NAO_ENCONTRADA", "Cidade não encontrada.", "CidadeId"));
 
     var updateResult = existente.AtualizarResultado(dto.Bairro, cidade);
     if (!updateResult.Success)
       return updateResult;
 
     if (await _bairrosRepository.ExisteBairro(cidade.Id, dto.Bairro, id))
-      return Resultado<Bairros>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe outro bairro com este nome nesta cidade."));
+      return Resultado<Bairros>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe outro bairro com este nome nesta cidade.", "Bairro"));
 
     return await ExecuteResultAsync(async () =>
     {

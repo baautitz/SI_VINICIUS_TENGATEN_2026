@@ -24,11 +24,11 @@ public class EmitentesRepository : IEmitentesRepository
         const string sql = @"
             SELECT COUNT(*) FROM emitentes;
 
-            SELECT id, nome_razao_social, cpf_cnpj, apelido_nome_fantasia, endereco,
-                   telefone, email, rg_ie, inscricao_municipal, regime_tributario,
-                   ativo, criado_em, observacao
+            SELECT id AS Id, nome_razaosocial AS NomeRazaoSocial, cpf_cnpj AS CpfCnpj, apelido_nomefantasia AS ApelidoNomeFantasia, endereco AS Endereco,
+                   telefone AS Telefone, email AS Email, rg_ie AS RgIe, inscricao_municipal AS InscricaoMunicipal, regime_tributario AS RegimeTributario,
+                   ativo AS Ativo, criado_em AS CriadoEm, observacao AS Observacao
             FROM emitentes
-            ORDER BY nome_razao_social
+            ORDER BY nome_razaosocial
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(
@@ -44,13 +44,13 @@ public class EmitentesRepository : IEmitentesRepository
     public async Task<Emitentes?> ObterEmitentePorId(int id)
     {
         const string sql = @"
-            SELECT e.id AS Id, e.nome_razao_social, e.cpf_cnpj, e.apelido_nome_fantasia,
-                   e.endereco, e.telefone, e.email, e.rg_ie, e.inscricao_municipal,
-                   e.regime_tributario, e.ativo, e.criado_em, e.observacao,
-                   b.id AS BairroId, b.bairro,
-                   c.id AS CidadeId, c.cidade, c.ddd,
-                   st.id AS EstadoId, st.estado, st.uf,
-                   p.id AS PaisId, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            SELECT e.id AS Id, e.nome_razaosocial AS NomeRazaoSocial, e.cpf_cnpj AS CpfCnpj, e.apelido_nomefantasia AS ApelidoNomeFantasia,
+                   e.endereco AS Endereco, e.telefone AS Telefone, e.email AS Email, e.rg_ie AS RgIe, e.inscricao_municipal AS InscricaoMunicipal,
+                   e.regime_tributario AS RegimeTributario, e.ativo AS Ativo, e.criado_em AS CriadoEm, e.observacao AS Observacao,
+                   b.id AS BairroId, b.id AS Id, b.bairro,
+                   c.id AS CidadeId, c.id AS Id, c.cidade, c.ddd,
+                   st.id AS EstadoId, st.id AS Id, st.estado, st.uf,
+                   p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM emitentes e
             LEFT JOIN bairros b ON b.id = e.bairro_id
             LEFT JOIN cidades c ON c.id = b.cidade_id
@@ -82,7 +82,7 @@ public class EmitentesRepository : IEmitentesRepository
     public async Task<Emitentes> CriarEmitente(Emitentes emitente)
     {
         const string sql = @"
-            INSERT INTO emitentes (nome_razao_social, cpf_cnpj, apelido_nome_fantasia, endereco,
+            INSERT INTO emitentes (nome_razaosocial, cpf_cnpj, apelido_nomefantasia, endereco,
                                    bairro_id, telefone, email, rg_ie, inscricao_municipal,
                                    regime_tributario, ativo, criado_em, observacao)
             VALUES (@NomeRazaoSocial, @CpfCnpj, @ApelidoNomeFantasia, @Endereco,
@@ -119,8 +119,8 @@ public class EmitentesRepository : IEmitentesRepository
     {
         const string sql = @"
             UPDATE emitentes
-            SET nome_razao_social = @NomeRazaoSocial, cpf_cnpj = @CpfCnpj,
-                apelido_nome_fantasia = @ApelidoNomeFantasia, endereco = @Endereco,
+            SET nome_razaosocial = @NomeRazaoSocial, cpf_cnpj = @CpfCnpj,
+                apelido_nomefantasia = @ApelidoNomeFantasia, endereco = @Endereco,
                 bairro_id = @BairroId, telefone = @Telefone, email = @Email,
                 rg_ie = @RgIe, inscricao_municipal = @InscricaoMunicipal,
                 regime_tributario = @RegimeTributario, ativo = @Ativo,
@@ -143,6 +143,7 @@ public class EmitentesRepository : IEmitentesRepository
                 emitente.InscricaoMunicipal,
                 emitente.RegimeTributario,
                 emitente.Ativo,
+                AtualizadoEm = DateTime.UtcNow,
                 emitente.Observacao
             },
             transaction: _session.Transaction
@@ -169,8 +170,8 @@ public class EmitentesRepository : IEmitentesRepository
         const string sql = @"
             SELECT COUNT(*) FROM emitentes;
 
-            SELECT id, nome_razao_social, cpf_cnpj, apelido_nome_fantasia
-            FROM emitentes ORDER BY nome_razao_social
+            SELECT id, nome_razaosocial AS NomeRazaoSocial, cpf_cnpj AS CpfCnpj, apelido_nomefantasia AS ApelidoNomeFantasia
+            FROM emitentes ORDER BY nome_razaosocial
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(
@@ -189,14 +190,14 @@ public class EmitentesRepository : IEmitentesRepository
 
         const string sql = @"
             SELECT COUNT(*) FROM emitentes
-            WHERE nome_razao_social ILIKE @Termo OR cpf_cnpj ILIKE @Termo
-               OR apelido_nome_fantasia ILIKE @Termo OR email ILIKE @Termo;
+            WHERE nome_razaosocial ILIKE @Termo OR cpf_cnpj ILIKE @Termo
+               OR apelido_nomefantasia ILIKE @Termo OR email ILIKE @Termo;
 
-            SELECT id, nome_razao_social, cpf_cnpj, apelido_nome_fantasia
+            SELECT id, nome_razaosocial AS NomeRazaoSocial, cpf_cnpj AS CpfCnpj, apelido_nomefantasia AS ApelidoNomeFantasia
             FROM emitentes
-            WHERE nome_razao_social ILIKE @Termo OR cpf_cnpj ILIKE @Termo
-               OR apelido_nome_fantasia ILIKE @Termo OR email ILIKE @Termo
-            ORDER BY nome_razao_social
+            WHERE nome_razaosocial ILIKE @Termo OR cpf_cnpj ILIKE @Termo
+               OR apelido_nomefantasia ILIKE @Termo OR email ILIKE @Termo
+            ORDER BY nome_razaosocial
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(
@@ -208,5 +209,25 @@ public class EmitentesRepository : IEmitentesRepository
         var itens = await multi.ReadAsync<EmitentesResumo>();
 
         return new ResultadoPaginado<EmitentesResumo>(itens, total, pagina, tamanhoDaPagina);
+    }
+
+    public async Task<bool> ExisteEmitenteCpfCnpj(string cpfCnpj, int? paisId, int? ignorarId = null)
+    {
+        var sql = @"
+            SELECT COUNT(1)
+            FROM emitentes em
+            WHERE em.cpf_cnpj = @CpfCnpj";
+
+        if (ignorarId.HasValue)
+        {
+            sql += " AND em.id != @IgnorarId";
+        }
+
+        var count = await _session.Connection.ExecuteScalarAsync<int>(
+            sql,
+            new { CpfCnpj = cpfCnpj, IgnorarId = ignorarId },
+            transaction: _session.Transaction);
+
+        return count > 0;
     }
 }

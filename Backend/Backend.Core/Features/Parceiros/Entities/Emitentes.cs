@@ -20,6 +20,13 @@ public class Emitentes
     public DateTime CriadoEm { get; private set; }
     public string? Observacao { get; private set; }
 
+    // Required by Dapper
+    protected Emitentes() 
+    {
+        NomeRazaoSocial = null!;
+        CpfCnpj = null!;
+    }
+
     public Emitentes(
         string nomeRazaoSocial,
         string cpfCnpj,
@@ -56,6 +63,26 @@ public class Emitentes
         Observacao = TextNormalization.NormalizeOrNull(observacao);
         Ativo = ativo;
         CriadoEm = DateTime.UtcNow;
+    }
+
+    public Emitentes(int id,
+        string nomeRazaoSocial,
+        string cpfCnpj,
+        string? apelidoNomeFantasia = null,
+        string? endereco = null,
+        Bairros? bairro = null,
+        string? telefone = null,
+        string? email = null,
+        string? rgIe = null,
+        string? inscricaoMunicipal = null,
+        string? regimeTributario = null,
+        string? observacao = null,
+        bool ativo = true,
+        DateTime? criadoEm = null)
+        : this(nomeRazaoSocial, cpfCnpj, apelidoNomeFantasia, endereco, bairro, telefone, email, rgIe, inscricaoMunicipal, regimeTributario, observacao, ativo)
+    {
+        Id = id;
+        CriadoEm = criadoEm ?? DateTime.UtcNow;
     }
 
     public void AtualizarDados(

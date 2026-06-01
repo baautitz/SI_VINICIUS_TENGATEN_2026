@@ -15,4 +15,5 @@ public interface IFornecedoresRepository
     public Task<bool> DeletarFornecedor(int id);
     public Task<ResultadoPaginado<FornecedoresResumo>> ObterFornecedoresResumo(int pagina = 1, int tamanhoDaPagina = 20);
     public Task<ResultadoPaginado<FornecedoresResumo>> PesquisarFornecedores(string termo, int pagina = 1, int tamanhoDaPagina = 20);
+    public Task<bool> ExisteFornecedorCpfCnpj(string cpfCnpj, int? paisId, int? ignorarId = null);
 }

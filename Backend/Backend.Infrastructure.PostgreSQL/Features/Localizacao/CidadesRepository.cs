@@ -77,6 +77,17 @@ public class CidadesRepository : ICidadesRepository
         return result.SingleOrDefault();
     }
 
+    public async Task<CidadeResumoDto?> ObterCidadeDetalhePorId(int id)
+    {
+        const string sql = @"
+            SELECT c.id, c.cidade AS Cidade, c.ddd AS Ddd, e.id AS EstadoId, e.estado AS EstadoNome, e.uf AS Uf
+            FROM cidades c
+            JOIN estados e ON e.id = c.estado_id
+            WHERE c.id = @Id;";
+        return await _session.Connection.QuerySingleOrDefaultAsync<CidadeResumoDto>(
+            sql, new { Id = id }, transaction: _session.Transaction);
+    }
+
     public Task<Cidades> CriarCidade(Cidades cidade)
     {
         return DbSessionExtensions.ExecuteWithConflictCheckAsync(async () =>

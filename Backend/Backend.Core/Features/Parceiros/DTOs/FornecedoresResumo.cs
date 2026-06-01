@@ -2,7 +2,7 @@ namespace Backend.Core.Features.Parceiros.DTOs;
 
 public record FornecedoresResumo(
     int Id,
-    string NomeRazaosocial,
+    string NomeRazaoSocial,
     string CpfCnpj,
-    bool Ativo
+    string ApelidoNomeFantasia
 );
