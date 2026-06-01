@@ -27,6 +27,8 @@ export function CidadesList({
   onPageChange,
   rowSelection,
   onRowSelectionChange,
+  selectAllAcrossPages,
+  onSelectAllAcrossPagesChange,
 }: FeatureListProps<CidadeDto>) {
   const columns: ColumnDef<CidadeDto>[] = [
     {
@@ -49,10 +51,12 @@ export function CidadesList({
         />
       ),
       enableHiding: false,
+      size: 50,
     },
     {
       accessorKey: "id",
       header: "ID",
+      size: 80,
       cell: ({ row }) => (
         <span className="font-semibold">{row.getValue("id")}</span>
       ),
@@ -133,9 +137,11 @@ export function CidadesList({
         globalFilter={searchTerm}
         onGlobalFilterChange={onSearchChange}
         searchPlaceholder="Pesquisar por cidade, DDD ou estado..."
-        // Pass states
         rowSelection={rowSelection}
         onRowSelectionChange={onRowSelectionChange}
+        selectAllAcrossPages={selectAllAcrossPages}
+        onSelectAllAcrossPagesChange={onSelectAllAcrossPagesChange}
+        getRowId={(row) => row.id.toString()}
       />
     </FeatureLayout>
   );

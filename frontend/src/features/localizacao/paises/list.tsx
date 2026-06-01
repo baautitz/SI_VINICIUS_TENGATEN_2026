@@ -27,6 +27,8 @@ export function PaisesList({
   onPageChange,
   rowSelection,
   onRowSelectionChange,
+  selectAllAcrossPages,
+  onSelectAllAcrossPagesChange,
 }: FeatureListProps<PaisDto>) {
   const columns: ColumnDef<PaisDto>[] = [
     {
@@ -49,10 +51,12 @@ export function PaisesList({
         />
       ),
       enableHiding: false,
+      size: 50,
     },
     {
       accessorKey: "id",
       header: "ID",
+      size: 80,
       cell: ({ row }) => (
         <span className="font-semibold">{row.getValue("id")}</span>
       ),
@@ -139,6 +143,9 @@ export function PaisesList({
         searchPlaceholder="Pesquisar por nome ou sigla..."
         rowSelection={rowSelection}
         onRowSelectionChange={onRowSelectionChange}
+        selectAllAcrossPages={selectAllAcrossPages}
+        onSelectAllAcrossPagesChange={onSelectAllAcrossPagesChange}
+        getRowId={(row) => row.id.toString()}
       />
     </FeatureLayout>
   );

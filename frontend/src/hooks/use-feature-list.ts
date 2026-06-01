@@ -10,8 +10,21 @@ export function useFeatureList<T>({ initialSearchTerm = "" }: UseFeatureListOpti
   const deferredSearch = React.useDeferredValue(searchTerm)
   const [page, setPage] = useState(1)
 
-  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
+  const [rowSelection, setRowSelectionRaw] = useState<RowSelectionState>({})
+  const [selectAllAcrossPages, setSelectAllAcrossPages] = useState(false)
 
+  const setRowSelection = (updaterOrValue: RowSelectionState | ((old: RowSelectionState) => RowSelectionState)) => {
+    setRowSelectionRaw((old) => {
+      const newValue = typeof updaterOrValue === 'function' ? updaterOrValue(old) : updaterOrValue;
+      
+      // Se a seleção for limpa ou desmarcada parcialmente, desativamos o selectAllAcrossPages
+      if (selectAllAcrossPages) {
+        setSelectAllAcrossPages(false);
+      }
+      
+      return newValue;
+    });
+  }
   const [isUpsertOpen, setIsUpsertOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<T | null>(null)
 
@@ -45,6 +58,8 @@ export function useFeatureList<T>({ initialSearchTerm = "" }: UseFeatureListOpti
     setPage,
     rowSelection,
     setRowSelection,
+    selectAllAcrossPages,
+    setSelectAllAcrossPages,
     isUpsertOpen,
     setIsUpsertOpen,
     editingItem,

@@ -27,6 +27,8 @@ export function EstadosList({
   onPageChange,
   rowSelection,
   onRowSelectionChange,
+  selectAllAcrossPages,
+  onSelectAllAcrossPagesChange,
 }: FeatureListProps<EstadoDto>) {
   const columns: ColumnDef<EstadoDto>[] = [
     {
@@ -49,10 +51,12 @@ export function EstadosList({
         />
       ),
       enableHiding: false,
+      size: 50,
     },
     {
       accessorKey: "id",
       header: "ID",
+      size: 80,
       cell: ({ row }) => (
         <span className="font-semibold">{row.getValue("id")}</span>
       ),
@@ -129,9 +133,11 @@ export function EstadosList({
         globalFilter={searchTerm}
         onGlobalFilterChange={onSearchChange}
         searchPlaceholder="Pesquisar por estado, UF ou país..."
-        // Pass states
         rowSelection={rowSelection}
         onRowSelectionChange={onRowSelectionChange}
+        selectAllAcrossPages={selectAllAcrossPages}
+        onSelectAllAcrossPagesChange={onSelectAllAcrossPagesChange}
+        getRowId={(row) => row.id.toString()}
       />
     </FeatureLayout>
   );

@@ -18,6 +18,8 @@ export interface FeatureListProps<TDto> {
   onPageChange: (page: number) => void;
   rowSelection: RowSelectionState;
   onRowSelectionChange: OnChangeFn<RowSelectionState>;
+  selectAllAcrossPages?: boolean;
+  onSelectAllAcrossPagesChange?: (value: boolean) => void;
 }
 
 interface UseFeatureOrchestratorProps<TDto extends { id: number }> {
@@ -78,6 +80,8 @@ export function useFeatureOrchestrator<TDto extends { id: number }>({
       onPageChange: list.setPage,
       rowSelection: list.rowSelection,
       onRowSelectionChange: list.setRowSelection,
+      selectAllAcrossPages: list.selectAllAcrossPages,
+      onSelectAllAcrossPagesChange: list.setSelectAllAcrossPages,
     },
     upsertProps: {
       open: list.isUpsertOpen,

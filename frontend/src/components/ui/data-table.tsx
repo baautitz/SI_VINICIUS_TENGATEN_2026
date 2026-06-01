@@ -34,23 +34,24 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
   loading?: boolean;
 
-  // Pagination (Server-side)
   pageCount: number;
   pageIndex: number;
   onPageChange: (pageIndex: number) => void;
   totalItems?: number;
 
-  // Filtering (Server-side)
   globalFilter?: string;
   onGlobalFilterChange?: (filter: string) => void;
   searchPlaceholder?: string;
 
-  // Selection
   rowSelection?: RowSelectionState;
   onRowSelectionChange?: OnChangeFn<RowSelectionState>;
 
-  // Extra Toolbar Actions
+  selectAllAcrossPages?: boolean;
+  onSelectAllAcrossPagesChange?: (value: boolean) => void;
+
   actions?: React.ReactNode;
+
+  getRowId?: (originalRow: TData, index: number, parent?: unknown) => string;
 }
 
 export function DataTable<TData, TValue>({
@@ -66,8 +67,13 @@ export function DataTable<TData, TValue>({
   searchPlaceholder = "Filtrar...",
   rowSelection = {},
   onRowSelectionChange,
+  selectAllAcrossPages = false,
+  onSelectAllAcrossPagesChange,
   actions,
+  getRowId,
 }: DataTableProps<TData, TValue>) {
+  "use no memo";
+
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
@@ -77,10 +83,11 @@ export function DataTable<TData, TValue>({
     },
     manualPagination: true,
     manualFiltering: true,
-    manualSorting: true, // We still keep it "manual" but remove UI
+    manualSorting: true,
     enableRowSelection: true,
     onRowSelectionChange: onRowSelectionChange,
     getCoreRowModel: getCoreRowModel(),
+    getRowId: getRowId,
   });
 
   return (
@@ -116,6 +123,9 @@ export function DataTable<TData, TValue>({
                       <TableHead
                         key={header.id}
                         className="whitespace-nowrap h-11 py-2 font-bold text-foreground"
+                        style={{
+                          width: header.column.getSize() !== 150 ? header.column.getSize() : undefined,
+                        }}
                       >
                         {header.isPlaceholder
                           ? null
@@ -130,6 +140,45 @@ export function DataTable<TData, TValue>({
               ))}
             </TableHeader>
             <TableBody>
+              {table.getIsAllPageRowsSelected() &&
+                totalItems !== undefined &&
+                totalItems > table.getRowModel().rows.length &&
+                onSelectAllAcrossPagesChange && (
+                  <TableRow className="bg-muted/30 hover:bg-muted/30 border-b">
+                    <TableCell
+                      colSpan={columns.length}
+                      className="py-3 text-center text-sm"
+                    >
+                      {selectAllAcrossPages ? (
+                        <>
+                          <span className="text-muted-foreground mr-2">
+                            Todas as <strong>{totalItems}</strong> entidades estão selecionadas.
+                          </span>
+                          <Button
+                            variant="link"
+                            className="h-auto p-0 font-semibold"
+                            onClick={() => onSelectAllAcrossPagesChange(false)}
+                          >
+                            Limpar seleção
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-muted-foreground mr-2">
+                            Todas as <strong>{table.getRowModel().rows.length}</strong> entidades desta página estão selecionadas.
+                          </span>
+                          <Button
+                            variant="link"
+                            className="h-auto p-0 font-semibold"
+                            onClick={() => onSelectAllAcrossPagesChange(true)}
+                          >
+                            Selecionar todas as {totalItems} entidades
+                          </Button>
+                        </>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                )}
               {loading ? (
                 <TableRow>
                   <TableCell
@@ -152,7 +201,13 @@ export function DataTable<TData, TValue>({
                     className="group border-b last:border-0"
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="py-3">
+                      <TableCell 
+                        key={cell.id} 
+                        className="py-3"
+                        style={{
+                          width: cell.column.getSize() !== 150 ? cell.column.getSize() : undefined,
+                        }}
+                      >
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext(),
@@ -178,7 +233,9 @@ export function DataTable<TData, TValue>({
 
       <div className="flex items-center justify-between mt-auto">
         <div className="flex-1 text-sm text-muted-foreground font-medium">
-          {Object.keys(rowSelection).length} de{" "}
+          {selectAllAcrossPages 
+            ? totalItems 
+            : Object.keys(rowSelection).length} de{" "}
           {totalItems ?? table.getFilteredRowModel().rows.length}{" "}
           selecionado(s).
         </div>

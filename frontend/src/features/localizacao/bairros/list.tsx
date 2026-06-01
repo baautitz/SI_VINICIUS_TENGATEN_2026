@@ -27,6 +27,8 @@ export function BairrosList({
   onPageChange,
   rowSelection,
   onRowSelectionChange,
+  selectAllAcrossPages,
+  onSelectAllAcrossPagesChange,
 }: FeatureListProps<BairroDto>) {
   const columns: ColumnDef<BairroDto>[] = [
     {
@@ -49,10 +51,12 @@ export function BairrosList({
         />
       ),
       enableHiding: false,
+      size: 50,
     },
     {
       accessorKey: "id",
       header: "ID",
+      size: 80,
       cell: ({ row }) => (
         <span className="font-semibold">{row.getValue("id")}</span>
       ),
@@ -129,9 +133,11 @@ export function BairrosList({
         globalFilter={searchTerm}
         onGlobalFilterChange={onSearchChange}
         searchPlaceholder="Pesquisar por bairro ou cidade..."
-        // Pass states
         rowSelection={rowSelection}
         onRowSelectionChange={onRowSelectionChange}
+        selectAllAcrossPages={selectAllAcrossPages}
+        onSelectAllAcrossPagesChange={onSelectAllAcrossPagesChange}
+        getRowId={(row) => row.id.toString()}
       />
     </FeatureLayout>
   );
