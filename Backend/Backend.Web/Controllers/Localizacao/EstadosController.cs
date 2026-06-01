@@ -18,8 +18,8 @@ public class EstadosController : ControllerBase
   }
 
   [HttpGet]
-  public Task<ResultadoPaginado<Estados>> GetEstados([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-      => _estadosService.ObterEstados(page, pageSize);
+  public Task<ResultadoPaginado<EstadoResumoDto>> GetEstados([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+      => _estadosService.ObterEstados(search, page, pageSize);
 
   [HttpGet("{id:int}")]
   public async Task<ActionResult<Estados>> GetEstado(int id)
@@ -32,6 +32,7 @@ public class EstadosController : ControllerBase
   }
 
   [HttpPost]
+  [ProducesResponseType(typeof(Resultado<Estados>), StatusCodes.Status201Created)]
   public async Task<ActionResult<Resultado<Estados>>> CreateEstado([FromBody] CreateEstadoDto dto)
   {
     var result = await _estadosService.CriarEstado(dto);

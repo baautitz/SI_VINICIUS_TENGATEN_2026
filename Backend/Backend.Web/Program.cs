@@ -8,6 +8,16 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        builder.Services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(policy =>
+            {
+                policy.AllowAnyOrigin()
+                      .AllowAnyHeader()
+                      .AllowAnyMethod();
+            });
+        });
+
         builder.Services.AddControllers();
         builder.Services.AddOpenApiDocument();
 
@@ -17,6 +27,10 @@ public class Program
         builder.Services.AddPostgreSQLInfrastructure(connectionString);
 
         var app = builder.Build();
+
+        app.UseMiddleware<Backend.Web.Middlewares.GlobalExceptionMiddleware>();
+
+        app.UseCors();
 
         if (app.Environment.IsDevelopment())
         {

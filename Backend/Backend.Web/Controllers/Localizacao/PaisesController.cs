@@ -18,8 +18,8 @@ public class PaisesController : ControllerBase
   }
 
   [HttpGet]
-  public Task<ResultadoPaginado<Paises>> GetPaises([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-      => _paisesService.ObterPaises(page, pageSize);
+  public Task<ResultadoPaginado<PaisResumoDto>> GetPaises([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+      => _paisesService.ObterPaises(search, page, pageSize);
 
   [HttpGet("{id:int}")]
   public async Task<ActionResult<Paises>> GetPais(int id)
@@ -32,6 +32,7 @@ public class PaisesController : ControllerBase
   }
 
   [HttpPost]
+  [ProducesResponseType(typeof(Resultado<Paises>), StatusCodes.Status201Created)]
   public async Task<ActionResult<Resultado<Paises>>> CreatePais([FromBody] CreatePaisDto dto)
   {
     var result = await _paisesService.CriarPais(dto);

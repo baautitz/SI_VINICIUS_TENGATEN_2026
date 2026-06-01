@@ -22,5 +22,9 @@
     <ProjectReference Include="..\Backend.Infrastructure.PostgreSQL\Backend.Infrastructure.PostgreSQL.csproj" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <!-- Fix for dotnet watch path normalization bug in .NET 10 on Linux/Docker -->
+    <IntermediateOutputPath Condition="'$(MSBuildRuntimeType)' == 'Core'">$(IntermediateOutputPath.Replace('\', '/'))</IntermediateOutputPath>
+  </PropertyGroup>
 </Project>
  

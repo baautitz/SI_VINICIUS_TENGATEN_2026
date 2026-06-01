@@ -18,8 +18,8 @@ public class CidadesController : ControllerBase
   }
 
   [HttpGet]
-  public Task<ResultadoPaginado<Cidades>> GetCidades([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-      => _cidadesService.ObterCidades(page, pageSize);
+  public Task<ResultadoPaginado<CidadeResumoDto>> GetCidades([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+      => _cidadesService.ObterCidades(search, page, pageSize);
 
   [HttpGet("{id:int}")]
   public async Task<ActionResult<Cidades>> GetCidade(int id)
@@ -32,6 +32,7 @@ public class CidadesController : ControllerBase
   }
 
   [HttpPost]
+  [ProducesResponseType(typeof(Resultado<Cidades>), StatusCodes.Status201Created)]
   public async Task<ActionResult<Resultado<Cidades>>> CreateCidade([FromBody] CreateCidadeDto dto)
   {
     var result = await _cidadesService.CriarCidade(dto);
