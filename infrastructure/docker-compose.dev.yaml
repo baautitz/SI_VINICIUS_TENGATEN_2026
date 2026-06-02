@@ -41,22 +41,26 @@ services:
       - /app/Backend.Web/obj
       - /app/Backend.Web/bin
 
-  # frontend:
-  #   build:
-  #     context: ../frontend
-  #     dockerfile: Dockerfile.dev
-  #   ports:
-  #     - "${FRONTEND_HTTP_PORT:-3000}:3000"
-  #   environment:
-  #     - NODE_ENV=development
-  #     - PORT=3000
-  #   depends_on:
-  #     backend:
-  #       condition: service_started
-  #   volumes:
-  #     - ../frontend:/app:delegated
-  #     - /app/node_modules
-  #     - /app/.next
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "${FRONTEND_HTTP_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
+      - NEXT_TELEMETRY_DISABLED=1
+    depends_on:
+      backend:
+        condition: service_started
+    volumes:
+      - ../frontend:/app:delegated
+      - /app/node_modules
+      - /app/.next
 
 volumes:
   postgres_data:
+

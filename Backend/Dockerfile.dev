@@ -13,4 +13,5 @@ ENV ASPNETCORE_ENVIRONMENT=Development
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 COPY --from=deps /root/.nuget /root/.nuget
+COPY . .
 ENTRYPOINT ["dotnet", "watch", "run", "--no-launch-profile", "--project", "Backend.Web/Backend.Web.csproj"]

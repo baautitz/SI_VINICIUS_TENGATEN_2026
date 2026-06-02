@@ -1,7 +1,12 @@
 "use client";
-import React from "react";
+
 import { EntityInput } from "@/components/ui/entity-input";
-import { BairrosFeature, Bairro, BairroResumo, formatBairroLabel } from "@/features/localizacao/bairros";
+import {
+  BairrosFeature,
+  Bairro,
+  BairroResumo,
+  formatBairroLabel,
+} from "@/features/localizacao/bairros";
 import { bairrosApi } from "@/api/localizacao";
 
 interface BairroInputProps {

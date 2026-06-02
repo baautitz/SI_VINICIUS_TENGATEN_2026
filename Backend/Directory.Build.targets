@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <IntermediateOutputPath Condition="'$(MSBuildRuntimeType)' == 'Core' and '$(IntermediateOutputPath)' != ''">$(IntermediateOutputPath.Replace('\', '/'))</IntermediateOutputPath>
+    <OutputPath Condition="'$(MSBuildRuntimeType)' == 'Core' and '$(OutputPath)' != ''">$(OutputPath.Replace('\', '/'))</OutputPath>
+  </PropertyGroup>
+</Project>
