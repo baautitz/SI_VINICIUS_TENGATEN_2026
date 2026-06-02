@@ -14,4 +14,5 @@ public interface ITransportadorasRepository {
     public Task<bool> DeletarTransportadora(int id);
     public Task<ResultadoPaginado<TransportadorasResumo>> ObterTransportadorasResumo(int pagina = 1, int tamanhoDaPagina = 20);
     public Task<ResultadoPaginado<TransportadorasResumo>> PesquisarTransportadoras(string termo, int pagina = 1, int tamanhoDaPagina = 20);
+    public Task<bool> ExisteTransportadoraCpfCnpj(string cpfCnpj, int? ignorarId = null);
 }

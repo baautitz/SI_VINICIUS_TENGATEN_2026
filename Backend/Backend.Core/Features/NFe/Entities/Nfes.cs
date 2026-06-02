@@ -1,4 +1,5 @@
 using Backend.Core.Common;
+using Backend.Core.Common.ValueObjects;
 using Backend.Core.Features.Localizacao.Entities;
 using Backend.Core.Features.NFe.Entities.Enums;
 using Backend.Core.Features.Parceiros.Entities;
@@ -99,16 +100,16 @@ public class Nfes
         DataSaida = dataSaida;
         ChaveAcesso = TextNormalization.NormalizeOrNull(chaveAcesso);
         EmitenteNomeRazaosocial = TextNormalization.Normalize(emitente.NomeRazaoSocial);
-        EmitenteCpfCnpj = TextNormalization.NormalizeDocument(emitente.CpfCnpj);
-        EmitenteRgIe = TextNormalization.NormalizeDocumentOrNull(emitente.RgIe);
+        EmitenteCpfCnpj = new CpfCnpj(emitente.CpfCnpj).Valor;
+        EmitenteRgIe = string.IsNullOrWhiteSpace(emitente.RgIe) ? null : new DocumentoGenerico(emitente.RgIe).Valor;
         EmitenteApelidoNomefantasia = TextNormalization.NormalizeOrNull(emitente.ApelidoNomeFantasia);
         EmitenteEndereco = TextNormalization.NormalizeOrNull(emitente.Endereco);
         EmitenteBairro = emitente.Bairro;
         EmitenteTelefone = TextNormalization.NormalizeOrNull(emitente.Telefone);
         EmitenteEmail = TextNormalization.NormalizeOrNull(emitente.Email);
         ClienteNomeRazaosocial = TextNormalization.Normalize(cliente.NomeRazaoSocial);
-        ClienteCpfCnpj = TextNormalization.NormalizeDocument(cliente.CpfCnpj);
-        ClienteRgIe = TextNormalization.NormalizeDocumentOrNull(cliente.RgIe);
+        ClienteCpfCnpj = new CpfCnpj(cliente.CpfCnpj).Valor;
+        ClienteRgIe = string.IsNullOrWhiteSpace(cliente.RgIe) ? null : new DocumentoGenerico(cliente.RgIe).Valor;
         ClienteApelidoNomefantasia = TextNormalization.NormalizeOrNull(cliente.ApelidoNomeFantasia);
         ClienteEndereco = TextNormalization.NormalizeOrNull(cliente.Endereco);
         ClienteBairro = cliente.Bairro;

@@ -3,8 +3,8 @@ SET search_path TO projeto_sistemas;
 CREATE TABLE IF NOT EXISTS veiculos (
   id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   transportadora_id INTEGER,
+  estado_id INTEGER NOT NULL,
   placa VARCHAR(10) NOT NULL,
-  uf CHAR(2) NOT NULL,
   rntrc VARCHAR(20),
   renavam VARCHAR(20),
   tipo_veiculo VARCHAR(50),
@@ -18,6 +18,10 @@ CREATE TABLE IF NOT EXISTS veiculos (
     REFERENCES transportadoras (id)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
-  CONSTRAINT veiculos_placa_not_empty CHECK (LENGTH(TRIM(placa)) > 0),
-  CONSTRAINT veiculos_uf_formato_ck CHECK (uf ~ '^[A-Z]{2}$')
+  CONSTRAINT veiculos_estado_fk
+    FOREIGN KEY (estado_id)
+    REFERENCES estados (id)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT veiculos_placa_not_empty CHECK (LENGTH(TRIM(placa)) > 0)
 );

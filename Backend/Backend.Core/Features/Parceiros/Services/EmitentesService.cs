@@ -1,4 +1,5 @@
 using Backend.Core.Common;
+using Backend.Core.Common.ValueObjects;
 using Backend.Core.Features.Localizacao.Repositories;
 using Backend.Core.Features.Parceiros.DTOs;
 using Backend.Core.Features.Parceiros.Entities;
@@ -41,7 +42,7 @@ public sealed class EmitentesService : BaseService
             paisId = bairro.Cidade?.Estado?.Pais?.Id;
         }
 
-        var cpfCnpjNormalizado = TextNormalization.NormalizeDocument(dto.CpfCnpj);
+        var cpfCnpjNormalizado = new CpfCnpj(dto.CpfCnpj).Valor;
 
         if (await _emitentesRepository.ExisteEmitenteCpfCnpj(cpfCnpjNormalizado, paisId))
             return Resultado<Emitentes>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe um emitente com este CPF ou CNPJ.", "CpfCnpj"));
@@ -94,7 +95,7 @@ public sealed class EmitentesService : BaseService
         if (siglaIso == "BRA" && !CpfCnpjValidatorUtils.IsValid(dto.CpfCnpj))
             return Resultado<Emitentes>.Falha(new ResultadoErro("DOCUMENTO_INVALIDO", "CPF ou CNPJ inválido para o Brasil.", "CpfCnpj"));
 
-        var cpfCnpjNormalizado = TextNormalization.NormalizeDocument(dto.CpfCnpj);
+        var cpfCnpjNormalizado = new CpfCnpj(dto.CpfCnpj).Valor;
 
         if (await _emitentesRepository.ExisteEmitenteCpfCnpj(cpfCnpjNormalizado, paisId, id))
             return Resultado<Emitentes>.Falha(new ResultadoErro("DUPLICIDADE", siglaIso == "BRA" ? "Já existe outro emitente com este CPF ou CNPJ." : "Já existe outro emitente com este Documento.", "CpfCnpj"));

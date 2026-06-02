@@ -1,4 +1,5 @@
 using Backend.Core.Common;
+using Backend.Core.Common.ValueObjects;
 using Backend.Core.Features.Localizacao.Entities;
 
 namespace Backend.Core.Features.Parceiros.Entities;
@@ -21,8 +22,9 @@ public class Fornecedores
     public Fornecedores(string nomeRazaosocial, string cpfCnpj, string? rgIe = null, string? apelidoNomefantasia = null, string? endereco = null, Bairros? bairro = null, string? telefone = null, string? email = null, string? observacao = null)
     {
         nomeRazaosocial = TextNormalization.Normalize(nomeRazaosocial);
-        cpfCnpj = TextNormalization.NormalizeDocument(cpfCnpj);
-        rgIe = TextNormalization.NormalizeDocumentOrNull(rgIe);
+        var cpfCnpjVo = new CpfCnpj(cpfCnpj);
+        rgIe = new DocumentoGenerico(rgIe ?? "").Valor;
+        if (string.IsNullOrWhiteSpace(rgIe)) rgIe = null;
         apelidoNomefantasia = TextNormalization.NormalizeOrNull(apelidoNomefantasia);
         endereco = TextNormalization.NormalizeOrNull(endereco);
         telefone = TextNormalization.NormalizeOrNull(telefone);
@@ -32,11 +34,11 @@ public class Fornecedores
         if (string.IsNullOrWhiteSpace(nomeRazaosocial))
             throw new DomainException("Nome/razão social é obrigatório.");
 
-        if (string.IsNullOrWhiteSpace(cpfCnpj))
+        if (string.IsNullOrWhiteSpace(cpfCnpjVo))
             throw new DomainException("CPF/CNPJ é obrigatório.");
 
         NomeRazaosocial = nomeRazaosocial;
-        CpfCnpj = cpfCnpj;
+        CpfCnpj = cpfCnpjVo;
         RgIe = rgIe;
         ApelidoNomefantasia = apelidoNomefantasia;
         Endereco = endereco;
@@ -59,8 +61,9 @@ public class Fornecedores
     public void Atualizar(string nomeRazaosocial, string cpfCnpj, string? rgIe = null, string? apelidoNomefantasia = null, string? endereco = null, Bairros? bairro = null, string? telefone = null, string? email = null, string? observacao = null)
     {
         nomeRazaosocial = TextNormalization.Normalize(nomeRazaosocial);
-        cpfCnpj = TextNormalization.NormalizeDocument(cpfCnpj);
-        rgIe = TextNormalization.NormalizeDocumentOrNull(rgIe);
+        var cpfCnpjVo = new CpfCnpj(cpfCnpj);
+        rgIe = new DocumentoGenerico(rgIe ?? "").Valor;
+        if (string.IsNullOrWhiteSpace(rgIe)) rgIe = null;
         apelidoNomefantasia = TextNormalization.NormalizeOrNull(apelidoNomefantasia);
         endereco = TextNormalization.NormalizeOrNull(endereco);
         telefone = TextNormalization.NormalizeOrNull(telefone);
@@ -70,11 +73,11 @@ public class Fornecedores
         if (string.IsNullOrWhiteSpace(nomeRazaosocial))
             throw new DomainException("Nome/razão social é obrigatório.");
 
-        if (string.IsNullOrWhiteSpace(cpfCnpj))
+        if (string.IsNullOrWhiteSpace(cpfCnpjVo))
             throw new DomainException("CPF/CNPJ é obrigatório.");
 
         NomeRazaosocial = nomeRazaosocial;
-        CpfCnpj = cpfCnpj;
+        CpfCnpj = cpfCnpjVo;
         RgIe = rgIe;
         ApelidoNomefantasia = apelidoNomefantasia;
         Endereco = endereco;

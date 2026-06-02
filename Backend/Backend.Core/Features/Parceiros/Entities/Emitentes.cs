@@ -1,4 +1,5 @@
 using Backend.Core.Common;
+using Backend.Core.Common.ValueObjects;
 using Backend.Core.Features.Localizacao.Entities;
 
 namespace Backend.Core.Features.Parceiros.Entities;
@@ -42,22 +43,23 @@ public class Emitentes
         bool ativo = true)
     {
         nomeRazaoSocial = TextNormalization.Normalize(nomeRazaoSocial);
-        cpfCnpj = TextNormalization.NormalizeDocument(cpfCnpj);
+        var cpfCnpjVo = new CpfCnpj(cpfCnpj);
 
         if (string.IsNullOrWhiteSpace(nomeRazaoSocial))
             throw new DomainException("Nome ou razão social do emitente é obrigatório.");
 
-        if (string.IsNullOrWhiteSpace(cpfCnpj))
+        if (string.IsNullOrWhiteSpace(cpfCnpjVo))
             throw new DomainException("CPF/CNPJ do emitente é obrigatório.");
 
         NomeRazaoSocial = nomeRazaoSocial;
-        CpfCnpj = cpfCnpj;
+        CpfCnpj = cpfCnpjVo;
         ApelidoNomeFantasia = TextNormalization.NormalizeOrNull(apelidoNomeFantasia);
         Endereco = TextNormalization.NormalizeOrNull(endereco);
         Bairro = bairro;
         Telefone = TextNormalization.NormalizeOrNull(telefone);
         Email = TextNormalization.NormalizeOrNull(email);
-        RgIe = TextNormalization.NormalizeDocumentOrNull(rgIe);
+        RgIe = new DocumentoGenerico(rgIe ?? "").Valor;
+        if (string.IsNullOrWhiteSpace(RgIe)) RgIe = null;
         InscricaoMunicipal = TextNormalization.NormalizeOrNull(inscricaoMunicipal);
         RegimeTributario = TextNormalization.NormalizeOrNull(regimeTributario);
         Observacao = TextNormalization.NormalizeOrNull(observacao);
@@ -99,22 +101,23 @@ public class Emitentes
         string? observacao = null)
     {
         nomeRazaoSocial = TextNormalization.Normalize(nomeRazaoSocial);
-        cpfCnpj = TextNormalization.NormalizeDocument(cpfCnpj);
+        var cpfCnpjVo = new CpfCnpj(cpfCnpj);
 
         if (string.IsNullOrWhiteSpace(nomeRazaoSocial))
             throw new DomainException("Nome ou razão social do emitente é obrigatório.");
 
-        if (string.IsNullOrWhiteSpace(cpfCnpj))
+        if (string.IsNullOrWhiteSpace(cpfCnpjVo))
             throw new DomainException("CPF/CNPJ do emitente é obrigatório.");
 
         NomeRazaoSocial = nomeRazaoSocial;
-        CpfCnpj = cpfCnpj;
+        CpfCnpj = cpfCnpjVo;
         ApelidoNomeFantasia = TextNormalization.NormalizeOrNull(apelidoNomeFantasia);
         Endereco = TextNormalization.NormalizeOrNull(endereco);
         Bairro = bairro;
         Telefone = TextNormalization.NormalizeOrNull(telefone);
         Email = TextNormalization.NormalizeOrNull(email);
-        RgIe = TextNormalization.NormalizeDocumentOrNull(rgIe);
+        RgIe = new DocumentoGenerico(rgIe ?? "").Valor;
+        if (string.IsNullOrWhiteSpace(RgIe)) RgIe = null;
         InscricaoMunicipal = TextNormalization.NormalizeOrNull(inscricaoMunicipal);
         RegimeTributario = TextNormalization.NormalizeOrNull(regimeTributario);
         Observacao = TextNormalization.NormalizeOrNull(observacao);

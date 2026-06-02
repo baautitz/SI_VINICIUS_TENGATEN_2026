@@ -1,4 +1,5 @@
 using Backend.Core.Common;
+using Backend.Core.Common.ValueObjects;
 
 namespace Backend.Core.Features.Localizacao.Entities;
 
@@ -77,7 +78,7 @@ public class Paises
         out string normalizedSimboloMoeda,
         out string normalizedPais)
     {
-        normalizedDdi = TextNormalization.Normalize(ddi);
+        normalizedDdi = new Ddi(ddi);
         normalizedSiglaIso = TextNormalization.Normalize(siglaIso);
         normalizedMoeda = TextNormalization.Normalize(moeda);
         normalizedSimboloMoeda = TextNormalization.Normalize(simboloMoeda);

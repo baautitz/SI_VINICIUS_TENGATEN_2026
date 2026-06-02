@@ -1,4 +1,5 @@
 using Backend.Core.Common;
+using Backend.Core.Common.ValueObjects;
 using Backend.Core.Features.Localizacao.Repositories;
 using Backend.Core.Features.Parceiros.DTOs;
 using Backend.Core.Features.Parceiros.Entities;
@@ -41,7 +42,7 @@ public sealed class ClientesService : BaseService
             paisId = bairro.Cidade?.Estado?.Pais?.Id;
         }
 
-        var cpfCnpjNormalizado = TextNormalization.NormalizeDocument(dto.CpfCnpj);
+        var cpfCnpjNormalizado = new CpfCnpj(dto.CpfCnpj).Valor;
 
         if (await _clientesRepository.ExisteClienteCpfCnpj(cpfCnpjNormalizado, paisId))
             return Resultado<Clientes>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe um cliente com este CPF ou CNPJ.", "CpfCnpj"));
@@ -93,7 +94,7 @@ public sealed class ClientesService : BaseService
         if (siglaIso == "BRA" && !CpfCnpjValidatorUtils.IsValid(dto.CpfCnpj))
             return Resultado<Clientes>.Falha(new ResultadoErro("DOCUMENTO_INVALIDO", "CPF ou CNPJ inválido para o Brasil.", "CpfCnpj"));
 
-        var cpfCnpjNormalizado = TextNormalization.NormalizeDocument(dto.CpfCnpj);
+        var cpfCnpjNormalizado = new CpfCnpj(dto.CpfCnpj).Valor;
 
         if (await _clientesRepository.ExisteClienteCpfCnpj(cpfCnpjNormalizado, paisId, id))
             return Resultado<Clientes>.Falha(new ResultadoErro("DUPLICIDADE", siglaIso == "BRA" ? "Já existe outro cliente com este CPF ou CNPJ." : "Já existe outro cliente com este Documento.", "CpfCnpj"));

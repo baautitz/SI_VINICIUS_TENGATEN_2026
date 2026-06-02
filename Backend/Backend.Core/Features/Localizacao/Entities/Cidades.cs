@@ -1,4 +1,5 @@
 using Backend.Core.Common;
+using Backend.Core.Common.ValueObjects;
 
 namespace Backend.Core.Features.Localizacao.Entities;
 
@@ -55,7 +56,8 @@ public class Cidades
         if (string.IsNullOrWhiteSpace(normalizedCidade))
             return Resultado.Falha(new ResultadoErro("CIDADE_OBRIGATORIA", "Cidade é obrigatória.", "Cidade"));
 
-        if (ddd <= 0)
+        var dddVo = new Ddd(ddd);
+        if (dddVo.ToShort() <= 0)
             return Resultado.Falha(new ResultadoErro("DDD_INVALIDO", "DDD deve ser maior que zero.", "Ddd"));
 
         if (normalizedEstado is null)

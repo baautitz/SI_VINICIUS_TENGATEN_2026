@@ -1,4 +1,5 @@
 using Backend.Core.Common;
+using Backend.Core.Common.ValueObjects;
 using Backend.Core.Features.Logistica.Entities;
 using Backend.Core.Features.NFe.Entities.Enums;
 
@@ -39,11 +40,11 @@ public class NfesTransportes
         Veiculos? veiculo = null)
     {
         TransportadoraNomeRazaosocial = TextNormalization.NormalizeOrNull(transportadoraNomeRazaosocial);
-        TransportadoraCpfCnpj = TextNormalization.NormalizeDocumentOrNull(transportadoraCpfCnpj);
-        TransportadoraRgIe = TextNormalization.NormalizeDocumentOrNull(transportadoraRgIe);
+        TransportadoraCpfCnpj = string.IsNullOrWhiteSpace(transportadoraCpfCnpj) ? null : new CpfCnpj(transportadoraCpfCnpj).Valor;
+        TransportadoraRgIe = string.IsNullOrWhiteSpace(transportadoraRgIe) ? null : new DocumentoGenerico(transportadoraRgIe).Valor;
         VeiculoPlaca = TextNormalization.NormalizeOrNull(veiculoPlaca);
         VeiculoUf = TextNormalization.NormalizeOrNull(veiculoUf);
-        VeiculoRntrc = TextNormalization.NormalizeOrNull(veiculoRntrc);
+        VeiculoRntrc = string.IsNullOrWhiteSpace(veiculoRntrc) ? null : new DocumentoGenerico(veiculoRntrc).Valor;
         QuantidadeVolumes = quantidadeVolumes;
         EspecieVolume = TextNormalization.NormalizeOrNull(especieVolume);
         MarcaVolume = TextNormalization.NormalizeOrNull(marcaVolume);

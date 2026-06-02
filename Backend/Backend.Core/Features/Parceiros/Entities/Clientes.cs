@@ -1,4 +1,5 @@
 using Backend.Core.Common;
+using Backend.Core.Common.ValueObjects;
 using Backend.Core.Features.Localizacao.Entities;
 
 namespace Backend.Core.Features.Parceiros.Entities;
@@ -40,20 +41,21 @@ public class Clientes
         bool ativo = true)
     {
         nomeRazaoSocial = TextNormalization.Normalize(nomeRazaoSocial);
-        cpfCnpj = TextNormalization.NormalizeDocument(cpfCnpj);
+        var cpfCnpjVo = new CpfCnpj(cpfCnpj);
 
         if (string.IsNullOrWhiteSpace(nomeRazaoSocial))
             throw new DomainException("Nome ou razão social do cliente é obrigatório.");
 
-        if (string.IsNullOrWhiteSpace(cpfCnpj))
+        if (string.IsNullOrWhiteSpace(cpfCnpjVo))
             throw new DomainException("CPF/CNPJ do cliente é obrigatório.");
 
         if (limiteCredito < 0)
             throw new DomainException("Limite de crédito não pode ser negativo.");
 
         NomeRazaoSocial = nomeRazaoSocial;
-        CpfCnpj = cpfCnpj;
-        RgIe = TextNormalization.NormalizeDocumentOrNull(rgIe);
+        CpfCnpj = cpfCnpjVo;
+        RgIe = new DocumentoGenerico(rgIe ?? "").Valor;
+        if (string.IsNullOrWhiteSpace(RgIe)) RgIe = null;
         ApelidoNomeFantasia = TextNormalization.NormalizeOrNull(apelidoNomeFantasia);
         Endereco = TextNormalization.NormalizeOrNull(endereco);
         Bairro = bairro;
@@ -97,20 +99,21 @@ public class Clientes
         string? observacao = null)
     {
         nomeRazaoSocial = TextNormalization.Normalize(nomeRazaoSocial);
-        cpfCnpj = TextNormalization.NormalizeDocument(cpfCnpj);
+        var cpfCnpjVo = new CpfCnpj(cpfCnpj);
 
         if (string.IsNullOrWhiteSpace(nomeRazaoSocial))
             throw new DomainException("Nome ou razão social do cliente é obrigatório.");
 
-        if (string.IsNullOrWhiteSpace(cpfCnpj))
+        if (string.IsNullOrWhiteSpace(cpfCnpjVo))
             throw new DomainException("CPF/CNPJ do cliente é obrigatório.");
 
         if (limiteCredito < 0)
             throw new DomainException("Limite de crédito não pode ser negativo.");
 
         NomeRazaoSocial = nomeRazaoSocial;
-        CpfCnpj = cpfCnpj;
-        RgIe = TextNormalization.NormalizeDocumentOrNull(rgIe);
+        CpfCnpj = cpfCnpjVo;
+        RgIe = new DocumentoGenerico(rgIe ?? "").Valor;
+        if (string.IsNullOrWhiteSpace(RgIe)) RgIe = null;
         ApelidoNomeFantasia = TextNormalization.NormalizeOrNull(apelidoNomeFantasia);
         Endereco = TextNormalization.NormalizeOrNull(endereco);
         Bairro = bairro;

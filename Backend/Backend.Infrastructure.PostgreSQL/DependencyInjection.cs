@@ -4,6 +4,8 @@ using Backend.Core.Features.Catalogo.Repositories;
 using Backend.Core.Features.Estoque.Repositories;
 using Backend.Core.Features.Financeiro.Repositories;
 using Backend.Core.Features.Localizacao.Repositories;
+using Backend.Core.Features.Logistica.Repositories;
+using Backend.Core.Features.Logistica.Services;
 using Backend.Core.Features.Localizacao.Services;
 using Backend.Core.Features.NFe.Repositories;
 using Backend.Core.Features.Parceiros.Repositories;
@@ -15,6 +17,7 @@ using Backend.Infrastructure.PostgreSQL.Features.Catalogo;
 using Backend.Infrastructure.PostgreSQL.Features.Estoque;
 using Backend.Infrastructure.PostgreSQL.Features.Financeiro;
 using Backend.Infrastructure.PostgreSQL.Features.Localizacao;
+using Backend.Infrastructure.PostgreSQL.Features.Logistica;
 using Backend.Infrastructure.PostgreSQL.Features.NFe;
 using Backend.Infrastructure.PostgreSQL.Features.Parceiros;
 using Backend.Infrastructure.PostgreSQL.Features.Vendas;
@@ -66,6 +69,12 @@ public static class DependencyInjection
         services.AddScoped<FornecedoresService>();
 
         services.AddScoped<IVendasRepository, VendasRepository>();
+
+        services.AddScoped<ITransportadorasRepository, TransportadorasRepository>();
+        services.AddScoped<TransportadorasService>();
+
+        services.AddScoped<IVeiculosRepository, VeiculosRepository>();
+        services.AddScoped<VeiculosService>();
 
         return services;
     }

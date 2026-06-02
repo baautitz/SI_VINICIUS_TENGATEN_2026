@@ -1,4 +1,5 @@
 using Backend.Core.Common;
+using Backend.Core.Common.ValueObjects;
 
 namespace Backend.Core.Features.Catalogo.Entities;
 
@@ -16,7 +17,7 @@ public class Skus
     public Skus(string sku, decimal preco, decimal estoque = 0, string? gtinEan = null)
     {
         sku = TextNormalization.Normalize(sku);
-        gtinEan = TextNormalization.NormalizeDocumentOrNull(gtinEan);
+        var gtinEanVo = string.IsNullOrWhiteSpace(gtinEan) ? null : new DocumentoGenerico(gtinEan);
 
         if (string.IsNullOrWhiteSpace(sku))
             throw new DomainException("SKU é obrigatório.");
@@ -30,7 +31,7 @@ public class Skus
         Sku = sku;
         Preco = preco;
         Estoque = estoque;
-        GtinEan = gtinEan;
+        GtinEan = gtinEanVo?.Valor;
         Ativo = true;
     }
 

@@ -1,4 +1,5 @@
 using Backend.Core.Common;
+using Backend.Core.Common.ValueObjects;
 
 namespace Backend.Core.Features.Acesso.Entities;
 
@@ -20,7 +21,7 @@ public class Usuarios
     public Usuarios(string nome, string cpfCnpj, string email, string usuario, string senha, string? telefone = null)
     {
         nome = TextNormalization.Normalize(nome);
-        cpfCnpj = TextNormalization.NormalizeDocument(cpfCnpj);
+        cpfCnpj = new CpfCnpj(cpfCnpj);
         email = TextNormalization.Normalize(email);
         usuario = TextNormalization.Normalize(usuario);
         telefone = TextNormalization.NormalizeOrNull(telefone);
@@ -55,7 +56,7 @@ public class Usuarios
     public void Atualizar(string nome, string cpfCnpj, string email, string usuario, string? telefone = null)
     {
         nome = TextNormalization.Normalize(nome);
-        cpfCnpj = TextNormalization.NormalizeDocument(cpfCnpj);
+        cpfCnpj = new CpfCnpj(cpfCnpj);
         email = TextNormalization.Normalize(email);
         usuario = TextNormalization.Normalize(usuario);
         telefone = TextNormalization.NormalizeOrNull(telefone);

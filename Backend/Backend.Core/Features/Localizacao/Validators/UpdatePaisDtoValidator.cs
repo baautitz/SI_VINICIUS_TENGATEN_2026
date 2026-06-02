@@ -10,11 +10,10 @@ public sealed class UpdatePaisDtoValidator : AbstractValidator<UpdatePaisDto>
     RuleFor(x => x.Ddi)
         .NotEmpty().WithMessage("DDI é obrigatório.")
         .WithErrorCode("DDI_OBRIGATORIO")
-        .Matches("^\\+\\d+$").WithMessage("DDI deve ser no formato +55, +1, etc.")
+        .Matches(@"^\+?\d+$").WithMessage("DDI deve conter apenas números.")
         .WithErrorCode("DDI_FORMATO_INVALIDO")
         .MaximumLength(5).WithMessage("DDI deve ter no máximo 5 caracteres.")
         .WithErrorCode("DDI_TAMANHO_INVALIDO");
-
     RuleFor(x => x.SiglaIso)
         .NotEmpty().WithMessage("Sigla ISO é obrigatória.")
         .WithErrorCode("SIGLAISO_OBRIGATORIO")
