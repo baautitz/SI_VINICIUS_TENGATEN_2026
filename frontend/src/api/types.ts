@@ -1,3 +1,8 @@
+export enum TipoPessoa {
+  FISICA = 1,
+  JURIDICA = 2
+}
+
 export interface PaginatedResult<T> {
   itens: T[];
   totalDeItens: number;
@@ -15,4 +20,10 @@ export interface ResultadoErro {
   code?: string;
   field?: string;
   message?: string;
+}
+
+export interface PaisResumo {
+  id: number;
+  pais: string;
+  siglaIso: string;
 }

@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FeatureLayout } from "@/components/ui/feature-layout";
+import { Badge } from "@/components/ui/badge";
 import { TransportadoraResumo } from "./types";
+import { TipoPessoa } from "@/api/types";
 
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 
@@ -60,6 +62,19 @@ export function TransportadorasList({
       cell: ({ row }) => (
         <span className="font-semibold">{row.getValue("id")}</span>
       ),
+    },
+    {
+      accessorKey: "tipoPessoa",
+      header: "Tipo",
+      size: 100,
+      cell: ({ row }) => {
+        const tipo = row.getValue("tipoPessoa") as TipoPessoa;
+        return (
+          <Badge variant={tipo === TipoPessoa.FISICA ? "secondary" : "outline"}>
+            {tipo === TipoPessoa.FISICA ? "Física" : "Jurídica"}
+          </Badge>
+        );
+      },
     },
     {
       accessorKey: "nomeRazaosocial",

@@ -1,17 +1,21 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { UpsertDialog } from "@/components/ui/upsert-dialog";
 import { DialogClose } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FormFieldUI } from "@/components/ui/form-field-ui";
 import { BairroInput } from "@/components/entity-inputs/bairro-input";
+import { PaisInput } from "@/components/entity-inputs/pais-input";
+import { TipoPessoaSelect } from "@/components/tipo-pessoa-select";
 import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import { clienteSchema, ClienteResumo, Cliente, ClienteFormValues } from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { clientesApi } from "@/api/parceiros";
+import { TipoPessoa } from "@/api/types";
+import { Pais } from "@/features/localizacao/paises";
 
 interface ClientesUpsertProps {
   open: boolean;
@@ -66,6 +70,10 @@ function ClientesUpsertForm({
   onClose,
   onSuccess,
 }: ClientesUpsertFormProps) {
+  const [selectedPais, setSelectedPais] = useState<Pais | null>(editingItem?.nacionalidade ?? null);
+  const [tipoPessoa, setTipoPessoa] = useState<TipoPessoa>(editingItem?.tipoPessoa ?? TipoPessoa.FISICA);
+  const [nacionalidadeId, setNacionalidadeId] = useState<number>(editingItem?.nacionalidade?.id ?? 0);
+
   const { mutation, globalError, getFieldError, resetErrors } =
     useUpsertMutation({
       mutationFn: async (value: ClienteFormValues) => {
@@ -80,11 +88,13 @@ function ClientesUpsertForm({
 
   const form = useForm({
     defaultValues: {
+      tipoPessoa: editingItem?.tipoPessoa ?? TipoPessoa.FISICA,
       nomeRazaoSocial: editingItem?.nomeRazaoSocial ?? "",
       cpfCnpj: editingItem?.cpfCnpj ?? "",
       apelidoNomeFantasia: editingItem?.apelidoNomeFantasia ?? "",
       endereco: editingItem?.endereco ?? "",
       bairroId: editingItem?.bairro?.id ?? null,
+      nacionalidadeId: editingItem?.nacionalidade?.id ?? 0,
       telefone: editingItem?.telefone ?? "",
       email: editingItem?.email ?? "",
       rgIe: editingItem?.rgIe ?? "",
@@ -101,6 +111,8 @@ function ClientesUpsertForm({
       mutation.mutate(payload as ClienteFormValues);
     },
   });
+
+  const isBrasil = selectedPais?.siglaIso === "BRA" || (!selectedPais && nacionalidadeId === 1);
 
   return (
     <UpsertDialog
@@ -143,7 +155,48 @@ function ClientesUpsertForm({
       >
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-start gap-4">
-            <div className="flex-1 min-w-62.5">
+            <div className="w-fit">
+              <form.Field
+                name="tipoPessoa"
+                validators={{ onChange: clienteSchema.shape.tipoPessoa }}
+              >
+                {(field) => (
+                  <TipoPessoaSelect
+                    name={field.name}
+                    label="Tipo"
+                    value={field.state.value}
+                    onChange={(val) => {
+                      field.handleChange(val);
+                      setTipoPessoa(val);
+                    }}
+                    error={getFieldError(field.name, field.state.meta.errors)}
+                    inputSize="small"
+                  />
+                )}
+              </form.Field>
+            </div>
+            <div className="flex-1 min-w-[250px]">
+              <form.Field
+                name="nacionalidadeId"
+                validators={{ onChange: clienteSchema.shape.nacionalidadeId }}
+              >
+                {(field) => (
+                  <PaisInput
+                    name={field.name}
+                    label="Nacionalidade"
+                    error={getFieldError(field.name, field.state.meta.errors)}
+                    initialItem={editingItem?.nacionalidade}
+                    onSelectId={(id) => {
+                      field.handleChange(id ?? 0);
+                      setNacionalidadeId(id ?? 0);
+                    }}
+                    onSelectItem={(item) => setSelectedPais(item)}
+                    inputSize="full"
+                  />
+                )}
+              </form.Field>
+            </div>
+            <div className="flex-2 min-w-[300px]">
               <form.Field
                 name="nomeRazaoSocial"
                 validators={{ onChange: clienteSchema.shape.nomeRazaoSocial }}
@@ -158,7 +211,10 @@ function ClientesUpsertForm({
                 )}
               </form.Field>
             </div>
-            <div className="flex-1 min-w-62.5">
+          </div>
+
+          <div className="flex flex-wrap items-start gap-4">
+            <div className="flex-1 min-w-[250px]">
               <form.Field
                 name="apelidoNomeFantasia"
                 validators={{
@@ -175,22 +231,25 @@ function ClientesUpsertForm({
                 )}
               </form.Field>
             </div>
-          </div>
-
-          <div className="flex flex-wrap items-start gap-4">
             <div className="w-fit">
               <form.Field
                 name="cpfCnpj"
                 validators={{ onChange: clienteSchema.shape.cpfCnpj }}
               >
-                {(field) => (
-                  <FormFieldUI
-                    field={field}
-                    label="CPF / CNPJ"
-                    getFieldError={getFieldError}
-                    inputSize="medium"
-                  />
-                )}
+                {(field) => {
+                   let label = "Documento";
+                   if (isBrasil) {
+                     label = tipoPessoa === TipoPessoa.FISICA ? "CPF" : "CNPJ";
+                   }
+                   return (
+                    <FormFieldUI
+                      field={field}
+                      label={label}
+                      getFieldError={getFieldError}
+                      inputSize="medium"
+                    />
+                   );
+                }}
               </form.Field>
             </div>
             <div className="w-fit">
@@ -201,13 +260,16 @@ function ClientesUpsertForm({
                 {(field) => (
                   <FormFieldUI
                     field={field}
-                    label="RG / Inscrição Estadual"
+                    label={isBrasil && tipoPessoa === TipoPessoa.JURIDICA ? "Inscrição Estadual" : "RG"}
                     getFieldError={getFieldError}
                     inputSize="medium"
                   />
                 )}
               </form.Field>
             </div>
+          </div>
+
+          <div className="flex flex-wrap items-start gap-4">
             <div className="w-fit">
               <form.Field
                 name="telefone"
@@ -219,6 +281,21 @@ function ClientesUpsertForm({
                     label="Telefone"
                     getFieldError={getFieldError}
                     inputSize="medium"
+                  />
+                )}
+              </form.Field>
+            </div>
+            <div className="flex-1 min-w-[300px]">
+              <form.Field
+                name="email"
+                validators={{ onChange: clienteSchema.shape.email }}
+              >
+                {(field) => (
+                  <FormFieldUI
+                    field={field}
+                    label="E-mail"
+                    getFieldError={getFieldError}
+                    inputSize="full"
                   />
                 )}
               </form.Field>
@@ -235,24 +312,6 @@ function ClientesUpsertForm({
                     type="number"
                     getFieldError={getFieldError}
                     inputSize="medium"
-                  />
-                )}
-              </form.Field>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-start gap-4">
-            <div className="flex-1 min-w-62.5">
-              <form.Field
-                name="email"
-                validators={{ onChange: clienteSchema.shape.email }}
-              >
-                {(field) => (
-                  <FormFieldUI
-                    field={field}
-                    label="E-mail"
-                    getFieldError={getFieldError}
-                    inputSize="full"
                   />
                 )}
               </form.Field>

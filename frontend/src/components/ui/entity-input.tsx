@@ -15,6 +15,7 @@ interface EntityInputProps<T, TResumo = T> {
   initialItem?: T | TResumo | null;
 
   onSelectId: (id: number | null) => void;
+  onSelectItem?: (item: T | null) => void;
 
   fetchById: (id: number) => Promise<T | null>;
   fetchList: (term: string) => Promise<{ itens?: unknown[] } | null>;
@@ -39,6 +40,7 @@ export function EntityInput<T, TResumo = T>({
   error,
   initialItem = null,
   onSelectId,
+  onSelectItem,
   fetchById,
   fetchList,
   getDisplayLabel,
@@ -79,6 +81,7 @@ export function EntityInput<T, TResumo = T>({
   const handleSearch = async (text: string, isBlur = false) => {
     if (!text.trim()) {
       onSelectId(null);
+      onSelectItem?.(null);
       setSelectedItem(null);
       setSearchText("");
       setSelectedLabel("");
@@ -127,6 +130,7 @@ export function EntityInput<T, TResumo = T>({
     if (fullItem) {
       const newLabel = getDisplayLabel(fullItem);
       onSelectId(itemId);
+      onSelectItem?.(fullItem);
       setSelectedItem(item);
       setSearchText(newLabel);
       setSelectedLabel(newLabel);

@@ -14,6 +14,8 @@ interface TransportadorasFeatureProps {
   initialSearchTerm?: string;
 }
 
+export * from "./types";
+
 export function TransportadorasFeature({
   selectionMode = false,
   onSelect,

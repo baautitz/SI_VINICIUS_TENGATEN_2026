@@ -10,6 +10,7 @@ interface PaisInputProps {
   error?: string
   initialItem?: Pais | PaisResumo | null
   onSelectId: (id: number | null) => void
+  onSelectItem?: (item: Pais | null) => void
   inputSize?: "small" | "medium" | "large" | "full"
 }
 
@@ -19,6 +20,7 @@ export function PaisInput({
   error,
   initialItem,
   onSelectId,
+  onSelectItem,
   inputSize
 }: PaisInputProps) {
   return (
@@ -28,6 +30,7 @@ export function PaisInput({
       error={error}
       initialItem={initialItem}
       onSelectId={onSelectId}
+      onSelectItem={onSelectItem}
       inputSize={inputSize}
       modalTitle="Selecionar País"
       getDisplayLabel={formatPaisLabel}
