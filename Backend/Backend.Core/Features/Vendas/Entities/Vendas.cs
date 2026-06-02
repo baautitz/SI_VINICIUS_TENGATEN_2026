@@ -1,4 +1,5 @@
-using Backend.Core.Common;
+using Backend.Core.Common.Exceptions;
+using Backend.Core.Common.Helpers;
 using Backend.Core.Features.Parceiros.Entities;
 
 namespace Backend.Core.Features.Vendas.Entities;

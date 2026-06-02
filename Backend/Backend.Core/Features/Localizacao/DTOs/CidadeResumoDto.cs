@@ -1,3 +1,5 @@
+using Backend.Core.Common.ValueObjects;
+
 namespace Backend.Core.Features.Localizacao.DTOs;
 
 public record CidadeResumoDto(

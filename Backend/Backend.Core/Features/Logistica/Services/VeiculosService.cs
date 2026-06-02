@@ -1,3 +1,5 @@
+using Backend.Core.Common.Extensions;
+using Backend.Core.Common.Results;
 using Backend.Core.Common;
 using Backend.Core.Features.Localizacao.Repositories;
 using Backend.Core.Features.Logistica.DTOs;

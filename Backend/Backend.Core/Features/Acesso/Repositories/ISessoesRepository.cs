@@ -1,5 +1,4 @@
-using Backend.Core.Common;
-
+using Backend.Core.Common.Results;
 using Backend.Core.Features.Acesso.Entities;
 
 namespace Backend.Core.Features.Acesso.Repositories;

@@ -1,4 +1,5 @@
-using Backend.Core.Common;
+using Backend.Core.Common.Exceptions;
+using Backend.Core.Common.Helpers;
 using Backend.Core.Common.ValueObjects;
 using Backend.Core.Features.Localizacao.Entities;
 using Backend.Core.Features.NFe.Entities.Enums;

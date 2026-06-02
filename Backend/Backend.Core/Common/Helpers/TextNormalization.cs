@@ -1,4 +1,4 @@
-namespace Backend.Core.Common;
+namespace Backend.Core.Common.Helpers;
 
 public static class TextNormalization
 {

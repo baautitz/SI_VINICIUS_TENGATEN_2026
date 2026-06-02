@@ -1,5 +1,5 @@
 using System.Linq;
-using Backend.Core.Common;
+using Backend.Core.Common.Results;
 using Backend.Core.Features.Acesso.Entities;
 using Backend.Core.Features.Acesso.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;

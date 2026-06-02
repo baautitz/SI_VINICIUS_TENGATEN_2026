@@ -1,4 +1,4 @@
-using Backend.Core.Common;
+using Backend.Core.Common.Exceptions;
 using Backend.Core.Features.NFe.Entities.Enums;
 using Backend.Core.Features.Pagamentos.Entities;
 

@@ -1,5 +1,5 @@
-using Backend.Core.Common;
-
+using Backend.Core.Common.Exceptions;
+using Backend.Core.Common.Helpers;
 namespace Backend.Core.Features.UnidadeMedida.Entities;
 
 public class UnidadesMedida

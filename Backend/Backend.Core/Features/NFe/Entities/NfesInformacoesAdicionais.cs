@@ -1,5 +1,4 @@
-using Backend.Core.Common;
-
+using Backend.Core.Common.Helpers;
 namespace Backend.Core.Features.NFe.Entities;
 
 public class NfesInformacoesAdicionais

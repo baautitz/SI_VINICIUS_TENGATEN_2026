@@ -1,5 +1,5 @@
 using System.Linq;
-using Backend.Core.Common;
+using Backend.Core.Common.Results;
 using Backend.Core.Features.Catalogo.DTOs;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Catalogo.Repositories;

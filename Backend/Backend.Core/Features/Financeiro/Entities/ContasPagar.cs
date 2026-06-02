@@ -1,4 +1,5 @@
-using Backend.Core.Common;
+using Backend.Core.Common.Exceptions;
+using Backend.Core.Common.Helpers;
 using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.Parceiros.Entities;
 using Backend.Core.Features.NFe.Entities;

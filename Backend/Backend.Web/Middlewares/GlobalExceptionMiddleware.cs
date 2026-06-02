@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
-using Backend.Core.Common;
+using Backend.Core.Common.Results;
+using Backend.Core.Common.Exceptions;
 
 namespace Backend.Web.Middlewares;
 
@@ -42,9 +43,26 @@ public class GlobalExceptionMiddleware
             context.Response.Clear();
             context.Response.ContentType = "application/json";
 
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+            var statusCode = HttpStatusCode.InternalServerError;
+            var erroCode = "ERRO_INTERNO";
+            var mensagem = "Ocorreu um erro inesperado no servidor.";
+
+            if (exception is ConflictException)
+            {
+                statusCode = HttpStatusCode.Conflict;
+                erroCode = "CONFLITO";
+                mensagem = exception.Message;
+            }
+            else if (exception is DomainException)
+            {
+                statusCode = HttpStatusCode.BadRequest;
+                erroCode = "ERRO_DOMINIO";
+                mensagem = exception.Message;
+            }
+
+            context.Response.StatusCode = (int)statusCode;
             var resultadoGenerico = Resultado.Falha(
-                new ResultadoErro("ERRO_INTERNO", "Ocorreu um erro inesperado no servidor.")
+                new ResultadoErro(erroCode, mensagem)
             );
             var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
             await context.Response.WriteAsync(JsonSerializer.Serialize(resultadoGenerico, jsonOptions));

@@ -1,5 +1,4 @@
-using Backend.Core.Common;
-
+using Backend.Core.Common.Exceptions;
 namespace Backend.Core.Features.Acesso.Entities;
 
 public class Sessoes

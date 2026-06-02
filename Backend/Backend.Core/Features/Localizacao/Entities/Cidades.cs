@@ -1,4 +1,5 @@
-using Backend.Core.Common;
+using Backend.Core.Common.Helpers;
+using Backend.Core.Common.Results;
 using Backend.Core.Common.ValueObjects;
 
 namespace Backend.Core.Features.Localizacao.Entities;

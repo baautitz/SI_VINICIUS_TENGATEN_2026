@@ -1,3 +1,6 @@
+using Backend.Core.Common.Extensions;
+using Backend.Core.Common.ValueObjects;
+using Backend.Core.Common.Results;
 using Backend.Core.Common;
 using Backend.Core.Features.Localizacao.DTOs;
 using Backend.Core.Features.Localizacao.Entities;

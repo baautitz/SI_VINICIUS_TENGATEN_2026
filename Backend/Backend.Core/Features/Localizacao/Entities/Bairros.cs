@@ -1,5 +1,5 @@
-using Backend.Core.Common;
-
+using Backend.Core.Common.Helpers;
+using Backend.Core.Common.Results;
 namespace Backend.Core.Features.Localizacao.Entities;
 
 public class Bairros

@@ -1,5 +1,4 @@
-using Backend.Core.Common;
-
+using Backend.Core.Common.Results;
 using Backend.Core.Features.Estoque.DTOs;
 
 using Backend.Core.Features.Estoque.Entities;

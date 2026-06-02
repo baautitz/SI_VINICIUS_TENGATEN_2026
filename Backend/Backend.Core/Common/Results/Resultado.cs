@@ -1,4 +1,4 @@
-namespace Backend.Core.Common;
+namespace Backend.Core.Common.Results;
 
 public sealed record ResultadoErro(string Code, string Message, string? Field = null);
 

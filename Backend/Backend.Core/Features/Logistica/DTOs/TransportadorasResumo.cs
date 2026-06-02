@@ -1,3 +1,5 @@
+using Backend.Core.Common.ValueObjects;
+
 namespace Backend.Core.Features.Logistica.DTOs;
 
 public record TransportadorasResumo(

@@ -1,4 +1,4 @@
-using Backend.Core.Common;
+using Backend.Core.Common.Results;
 using Backend.Core.Features.Localizacao.DTOs;
 using Backend.Core.Features.Localizacao.Entities;
 

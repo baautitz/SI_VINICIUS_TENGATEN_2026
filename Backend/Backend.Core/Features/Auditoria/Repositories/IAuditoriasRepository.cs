@@ -1,5 +1,4 @@
-using Backend.Core.Common;
-
+using Backend.Core.Common.Results;
 using Backend.Core.Features.Auditoria.Entities;
 
 namespace Backend.Core.Features.Auditoria.Repositories;

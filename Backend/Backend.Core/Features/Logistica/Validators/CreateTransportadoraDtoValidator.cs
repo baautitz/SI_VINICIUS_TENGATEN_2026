@@ -1,3 +1,4 @@
+using Backend.Core.Common.ValueObjects;
 using Backend.Core.Features.Logistica.DTOs;
 using FluentValidation;
 

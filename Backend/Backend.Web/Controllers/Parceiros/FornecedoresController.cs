@@ -1,4 +1,4 @@
-using Backend.Core.Common;
+using Backend.Core.Common.Results;
 using Backend.Core.Features.Parceiros.DTOs;
 using Backend.Core.Features.Parceiros.Entities;
 using Backend.Core.Features.Parceiros.Services;

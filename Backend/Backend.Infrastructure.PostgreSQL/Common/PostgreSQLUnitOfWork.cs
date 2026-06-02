@@ -1,4 +1,4 @@
-﻿using Backend.Core.Common;
+﻿using Backend.Core.Common.Interfaces;
 
 namespace Backend.Infrastructure.PostgreSQL.Common;
 
