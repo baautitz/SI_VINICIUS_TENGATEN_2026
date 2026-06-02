@@ -30,7 +30,7 @@ export function FormFieldUI({
         id={field.name}
         type={type}
         inputSize={inputSize}
-        value={field.state.value as string | number}
+        value={(field.state.value ?? "") as string | number}
         onBlur={field.handleBlur}
         onChange={(e) => {
           if (onChangeOverride) {

@@ -8,6 +8,7 @@ import {
   Users,
   Truck,
   UserCircle,
+  Car,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -27,6 +28,13 @@ const systemModules = [
       { name: "Clientes", url: "/parceiros/clientes", icon: Users },
       { name: "Fornecedores", url: "/parceiros/fornecedores", icon: Truck },
       { name: "Emitentes", url: "/parceiros/emitentes", icon: UserCircle },
+    ],
+  },
+  {
+    name: "Logística",
+    entities: [
+      { name: "Transportadoras", url: "/logistica/transportadoras", icon: Truck },
+      { name: "Veículos", url: "/logistica/veiculos", icon: Car },
     ],
   },
 ];

@@ -31,7 +31,7 @@ export const paisSchema = z.object({
   ddi: z
     .string()
     .min(1, "DDI é obrigatório.")
-    .regex(/^\+\d+$/, "DDI deve ser no formato +55, +1, etc."),
+    .regex(/^\+?\d+$/, "DDI deve conter apenas números."),
   moeda: z.string().min(1, "Moeda é obrigatória."),
   simboloMoeda: z.string().min(1, "Símbolo da moeda é obrigatório."),
 });

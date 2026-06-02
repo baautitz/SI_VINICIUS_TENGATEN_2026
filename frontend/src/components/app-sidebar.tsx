@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import * as React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Globe,
   Map,
@@ -13,8 +13,9 @@ import {
   Users,
   Truck,
   UserCircle,
-  BriefcaseBusiness
-} from "lucide-react"
+  BriefcaseBusiness,
+  Car,
+} from "lucide-react";
 
 import {
   Sidebar,
@@ -28,14 +29,14 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarRail,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-import { ChevronRight } from "lucide-react"
+} from "@/components/ui/collapsible";
+import { ChevronRight } from "lucide-react";
 
 const localizationItems = [
   {
@@ -58,7 +59,7 @@ const localizationItems = [
     url: "/localizacao/bairros",
     icon: Milestone,
   },
-]
+];
 
 const parceirosItems = [
   {
@@ -76,10 +77,23 @@ const parceirosItems = [
     url: "/parceiros/emitentes",
     icon: UserCircle,
   },
-]
+];
+
+const logisticaItems = [
+  {
+    title: "Transportadoras",
+    url: "/logistica/transportadoras",
+    icon: Truck,
+  },
+  {
+    title: "Veículos",
+    url: "/logistica/veiculos",
+    icon: Car,
+  },
+];
 
 export function AppSidebar() {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
   return (
     <Sidebar collapsible="icon">
@@ -125,21 +139,18 @@ export function AppSidebar() {
                   <CollapsibleContent>
                     <SidebarMenuSub>
                       {localizationItems.map((item) => {
-                        const Icon = item.icon
-                        const active = pathname === item.url
+                        const Icon = item.icon;
+                        const active = pathname === item.url;
                         return (
                           <SidebarMenuSubItem key={item.title}>
-                            <SidebarMenuSubButton
-                              asChild
-                              isActive={active}
-                            >
+                            <SidebarMenuSubButton asChild isActive={active}>
                               <Link href={item.url}>
                                 <Icon />
                                 <span>{item.title}</span>
                               </Link>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>
-                        )
+                        );
                       })}
                     </SidebarMenuSub>
                   </CollapsibleContent>
@@ -171,21 +182,60 @@ export function AppSidebar() {
                   <CollapsibleContent>
                     <SidebarMenuSub>
                       {parceirosItems.map((item) => {
-                        const Icon = item.icon
-                        const active = pathname === item.url
+                        const Icon = item.icon;
+                        const active = pathname === item.url;
                         return (
                           <SidebarMenuSubItem key={item.title}>
-                            <SidebarMenuSubButton
-                              asChild
-                              isActive={active}
-                            >
+                            <SidebarMenuSubButton asChild isActive={active}>
                               <Link href={item.url}>
                                 <Icon />
                                 <span>{item.title}</span>
                               </Link>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>
-                        )
+                        );
+                      })}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <Collapsible
+                asChild
+                defaultOpen={pathname.startsWith("/logistica")}
+                className="group/collapsible"
+              >
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton
+                      tooltip="Logística"
+                      isActive={pathname.startsWith("/logistica")}
+                    >
+                      <Truck />
+                      <span>Logística</span>
+                      <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {logisticaItems.map((item) => {
+                        const Icon = item.icon;
+                        const active = pathname === item.url;
+                        return (
+                          <SidebarMenuSubItem key={item.title}>
+                            <SidebarMenuSubButton asChild isActive={active}>
+                              <Link href={item.url}>
+                                <Icon />
+                                <span>{item.title}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        );
                       })}
                     </SidebarMenuSub>
                   </CollapsibleContent>
@@ -197,5 +247,5 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }
