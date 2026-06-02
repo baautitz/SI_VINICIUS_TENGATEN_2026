@@ -14,5 +14,5 @@ public interface IEmitentesRepository {
     public Task<bool> DeletarEmitente(int id);
     public Task<ResultadoPaginado<EmitentesResumo>> ObterEmitentesResumo(int pagina = 1, int tamanhoDaPagina = 20);
     public Task<ResultadoPaginado<EmitentesResumo>> PesquisarEmitentes(string termo, int pagina = 1, int tamanhoDaPagina = 20);
-    public Task<bool> ExisteEmitenteCpfCnpj(string cpfCnpj, int? paisId, int? ignorarId = null);
+    public Task<bool> ExisteEmitenteCpfCnpj(string cpfCnpj, int nacionalidadeId, int? ignorarId = null);
 }

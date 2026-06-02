@@ -1,3 +1,4 @@
+using Backend.Core.Common.Enums;
 using Backend.Core.Common.Exceptions;
 using Backend.Core.Common.Helpers;
 using Backend.Core.Common.ValueObjects;
@@ -8,11 +9,13 @@ namespace Backend.Core.Features.Parceiros.Entities;
 public class Emitentes
 {
     public int Id { get; set; }
+    public TipoPessoa TipoPessoa { get; private set; }
     public string NomeRazaoSocial { get; private set; }
     public string CpfCnpj { get; private set; }
     public string? ApelidoNomeFantasia { get; private set; }
     public string? Endereco { get; private set; }
     public Bairros? Bairro { get; private set; }
+    public Paises Nacionalidade { get; private set; }
     public string? Telefone { get; private set; }
     public string? Email { get; private set; }
     public string? RgIe { get; private set; }
@@ -27,11 +30,14 @@ public class Emitentes
     {
         NomeRazaoSocial = null!;
         CpfCnpj = null!;
+        Nacionalidade = null!;
     }
 
     public Emitentes(
+        TipoPessoa tipoPessoa,
         string nomeRazaoSocial,
         string cpfCnpj,
+        Paises nacionalidade,
         string? apelidoNomeFantasia = null,
         string? endereco = null,
         Bairros? bairro = null,
@@ -44,16 +50,21 @@ public class Emitentes
         bool ativo = true)
     {
         nomeRazaoSocial = TextNormalization.Normalize(nomeRazaoSocial);
-        var cpfCnpjVo = new CpfCnpj(cpfCnpj);
+        var documentoLimpo = new DocumentoGenerico(cpfCnpj).Valor;
 
         if (string.IsNullOrWhiteSpace(nomeRazaoSocial))
             throw new DomainException("Nome ou razão social do emitente é obrigatório.");
 
-        if (string.IsNullOrWhiteSpace(cpfCnpjVo))
-            throw new DomainException("CPF/CNPJ do emitente é obrigatório.");
+        if (string.IsNullOrWhiteSpace(documentoLimpo))
+            throw new DomainException("CPF/CNPJ ou Documento do emitente é obrigatório.");
 
+        if (nacionalidade == null)
+            throw new DomainException("Nacionalidade do emitente é obrigatória.");
+
+        TipoPessoa = tipoPessoa;
         NomeRazaoSocial = nomeRazaoSocial;
-        CpfCnpj = cpfCnpjVo;
+        CpfCnpj = documentoLimpo;
+        Nacionalidade = nacionalidade;
         ApelidoNomeFantasia = TextNormalization.NormalizeOrNull(apelidoNomeFantasia);
         Endereco = TextNormalization.NormalizeOrNull(endereco);
         Bairro = bairro;
@@ -69,8 +80,10 @@ public class Emitentes
     }
 
     public Emitentes(int id,
+        TipoPessoa tipoPessoa,
         string nomeRazaoSocial,
         string cpfCnpj,
+        Paises nacionalidade,
         string? apelidoNomeFantasia = null,
         string? endereco = null,
         Bairros? bairro = null,
@@ -82,15 +95,17 @@ public class Emitentes
         string? observacao = null,
         bool ativo = true,
         DateTime? criadoEm = null)
-        : this(nomeRazaoSocial, cpfCnpj, apelidoNomeFantasia, endereco, bairro, telefone, email, rgIe, inscricaoMunicipal, regimeTributario, observacao, ativo)
+        : this(tipoPessoa, nomeRazaoSocial, cpfCnpj, nacionalidade, apelidoNomeFantasia, endereco, bairro, telefone, email, rgIe, inscricaoMunicipal, regimeTributario, observacao, ativo)
     {
         Id = id;
         CriadoEm = criadoEm ?? DateTime.UtcNow;
     }
 
     public void AtualizarDados(
+        TipoPessoa tipoPessoa,
         string nomeRazaoSocial,
         string cpfCnpj,
+        Paises nacionalidade,
         string? apelidoNomeFantasia = null,
         string? endereco = null,
         Bairros? bairro = null,
@@ -102,16 +117,21 @@ public class Emitentes
         string? observacao = null)
     {
         nomeRazaoSocial = TextNormalization.Normalize(nomeRazaoSocial);
-        var cpfCnpjVo = new CpfCnpj(cpfCnpj);
+        var documentoLimpo = new DocumentoGenerico(cpfCnpj).Valor;
 
         if (string.IsNullOrWhiteSpace(nomeRazaoSocial))
             throw new DomainException("Nome ou razão social do emitente é obrigatório.");
 
-        if (string.IsNullOrWhiteSpace(cpfCnpjVo))
-            throw new DomainException("CPF/CNPJ do emitente é obrigatório.");
+        if (string.IsNullOrWhiteSpace(documentoLimpo))
+            throw new DomainException("CPF/CNPJ ou Documento do emitente é obrigatório.");
 
+        if (nacionalidade == null)
+            throw new DomainException("Nacionalidade do emitente é obrigatória.");
+
+        TipoPessoa = tipoPessoa;
         NomeRazaoSocial = nomeRazaoSocial;
-        CpfCnpj = cpfCnpjVo;
+        CpfCnpj = documentoLimpo;
+        Nacionalidade = nacionalidade;
         ApelidoNomeFantasia = TextNormalization.NormalizeOrNull(apelidoNomeFantasia);
         Endereco = TextNormalization.NormalizeOrNull(endereco);
         Bairro = bairro;

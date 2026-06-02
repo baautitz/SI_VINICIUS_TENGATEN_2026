@@ -21,24 +21,29 @@ public class TransportadorasRepository : ITransportadorasRepository
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
-        const string sql = @"
-            SELECT COUNT(*) FROM transportadoras;
-
-            SELECT id AS Id, nome_razaosocial AS NomeRazaosocial, cpf_cnpj AS CpfCnpj, rg_ie AS RgIe, apelido_nomefantasia AS ApelidoNomefantasia,
-                   endereco AS Endereco, telefone AS Telefone, email AS Email, rntrc AS Rntrc, ativo AS Ativo, criado_em AS CriadoEm,
-                   observacao AS Observacao
-            FROM transportadoras
-            ORDER BY nome_razaosocial
+        const string sqlCount = "SELECT COUNT(*) FROM transportadoras;";
+        const string sqlData = @"
+            SELECT t.id AS Id, t.tipo_pessoa AS TipoPessoa, t.nome_razaosocial AS NomeRazaoSocial, t.cpf_cnpj AS CpfCnpj, t.rg_ie AS RgIe, t.apelido_nomefantasia AS ApelidoNomefantasia,
+                   t.endereco AS Endereco, t.telefone AS Telefone, t.email AS Email, t.rntrc AS Rntrc, t.ativo AS Ativo, t.criado_em AS CriadoEm,
+                   t.observacao AS Observacao,
+                   p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            FROM transportadoras t
+            INNER JOIN paises p ON p.id = t.nacionalidade_id
+            ORDER BY t.nome_razaosocial
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
-        using var multi = await _session.Connection.QueryMultipleAsync(
-            sql,
-            new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
-            transaction: _session.Transaction
-        );
+        var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
 
-        var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<Transportadoras>();
+        var itens = await _session.Connection.QueryAsync<Transportadoras, Paises, Transportadoras>(
+            sqlData,
+            (transportadora, pais) => {
+                transportadora.Atualizar(transportadora.TipoPessoa, transportadora.NomeRazaosocial, transportadora.CpfCnpj, pais!, transportadora.RgIe, transportadora.ApelidoNomefantasia, transportadora.Endereco, null, transportadora.Telefone, transportadora.Email, transportadora.Rntrc, transportadora.Observacao);
+                return transportadora;
+            },
+            new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
+            transaction: _session.Transaction,
+            splitOn: "PaisId"
+        );
 
         return new ResultadoPaginado<Transportadoras>(itens, total, pagina, tamanhoDaPagina);
     }
@@ -46,49 +51,63 @@ public class TransportadorasRepository : ITransportadorasRepository
     public async Task<Transportadoras?> ObterTransportadoraPorId(int id)
     {
         const string sql = @"
-            SELECT t.id AS Id, t.nome_razaosocial AS NomeRazaosocial, t.cpf_cnpj AS CpfCnpj, t.rg_ie AS RgIe, t.apelido_nomefantasia AS ApelidoNomefantasia,
+            SELECT t.id AS Id, t.tipo_pessoa AS TipoPessoa, t.nome_razaosocial AS NomeRazaoSocial, t.cpf_cnpj AS CpfCnpj, t.rg_ie AS RgIe, t.apelido_nomefantasia AS ApelidoNomefantasia,
                    t.endereco AS Endereco, t.telefone AS Telefone, t.email AS Email, t.rntrc AS Rntrc, t.ativo AS Ativo, t.criado_em AS CriadoEm,
                    t.observacao AS Observacao,
-                   b.id AS Id, b.bairro,
-                   ci.id AS Id, ci.cidade, ci.ddd,
-                   e.id AS Id, e.estado, e.uf,
-                   p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+                   b.id AS BairroId, b.id AS Id, b.bairro,
+                   ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
+                   e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
+                   p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda,
+                   v.id AS VeiculoId, v.id AS Id, v.placa, v.rntrc, v.renavam, v.tipo_veiculo, v.marca_modelo, v.ativo, v.observacao, v.estado_id AS EstadoId
             FROM transportadoras t
+            INNER JOIN paises p ON p.id = t.nacionalidade_id
             LEFT JOIN bairros b ON b.id = t.bairro_id
             LEFT JOIN cidades ci ON ci.id = b.cidade_id
             LEFT JOIN estados e ON e.id = ci.estado_id
-            LEFT JOIN paises p ON p.id = e.pais_id
+            LEFT JOIN veiculos v ON v.transportadora_id = t.id
             WHERE t.id = @Id;";
 
-        var result = await _session.Connection.QueryAsync<Transportadoras, Bairros, Cidades, Estados, Paises, Transportadoras>(
+        var transportadoraDict = new Dictionary<int, Transportadoras>();
+
+        await _session.Connection.QueryAsync<Transportadoras, Bairros, Cidades, Estados, Paises, Veiculos, Transportadoras>(
             sql,
-            (transportadora, bairro, cidade, estado, pais) =>
+            (transportadora, bairro, cidade, estado, pais, veiculo) =>
             {
-                if (bairro is not null)
+                if (!transportadoraDict.TryGetValue(transportadora.Id, out var transportadoraEntry))
                 {
+                    transportadoraEntry = transportadora;
                     if (pais is not null && estado is not null) estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
                     if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
-                    if (cidade is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
-                    transportadora.Atualizar(transportadora.NomeRazaosocial, transportadora.CpfCnpj, transportadora.RgIe, transportadora.ApelidoNomefantasia, transportadora.Endereco, bairro, transportadora.Telefone, transportadora.Email, transportadora.Rntrc, transportadora.Observacao);
+                    if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
+                    
+                    transportadoraEntry.Atualizar(transportadoraEntry.TipoPessoa, transportadoraEntry.NomeRazaosocial, transportadoraEntry.CpfCnpj, pais!, transportadoraEntry.RgIe, transportadoraEntry.ApelidoNomefantasia, transportadoraEntry.Endereco, bairro, transportadoraEntry.Telefone, transportadoraEntry.Email, transportadoraEntry.Rntrc, transportadoraEntry.Observacao);
+                    
+                    transportadoraDict.Add(transportadoraEntry.Id, transportadoraEntry);
                 }
-                return transportadora;
+
+                if (veiculo is not null)
+                {
+                    transportadoraEntry.AdicionarVeiculo(veiculo);
+                }
+                
+                return transportadoraEntry;
             },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "Id,Id,Id,Id"
+            splitOn: "BairroId,CidadeId,EstadoId,PaisId,VeiculoId"
         );
 
-        return result.SingleOrDefault();
+        return transportadoraDict.Values.SingleOrDefault();
     }
 
     public async Task<Transportadoras> CriarTransportadora(Transportadoras transportadora)
     {
         const string sql = @"
-            INSERT INTO transportadoras (nome_razaosocial, cpf_cnpj, rg_ie, apelido_nomefantasia,
-                                        endereco, bairro_id, telefone, email, rntrc,
+            INSERT INTO transportadoras (tipo_pessoa, nome_razaosocial, cpf_cnpj, rg_ie, apelido_nomefantasia,
+                                        endereco, bairro_id, nacionalidade_id, telefone, email, rntrc,
                                         ativo, criado_em, observacao)
-            VALUES (@NomeRazaosocial, @CpfCnpj, @RgIe, @ApelidoNomefantasia,
-                    @Endereco, @BairroId, @Telefone, @Email, @Rntrc,
+            VALUES (@TipoPessoa, @NomeRazaosocial, @CpfCnpj, @RgIe, @ApelidoNomefantasia,
+                    @Endereco, @BairroId, @NacionalidadeId, @Telefone, @Email, @Rntrc,
                     @Ativo, @CriadoEm, @Observacao)
             RETURNING id;";
 
@@ -96,12 +115,14 @@ public class TransportadorasRepository : ITransportadorasRepository
             sql,
             new
             {
+                TipoPessoa = transportadora.TipoPessoa.ToString(),
                 transportadora.NomeRazaosocial,
                 transportadora.CpfCnpj,
                 transportadora.RgIe,
                 transportadora.ApelidoNomefantasia,
                 transportadora.Endereco,
                 BairroId = transportadora.Bairro?.Id,
+                NacionalidadeId = transportadora.Nacionalidade.Id,
                 transportadora.Telefone,
                 transportadora.Email,
                 transportadora.Rntrc,
@@ -120,10 +141,10 @@ public class TransportadorasRepository : ITransportadorasRepository
     {
         const string sql = @"
             UPDATE transportadoras
-            SET nome_razaosocial = @NomeRazaosocial, cpf_cnpj = @CpfCnpj,
+            SET tipo_pessoa = @TipoPessoa, nome_razaosocial = @NomeRazaosocial, cpf_cnpj = @CpfCnpj,
                 rg_ie = @RgIe, apelido_nomefantasia = @ApelidoNomefantasia,
-                endereco = @Endereco, bairro_id = @BairroId, telefone = @Telefone,
-                email = @Email, rntrc = @Rntrc, ativo = @Ativo,
+                endereco = @Endereco, bairro_id = @BairroId, nacionalidade_id = @NacionalidadeId,
+                telefone = @Telefone, email = @Email, rntrc = @Rntrc, ativo = @Ativo,
                 atualizado_em = @AtualizadoEm, observacao = @Observacao
             WHERE id = @Id;";
 
@@ -132,12 +153,14 @@ public class TransportadorasRepository : ITransportadorasRepository
             new
             {
                 Id = id,
+                TipoPessoa = transportadora.TipoPessoa.ToString(),
                 transportadora.NomeRazaosocial,
                 transportadora.CpfCnpj,
                 transportadora.RgIe,
                 transportadora.ApelidoNomefantasia,
                 transportadora.Endereco,
                 BairroId = transportadora.Bairro?.Id,
+                NacionalidadeId = transportadora.Nacionalidade.Id,
                 transportadora.Telefone,
                 transportadora.Email,
                 transportadora.Rntrc,
@@ -169,7 +192,7 @@ public class TransportadorasRepository : ITransportadorasRepository
         const string sql = @"
             SELECT COUNT(*) FROM transportadoras;
 
-            SELECT id, nome_razaosocial AS NomeRazaosocial, cpf_cnpj AS CpfCnpj, ativo AS Ativo
+            SELECT id, tipo_pessoa AS TipoPessoa, nacionalidade_id AS NacionalidadeId, nome_razaosocial AS NomeRazaoSocial, cpf_cnpj AS CpfCnpj, ativo AS Ativo
             FROM transportadoras ORDER BY nome_razaosocial
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
@@ -192,7 +215,7 @@ public class TransportadorasRepository : ITransportadorasRepository
             WHERE nome_razaosocial ILIKE @Termo OR cpf_cnpj ILIKE @Termo
                OR apelido_nomefantasia ILIKE @Termo OR email ILIKE @Termo;
 
-            SELECT id, nome_razaosocial AS NomeRazaosocial, cpf_cnpj AS CpfCnpj, ativo AS Ativo
+            SELECT id, tipo_pessoa AS TipoPessoa, nacionalidade_id AS NacionalidadeId, nome_razaosocial AS NomeRazaoSocial, cpf_cnpj AS CpfCnpj, ativo AS Ativo
             FROM transportadoras
             WHERE nome_razaosocial ILIKE @Termo OR cpf_cnpj ILIKE @Termo
                OR apelido_nomefantasia ILIKE @Termo OR email ILIKE @Termo
@@ -210,12 +233,12 @@ public class TransportadorasRepository : ITransportadorasRepository
         return new ResultadoPaginado<TransportadorasResumo>(itens, total, pagina, tamanhoDaPagina);
     }
 
-    public async Task<bool> ExisteTransportadoraCpfCnpj(string cpfCnpj, int? ignorarId = null)
+    public async Task<bool> ExisteTransportadoraCpfCnpj(string cpfCnpj, int nacionalidadeId, int? ignorarId = null)
     {
         var sql = @"
             SELECT COUNT(1)
             FROM transportadoras
-            WHERE cpf_cnpj = @CpfCnpj";
+            WHERE cpf_cnpj = @CpfCnpj AND nacionalidade_id = @NacionalidadeId";
 
         if (ignorarId.HasValue)
         {
@@ -224,7 +247,7 @@ public class TransportadorasRepository : ITransportadorasRepository
 
         var count = await _session.Connection.ExecuteScalarAsync<int>(
             sql,
-            new { CpfCnpj = cpfCnpj, IgnorarId = ignorarId },
+            new { CpfCnpj = cpfCnpj, NacionalidadeId = nacionalidadeId, IgnorarId = ignorarId },
             transaction: _session.Transaction);
 
         return count > 0;

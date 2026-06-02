@@ -21,24 +21,29 @@ public class FornecedoresRepository : IFornecedoresRepository
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
-        const string sql = @"
-            SELECT COUNT(*) FROM fornecedores;
-
-            SELECT id, nome_razaosocial AS NomeRazaosocial, cpf_cnpj, rg_ie, apelido_nomefantasia AS ApelidoNomefantasia,
-                   endereco, telefone, email, ativo, criado_em,
-                   observacao
-            FROM fornecedores
-            ORDER BY nome_razaosocial
+        const string sqlCount = "SELECT COUNT(*) FROM fornecedores;";
+        const string sqlData = @"
+            SELECT f.id AS Id, f.tipo_pessoa AS TipoPessoa, f.nome_razaosocial AS NomeRazaosocial, f.cpf_cnpj AS CpfCnpj, f.rg_ie AS RgIe, f.apelido_nomefantasia AS ApelidoNomefantasia,
+                   f.endereco AS Endereco, f.telefone AS Telefone, f.email AS Email, f.ativo AS Ativo, f.criado_em AS CriadoEm,
+                   f.observacao AS Observacao,
+                   p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            FROM fornecedores f
+            INNER JOIN paises p ON p.id = f.nacionalidade_id
+            ORDER BY f.nome_razaosocial
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
-        using var multi = await _session.Connection.QueryMultipleAsync(
-            sql,
-            new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
-            transaction: _session.Transaction
-        );
+        var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
 
-        var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<Fornecedores>();
+        var itens = await _session.Connection.QueryAsync<Fornecedores, Paises, Fornecedores>(
+            sqlData,
+            (fornecedor, pais) => {
+                fornecedor.Atualizar(fornecedor.TipoPessoa, fornecedor.NomeRazaosocial, fornecedor.CpfCnpj, pais!, fornecedor.RgIe, fornecedor.ApelidoNomefantasia, fornecedor.Endereco, null, fornecedor.Telefone, fornecedor.Email, fornecedor.Observacao);
+                return fornecedor;
+            },
+            new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
+            transaction: _session.Transaction,
+            splitOn: "PaisId"
+        );
 
         return new ResultadoPaginado<Fornecedores>(itens, total, pagina, tamanhoDaPagina);
     }
@@ -46,31 +51,30 @@ public class FornecedoresRepository : IFornecedoresRepository
     public async Task<Fornecedores?> ObterFornecedorPorId(int id)
     {
         const string sql = @"
-            SELECT f.id AS Id, f.nome_razaosocial AS NomeRazaosocial, f.cpf_cnpj, f.rg_ie, f.apelido_nomefantasia AS ApelidoNomefantasia,
-                   f.endereco, f.telefone, f.email, f.ativo, f.criado_em,
-                   f.observacao,
+            SELECT f.id AS Id, f.tipo_pessoa AS TipoPessoa, f.nome_razaosocial AS NomeRazaosocial, f.cpf_cnpj AS CpfCnpj, f.rg_ie AS RgIe, f.apelido_nomefantasia AS ApelidoNomefantasia,
+                   f.endereco AS Endereco, f.telefone AS Telefone, f.email AS Email, f.ativo AS Ativo, f.criado_em AS CriadoEm,
+                   f.observacao AS Observacao,
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
                    e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
                    p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM fornecedores f
+            INNER JOIN paises p ON p.id = f.nacionalidade_id
             LEFT JOIN bairros b ON b.id = f.bairro_id
             LEFT JOIN cidades ci ON ci.id = b.cidade_id
             LEFT JOIN estados e ON e.id = ci.estado_id
-            LEFT JOIN paises p ON p.id = e.pais_id
             WHERE f.id = @Id;";
 
         var result = await _session.Connection.QueryAsync<Fornecedores, Bairros, Cidades, Estados, Paises, Fornecedores>(
             sql,
             (fornecedor, bairro, cidade, estado, pais) =>
             {
-                if (bairro is not null)
-                {
-                    if (pais is not null && estado is not null) estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
-                    if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
-                    if (cidade is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
-                    fornecedor.Atualizar(fornecedor.NomeRazaosocial, fornecedor.CpfCnpj, fornecedor.RgIe, fornecedor.ApelidoNomefantasia, fornecedor.Endereco, bairro, fornecedor.Telefone, fornecedor.Email, fornecedor.Observacao);
-                }
+                if (pais is not null && estado is not null) estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
+                if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
+                if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
+                
+                fornecedor.Atualizar(fornecedor.TipoPessoa, fornecedor.NomeRazaosocial, fornecedor.CpfCnpj, pais!, fornecedor.RgIe, fornecedor.ApelidoNomefantasia, fornecedor.Endereco, bairro, fornecedor.Telefone, fornecedor.Email, fornecedor.Observacao);
+                
                 return fornecedor;
             },
             new { Id = id },
@@ -84,11 +88,11 @@ public class FornecedoresRepository : IFornecedoresRepository
     public async Task<Fornecedores> CriarFornecedor(Fornecedores fornecedor)
     {
         const string sql = @"
-            INSERT INTO fornecedores (nome_razaosocial, cpf_cnpj, rg_ie, apelido_nomefantasia,
-                                      endereco, bairro_id, telefone, email,
+            INSERT INTO fornecedores (tipo_pessoa, nome_razaosocial, cpf_cnpj, rg_ie, apelido_nomefantasia,
+                                      endereco, bairro_id, nacionalidade_id, telefone, email,
                                       ativo, criado_em, observacao)
-            VALUES (@NomeRazaosocial, @CpfCnpj, @RgIe, @ApelidoNomefantasia,
-                    @Endereco, @BairroId, @Telefone, @Email,
+            VALUES (@TipoPessoa, @NomeRazaosocial, @CpfCnpj, @RgIe, @ApelidoNomefantasia,
+                    @Endereco, @BairroId, @NacionalidadeId, @Telefone, @Email,
                     @Ativo, @CriadoEm, @Observacao)
             RETURNING id;";
 
@@ -96,12 +100,14 @@ public class FornecedoresRepository : IFornecedoresRepository
             sql,
             new
             {
+                TipoPessoa = fornecedor.TipoPessoa.ToString(),
                 fornecedor.NomeRazaosocial,
                 fornecedor.CpfCnpj,
                 fornecedor.RgIe,
                 fornecedor.ApelidoNomefantasia,
                 fornecedor.Endereco,
                 BairroId = fornecedor.Bairro?.Id,
+                NacionalidadeId = fornecedor.Nacionalidade.Id,
                 fornecedor.Telefone,
                 fornecedor.Email,
                 fornecedor.Ativo,
@@ -120,11 +126,11 @@ public class FornecedoresRepository : IFornecedoresRepository
     {
         const string sql = @"
             UPDATE fornecedores
-            SET nome_razaosocial = @NomeRazaosocial, cpf_cnpj = @CpfCnpj,
+            SET tipo_pessoa = @TipoPessoa, nome_razaosocial = @NomeRazaosocial, cpf_cnpj = @CpfCnpj,
                 rg_ie = @RgIe, apelido_nomefantasia = @ApelidoNomefantasia,
-                endereco = @Endereco, bairro_id = @BairroId, telefone = @Telefone,
-                email = @Email, ativo = @Ativo,
-                observacao = @Observacao
+                endereco = @Endereco, bairro_id = @BairroId, nacionalidade_id = @NacionalidadeId,
+                telefone = @Telefone, email = @Email, ativo = @Ativo,
+                atualizado_em = @AtualizadoEm, observacao = @Observacao
             WHERE id = @Id;";
 
         await _session.Connection.ExecuteAsync(
@@ -132,15 +138,18 @@ public class FornecedoresRepository : IFornecedoresRepository
             new
             {
                 Id = id,
+                TipoPessoa = fornecedor.TipoPessoa.ToString(),
                 fornecedor.NomeRazaosocial,
                 fornecedor.CpfCnpj,
                 fornecedor.RgIe,
                 fornecedor.ApelidoNomefantasia,
                 fornecedor.Endereco,
                 BairroId = fornecedor.Bairro?.Id,
+                NacionalidadeId = fornecedor.Nacionalidade.Id,
                 fornecedor.Telefone,
                 fornecedor.Email,
                 fornecedor.Ativo,
+                AtualizadoEm = DateTime.UtcNow,
                 fornecedor.Observacao
             },
             transaction: _session.Transaction
@@ -171,7 +180,7 @@ public class FornecedoresRepository : IFornecedoresRepository
         const string sql = @"
             SELECT COUNT(*) FROM fornecedores;
 
-            SELECT id, nome_razaosocial AS NomeRazaoSocial, cpf_cnpj AS CpfCnpj, apelido_nomefantasia AS ApelidoNomeFantasia
+            SELECT id, tipo_pessoa AS TipoPessoa, nome_razaosocial AS NomeRazaoSocial, cpf_cnpj AS CpfCnpj, apelido_nomefantasia AS ApelidoNomeFantasia, nacionalidade_id AS NacionalidadeId
             FROM fornecedores
             ORDER BY nome_razaosocial
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
@@ -196,7 +205,7 @@ public class FornecedoresRepository : IFornecedoresRepository
             WHERE nome_razaosocial ILIKE @Termo OR cpf_cnpj ILIKE @Termo
                OR apelido_nomefantasia ILIKE @Termo OR email ILIKE @Termo;
 
-            SELECT id, nome_razaosocial AS NomeRazaoSocial, cpf_cnpj AS CpfCnpj, apelido_nomefantasia AS ApelidoNomeFantasia
+            SELECT id, tipo_pessoa AS TipoPessoa, nome_razaosocial AS NomeRazaoSocial, cpf_cnpj AS CpfCnpj, apelido_nomefantasia AS ApelidoNomeFantasia, nacionalidade_id AS NacionalidadeId
             FROM fornecedores
             WHERE nome_razaosocial ILIKE @Termo OR cpf_cnpj ILIKE @Termo
                OR apelido_nomefantasia ILIKE @Termo OR email ILIKE @Termo
@@ -214,12 +223,12 @@ public class FornecedoresRepository : IFornecedoresRepository
         return new ResultadoPaginado<FornecedoresResumo>(itens, total, pagina, tamanhoDaPagina);
     }
 
-    public async Task<bool> ExisteFornecedorCpfCnpj(string cpfCnpj, int? paisId, int? ignorarId = null)
+    public async Task<bool> ExisteFornecedorCpfCnpj(string cpfCnpj, int nacionalidadeId, int? ignorarId = null)
     {
         var sql = @"
             SELECT COUNT(1)
             FROM fornecedores f
-            WHERE f.cpf_cnpj = @CpfCnpj";
+            WHERE f.cpf_cnpj = @CpfCnpj AND f.nacionalidade_id = @NacionalidadeId";
 
         if (ignorarId.HasValue)
         {
@@ -228,7 +237,7 @@ public class FornecedoresRepository : IFornecedoresRepository
 
         var count = await _session.Connection.ExecuteScalarAsync<int>(
             sql,
-            new { CpfCnpj = cpfCnpj, IgnorarId = ignorarId },
+            new { CpfCnpj = cpfCnpj, NacionalidadeId = nacionalidadeId, IgnorarId = ignorarId },
             transaction: _session.Transaction);
 
         return count > 0;

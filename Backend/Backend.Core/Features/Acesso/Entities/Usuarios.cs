@@ -22,7 +22,7 @@ public class Usuarios
     public Usuarios(string nome, string cpfCnpj, string email, string usuario, string senha, string? telefone = null)
     {
         nome = TextNormalization.Normalize(nome);
-        cpfCnpj = new CpfCnpj(cpfCnpj);
+        cpfCnpj = new DocumentoGenerico(cpfCnpj).Valor;
         email = TextNormalization.Normalize(email);
         usuario = TextNormalization.Normalize(usuario);
         telefone = TextNormalization.NormalizeOrNull(telefone);
@@ -57,7 +57,7 @@ public class Usuarios
     public void Atualizar(string nome, string cpfCnpj, string email, string usuario, string? telefone = null)
     {
         nome = TextNormalization.Normalize(nome);
-        cpfCnpj = new CpfCnpj(cpfCnpj);
+        cpfCnpj = new DocumentoGenerico(cpfCnpj).Valor;
         email = TextNormalization.Normalize(email);
         usuario = TextNormalization.Normalize(usuario);
         telefone = TextNormalization.NormalizeOrNull(telefone);

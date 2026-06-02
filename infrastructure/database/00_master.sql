@@ -17,6 +17,7 @@ SET search_path TO projeto_sistemas, public;
 \ir acesso/schema/usuarios.sql
 \ir acesso/schema/sessoes.sql
 
+\ir parceiros/schema/parceiros_tipos.sql
 \ir parceiros/schema/clientes.sql
 \ir parceiros/schema/emitentes.sql
 
@@ -61,3 +62,4 @@ SET search_path TO projeto_sistemas, public;
 \ir pagamentos/seeds/seed_metodos_pagamento.sql
 
 COMMIT;
+

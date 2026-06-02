@@ -1,3 +1,4 @@
+using Backend.Core.Common.Enums;
 using Backend.Core.Common.Exceptions;
 using Backend.Core.Common.Helpers;
 using Backend.Core.Common.ValueObjects;
@@ -10,12 +11,14 @@ public class Transportadoras
     private readonly List<Veiculos> _veiculos = new();
 
     public int Id { get; set; }
+    public TipoPessoa TipoPessoa { get; private set; }
     public string NomeRazaosocial { get; private set; }
     public string CpfCnpj { get; private set; }
     public string? RgIe { get; private set; }
     public string? ApelidoNomefantasia { get; private set; }
     public string? Endereco { get; private set; }
     public Bairros? Bairro { get; private set; }
+    public Paises Nacionalidade { get; private set; }
     public string? Telefone { get; private set; }
     public string? Email { get; private set; }
     public string? Rntrc { get; private set; }
@@ -29,40 +32,52 @@ public class Transportadoras
     {
         NomeRazaosocial = null!;
         CpfCnpj = null!;
+        Nacionalidade = null!;
     }
-public Transportadoras(string nomeRazaosocial, string cpfCnpj, string? rgIe = null, string? apelidoNomefantasia = null, string? endereco = null, Bairros? bairro = null, string? telefone = null, string? email = null, string? rntrc = null, string? observacao = null)
-{
-    nomeRazaosocial = TextNormalization.Normalize(nomeRazaosocial);
-    var cpfCnpjVo = new CpfCnpj(cpfCnpj);
-    var rgIeVo = string.IsNullOrWhiteSpace(rgIe) ? null : new DocumentoGenerico(rgIe);
-    var rntrcVo = string.IsNullOrWhiteSpace(rntrc) ? null : new DocumentoGenerico(rntrc);
-    apelidoNomefantasia = TextNormalization.NormalizeOrNull(apelidoNomefantasia);
-    endereco = TextNormalization.NormalizeOrNull(endereco);
-    telefone = TextNormalization.NormalizeOrNull(telefone);
-    email = TextNormalization.NormalizeOrNull(email);
-    observacao = TextNormalization.NormalizeOrNull(observacao);
 
-    if (string.IsNullOrWhiteSpace(nomeRazaosocial))
-        throw new DomainException("Nome/razão social é obrigatório.");
+    public Transportadoras(
+        TipoPessoa tipoPessoa,
+        string nomeRazaosocial,
+        string cpfCnpj,
+        Paises nacionalidade,
+        string? rgIe = null,
+        string? apelidoNomefantasia = null,
+        string? endereco = null,
+        Bairros? bairro = null,
+        string? telefone = null,
+        string? email = null,
+        string? rntrc = null,
+        string? observacao = null)
+    {
+        nomeRazaosocial = TextNormalization.Normalize(nomeRazaosocial);
+        var documentoLimpo = new DocumentoGenerico(cpfCnpj).Valor;
 
-    if (string.IsNullOrWhiteSpace(cpfCnpjVo))
-        throw new DomainException("CPF/CNPJ é obrigatório.");
+        if (string.IsNullOrWhiteSpace(nomeRazaosocial))
+            throw new DomainException("Nome/razão social é obrigatório.");
 
-    NomeRazaosocial = nomeRazaosocial;
+        if (string.IsNullOrWhiteSpace(documentoLimpo))
+            throw new DomainException("CPF/CNPJ ou Documento é obrigatório.");
 
-    CpfCnpj = cpfCnpjVo;
-    RgIe = rgIeVo?.Valor;
-    ApelidoNomefantasia = apelidoNomefantasia;
-    Endereco = endereco;
-    Bairro = bairro;
-    Telefone = telefone;
-    Email = email;
-    Rntrc = rntrcVo?.Valor;
-    Observacao = observacao;
-    Ativo = true;
-    CriadoEm = DateTime.UtcNow;
-}
+        if (nacionalidade == null)
+            throw new DomainException("Nacionalidade é obrigatória.");
 
+        TipoPessoa = tipoPessoa;
+        NomeRazaosocial = nomeRazaosocial;
+        CpfCnpj = documentoLimpo;
+        Nacionalidade = nacionalidade;
+        RgIe = new DocumentoGenerico(rgIe ?? "").Valor;
+        if (string.IsNullOrWhiteSpace(RgIe)) RgIe = null;
+        ApelidoNomefantasia = TextNormalization.NormalizeOrNull(apelidoNomefantasia);
+        Endereco = TextNormalization.NormalizeOrNull(endereco);
+        Bairro = bairro;
+        Telefone = TextNormalization.NormalizeOrNull(telefone);
+        Email = TextNormalization.NormalizeOrNull(email);
+        Rntrc = new DocumentoGenerico(rntrc ?? "").Valor;
+        if (string.IsNullOrWhiteSpace(Rntrc)) Rntrc = null;
+        Observacao = TextNormalization.NormalizeOrNull(observacao);
+        Ativo = true;
+        CriadoEm = DateTime.UtcNow;
+    }
 
     public void AdicionarVeiculo(Veiculos veiculo)
     {
@@ -82,36 +97,48 @@ public Transportadoras(string nomeRazaosocial, string cpfCnpj, string? rgIe = nu
 
         _veiculos.Remove(veiculo);
     }
-public void Atualizar(string nomeRazaosocial, string cpfCnpj, string? rgIe = null, string? apelidoNomefantasia = null, string? endereco = null, Bairros? bairro = null, string? telefone = null, string? email = null, string? rntrc = null, string? observacao = null)
-{
-    nomeRazaosocial = TextNormalization.Normalize(nomeRazaosocial);
-    var cpfCnpjVo = new CpfCnpj(cpfCnpj);
-    var rgIeVo = string.IsNullOrWhiteSpace(rgIe) ? null : new DocumentoGenerico(rgIe);
-    var rntrcVo = string.IsNullOrWhiteSpace(rntrc) ? null : new DocumentoGenerico(rntrc);
-    apelidoNomefantasia = TextNormalization.NormalizeOrNull(apelidoNomefantasia);
-    endereco = TextNormalization.NormalizeOrNull(endereco);
-    telefone = TextNormalization.NormalizeOrNull(telefone);
-    email = TextNormalization.NormalizeOrNull(email);
-    observacao = TextNormalization.NormalizeOrNull(observacao);
 
-    if (string.IsNullOrWhiteSpace(nomeRazaosocial))
-        throw new DomainException("Nome/razão social é obrigatório.");
+    public void Atualizar(
+        TipoPessoa tipoPessoa,
+        string nomeRazaosocial,
+        string cpfCnpj,
+        Paises nacionalidade,
+        string? rgIe = null,
+        string? apelidoNomefantasia = null,
+        string? endereco = null,
+        Bairros? bairro = null,
+        string? telefone = null,
+        string? email = null,
+        string? rntrc = null,
+        string? observacao = null)
+    {
+        nomeRazaosocial = TextNormalization.Normalize(nomeRazaosocial);
+        var documentoLimpo = new DocumentoGenerico(cpfCnpj).Valor;
 
-    if (string.IsNullOrWhiteSpace(cpfCnpjVo))
-        throw new DomainException("CPF/CNPJ é obrigatório.");
+        if (string.IsNullOrWhiteSpace(nomeRazaosocial))
+            throw new DomainException("Nome/razão social é obrigatório.");
 
-    NomeRazaosocial = nomeRazaosocial;
+        if (string.IsNullOrWhiteSpace(documentoLimpo))
+            throw new DomainException("CPF/CNPJ ou Documento é obrigatório.");
 
-    CpfCnpj = cpfCnpjVo;
-    RgIe = rgIeVo?.Valor;
-    ApelidoNomefantasia = apelidoNomefantasia;
-    Endereco = endereco;
-    Bairro = bairro;
-    Telefone = telefone;
-    Email = email;
-    Rntrc = rntrcVo?.Valor;
-    Observacao = observacao;
-}
+        if (nacionalidade == null)
+            throw new DomainException("Nacionalidade é obrigatória.");
+
+        TipoPessoa = tipoPessoa;
+        NomeRazaosocial = nomeRazaosocial;
+        CpfCnpj = documentoLimpo;
+        Nacionalidade = nacionalidade;
+        RgIe = new DocumentoGenerico(rgIe ?? "").Valor;
+        if (string.IsNullOrWhiteSpace(RgIe)) RgIe = null;
+        ApelidoNomefantasia = TextNormalization.NormalizeOrNull(apelidoNomefantasia);
+        Endereco = TextNormalization.NormalizeOrNull(endereco);
+        Bairro = bairro;
+        Telefone = TextNormalization.NormalizeOrNull(telefone);
+        Email = TextNormalization.NormalizeOrNull(email);
+        Rntrc = new DocumentoGenerico(rntrc ?? "").Valor;
+        if (string.IsNullOrWhiteSpace(Rntrc)) Rntrc = null;
+        Observacao = TextNormalization.NormalizeOrNull(observacao);
+    }
 
 
     public void Ativar() => Ativo = true;

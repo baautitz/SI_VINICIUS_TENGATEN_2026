@@ -14,5 +14,5 @@ public interface IClientesRepository {
     public Task<bool> DeletarCliente(int id);
     public Task<ResultadoPaginado<ClientesResumo>> ObterClientesResumo(int pagina = 1, int tamanhoDaPagina = 20);
     public Task<ResultadoPaginado<ClientesResumo>> PesquisarClientes(string termo, int pagina = 1, int tamanhoDaPagina = 20);
-    public Task<bool> ExisteClienteCpfCnpj(string cpfCnpj, int? paisId, int? ignorarId = null);
+    public Task<bool> ExisteClienteCpfCnpj(string cpfCnpj, int nacionalidadeId, int? ignorarId = null);
 }

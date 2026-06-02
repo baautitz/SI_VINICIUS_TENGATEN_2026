@@ -1,4 +1,5 @@
 using Backend.Core.Common;
+using Backend.Core.Common.Interfaces;
 using Backend.Core.Features.Acesso.Repositories;
 using Backend.Core.Features.Catalogo.Repositories;
 using Backend.Core.Features.Estoque.Repositories;

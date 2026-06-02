@@ -15,5 +15,11 @@ public class CreateFornecedorDtoValidator : AbstractValidator<CreateFornecedorDt
         RuleFor(x => x.CpfCnpj)
             .NotEmpty().WithMessage("CPF/CNPJ ou Documento é obrigatório.")
             .MaximumLength(20).WithMessage("CPF/CNPJ ou Documento deve ter no máximo 20 caracteres.");
+
+        RuleFor(x => x.TipoPessoa)
+            .IsInEnum().WithMessage("Tipo de Pessoa inválido.");
+
+        RuleFor(x => x.NacionalidadeId)
+            .GreaterThan(0).WithMessage("Nacionalidade é obrigatória.");
     }
 }

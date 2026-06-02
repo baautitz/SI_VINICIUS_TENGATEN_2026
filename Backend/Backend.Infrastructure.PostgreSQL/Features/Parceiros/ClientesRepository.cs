@@ -21,24 +21,34 @@ public class ClientesRepository : IClientesRepository
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
-        const string sql = @"
-            SELECT COUNT(*) FROM clientes;
-
-            SELECT id AS Id, nome_razaosocial AS NomeRazaoSocial, cpf_cnpj AS CpfCnpj, rg_ie AS RgIe, apelido_nomefantasia AS ApelidoNomeFantasia,
-                   endereco AS Endereco, telefone AS Telefone, email AS Email, limite_credito AS LimiteCredito, ativo AS Ativo, criado_em AS CriadoEm,
-                   observacao AS Observacao
-            FROM clientes
-            ORDER BY nome_razaosocial
+        const string sqlCount = "SELECT COUNT(*) FROM clientes;";
+        const string sqlData = @"
+            SELECT c.id AS Id, c.tipo_pessoa AS TipoPessoa, c.nome_razaosocial AS NomeRazaoSocial, c.cpf_cnpj AS CpfCnpj, c.rg_ie AS RgIe, c.apelido_nomefantasia AS ApelidoNomeFantasia,
+                   c.endereco AS Endereco, c.telefone AS Telefone, c.email AS Email, c.limite_credito AS LimiteCredito, c.ativo AS Ativo, c.criado_em AS CriadoEm,
+                   c.observacao AS Observacao,
+                   p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            FROM clientes c
+            INNER JOIN paises p ON p.id = c.nacionalidade_id
+            ORDER BY c.nome_razaosocial
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
-        using var multi = await _session.Connection.QueryMultipleAsync(
-            sql,
+        var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
+        
+        var itens = await _session.Connection.QueryAsync<Clientes, Paises, Clientes>(
+            sqlData,
+            (cliente, pais) => {
+                // Usando o construtor ou método para injetar o país se necessário,
+                // mas as entidades agora precisam de Nacionalidade no construtor.
+                // Como Clientes é materializado pelo Dapper (via construtor protegido),
+                // precisamos garantir que o campo Nacionalidade seja preenchido.
+                // Vou usar o método de atualização para injetar o país materializado.
+                cliente.AtualizarDados(cliente.TipoPessoa, cliente.NomeRazaoSocial, cliente.CpfCnpj, pais, cliente.RgIe, cliente.ApelidoNomeFantasia, cliente.Endereco, null, cliente.Telefone, cliente.Email, cliente.LimiteCredito, cliente.Observacao);
+                return cliente; 
+            },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
-            transaction: _session.Transaction
+            transaction: _session.Transaction,
+            splitOn: "PaisId"
         );
-
-        var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<Clientes>();
 
         return new ResultadoPaginado<Clientes>(itens, total, pagina, tamanhoDaPagina);
     }
@@ -46,7 +56,7 @@ public class ClientesRepository : IClientesRepository
     public async Task<Clientes?> ObterClientePorId(int id)
     {
         const string sql = @"
-            SELECT c.id AS Id, c.nome_razaosocial AS NomeRazaoSocial, c.cpf_cnpj AS CpfCnpj, c.rg_ie AS RgIe, c.apelido_nomefantasia AS ApelidoNomeFantasia,
+            SELECT c.id AS Id, c.tipo_pessoa AS TipoPessoa, c.nome_razaosocial AS NomeRazaoSocial, c.cpf_cnpj AS CpfCnpj, c.rg_ie AS RgIe, c.apelido_nomefantasia AS ApelidoNomeFantasia,
                    c.endereco AS Endereco, c.telefone AS Telefone, c.email AS Email, c.limite_credito AS LimiteCredito, c.ativo AS Ativo, c.criado_em AS CriadoEm,
                    c.observacao AS Observacao,
                    b.id AS BairroId, b.id AS Id, b.bairro,
@@ -54,23 +64,24 @@ public class ClientesRepository : IClientesRepository
                    e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
                    p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM clientes c
+            INNER JOIN paises p ON p.id = c.nacionalidade_id
             LEFT JOIN bairros b ON b.id = c.bairro_id
             LEFT JOIN cidades ci ON ci.id = b.cidade_id
             LEFT JOIN estados e ON e.id = ci.estado_id
-            LEFT JOIN paises p ON p.id = e.pais_id
             WHERE c.id = @Id;";
 
         var result = await _session.Connection.QueryAsync<Clientes, Bairros, Cidades, Estados, Paises, Clientes>(
             sql,
             (cliente, bairro, cidade, estado, pais) =>
             {
-                if (bairro is not null)
-                {
-                    if (pais is not null && estado is not null) estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
-                    if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
-                    if (cidade is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
-                    cliente.AtualizarDados(cliente.NomeRazaoSocial, cliente.CpfCnpj, cliente.RgIe, cliente.ApelidoNomeFantasia, cliente.Endereco, bairro, cliente.Telefone, cliente.Email, cliente.LimiteCredito, cliente.Observacao);
-                }
+                if (pais is not null && estado is not null) estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
+                if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
+                if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
+                
+                // Usando reflexão ou mudando para campos públicos se necessário, mas Clientes já tem métodos de atualização.
+                // O Dapper materializa o 'cliente' usando o construtor protegido.
+                cliente.AtualizarDados(cliente.TipoPessoa, cliente.NomeRazaoSocial, cliente.CpfCnpj, pais!, cliente.RgIe, cliente.ApelidoNomeFantasia, cliente.Endereco, bairro, cliente.Telefone, cliente.Email, cliente.LimiteCredito, cliente.Observacao);
+                
                 return cliente;
             },
             new { Id = id },
@@ -84,11 +95,11 @@ public class ClientesRepository : IClientesRepository
     public async Task<Clientes> CriarCliente(Clientes cliente)
     {
         const string sql = @"
-            INSERT INTO clientes (nome_razaosocial, cpf_cnpj, rg_ie, apelido_nomefantasia,
-                                  endereco, bairro_id, telefone, email, limite_credito,
+            INSERT INTO clientes (tipo_pessoa, nome_razaosocial, cpf_cnpj, rg_ie, apelido_nomefantasia,
+                                  endereco, bairro_id, nacionalidade_id, telefone, email, limite_credito,
                                   ativo, criado_em, observacao)
-            VALUES (@NomeRazaoSocial, @CpfCnpj, @RgIe, @ApelidoNomeFantasia,
-                    @Endereco, @BairroId, @Telefone, @Email, @LimiteCredito,
+            VALUES (@TipoPessoa, @NomeRazaoSocial, @CpfCnpj, @RgIe, @ApelidoNomeFantasia,
+                    @Endereco, @BairroId, @NacionalidadeId, @Telefone, @Email, @LimiteCredito,
                     @Ativo, @CriadoEm, @Observacao)
             RETURNING id;";
 
@@ -96,12 +107,14 @@ public class ClientesRepository : IClientesRepository
             sql,
             new
             {
+                TipoPessoa = cliente.TipoPessoa.ToString(),
                 cliente.NomeRazaoSocial,
                 cliente.CpfCnpj,
                 cliente.RgIe,
                 cliente.ApelidoNomeFantasia,
                 cliente.Endereco,
                 BairroId = cliente.Bairro?.Id,
+                NacionalidadeId = cliente.Nacionalidade.Id,
                 cliente.Telefone,
                 cliente.Email,
                 cliente.LimiteCredito,
@@ -120,11 +133,11 @@ public class ClientesRepository : IClientesRepository
     {
         const string sql = @"
             UPDATE clientes
-            SET nome_razaosocial = @NomeRazaoSocial, cpf_cnpj = @CpfCnpj,
+            SET tipo_pessoa = @TipoPessoa, nome_razaosocial = @NomeRazaoSocial, cpf_cnpj = @CpfCnpj,
                 rg_ie = @RgIe, apelido_nomefantasia = @ApelidoNomeFantasia,
-                endereco = @Endereco, bairro_id = @BairroId, telefone = @Telefone,
-                email = @Email, limite_credito = @LimiteCredito, ativo = @Ativo,
-                atualizado_em = @AtualizadoEm, observacao = @Observacao
+                endereco = @Endereco, bairro_id = @BairroId, nacionalidade_id = @NacionalidadeId,
+                telefone = @Telefone, email = @Email, limite_credito = @LimiteCredito, 
+                ativo = @Ativo, atualizado_em = @AtualizadoEm, observacao = @Observacao
             WHERE id = @Id;";
 
         var linhasAfetadas = await _session.Connection.ExecuteAsync(
@@ -132,12 +145,14 @@ public class ClientesRepository : IClientesRepository
             new
             {
                 Id = id,
+                TipoPessoa = cliente.TipoPessoa.ToString(),
                 cliente.NomeRazaoSocial,
                 cliente.CpfCnpj,
                 cliente.RgIe,
                 cliente.ApelidoNomeFantasia,
                 cliente.Endereco,
                 BairroId = cliente.Bairro?.Id,
+                NacionalidadeId = cliente.Nacionalidade.Id,
                 cliente.Telefone,
                 cliente.Email,
                 cliente.LimiteCredito,
@@ -172,7 +187,7 @@ public class ClientesRepository : IClientesRepository
         const string sql = @"
             SELECT COUNT(*) FROM clientes;
 
-            SELECT id, nome_razaosocial AS NomeRazaoSocial, cpf_cnpj AS CpfCnpj, apelido_nomefantasia AS ApelidoNomeFantasia
+            SELECT id, tipo_pessoa AS TipoPessoa, nome_razaosocial AS NomeRazaoSocial, cpf_cnpj AS CpfCnpj, apelido_nomefantasia AS ApelidoNomeFantasia, nacionalidade_id AS NacionalidadeId
             FROM clientes ORDER BY nome_razaosocial
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
@@ -195,7 +210,7 @@ public class ClientesRepository : IClientesRepository
             WHERE nome_razaosocial ILIKE @Termo OR cpf_cnpj ILIKE @Termo
                OR apelido_nomefantasia ILIKE @Termo OR email ILIKE @Termo;
 
-            SELECT id, nome_razaosocial AS NomeRazaoSocial, cpf_cnpj AS CpfCnpj, apelido_nomefantasia AS ApelidoNomeFantasia
+            SELECT id, tipo_pessoa AS TipoPessoa, nome_razaosocial AS NomeRazaoSocial, cpf_cnpj AS CpfCnpj, apelido_nomefantasia AS ApelidoNomeFantasia, nacionalidade_id AS NacionalidadeId
             FROM clientes
             WHERE nome_razaosocial ILIKE @Termo OR cpf_cnpj ILIKE @Termo
                OR apelido_nomefantasia ILIKE @Termo OR email ILIKE @Termo
@@ -213,12 +228,12 @@ public class ClientesRepository : IClientesRepository
         return new ResultadoPaginado<ClientesResumo>(itens, total, pagina, tamanhoDaPagina);
     }
 
-    public async Task<bool> ExisteClienteCpfCnpj(string cpfCnpj, int? paisId, int? ignorarId = null)
+    public async Task<bool> ExisteClienteCpfCnpj(string cpfCnpj, int nacionalidadeId, int? ignorarId = null)
     {
         var sql = @"
             SELECT COUNT(1)
             FROM clientes c
-            WHERE c.cpf_cnpj = @CpfCnpj";
+            WHERE c.cpf_cnpj = @CpfCnpj AND c.nacionalidade_id = @NacionalidadeId";
 
         if (ignorarId.HasValue)
         {
@@ -227,7 +242,7 @@ public class ClientesRepository : IClientesRepository
 
         var count = await _session.Connection.ExecuteScalarAsync<int>(
             sql,
-            new { CpfCnpj = cpfCnpj, IgnorarId = ignorarId },
+            new { CpfCnpj = cpfCnpj, NacionalidadeId = nacionalidadeId, IgnorarId = ignorarId },
             transaction: _session.Transaction);
 
         return count > 0;

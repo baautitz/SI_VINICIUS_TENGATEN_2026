@@ -1,5 +1,7 @@
 using System.Linq;
 using Backend.Core.Common.Results;
+using Backend.Core.Common.Enums;
+using Backend.Core.Features.Localizacao.Entities;
 using Backend.Core.Features.Financeiro.DTOs;
 using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Financeiro.Entities.Enums;
@@ -28,12 +30,14 @@ public class ContasReceberRepository : IContasReceberRepository
         const string querySql = @"
             SELECT cr.id AS Id, cr.descricao AS Descricao, cr.data_emissao AS DataEmissao, cr.data_vencimento AS DataVencimento,
                    cr.valor_original AS ValorOriginal, cr.valor_saldo AS ValorSaldo, cr.status AS Status, cr.observacao AS Observacao, cr.criado_em AS CriadoEm,
-                   c.id AS ClienteId, c.nome_razao_social AS ClienteNomeRazaoSocial, c.cpf_cnpj AS ClienteCpfCnpj,
-                   c.rg_ie AS ClienteRgIe, c.apelido_nome_fantasia AS ClienteApelidoNomeFantasia, c.endereco AS ClienteEndereco,
+                   c.id AS ClienteId, c.tipo_pessoa AS ClienteTipoPessoa, c.nome_razaosocial AS ClienteNomeRazaoSocial, c.cpf_cnpj AS ClienteCpfCnpj,
+                   c.rg_ie AS ClienteRgIe, c.apelido_nomefantasia AS ClienteApelidoNomeFantasia, c.endereco AS ClienteEndereco,
                    c.telefone AS ClienteTelefone, c.email AS ClienteEmail, c.limite_credito AS ClienteLimiteCredito,
-                   c.ativo AS ClienteAtivo, c.criado_em AS ClienteCriadoEm, c.observacao AS ClienteObservacao
+                   c.ativo AS ClienteAtivo, c.criado_em AS ClienteCriadoEm, c.observacao AS ClienteObservacao,
+                   p.id AS PaisId, p.ddi AS PaisDdi, p.sigla_iso AS PaisSiglaIso, p.moeda AS PaisMoeda, p.simbolo_moeda AS PaisSimboloMoeda, p.pais AS PaisNome
             FROM contas_receber cr
             JOIN clientes c ON c.id = cr.cliente_id
+            JOIN paises p ON p.id = c.nacionalidade_id
             ORDER BY cr.data_vencimento
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
@@ -87,12 +91,14 @@ public class ContasReceberRepository : IContasReceberRepository
         const string contaSql = @"
             SELECT cr.id AS Id, cr.descricao AS Descricao, cr.data_emissao AS DataEmissao, cr.data_vencimento AS DataVencimento,
                    cr.valor_original AS ValorOriginal, cr.valor_saldo AS ValorSaldo, cr.status AS Status, cr.observacao AS Observacao, cr.criado_em AS CriadoEm,
-                   c.id AS ClienteId, c.nome_razao_social AS ClienteNomeRazaoSocial, c.cpf_cnpj AS ClienteCpfCnpj,
-                   c.rg_ie AS ClienteRgIe, c.apelido_nome_fantasia AS ClienteApelidoNomeFantasia, c.endereco AS ClienteEndereco,
+                   c.id AS ClienteId, c.tipo_pessoa AS ClienteTipoPessoa, c.nome_razaosocial AS ClienteNomeRazaoSocial, c.cpf_cnpj AS ClienteCpfCnpj,
+                   c.rg_ie AS ClienteRgIe, c.apelido_nomefantasia AS ClienteApelidoNomeFantasia, c.endereco AS ClienteEndereco,
                    c.telefone AS ClienteTelefone, c.email AS ClienteEmail, c.limite_credito AS ClienteLimiteCredito,
-                   c.ativo AS ClienteAtivo, c.criado_em AS ClienteCriadoEm, c.observacao AS ClienteObservacao
+                   c.ativo AS ClienteAtivo, c.criado_em AS ClienteCriadoEm, c.observacao AS ClienteObservacao,
+                   p.id AS PaisId, p.ddi AS PaisDdi, p.sigla_iso AS PaisSiglaIso, p.moeda AS PaisMoeda, p.simbolo_moeda AS PaisSimboloMoeda, p.pais AS PaisNome
             FROM contas_receber cr
             JOIN clientes c ON c.id = cr.cliente_id
+            JOIN paises p ON p.id = c.nacionalidade_id
             WHERE cr.id = @Id;";
 
         const string parcelasSql = @"
@@ -295,10 +301,15 @@ public class ContasReceberRepository : IContasReceberRepository
 
     private static ContasReceber BuildContaReceber(ContaReceberDto dto)
     {
+        var pais = new Paises(dto.PaisId, dto.PaisDdi, dto.PaisSiglaIso, dto.PaisMoeda, dto.PaisSimboloMoeda, dto.PaisNome);
+        var tipoPessoa = Enum.Parse<TipoPessoa>(dto.ClienteTipoPessoa);
+
         var cliente = new Clientes(
             dto.ClienteId,
+            tipoPessoa,
             dto.ClienteNomeRazaoSocial,
             dto.ClienteCpfCnpj,
+            pais,
             dto.ClienteRgIe,
             dto.ClienteApelidoNomeFantasia,
             dto.ClienteEndereco,
@@ -340,6 +351,7 @@ public class ContasReceberRepository : IContasReceberRepository
         string? Observacao,
         DateTime CriadoEm,
         int ClienteId,
+        string ClienteTipoPessoa,
         string ClienteNomeRazaoSocial,
         string ClienteCpfCnpj,
         string? ClienteRgIe,
@@ -350,7 +362,13 @@ public class ContasReceberRepository : IContasReceberRepository
         decimal ClienteLimiteCredito,
         bool ClienteAtivo,
         DateTime ClienteCriadoEm,
-        string? ClienteObservacao);
+        string? ClienteObservacao,
+        int PaisId,
+        string PaisDdi,
+        string PaisSiglaIso,
+        string PaisMoeda,
+        string PaisSimboloMoeda,
+        string PaisNome);
 
     private sealed record ParcelaReceberDto(
         int Id,

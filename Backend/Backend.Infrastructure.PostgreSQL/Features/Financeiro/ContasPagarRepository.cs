@@ -1,6 +1,7 @@
 using System.Linq;
-using System.Linq;
 using Backend.Core.Common.Results;
+using Backend.Core.Common.Enums;
+using Backend.Core.Features.Localizacao.Entities;
 using Backend.Core.Features.Financeiro.DTOs;
 using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Financeiro.Entities.Enums;
@@ -29,11 +30,13 @@ public class ContasPagarRepository : IContasPagarRepository
         const string querySql = @"
             SELECT cp.id AS Id, cp.descricao AS Descricao, cp.data_emissao AS DataEmissao, cp.data_vencimento AS DataVencimento, cp.valor_original AS ValorOriginal,
                    cp.valor_saldo AS ValorSaldo, cp.status AS Status, cp.observacao AS Observacao, cp.criado_em AS CriadoEm,
-                   f.id AS FornecedorId, f.nome_razaosocial AS FornecedorNomeRazaosocial, f.cpf_cnpj AS FornecedorCpfCnpj,
+                   f.id AS FornecedorId, f.tipo_pessoa AS FornecedorTipoPessoa, f.nome_razaosocial AS FornecedorNomeRazaosocial, f.cpf_cnpj AS FornecedorCpfCnpj,
                    f.rg_ie AS FornecedorRgIe, f.apelido_nomefantasia AS FornecedorApelidoNomeFantasia, f.endereco AS FornecedorEndereco,
-                   f.telefone AS FornecedorTelefone, f.email AS FornecedorEmail, f.ativo AS FornecedorAtivo, f.criado_em AS FornecedorCriadoEm, f.observacao AS FornecedorObservacao
+                   f.telefone AS FornecedorTelefone, f.email AS FornecedorEmail, f.ativo AS FornecedorAtivo, f.criado_em AS FornecedorCriadoEm, f.observacao AS FornecedorObservacao,
+                   p.id AS PaisId, p.ddi AS PaisDdi, p.sigla_iso AS PaisSiglaIso, p.moeda AS PaisMoeda, p.simbolo_moeda AS PaisSimboloMoeda, p.pais AS PaisNome
             FROM contas_pagar cp
             JOIN fornecedores f ON f.id = cp.fornecedor_id
+            JOIN paises p ON p.id = f.nacionalidade_id
             ORDER BY cp.data_vencimento
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
@@ -87,11 +90,13 @@ public class ContasPagarRepository : IContasPagarRepository
         const string contaSql = @"
             SELECT cp.id AS Id, cp.descricao AS Descricao, cp.data_emissao AS DataEmissao, cp.data_vencimento AS DataVencimento, cp.valor_original AS ValorOriginal,
                    cp.valor_saldo AS ValorSaldo, cp.status AS Status, cp.observacao AS Observacao, cp.criado_em AS CriadoEm,
-                   f.id AS FornecedorId, f.nome_razaosocial AS FornecedorNomeRazaosocial, f.cpf_cnpj AS FornecedorCpfCnpj,
+                   f.id AS FornecedorId, f.tipo_pessoa AS FornecedorTipoPessoa, f.nome_razaosocial AS FornecedorNomeRazaosocial, f.cpf_cnpj AS FornecedorCpfCnpj,
                    f.rg_ie AS FornecedorRgIe, f.apelido_nomefantasia AS FornecedorApelidoNomeFantasia, f.endereco AS FornecedorEndereco,
-                   f.telefone AS FornecedorTelefone, f.email AS FornecedorEmail, f.ativo AS FornecedorAtivo, f.criado_em AS FornecedorCriadoEm, f.observacao AS FornecedorObservacao
+                   f.telefone AS FornecedorTelefone, f.email AS FornecedorEmail, f.ativo AS FornecedorAtivo, f.criado_em AS FornecedorCriadoEm, f.observacao AS FornecedorObservacao,
+                   p.id AS PaisId, p.ddi AS PaisDdi, p.sigla_iso AS PaisSiglaIso, p.moeda AS PaisMoeda, p.simbolo_moeda AS PaisSimboloMoeda, p.pais AS PaisNome
             FROM contas_pagar cp
             JOIN fornecedores f ON f.id = cp.fornecedor_id
+            JOIN paises p ON p.id = f.nacionalidade_id
             WHERE cp.id = @Id;";
 
         const string parcelasSql = @"
@@ -294,10 +299,15 @@ public class ContasPagarRepository : IContasPagarRepository
 
     private static ContasPagar BuildContaPagar(ContaPagarDto dto)
     {
+        var pais = new Paises(dto.PaisId, dto.PaisDdi, dto.PaisSiglaIso, dto.PaisMoeda, dto.PaisSimboloMoeda, dto.PaisNome);
+        var tipoPessoa = Enum.Parse<TipoPessoa>(dto.FornecedorTipoPessoa);
+
         var fornecedor = new Fornecedores(
             dto.FornecedorId,
+            tipoPessoa,
             dto.FornecedorNomeRazaosocial,
             dto.FornecedorCpfCnpj,
+            pais,
             dto.FornecedorRgIe,
             dto.FornecedorApelidoNomeFantasia,
             dto.FornecedorEndereco,
@@ -338,6 +348,7 @@ public class ContasPagarRepository : IContasPagarRepository
         string? Observacao,
         DateTime CriadoEm,
         int FornecedorId,
+        string FornecedorTipoPessoa,
         string FornecedorNomeRazaosocial,
         string FornecedorCpfCnpj,
         string? FornecedorRgIe,
@@ -347,7 +358,13 @@ public class ContasPagarRepository : IContasPagarRepository
         string? FornecedorEmail,
         bool FornecedorAtivo,
         DateTime FornecedorCriadoEm,
-        string? FornecedorObservacao);
+        string? FornecedorObservacao,
+        int PaisId,
+        string PaisDdi,
+        string PaisSiglaIso,
+        string PaisMoeda,
+        string PaisSimboloMoeda,
+        string PaisNome);
 
     private sealed record ParcelaPagarDto(
         int Id,

@@ -101,7 +101,7 @@ public class Nfes
         DataSaida = dataSaida;
         ChaveAcesso = TextNormalization.NormalizeOrNull(chaveAcesso);
         EmitenteNomeRazaosocial = TextNormalization.Normalize(emitente.NomeRazaoSocial);
-        EmitenteCpfCnpj = new CpfCnpj(emitente.CpfCnpj).Valor;
+        EmitenteCpfCnpj = new DocumentoGenerico(emitente.CpfCnpj).Valor;
         EmitenteRgIe = string.IsNullOrWhiteSpace(emitente.RgIe) ? null : new DocumentoGenerico(emitente.RgIe).Valor;
         EmitenteApelidoNomefantasia = TextNormalization.NormalizeOrNull(emitente.ApelidoNomeFantasia);
         EmitenteEndereco = TextNormalization.NormalizeOrNull(emitente.Endereco);
@@ -109,7 +109,7 @@ public class Nfes
         EmitenteTelefone = TextNormalization.NormalizeOrNull(emitente.Telefone);
         EmitenteEmail = TextNormalization.NormalizeOrNull(emitente.Email);
         ClienteNomeRazaosocial = TextNormalization.Normalize(cliente.NomeRazaoSocial);
-        ClienteCpfCnpj = new CpfCnpj(cliente.CpfCnpj).Valor;
+        ClienteCpfCnpj = new DocumentoGenerico(cliente.CpfCnpj).Valor;
         ClienteRgIe = string.IsNullOrWhiteSpace(cliente.RgIe) ? null : new DocumentoGenerico(cliente.RgIe).Valor;
         ClienteApelidoNomefantasia = TextNormalization.NormalizeOrNull(cliente.ApelidoNomeFantasia);
         ClienteEndereco = TextNormalization.NormalizeOrNull(cliente.Endereco);

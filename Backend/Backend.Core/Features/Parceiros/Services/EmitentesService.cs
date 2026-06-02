@@ -1,3 +1,4 @@
+using Backend.Core.Common.Enums;
 using Backend.Core.Common.Extensions;
 using Backend.Core.Common.Results;
 using Backend.Core.Common;
@@ -14,11 +15,13 @@ public sealed class EmitentesService : BaseService
 {
     private readonly IEmitentesRepository _emitentesRepository;
     private readonly IBairrosRepository _bairrosRepository;
+    private readonly IPaisesRepository _paisesRepository;
 
-    public EmitentesService(IEmitentesRepository emitentesRepository, IBairrosRepository bairrosRepository)
+    public EmitentesService(IEmitentesRepository emitentesRepository, IBairrosRepository bairrosRepository, IPaisesRepository paisesRepository)
     {
         _emitentesRepository = emitentesRepository;
         _bairrosRepository = bairrosRepository;
+        _paisesRepository = paisesRepository;
     }
 
     public Task<ResultadoPaginado<Emitentes>> ObterEmitentes(int pagina = 1, int tamanhoDaPagina = 20)
@@ -34,26 +37,44 @@ public sealed class EmitentesService : BaseService
         if (!validation.IsValid)
             return Resultado<Emitentes>.Falha(validation.ToResultadoErros());
 
+        var nacionalidade = await _paisesRepository.ObterPaisPorId(dto.NacionalidadeId);
+        if (nacionalidade is null)
+            return Resultado<Emitentes>.Falha(new ResultadoErro("NACIONALIDADE_NAO_ENCONTRADA", "Nacionalidade não encontrada.", "NacionalidadeId"));
+
+        if (nacionalidade.SiglaIso == "BRA")
+        {
+            if (dto.TipoPessoa == TipoPessoa.FISICA)
+            {
+                if (!new Cpf(dto.CpfCnpj).EhValido())
+                    return Resultado<Emitentes>.Falha(new ResultadoErro("CPF_INVALIDO", "CPF inválido para o Brasil.", "CpfCnpj"));
+            }
+            else
+            {
+                if (!new Cnpj(dto.CpfCnpj).EhValido())
+                    return Resultado<Emitentes>.Falha(new ResultadoErro("CNPJ_INVALIDO", "CNPJ inválido para o Brasil.", "CpfCnpj"));
+            }
+        }
+
         Localizacao.Entities.Bairros? bairro = null;
-        int? paisId = null;
         if (dto.BairroId.HasValue)
         {
             bairro = await _bairrosRepository.ObterBairroPorId(dto.BairroId.Value);
             if (bairro is null)
                 return Resultado<Emitentes>.Falha(new ResultadoErro("BAIRRO_NAO_ENCONTRADO", "O bairro informado não foi encontrado.", "BairroId"));
-            paisId = bairro.Cidade?.Estado?.Pais?.Id;
         }
 
-        var cpfCnpjNormalizado = new CpfCnpj(dto.CpfCnpj).Valor;
+        var documentoLimpo = new DocumentoGenerico(dto.CpfCnpj).Valor;
 
-        if (await _emitentesRepository.ExisteEmitenteCpfCnpj(cpfCnpjNormalizado, paisId))
-            return Resultado<Emitentes>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe um emitente com este CPF ou CNPJ.", "CpfCnpj"));
+        if (await _emitentesRepository.ExisteEmitenteCpfCnpj(documentoLimpo, dto.NacionalidadeId))
+            return Resultado<Emitentes>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe um emitente com este documento nesta nacionalidade.", "CpfCnpj"));
 
         return await ExecuteResultAsync(async () =>
         {
             var emitente = new Emitentes(
+                dto.TipoPessoa,
                 dto.NomeRazaoSocial,
-                cpfCnpjNormalizado,
+                documentoLimpo,
+                nacionalidade,
                 dto.ApelidoNomeFantasia,
                 dto.Endereco,
                 bairro,
@@ -82,31 +103,44 @@ public sealed class EmitentesService : BaseService
         if (existente is null)
             return Resultado<Emitentes>.Falha(new ResultadoErro("EMITENTE_NAO_ENCONTRADO", "Emitente não encontrado."));
 
+        var nacionalidade = await _paisesRepository.ObterPaisPorId(dto.NacionalidadeId);
+        if (nacionalidade is null)
+            return Resultado<Emitentes>.Falha(new ResultadoErro("NACIONALIDADE_NAO_ENCONTRADA", "Nacionalidade não encontrada.", "NacionalidadeId"));
+
+        if (nacionalidade.SiglaIso == "BRA")
+        {
+            if (dto.TipoPessoa == TipoPessoa.FISICA)
+            {
+                if (!new Cpf(dto.CpfCnpj).EhValido())
+                    return Resultado<Emitentes>.Falha(new ResultadoErro("CPF_INVALIDO", "CPF inválido para o Brasil.", "CpfCnpj"));
+            }
+            else
+            {
+                if (!new Cnpj(dto.CpfCnpj).EhValido())
+                    return Resultado<Emitentes>.Falha(new ResultadoErro("CNPJ_INVALIDO", "CNPJ inválido para o Brasil.", "CpfCnpj"));
+            }
+        }
+
         Localizacao.Entities.Bairros? bairro = null;
-        int? paisId = null;
-        string? siglaIso = null;
         if (dto.BairroId.HasValue)
         {
             bairro = await _bairrosRepository.ObterBairroPorId(dto.BairroId.Value);
             if (bairro is null)
                 return Resultado<Emitentes>.Falha(new ResultadoErro("BAIRRO_NAO_ENCONTRADO", "O bairro informado não foi encontrado.", "BairroId"));
-            paisId = bairro.Cidade?.Estado?.Pais?.Id;
-            siglaIso = bairro.Cidade?.Estado?.Pais?.SiglaIso;
         }
 
-        if (siglaIso == "BRA" && !CpfCnpjValidatorUtils.IsValid(dto.CpfCnpj))
-            return Resultado<Emitentes>.Falha(new ResultadoErro("DOCUMENTO_INVALIDO", "CPF ou CNPJ inválido para o Brasil.", "CpfCnpj"));
+        var documentoLimpo = new DocumentoGenerico(dto.CpfCnpj).Valor;
 
-        var cpfCnpjNormalizado = new CpfCnpj(dto.CpfCnpj).Valor;
-
-        if (await _emitentesRepository.ExisteEmitenteCpfCnpj(cpfCnpjNormalizado, paisId, id))
-            return Resultado<Emitentes>.Falha(new ResultadoErro("DUPLICIDADE", siglaIso == "BRA" ? "Já existe outro emitente com este CPF ou CNPJ." : "Já existe outro emitente com este Documento.", "CpfCnpj"));
+        if (await _emitentesRepository.ExisteEmitenteCpfCnpj(documentoLimpo, dto.NacionalidadeId, id))
+            return Resultado<Emitentes>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe outro emitente com este documento nesta nacionalidade.", "CpfCnpj"));
 
         return await ExecuteResultAsync(async () =>
         {
             existente.AtualizarDados(
+                dto.TipoPessoa,
                 dto.NomeRazaoSocial,
-                cpfCnpjNormalizado,
+                documentoLimpo,
+                nacionalidade,
                 dto.ApelidoNomeFantasia,
                 dto.Endereco,
                 bairro,
