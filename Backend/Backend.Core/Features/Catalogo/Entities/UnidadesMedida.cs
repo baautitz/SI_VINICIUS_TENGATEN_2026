@@ -11,7 +11,7 @@ public class UnidadesMedida
     public string Categoria { get; private set; } = null!;
     public bool Ativo { get; private set; }
 
-    // For Dapper ORM materialization
+    
     protected UnidadesMedida() { }
 
     public UnidadesMedida(string sigla, string descricao, string categoria, bool ativo = true)

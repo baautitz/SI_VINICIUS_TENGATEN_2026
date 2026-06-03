@@ -15,7 +15,7 @@ public class Skus
     public bool Ativo { get; private set; }
     public IReadOnlyCollection<SkuAtributosValores> SkuAtributosValores => _atributos.AsReadOnly();
 
-    // For Dapper ORM materialization
+    
     protected Skus() { }
 
     public Skus(string sku, decimal preco, decimal estoque = 0, string? gtinEan = null)

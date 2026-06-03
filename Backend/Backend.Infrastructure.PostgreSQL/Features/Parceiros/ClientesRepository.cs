@@ -37,11 +37,6 @@ public class ClientesRepository : IClientesRepository
         var itens = await _session.Connection.QueryAsync<Clientes, Paises, Clientes>(
             sqlData,
             (cliente, pais) => {
-                // Usando o construtor ou método para injetar o país se necessário,
-                // mas as entidades agora precisam de Nacionalidade no construtor.
-                // Como Clientes é materializado pelo Dapper (via construtor protegido),
-                // precisamos garantir que o campo Nacionalidade seja preenchido.
-                // Vou usar o método de atualização para injetar o país materializado.
                 cliente.AtualizarDados(cliente.TipoPessoa, cliente.NomeRazaoSocial, cliente.CpfCnpj, pais, cliente.RgIe, cliente.ApelidoNomeFantasia, cliente.Endereco, null, cliente.Telefone, cliente.Email, cliente.LimiteCredito, cliente.Observacao);
                 return cliente; 
             },
@@ -78,8 +73,6 @@ public class ClientesRepository : IClientesRepository
                 if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
                 if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
                 
-                // Usando reflexão ou mudando para campos públicos se necessário, mas Clientes já tem métodos de atualização.
-                // O Dapper materializa o 'cliente' usando o construtor protegido.
                 cliente.AtualizarDados(cliente.TipoPessoa, cliente.NomeRazaoSocial, cliente.CpfCnpj, pais!, cliente.RgIe, cliente.ApelidoNomeFantasia, cliente.Endereco, bairro, cliente.Telefone, cliente.Email, cliente.LimiteCredito, cliente.Observacao);
                 
                 return cliente;

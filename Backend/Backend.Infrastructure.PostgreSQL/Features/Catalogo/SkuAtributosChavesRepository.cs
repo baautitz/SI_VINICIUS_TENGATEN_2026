@@ -137,7 +137,6 @@ public class SkuAtributosChavesRepository : ISkuAtributosChavesRepository
                 transaction: _session.Transaction
             );
 
-            // Sincronização mestre-detalhe: remove todos e insere novamente
             const string deleteValSql = "DELETE FROM sku_atributos_valores WHERE chave_id = @Id;";
             await _session.Connection.ExecuteAsync(deleteValSql, new { Id = id }, transaction: _session.Transaction);
 

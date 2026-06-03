@@ -1,55 +1,63 @@
-import React, { useState } from "react"
-import { RowSelectionState } from "@tanstack/react-table"
+import React, { useState } from "react";
+import { RowSelectionState } from "@tanstack/react-table";
 
 interface UseFeatureListOptions {
-  initialSearchTerm?: string
+  initialSearchTerm?: string;
 }
 
-export function useFeatureList<T>({ initialSearchTerm = "" }: UseFeatureListOptions = {}) {
-  const [searchTerm, setSearchTerm] = useState(initialSearchTerm)
-  const deferredSearch = React.useDeferredValue(searchTerm)
-  const [page, setPage] = useState(1)
+export function useFeatureList<T>({
+  initialSearchTerm = "",
+}: UseFeatureListOptions = {}) {
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
+  const deferredSearch = React.useDeferredValue(searchTerm);
+  const [page, setPage] = useState(1);
 
-  const [rowSelection, setRowSelectionRaw] = useState<RowSelectionState>({})
-  const [selectAllAcrossPages, setSelectAllAcrossPages] = useState(false)
+  const [rowSelection, setRowSelectionRaw] = useState<RowSelectionState>({});
+  const [selectAllAcrossPages, setSelectAllAcrossPages] = useState(false);
 
-  const setRowSelection = (updaterOrValue: RowSelectionState | ((old: RowSelectionState) => RowSelectionState)) => {
+  const setRowSelection = (
+    updaterOrValue:
+      | RowSelectionState
+      | ((old: RowSelectionState) => RowSelectionState),
+  ) => {
     setRowSelectionRaw((old) => {
-      const newValue = typeof updaterOrValue === 'function' ? updaterOrValue(old) : updaterOrValue;
-      
-      // Se a seleção for limpa ou desmarcada parcialmente, desativamos o selectAllAcrossPages
+      const newValue =
+        typeof updaterOrValue === "function"
+          ? updaterOrValue(old)
+          : updaterOrValue;
+
       if (selectAllAcrossPages) {
         setSelectAllAcrossPages(false);
       }
-      
+
       return newValue;
     });
-  }
-  const [isUpsertOpen, setIsUpsertOpen] = useState(false)
-  const [editingItem, setEditingItem] = useState<T | null>(null)
+  };
+  const [isUpsertOpen, setIsUpsertOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<T | null>(null);
 
-  const [deleteDialogOpen, setDeleteDialogVisible] = useState(false)
-  const [itemToDelete, setItemToDelete] = useState<T | null>(null)
+  const [deleteDialogOpen, setDeleteDialogVisible] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<T | null>(null);
 
   const handleCreate = () => {
-    setEditingItem(null)
-    setIsUpsertOpen(true)
-  }
+    setEditingItem(null);
+    setIsUpsertOpen(true);
+  };
 
   const handleEdit = (item: T) => {
-    setEditingItem(item)
-    setIsUpsertOpen(true)
-  }
+    setEditingItem(item);
+    setIsUpsertOpen(true);
+  };
 
   const handleDeleteClick = (item: T) => {
-    setItemToDelete(item)
-    setDeleteDialogVisible(true)
-  }
+    setItemToDelete(item);
+    setDeleteDialogVisible(true);
+  };
 
   const handleSearchChange = (val: string) => {
-    setSearchTerm(val)
-    setPage(1)
-  }
+    setSearchTerm(val);
+    setPage(1);
+  };
 
   return {
     searchTerm,
@@ -70,5 +78,5 @@ export function useFeatureList<T>({ initialSearchTerm = "" }: UseFeatureListOpti
     handleEdit,
     handleDeleteClick,
     handleSearchChange,
-  }
+  };
 }

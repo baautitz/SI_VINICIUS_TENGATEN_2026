@@ -25,7 +25,7 @@ public class Emitentes
     public DateTime CriadoEm { get; private set; }
     public string? Observacao { get; private set; }
 
-    // Required by Dapper
+    
     protected Emitentes() 
     {
         NomeRazaoSocial = null!;

@@ -22,7 +22,7 @@ public class Paises
         Pais = pais;
     }
 
-    // For Dapper ORM materialization
+    
     protected Paises() { }
 
     public Paises(int id, string ddi, string siglaIso, string moeda, string simboloMoeda, string pais)
