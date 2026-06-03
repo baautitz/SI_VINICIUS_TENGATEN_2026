@@ -98,7 +98,7 @@ public class ClientesRepository : IClientesRepository
             INSERT INTO clientes (tipo_pessoa, nome_razaosocial, cpf_cnpj, rg_ie, apelido_nomefantasia,
                                   endereco, bairro_id, nacionalidade_id, telefone, email, limite_credito,
                                   ativo, criado_em, observacao)
-            VALUES (@TipoPessoa, @NomeRazaoSocial, @CpfCnpj, @RgIe, @ApelidoNomeFantasia,
+            VALUES (@TipoPessoa::tipo_pessoa, @NomeRazaoSocial, @CpfCnpj, @RgIe, @ApelidoNomeFantasia,
                     @Endereco, @BairroId, @NacionalidadeId, @Telefone, @Email, @LimiteCredito,
                     @Ativo, @CriadoEm, @Observacao)
             RETURNING id;";
@@ -133,7 +133,7 @@ public class ClientesRepository : IClientesRepository
     {
         const string sql = @"
             UPDATE clientes
-            SET tipo_pessoa = @TipoPessoa, nome_razaosocial = @NomeRazaoSocial, cpf_cnpj = @CpfCnpj,
+            SET tipo_pessoa = @TipoPessoa::tipo_pessoa, nome_razaosocial = @NomeRazaoSocial, cpf_cnpj = @CpfCnpj,
                 rg_ie = @RgIe, apelido_nomefantasia = @ApelidoNomeFantasia,
                 endereco = @Endereco, bairro_id = @BairroId, nacionalidade_id = @NacionalidadeId,
                 telefone = @Telefone, email = @Email, limite_credito = @LimiteCredito, 

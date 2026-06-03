@@ -106,7 +106,7 @@ public class TransportadorasRepository : ITransportadorasRepository
             INSERT INTO transportadoras (tipo_pessoa, nome_razaosocial, cpf_cnpj, rg_ie, apelido_nomefantasia,
                                         endereco, bairro_id, nacionalidade_id, telefone, email, rntrc,
                                         ativo, criado_em, observacao)
-            VALUES (@TipoPessoa, @NomeRazaosocial, @CpfCnpj, @RgIe, @ApelidoNomefantasia,
+            VALUES (@TipoPessoa::tipo_pessoa, @NomeRazaosocial, @CpfCnpj, @RgIe, @ApelidoNomefantasia,
                     @Endereco, @BairroId, @NacionalidadeId, @Telefone, @Email, @Rntrc,
                     @Ativo, @CriadoEm, @Observacao)
             RETURNING id;";
@@ -141,7 +141,7 @@ public class TransportadorasRepository : ITransportadorasRepository
     {
         const string sql = @"
             UPDATE transportadoras
-            SET tipo_pessoa = @TipoPessoa, nome_razaosocial = @NomeRazaosocial, cpf_cnpj = @CpfCnpj,
+            SET tipo_pessoa = @TipoPessoa::tipo_pessoa, nome_razaosocial = @NomeRazaosocial, cpf_cnpj = @CpfCnpj,
                 rg_ie = @RgIe, apelido_nomefantasia = @ApelidoNomefantasia,
                 endereco = @Endereco, bairro_id = @BairroId, nacionalidade_id = @NacionalidadeId,
                 telefone = @Telefone, email = @Email, rntrc = @Rntrc, ativo = @Ativo,

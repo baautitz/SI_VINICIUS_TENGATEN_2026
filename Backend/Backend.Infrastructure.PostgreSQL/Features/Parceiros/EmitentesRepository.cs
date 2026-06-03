@@ -91,7 +91,7 @@ public class EmitentesRepository : IEmitentesRepository
             INSERT INTO emitentes (tipo_pessoa, nome_razaosocial, cpf_cnpj, apelido_nomefantasia, endereco,
                                    bairro_id, nacionalidade_id, telefone, email, rg_ie, inscricao_municipal,
                                    regime_tributario, ativo, criado_em, observacao)
-            VALUES (@TipoPessoa, @NomeRazaoSocial, @CpfCnpj, @ApelidoNomeFantasia, @Endereco,
+            VALUES (@TipoPessoa::tipo_pessoa, @NomeRazaoSocial, @CpfCnpj, @ApelidoNomeFantasia, @Endereco,
                     @BairroId, @NacionalidadeId, @Telefone, @Email, @RgIe, @InscricaoMunicipal,
                     @RegimeTributario, @Ativo, @CriadoEm, @Observacao)
             RETURNING id;";
@@ -127,7 +127,7 @@ public class EmitentesRepository : IEmitentesRepository
     {
         const string sql = @"
             UPDATE emitentes
-            SET tipo_pessoa = @TipoPessoa, nome_razaosocial = @NomeRazaoSocial, cpf_cnpj = @CpfCnpj,
+            SET tipo_pessoa = @TipoPessoa::tipo_pessoa, nome_razaosocial = @NomeRazaoSocial, cpf_cnpj = @CpfCnpj,
                 apelido_nomefantasia = @ApelidoNomeFantasia, endereco = @Endereco,
                 bairro_id = @BairroId, nacionalidade_id = @NacionalidadeId, telefone = @Telefone, email = @Email,
                 rg_ie = @RgIe, inscricao_municipal = @InscricaoMunicipal,
