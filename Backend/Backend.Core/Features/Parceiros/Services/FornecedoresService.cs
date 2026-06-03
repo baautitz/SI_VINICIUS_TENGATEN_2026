@@ -41,6 +41,9 @@ public sealed class FornecedoresService : BaseService
         if (nacionalidade is null)
             return Resultado<Fornecedores>.Falha(new ResultadoErro("NACIONALIDADE_NAO_ENCONTRADA", "Nacionalidade não encontrada.", "NacionalidadeId"));
 
+        if (nacionalidade.SiglaIso != "BRA" && !string.IsNullOrWhiteSpace(dto.RgIe))
+            return Resultado<Fornecedores>.Falha(new ResultadoErro("RG_IE_NAO_PERMITIDO", "RG/IE não é permitido para estrangeiros.", nameof(dto.RgIe)));
+
         if (nacionalidade.SiglaIso == "BRA")
         {
             if (dto.TipoPessoa == TipoPessoa.FISICA)
@@ -103,6 +106,9 @@ public sealed class FornecedoresService : BaseService
         var nacionalidade = await _paisesRepository.ObterPaisPorId(dto.NacionalidadeId);
         if (nacionalidade is null)
             return Resultado<Fornecedores>.Falha(new ResultadoErro("NACIONALIDADE_NAO_ENCONTRADA", "Nacionalidade não encontrada.", "NacionalidadeId"));
+
+        if (nacionalidade.SiglaIso != "BRA" && !string.IsNullOrWhiteSpace(dto.RgIe))
+            return Resultado<Fornecedores>.Falha(new ResultadoErro("RG_IE_NAO_PERMITIDO", "RG/IE não é permitido para estrangeiros.", nameof(dto.RgIe)));
 
         if (nacionalidade.SiglaIso == "BRA")
         {

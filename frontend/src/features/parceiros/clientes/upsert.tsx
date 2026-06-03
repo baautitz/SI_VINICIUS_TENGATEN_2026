@@ -107,6 +107,7 @@ function ClientesUpsertForm({
       const payload = {
         ...value,
         bairroId: value.bairroId || null,
+        rgIe: isBrasil ? value.rgIe : "",
       };
       mutation.mutate(payload as ClienteFormValues);
     },
@@ -252,21 +253,23 @@ function ClientesUpsertForm({
                 }}
               </form.Field>
             </div>
-            <div className="w-fit">
-              <form.Field
-                name="rgIe"
-                validators={{ onChange: clienteSchema.shape.rgIe }}
-              >
-                {(field) => (
-                  <FormFieldUI
-                    field={field}
-                    label={isBrasil && tipoPessoa === TipoPessoa.JURIDICA ? "Inscrição Estadual" : "RG"}
-                    getFieldError={getFieldError}
-                    inputSize="medium"
-                  />
-                )}
-              </form.Field>
-            </div>
+            {isBrasil && (
+              <div className="w-fit">
+                <form.Field
+                  name="rgIe"
+                  validators={{ onChange: clienteSchema.shape.rgIe }}
+                >
+                  {(field) => (
+                    <FormFieldUI
+                      field={field}
+                      label={isBrasil && tipoPessoa === TipoPessoa.JURIDICA ? "Inscrição Estadual" : "RG"}
+                      getFieldError={getFieldError}
+                      inputSize="medium"
+                    />
+                  )}
+                </form.Field>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap items-start gap-4">

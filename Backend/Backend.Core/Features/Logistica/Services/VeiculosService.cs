@@ -8,7 +8,7 @@ using Backend.Core.Features.Logistica.Repositories;
 using Backend.Core.Features.Logistica.Validators;
 
 namespace Backend.Core.Features.Logistica.Services;
-
+// todo: validar placa de transportadora brasileira e bairro só pode ser da nacionalidade da transportadora
 public sealed class VeiculosService : BaseService
 {
     private readonly IVeiculosRepository _veiculosRepository;
