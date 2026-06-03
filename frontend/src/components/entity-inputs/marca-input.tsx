@@ -11,7 +11,6 @@ interface MarcaInputProps {
   initialItem?: Marca | MarcaResumo | null
   onSelectId: (id: number | null) => void
   onSelectItem?: (item: Marca | null) => void
-  inputSize?: "small" | "medium" | "large" | "full"
 }
 
 export function MarcaInput({
@@ -21,7 +20,6 @@ export function MarcaInput({
   initialItem,
   onSelectId,
   onSelectItem,
-  inputSize
 }: MarcaInputProps) {
   return (
     <EntityInput<Marca, MarcaResumo>
@@ -31,7 +29,6 @@ export function MarcaInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
-      inputSize={inputSize}
       modalTitle="Selecionar Marca"
       getDisplayLabel={formatMarcaLabel}
       getSearchTerm={(item) => item.marca}

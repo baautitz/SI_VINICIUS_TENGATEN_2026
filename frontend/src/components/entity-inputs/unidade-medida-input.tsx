@@ -11,7 +11,6 @@ interface UnidadeMedidaInputProps {
   initialItem?: UnidadeMedida | UnidadeMedidaResumo | null
   onSelectId: (id: number | null) => void
   onSelectItem?: (item: UnidadeMedida | null) => void
-  inputSize?: "small" | "medium" | "large" | "full"
 }
 
 export function UnidadeMedidaInput({
@@ -21,7 +20,6 @@ export function UnidadeMedidaInput({
   initialItem,
   onSelectId,
   onSelectItem,
-  inputSize
 }: UnidadeMedidaInputProps) {
   return (
     <EntityInput<UnidadeMedida, UnidadeMedidaResumo>
@@ -31,7 +29,6 @@ export function UnidadeMedidaInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
-      inputSize={inputSize}
       modalTitle="Selecionar Unidade de Medida"
       getDisplayLabel={formatUnidadeMedidaLabel}
       getSearchTerm={(item) => item.descricao}

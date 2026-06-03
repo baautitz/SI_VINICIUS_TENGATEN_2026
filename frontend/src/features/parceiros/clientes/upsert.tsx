@@ -176,7 +176,7 @@ function ClientesUpsertForm({
                 )}
               </form.Field>
             </div>
-            <div className="flex-1 min-w-[250px]">
+            <div className="flex-1 min-w-62.5">
               <form.Field
                 name="nacionalidadeId"
                 validators={{ onChange: clienteSchema.shape.nacionalidadeId }}
@@ -192,12 +192,11 @@ function ClientesUpsertForm({
                       setNacionalidadeId(id ?? 0);
                     }}
                     onSelectItem={(item) => setSelectedPais(item)}
-                    inputSize="full"
                   />
                 )}
               </form.Field>
             </div>
-            <div className="flex-2 min-w-[300px]">
+            <div className="flex-2 min-w-75">
               <form.Field
                 name="nomeRazaoSocial"
                 validators={{ onChange: clienteSchema.shape.nomeRazaoSocial }}
@@ -215,7 +214,7 @@ function ClientesUpsertForm({
           </div>
 
           <div className="flex flex-wrap items-start gap-4">
-            <div className="flex-1 min-w-[250px]">
+            <div className="flex-1 min-w-62.5">
               <form.Field
                 name="apelidoNomeFantasia"
                 validators={{
@@ -288,7 +287,7 @@ function ClientesUpsertForm({
                 )}
               </form.Field>
             </div>
-            <div className="flex-1 min-w-[300px]">
+            <div className="flex-1 min-w-75">
               <form.Field
                 name="email"
                 validators={{ onChange: clienteSchema.shape.email }}

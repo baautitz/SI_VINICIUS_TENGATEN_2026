@@ -10,7 +10,6 @@ interface CidadeInputProps {
   error?: string
   initialItem?: Cidade | CidadeResumo | null
   onSelectId: (id: number | null) => void
-  inputSize?: "small" | "medium" | "large" | "full"
 }
 
 export function CidadeInput({
@@ -19,7 +18,6 @@ export function CidadeInput({
   error,
   initialItem,
   onSelectId,
-  inputSize
 }: CidadeInputProps) {
   return (
     <EntityInput<Cidade, CidadeResumo>
@@ -28,7 +26,6 @@ export function CidadeInput({
       error={error}
       initialItem={initialItem}
       onSelectId={onSelectId}
-      inputSize={inputSize}
       modalTitle="Selecionar Cidade"
       getDisplayLabel={formatCidadeLabel}
       getSearchTerm={(item) => item.cidade}

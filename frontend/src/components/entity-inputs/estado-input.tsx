@@ -10,7 +10,6 @@ interface EstadoInputProps {
   error?: string
   initialItem?: Estado | EstadoResumo | null
   onSelectId: (id: number | null) => void
-  inputSize?: "small" | "medium" | "large" | "full"
 }
 
 export function EstadoInput({
@@ -19,7 +18,6 @@ export function EstadoInput({
   error,
   initialItem,
   onSelectId,
-  inputSize
 }: EstadoInputProps) {
   return (
     <EntityInput<Estado, EstadoResumo>
@@ -28,7 +26,6 @@ export function EstadoInput({
       error={error}
       initialItem={initialItem}
       onSelectId={onSelectId}
-      inputSize={inputSize}
       modalTitle="Selecionar Estado"
       getDisplayLabel={formatEstadoLabel}
       getSearchTerm={(item) => item.estado}

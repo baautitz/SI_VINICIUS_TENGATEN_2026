@@ -11,7 +11,6 @@ interface CategoriaInputProps {
   initialItem?: Categoria | CategoriaResumo | null
   onSelectId: (id: number | null) => void
   onSelectItem?: (item: Categoria | null) => void
-  inputSize?: "small" | "medium" | "large" | "full"
 }
 
 export function CategoriaInput({
@@ -21,7 +20,6 @@ export function CategoriaInput({
   initialItem,
   onSelectId,
   onSelectItem,
-  inputSize
 }: CategoriaInputProps) {
   return (
     <EntityInput<Categoria, CategoriaResumo>
@@ -31,7 +29,6 @@ export function CategoriaInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
-      inputSize={inputSize}
       modalTitle="Selecionar Categoria"
       getDisplayLabel={formatCategoriaLabel}
       getSearchTerm={(item) => item.categoria}

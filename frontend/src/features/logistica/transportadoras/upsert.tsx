@@ -11,7 +11,12 @@ import { PaisInput } from "@/components/entity-inputs/pais-input";
 import { TipoPessoaSelect } from "@/components/tipo-pessoa-select";
 import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
-import { transportadoraSchema, TransportadoraResumo, Transportadora, TransportadoraFormValues } from "./types";
+import {
+  transportadoraSchema,
+  TransportadoraResumo,
+  Transportadora,
+  TransportadoraFormValues,
+} from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { transportadorasApi } from "@/api/logistica";
 import { TipoPessoa } from "@/api/types";
@@ -57,7 +62,7 @@ export function TransportadorasUpsert(props: TransportadorasUpsertProps) {
   return (
     <TransportadorasUpsertForm
       open={open}
-      editingItem={isEditMode ? fullItem ?? null : null}
+      editingItem={isEditMode ? (fullItem ?? null) : null}
       onClose={onClose}
       onSuccess={onSuccess}
     />
@@ -70,9 +75,15 @@ function TransportadorasUpsertForm({
   onClose,
   onSuccess,
 }: TransportadorasUpsertFormProps) {
-  const [selectedPais, setSelectedPais] = useState<Pais | null>(editingItem?.nacionalidade ?? null);
-  const [tipoPessoa, setTipoPessoa] = useState<TipoPessoa>(editingItem?.tipoPessoa ?? TipoPessoa.JURIDICA);
-  const [nacionalidadeId, setNacionalidadeId] = useState<number>(editingItem?.nacionalidade?.id ?? 0);
+  const [selectedPais, setSelectedPais] = useState<Pais | null>(
+    editingItem?.nacionalidade ?? null,
+  );
+  const [tipoPessoa, setTipoPessoa] = useState<TipoPessoa>(
+    editingItem?.tipoPessoa ?? TipoPessoa.JURIDICA,
+  );
+  const [nacionalidadeId, setNacionalidadeId] = useState<number>(
+    editingItem?.nacionalidade?.id ?? 0,
+  );
 
   const { mutation, globalError, getFieldError, resetErrors } =
     useUpsertMutation({
@@ -113,7 +124,9 @@ function TransportadorasUpsertForm({
     },
   });
 
-  const isBrasil = selectedPais?.siglaIso === "BRA" || (!selectedPais && nacionalidadeId === 1);
+  const isBrasil =
+    selectedPais?.siglaIso === "BRA" ||
+    (!selectedPais && nacionalidadeId === 1);
 
   return (
     <UpsertDialog
@@ -176,10 +189,12 @@ function TransportadorasUpsertForm({
                 )}
               </form.Field>
             </div>
-            <div className="flex-1 min-w-[250px]">
+            <div className="flex-1 min-w-62.5">
               <form.Field
                 name="nacionalidadeId"
-                validators={{ onChange: transportadoraSchema.shape.nacionalidadeId }}
+                validators={{
+                  onChange: transportadoraSchema.shape.nacionalidadeId,
+                }}
               >
                 {(field) => (
                   <PaisInput
@@ -192,15 +207,16 @@ function TransportadorasUpsertForm({
                       setNacionalidadeId(id ?? 0);
                     }}
                     onSelectItem={(item) => setSelectedPais(item)}
-                    inputSize="full"
                   />
                 )}
               </form.Field>
             </div>
-            <div className="flex-2 min-w-[300px]">
+            <div className="flex-2 min-w-75">
               <form.Field
                 name="nomeRazaosocial"
-                validators={{ onChange: transportadoraSchema.shape.nomeRazaosocial }}
+                validators={{
+                  onChange: transportadoraSchema.shape.nomeRazaosocial,
+                }}
               >
                 {(field) => (
                   <FormFieldUI
@@ -215,7 +231,7 @@ function TransportadorasUpsertForm({
           </div>
 
           <div className="flex flex-wrap items-start gap-4">
-            <div className="flex-1 min-w-[250px]">
+            <div className="flex-1 min-w-62.5">
               <form.Field
                 name="apelidoNomefantasia"
                 validators={{
@@ -238,18 +254,18 @@ function TransportadorasUpsertForm({
                 validators={{ onChange: transportadoraSchema.shape.cpfCnpj }}
               >
                 {(field) => {
-                   let label = "Documento";
-                   if (isBrasil) {
-                     label = tipoPessoa === TipoPessoa.FISICA ? "CPF" : "CNPJ";
-                   }
-                   return (
+                  let label = "Documento";
+                  if (isBrasil) {
+                    label = tipoPessoa === TipoPessoa.FISICA ? "CPF" : "CNPJ";
+                  }
+                  return (
                     <FormFieldUI
                       field={field}
                       label={label}
                       getFieldError={getFieldError}
                       inputSize="medium"
                     />
-                   );
+                  );
                 }}
               </form.Field>
             </div>
@@ -262,7 +278,11 @@ function TransportadorasUpsertForm({
                   {(field) => (
                     <FormFieldUI
                       field={field}
-                      label={isBrasil && tipoPessoa === TipoPessoa.JURIDICA ? "Inscrição Estadual" : "RG"}
+                      label={
+                        isBrasil && tipoPessoa === TipoPessoa.JURIDICA
+                          ? "Inscrição Estadual"
+                          : "RG"
+                      }
                       getFieldError={getFieldError}
                       inputSize="medium"
                     />
@@ -288,7 +308,7 @@ function TransportadorasUpsertForm({
                 )}
               </form.Field>
             </div>
-            <div className="flex-1 min-w-[300px]">
+            <div className="flex-1 min-w-75">
               <form.Field
                 name="email"
                 validators={{ onChange: transportadoraSchema.shape.email }}

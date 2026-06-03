@@ -29,8 +29,6 @@ interface EntityInputProps<T, TResumo = T> {
     onSelect: (item: TResumo) => void;
     initialSearchTerm: string;
   }) => React.ReactNode;
-
-  inputSize?: "small" | "medium" | "large" | "full";
 }
 
 export function EntityInput<T, TResumo = T>({
@@ -48,7 +46,6 @@ export function EntityInput<T, TResumo = T>({
   getId,
   modalTitle,
   renderFeature,
-  inputSize = "full",
 }: EntityInputProps<T, TResumo>) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<TResumo | null>(
@@ -149,7 +146,6 @@ export function EntityInput<T, TResumo = T>({
           <Input
             ref={inputRef}
             id={name}
-            inputSize={inputSize}
             placeholder={placeholder}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}

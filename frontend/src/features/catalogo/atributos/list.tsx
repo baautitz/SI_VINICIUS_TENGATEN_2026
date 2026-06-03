@@ -73,7 +73,7 @@ export function AtributosList({
       cell: ({ row }) => {
         const valores: string[] = row.getValue("valores") || [];
         return (
-          <div className="flex flex-wrap gap-1 max-w-[500px]">
+          <div className="flex flex-wrap gap-1 max-w-125">
             {valores.length > 0 ? (
               valores.map((v, i) => (
                 <span

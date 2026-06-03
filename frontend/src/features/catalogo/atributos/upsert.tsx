@@ -228,7 +228,7 @@ function AtributosUpsertForm({
                     size="sm"
                     className="w-full mt-2 border-dashed bg-muted/10"
                   >
-                    <CardContent className="flex flex-wrap gap-2 py-3 min-h-[80px]">
+                    <CardContent className="flex flex-wrap gap-2 py-3 min-h-20">
                       {currentValues.length > 0 ? (
                         currentValues.map((val, idx) => (
                           <Badge

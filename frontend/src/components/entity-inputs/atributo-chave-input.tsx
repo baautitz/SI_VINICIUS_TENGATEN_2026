@@ -11,7 +11,6 @@ interface AtributoChaveInputProps {
   initialItem?: SkuAtributoChave | SkuAtributoChaveResumo | null
   onSelectId: (id: number | null) => void
   onSelectItem?: (item: SkuAtributoChave | null) => void
-  inputSize?: "small" | "medium" | "large" | "full"
 }
 
 export function AtributoChaveInput({
@@ -21,7 +20,6 @@ export function AtributoChaveInput({
   initialItem,
   onSelectId,
   onSelectItem,
-  inputSize
 }: AtributoChaveInputProps) {
   return (
     <EntityInput<SkuAtributoChave, SkuAtributoChaveResumo>
@@ -31,7 +29,6 @@ export function AtributoChaveInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
-      inputSize={inputSize}
       modalTitle="Selecionar Atributo"
       getDisplayLabel={formatSkuAtributoChaveLabel}
       getSearchTerm={(item) => item.chave}

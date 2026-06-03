@@ -11,7 +11,6 @@ interface PaisInputProps {
   initialItem?: Pais | PaisResumo | null
   onSelectId: (id: number | null) => void
   onSelectItem?: (item: Pais | null) => void
-  inputSize?: "small" | "medium" | "large" | "full"
 }
 
 export function PaisInput({
@@ -21,7 +20,6 @@ export function PaisInput({
   initialItem,
   onSelectId,
   onSelectItem,
-  inputSize
 }: PaisInputProps) {
   return (
     <EntityInput<Pais, PaisResumo>
@@ -31,7 +29,6 @@ export function PaisInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
-      inputSize={inputSize}
       modalTitle="Selecionar País"
       getDisplayLabel={formatPaisLabel}
       getSearchTerm={(item) => item.pais}
