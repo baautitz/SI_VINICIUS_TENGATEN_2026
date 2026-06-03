@@ -5,5 +5,6 @@ public record BairroResumoDto(
     string Bairro,
     int CidadeId,
     string CidadeNome,
+    int EstadoId,
     string Uf
 );

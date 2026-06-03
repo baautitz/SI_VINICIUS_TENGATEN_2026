@@ -6,6 +6,7 @@ export interface BairroResumo {
   bairro: string
   cidadeId: number
   cidadeNome: string
+  estadoId: number
   uf: string
 }
 
