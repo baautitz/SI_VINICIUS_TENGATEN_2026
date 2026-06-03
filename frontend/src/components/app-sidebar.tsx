@@ -17,6 +17,9 @@ import {
   Car,
   Scale,
   Package,
+  Tag,
+  Layers,
+  Sliders,
 } from "lucide-react";
 
 import {
@@ -45,6 +48,21 @@ const catalogoItems = [
     title: "Unidades de Medida",
     url: "/catalogo/unidades-medida",
     icon: Scale,
+  },
+  {
+    title: "Marcas",
+    url: "/catalogo/marcas",
+    icon: Tag,
+  },
+  {
+    title: "Categorias",
+    url: "/catalogo/categorias",
+    icon: Layers,
+  },
+  {
+    title: "Atributos",
+    url: "/catalogo/atributos",
+    icon: Sliders,
   },
 ];
 

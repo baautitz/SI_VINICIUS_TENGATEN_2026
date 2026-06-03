@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Backend.Core.Common.Results;
 using Backend.Core.Features.Catalogo.DTOs;
 using Backend.Core.Features.Catalogo.Entities;
@@ -80,9 +84,10 @@ public class ProdutosRepository : IProdutosRepository
         {
             var skuCodes = skus.Select(s => s.Sku).ToArray();
             const string atributosSql = @"
-                SELECT sku, chave_id AS ChaveId, valor AS Valor
-                FROM skus_atributos_valores
-                WHERE sku = ANY(@Skus);";
+                SELECT savr.sku, sav.id AS Id, sav.chave_id AS ChaveId, sav.valor AS Valor
+                FROM skus_atributos_valores_relacionamento savr
+                JOIN sku_atributos_valores sav ON sav.id = savr.valor_id
+                WHERE savr.sku = ANY(@Skus);";
 
             var atributos = (await _session.Connection.QueryAsync<SkuAtributoDto>(
                 atributosSql,
@@ -283,7 +288,7 @@ public class ProdutosRepository : IProdutosRepository
             sku.Desativar();
 
         foreach (var atributo in atributos)
-            sku.AdicionarAtributo(new SkusAtributosValores(atributo.Sku, atributo.ChaveId, atributo.Valor));
+            sku.AdicionarAtributo(new SkuAtributosValores(atributo.Id, atributo.ChaveId, atributo.Valor));
 
         return sku;
     }
@@ -324,6 +329,7 @@ public class ProdutosRepository : IProdutosRepository
     private sealed class SkuAtributoDto
     {
         public string Sku { get; set; } = null!;
+        public int Id { get; set; }
         public int ChaveId { get; set; }
         public string Valor { get; set; } = null!;
     }

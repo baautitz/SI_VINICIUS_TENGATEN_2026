@@ -1,14 +1,17 @@
 using Backend.Core.Common.Exceptions;
 using Backend.Core.Common.Helpers;
+
 namespace Backend.Core.Features.Catalogo.Entities;
 
 public class SkuAtributosChaves
 {
-    private readonly List<SkusAtributosValores> _skusAtributosValores = new();
+    private readonly List<SkuAtributosValores> _skuAtributosValores = new();
 
     public int Id { get; private set; }
     public string Chave { get; private set; }
-    public IReadOnlyCollection<SkusAtributosValores> SkusAtributosValores => _skusAtributosValores.AsReadOnly();
+    public IReadOnlyCollection<SkuAtributosValores> SkuAtributosValores => _skuAtributosValores.AsReadOnly();
+
+    protected SkuAtributosChaves() { }
 
     public SkuAtributosChaves(string chave)
     {
@@ -26,22 +29,37 @@ public class SkuAtributosChaves
         Id = id;
     }
 
-    public void AdicionarValor(SkusAtributosValores valor)
+    public void Atualizar(string chave)
     {
-        if (valor == null)
-            throw new DomainException("Valor de atributo é obrigatório.");
+        chave = TextNormalization.Normalize(chave);
 
-        if (_skusAtributosValores.Any(x => x.Valor == valor.Valor && x.ChaveId == valor.ChaveId))
-            throw new DomainException("Valor de atributo duplicado.");
+        if (string.IsNullOrWhiteSpace(chave))
+            throw new DomainException("Chave de atributo é obrigatória.");
 
-        _skusAtributosValores.Add(valor);
+        Chave = chave;
     }
 
-    public void RemoverValor(SkusAtributosValores valor)
+    public void AdicionarValor(SkuAtributosValores valor)
     {
         if (valor == null)
             throw new DomainException("Valor de atributo é obrigatório.");
 
-        _skusAtributosValores.Remove(valor);
+        if (_skuAtributosValores.Any(x => x.Valor.Equals(valor.Valor, StringComparison.OrdinalIgnoreCase)))
+            throw new DomainException("Valor de atributo duplicado.");
+
+        _skuAtributosValores.Add(valor);
+    }
+
+    public void RemoverValor(SkuAtributosValores valor)
+    {
+        if (valor == null)
+            throw new DomainException("Valor de atributo é obrigatório.");
+
+        _skuAtributosValores.Remove(valor);
+    }
+
+    public void LimparValores()
+    {
+        _skuAtributosValores.Clear();
     }
 }

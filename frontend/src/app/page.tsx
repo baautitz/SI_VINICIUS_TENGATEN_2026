@@ -10,6 +10,9 @@ import {
   UserCircle,
   Car,
   Scale,
+  Tag,
+  Layers,
+  Sliders,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -18,6 +21,9 @@ const systemModules = [
     name: "Catálogo",
     entities: [
       { name: "Unidades de Medida", url: "/catalogo/unidades-medida", icon: Scale },
+      { name: "Marcas", url: "/catalogo/marcas", icon: Tag },
+      { name: "Categorias", url: "/catalogo/categorias", icon: Layers },
+      { name: "Atributos", url: "/catalogo/atributos", icon: Sliders },
     ],
   },
   {

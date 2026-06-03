@@ -6,14 +6,17 @@ namespace Backend.Core.Features.Catalogo.Entities;
 
 public class Skus
 {
-    private readonly List<SkusAtributosValores> _atributos = new();
+    private readonly List<SkuAtributosValores> _atributos = new();
 
     public string Sku { get; private set; }
     public string? GtinEan { get; private set; }
     public decimal Preco { get; private set; }
     public decimal Estoque { get; private set; }
     public bool Ativo { get; private set; }
-    public IReadOnlyCollection<SkusAtributosValores> SkusAtributosValores => _atributos.AsReadOnly();
+    public IReadOnlyCollection<SkuAtributosValores> SkuAtributosValores => _atributos.AsReadOnly();
+
+    // For Dapper ORM materialization
+    protected Skus() { }
 
     public Skus(string sku, decimal preco, decimal estoque = 0, string? gtinEan = null)
     {
@@ -63,18 +66,18 @@ public class Skus
 
     public void Desativar() => Ativo = false;
 
-    public void AdicionarAtributo(SkusAtributosValores atributo)
+    public void AdicionarAtributo(SkuAtributosValores atributo)
     {
         if (atributo == null)
             throw new DomainException("Atributo é obrigatório.");
 
-        if (_atributos.Any(x => x.ChaveId == atributo.ChaveId && x.Valor == atributo.Valor))
+        if (_atributos.Any(x => x.ChaveId == atributo.ChaveId && x.Valor.Equals(atributo.Valor, StringComparison.OrdinalIgnoreCase)))
             throw new DomainException("Atributo duplicado para este SKU.");
 
         _atributos.Add(atributo);
     }
 
-    public void RemoverAtributo(SkusAtributosValores atributo)
+    public void RemoverAtributo(SkuAtributosValores atributo)
     {
         if (atributo == null)
             throw new DomainException("Atributo é obrigatório.");
@@ -82,7 +85,7 @@ public class Skus
         _atributos.Remove(atributo);
     }
 
-    public void DefinirAtributos(IEnumerable<SkusAtributosValores> atributos)
+    public void DefinirAtributos(IEnumerable<SkuAtributosValores> atributos)
     {
         if (atributos == null)
             throw new DomainException("Atributos são obrigatórios.");

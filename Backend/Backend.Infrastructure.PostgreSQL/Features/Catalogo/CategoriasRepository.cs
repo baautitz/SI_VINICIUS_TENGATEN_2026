@@ -4,6 +4,7 @@ using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Catalogo.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;
 using Dapper;
+using Npgsql;
 
 namespace Backend.Infrastructure.PostgreSQL.Features.Catalogo;
 
@@ -53,49 +54,70 @@ public class CategoriasRepository : ICategoriasRepository
 
     public async Task<Categorias> CriarCategoria(Categorias categoria)
     {
-        const string sql = @"
-            INSERT INTO categorias (categoria, descricao, ativo)
-            VALUES (@Categoria, @Descricao, @Ativo)
-            RETURNING id;";
+        try
+        {
+            const string sql = @"
+                INSERT INTO categorias (categoria, descricao, ativo)
+                VALUES (@Categoria, @Descricao, @Ativo)
+                RETURNING id;";
 
-        var idGerado = await _session.Connection.ExecuteScalarAsync<int>(
-            sql,
-            categoria,
-            transaction: _session.Transaction
-        );
+            var idGerado = await _session.Connection.ExecuteScalarAsync<int>(
+                sql,
+                new { categoria.Categoria, categoria.Descricao, categoria.Ativo },
+                transaction: _session.Transaction
+            );
 
-        return new Categorias(idGerado, categoria.Categoria, categoria.Descricao);
+            return new Categorias(idGerado, categoria.Categoria, categoria.Descricao);
+        }
+        catch (PostgresException ex)
+        {
+            throw DbExceptionTranslator.Translate(ex);
+        }
     }
 
     public async Task<Categorias> AtualizarCategoria(int id, Categorias categoria)
     {
-        const string sql = @"
-            UPDATE categorias
-            SET categoria = @Categoria,
-                descricao = @Descricao,
-                ativo = @Ativo
-            WHERE id = @Id;";
+        try
+        {
+            const string sql = @"
+                UPDATE categorias
+                SET categoria = @Categoria,
+                    descricao = @Descricao,
+                    ativo = @Ativo
+                WHERE id = @Id;";
 
-        await _session.Connection.ExecuteAsync(
-            sql,
-            new { Id = id, categoria.Categoria, categoria.Descricao, categoria.Ativo },
-            transaction: _session.Transaction
-        );
+            await _session.Connection.ExecuteAsync(
+                sql,
+                new { Id = id, categoria.Categoria, categoria.Descricao, categoria.Ativo },
+                transaction: _session.Transaction
+            );
 
-        return new Categorias(id, categoria.Categoria, categoria.Descricao);
+            return new Categorias(id, categoria.Categoria, categoria.Descricao);
+        }
+        catch (PostgresException ex)
+        {
+            throw DbExceptionTranslator.Translate(ex);
+        }
     }
 
     public async Task<bool> DeletarCategoria(int id)
     {
-        const string sql = "DELETE FROM categorias WHERE id = @Id;";
+        try
+        {
+            const string sql = "DELETE FROM categorias WHERE id = @Id;";
 
-        var linhasAfetadas = await _session.Connection.ExecuteAsync(
-            sql,
-            new { Id = id },
-            transaction: _session.Transaction
-        );
+            var linhasAfetadas = await _session.Connection.ExecuteAsync(
+                sql,
+                new { Id = id },
+                transaction: _session.Transaction
+            );
 
-        return linhasAfetadas > 0;
+            return linhasAfetadas > 0;
+        }
+        catch (PostgresException ex)
+        {
+            throw DbExceptionTranslator.Translate(ex);
+        }
     }
 
     public async Task<ResultadoPaginado<CategoriasResumo>> ObterCategoriasResumo(int pagina = 1, int tamanhoDaPagina = 20)
@@ -129,11 +151,13 @@ public class CategoriasRepository : ICategoriasRepository
         const string sql = @"
             SELECT COUNT(*)
             FROM categorias
-            WHERE categoria ILIKE @Termo OR descricao ILIKE @Termo;
+            WHERE unaccent(categoria::text) ILIKE unaccent(@Termo::text) 
+               OR unaccent(descricao::text) ILIKE unaccent(@Termo::text);
 
             SELECT id, categoria, ativo
             FROM categorias
-            WHERE categoria ILIKE @Termo OR descricao ILIKE @Termo
+            WHERE unaccent(categoria::text) ILIKE unaccent(@Termo::text) 
+               OR unaccent(descricao::text) ILIKE unaccent(@Termo::text)
             ORDER BY categoria
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
@@ -147,5 +171,18 @@ public class CategoriasRepository : ICategoriasRepository
         var itens = await multi.ReadAsync<CategoriasResumo>();
 
         return new ResultadoPaginado<CategoriasResumo>(itens, total, pagina, tamanhoDaPagina);
+    }
+
+    public async Task<bool> ExisteCategoria(string categoria, int? ignorarId = null)
+    {
+        var sql = "SELECT COUNT(1) FROM categorias WHERE unaccent(categoria::text) ILIKE unaccent(@Categoria::text)";
+        if (ignorarId.HasValue)
+            sql += " AND id != @IgnorarId";
+
+        return await _session.Connection.ExecuteScalarAsync<int>(
+            sql,
+            new { Categoria = categoria, IgnorarId = ignorarId },
+            transaction: _session.Transaction
+        ) > 0;
     }
 }

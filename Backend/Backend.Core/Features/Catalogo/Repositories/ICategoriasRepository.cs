@@ -14,4 +14,5 @@ public interface ICategoriasRepository
     public Task<bool> DeletarCategoria(int id);
     public Task<ResultadoPaginado<CategoriasResumo>> ObterCategoriasResumo(int pagina = 1, int tamanhoDaPagina = 20);
     public Task<ResultadoPaginado<CategoriasResumo>> PesquisarCategorias(string termo, int pagina = 1, int tamanhoDaPagina = 20);
+    public Task<bool> ExisteCategoria(string categoria, int? ignorarId = null);
 }

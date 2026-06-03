@@ -14,4 +14,5 @@ public interface IMarcasRepository
     public Task<bool> DeletarMarca(int id);
     public Task<ResultadoPaginado<MarcasResumo>> ObterMarcasResumo(int pagina = 1, int tamanhoDaPagina = 20);
     public Task<ResultadoPaginado<MarcasResumo>> PesquisarMarcas(string termo, int pagina = 1, int tamanhoDaPagina = 20);
+    public Task<bool> ExisteMarca(string marca, int? ignorarId = null);
 }

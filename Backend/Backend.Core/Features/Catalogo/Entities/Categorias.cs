@@ -9,6 +9,8 @@ public class Categorias
     public string? Descricao { get; private set; }
     public bool Ativo { get; private set; }
 
+    protected Categorias() { }
+
     public Categorias(string categoria, string? descricao = null)
     {
         categoria = TextNormalization.Normalize(categoria);

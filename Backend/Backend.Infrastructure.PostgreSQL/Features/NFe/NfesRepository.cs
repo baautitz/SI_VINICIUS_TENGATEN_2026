@@ -87,7 +87,7 @@ public class NfesRepository : INfesRepository
                 itensSql,
                 (item, sku, unidade) =>
                 {
-                    sku.DefinirAtributos(new List<SkusAtributosValores>());
+                    sku.DefinirAtributos(new List<SkuAtributosValores>());
                     item.AtualizarSku(sku);
                     item.AtualizarUnidadeMedida(unidade);
                     return item;
@@ -187,7 +187,7 @@ public class NfesRepository : INfesRepository
             itensSql,
             (item, sku, unidade) =>
             {
-                sku.DefinirAtributos(new List<SkusAtributosValores>());
+                sku.DefinirAtributos(new List<SkuAtributosValores>());
                 item.AtualizarSku(sku);
                 item.AtualizarUnidadeMedida(unidade);
                 return item;

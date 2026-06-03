@@ -9,6 +9,8 @@ public class Marcas
     public string? Descricao { get; private set; }
     public bool Ativo { get; private set; }
 
+    protected Marcas() { }
+
     public Marcas(string marca, string? descricao = null)
     {
         marca = TextNormalization.Normalize(marca);

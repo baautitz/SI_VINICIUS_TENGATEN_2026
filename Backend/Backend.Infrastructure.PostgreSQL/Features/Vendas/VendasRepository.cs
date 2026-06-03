@@ -66,7 +66,7 @@ public class VendasRepository : IVendasRepository
                 itensSql,
                 (item, sku) =>
                 {
-                    sku.DefinirAtributos(new List<SkusAtributosValores>());
+                    sku.DefinirAtributos(new List<SkuAtributosValores>());
                     item.AtualizarSku(sku);
                     return item;
                 },
@@ -130,7 +130,7 @@ public class VendasRepository : IVendasRepository
             itensSql,
             (item, sku) =>
             {
-                sku.DefinirAtributos(new List<SkusAtributosValores>());
+                sku.DefinirAtributos(new List<SkuAtributosValores>());
                 item.AtualizarSku(sku);
                 return item;
             },
