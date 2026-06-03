@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { RowSelectionState, OnChangeFn } from "@tanstack/react-table";
 import { useFeatureList } from "./use-feature-list";
+import { toast } from "sonner";
+import { extractApiErrors } from "@/utils/api-error";
 
 export interface FeatureListProps<TDto> {
   items: TDto[];
@@ -55,7 +57,8 @@ export function useFeatureOrchestrator<TDto extends { id: number }>({
       list.setDeleteDialogVisible(false);
     },
     onError: (e) => {
-      console.error(e);
+      const apiErrors = extractApiErrors(e);
+      toast.error(apiErrors.globalError || "Erro ao deletar o registro.");
     },
   });
 

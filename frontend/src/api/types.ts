@@ -1,6 +1,6 @@
 export enum TipoPessoa {
   FISICA = 1,
-  JURIDICA = 2
+  JURIDICA = 2,
 }
 
 export interface PaginatedResult<T> {

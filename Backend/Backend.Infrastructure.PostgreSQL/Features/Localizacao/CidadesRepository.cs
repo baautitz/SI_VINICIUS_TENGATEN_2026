@@ -4,6 +4,7 @@ using Backend.Core.Features.Localizacao.Entities;
 using Backend.Core.Features.Localizacao.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;
 using Dapper;
+using Npgsql;
 
 namespace Backend.Infrastructure.PostgreSQL.Features.Localizacao;
 
@@ -88,24 +89,32 @@ public class CidadesRepository : ICidadesRepository
             sql, new { Id = id }, transaction: _session.Transaction);
     }
 
-    public Task<Cidades> CriarCidade(Cidades cidade)
+    public async Task<Cidades> CriarCidade(Cidades cidade)
     {
-        return DbSessionExtensions.ExecuteWithConflictCheckAsync(async () =>
+        try
         {
             const string sql = "INSERT INTO cidades (cidade, ddd, estado_id) VALUES (@Cidade, @Ddd, @EstadoId) RETURNING id;";
             var idGerado = await _session.Connection.ExecuteScalarAsync<int>(sql, new { cidade.Cidade, cidade.Ddd, EstadoId = cidade.Estado.Id }, transaction: _session.Transaction);
             return new Cidades(idGerado, cidade.Cidade, cidade.Ddd, cidade.Estado);
-        });
+        }
+        catch (PostgresException ex)
+        {
+            throw DbExceptionTranslator.Translate(ex);
+        }
     }
 
-    public Task<Cidades> AtualizarCidade(int id, Cidades cidade)
+    public async Task<Cidades> AtualizarCidade(int id, Cidades cidade)
     {
-        return DbSessionExtensions.ExecuteWithConflictCheckAsync(async () =>
+        try
         {
             const string sql = "UPDATE cidades SET cidade = @Cidade, ddd = @Ddd, estado_id = @EstadoId WHERE id = @Id;";
             await _session.Connection.ExecuteAsync(sql, new { Id = id, cidade.Cidade, cidade.Ddd, EstadoId = cidade.Estado.Id }, transaction: _session.Transaction);
             return new Cidades(id, cidade.Cidade, cidade.Ddd, cidade.Estado);
-        });
+        }
+        catch (PostgresException ex)
+        {
+            throw DbExceptionTranslator.Translate(ex);
+        }
     }
 
     public async Task<bool> ExisteCidade(int estadoId, string cidade, int? ignorarId = null)
@@ -117,8 +126,15 @@ public class CidadesRepository : ICidadesRepository
 
     public async Task<bool> DeletarCidade(int id)
     {
-        const string sql = "DELETE FROM cidades WHERE id = @Id;";
-        var rows = await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
-        return rows > 0;
+        try
+        {
+            const string sql = "DELETE FROM cidades WHERE id = @Id;";
+            var rows = await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+            return rows > 0;
+        }
+        catch (PostgresException ex)
+        {
+            throw DbExceptionTranslator.Translate(ex);
+        }
     }
 }

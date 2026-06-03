@@ -32,17 +32,6 @@ public class GlobalExceptionMiddleware
     {
         try
         {
-            _logger.LogError(exception, "Ocorreu uma exceção: {Message}", exception.Message);
-
-            if (context.Response.HasStarted)
-            {
-                _logger.LogWarning("A resposta já foi iniciada, a exceção não pôde ser formatada pelo middleware.");
-                return;
-            }
-
-            context.Response.Clear();
-            context.Response.ContentType = "application/json";
-
             var statusCode = HttpStatusCode.InternalServerError;
             var erroCode = "ERRO_INTERNO";
             var mensagem = "Ocorreu um erro inesperado no servidor.";
@@ -52,13 +41,28 @@ public class GlobalExceptionMiddleware
                 statusCode = HttpStatusCode.Conflict;
                 erroCode = "CONFLITO";
                 mensagem = exception.Message;
+                _logger.LogWarning("Conflito detectado: {Message}", exception.Message);
             }
             else if (exception is DomainException)
             {
                 statusCode = HttpStatusCode.BadRequest;
                 erroCode = "ERRO_DOMINIO";
                 mensagem = exception.Message;
+                _logger.LogWarning("Regra de domínio violada: {Message}", exception.Message);
             }
+            else
+            {
+                _logger.LogError(exception, "Ocorreu uma exceção não tratada: {Message}", exception.Message);
+            }
+
+            if (context.Response.HasStarted)
+            {
+                _logger.LogWarning("A resposta já foi iniciada, a exceção não pôde ser formatada pelo middleware.");
+                return;
+            }
+
+            context.Response.Clear();
+            context.Response.ContentType = "application/json";
 
             context.Response.StatusCode = (int)statusCode;
             var resultadoGenerico = Resultado.Falha(

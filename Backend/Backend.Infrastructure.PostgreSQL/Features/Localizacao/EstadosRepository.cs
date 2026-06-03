@@ -4,6 +4,7 @@ using Backend.Core.Features.Localizacao.Entities;
 using Backend.Core.Features.Localizacao.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;
 using Dapper;
+using Npgsql;
 
 namespace Backend.Infrastructure.PostgreSQL.Features.Localizacao;
 
@@ -83,24 +84,32 @@ public class EstadosRepository : IEstadosRepository
             sql, new { Id = id }, transaction: _session.Transaction);
     }
 
-    public Task<Estados> CriarEstado(Estados estado)
+    public async Task<Estados> CriarEstado(Estados estado)
     {
-        return DbSessionExtensions.ExecuteWithConflictCheckAsync(async () =>
+        try
         {
             const string sql = "INSERT INTO estados (estado, uf, pais_id) VALUES (@Estado, @Uf, @PaisId) RETURNING id;";
             var idGerado = await _session.Connection.ExecuteScalarAsync<int>(sql, new { estado.Estado, estado.Uf, PaisId = estado.Pais.Id }, transaction: _session.Transaction);
             return new Estados(idGerado, estado.Estado, estado.Uf, estado.Pais);
-        });
+        }
+        catch (PostgresException ex)
+        {
+            throw DbExceptionTranslator.Translate(ex);
+        }
     }
 
-    public Task<Estados> AtualizarEstado(int id, Estados estado)
+    public async Task<Estados> AtualizarEstado(int id, Estados estado)
     {
-        return DbSessionExtensions.ExecuteWithConflictCheckAsync(async () =>
+        try
         {
             const string sql = "UPDATE estados SET estado = @Estado, uf = @Uf, pais_id = @PaisId WHERE id = @Id;";
             await _session.Connection.ExecuteAsync(sql, new { Id = id, estado.Estado, estado.Uf, PaisId = estado.Pais.Id }, transaction: _session.Transaction);
             return new Estados(id, estado.Estado, estado.Uf, estado.Pais);
-        });
+        }
+        catch (PostgresException ex)
+        {
+            throw DbExceptionTranslator.Translate(ex);
+        }
     }
 
     public async Task<bool> ExisteEstado(int paisId, string uf, int? ignorarId = null)
@@ -112,8 +121,15 @@ public class EstadosRepository : IEstadosRepository
 
     public async Task<bool> DeletarEstado(int id)
     {
-        const string sql = "DELETE FROM estados WHERE id = @Id;";
-        var rows = await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
-        return rows > 0;
+        try
+        {
+            const string sql = "DELETE FROM estados WHERE id = @Id;";
+            var rows = await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+            return rows > 0;
+        }
+        catch (PostgresException ex)
+        {
+            throw DbExceptionTranslator.Translate(ex);
+        }
     }
 }

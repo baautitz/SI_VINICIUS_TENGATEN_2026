@@ -4,6 +4,7 @@ using Backend.Core.Features.Localizacao.Entities;
 using Backend.Core.Features.Localizacao.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;
 using Dapper;
+using Npgsql;
 
 namespace Backend.Infrastructure.PostgreSQL.Features.Localizacao;
 
@@ -26,8 +27,8 @@ public class BairrosRepository : IBairrosRepository
         if (string.IsNullOrWhiteSpace(search))
         {
             sql = @"
-                SELECT COUNT(*) FROM bairros b JOIN cidades c ON c.id = b.cidade_id JOIN estados e ON e.id = c.estado_id;
-                SELECT b.id, b.bairro AS Bairro, c.id AS CidadeId, c.cidade AS CidadeNome, e.uf AS Uf
+                SELECT COUNT(*) FROM bairros;
+                SELECT b.id, b.bairro AS Bairro, c.id AS CidadeId, c.cidade AS CidadeNome, e.id AS EstadoId, e.uf AS Uf
                 FROM bairros b
                 JOIN cidades c ON c.id = b.cidade_id
                 JOIN estados e ON e.id = c.estado_id
@@ -37,8 +38,8 @@ public class BairrosRepository : IBairrosRepository
         else
         {
             sql = @"
-                SELECT COUNT(*) FROM bairros b JOIN cidades c ON c.id = b.cidade_id JOIN estados e ON e.id = c.estado_id WHERE unaccent(b.bairro::text) ILIKE unaccent(@Termo::text);
-                SELECT b.id, b.bairro AS Bairro, c.id AS CidadeId, c.cidade AS CidadeNome, e.uf AS Uf
+                SELECT COUNT(*) FROM bairros WHERE unaccent(bairro::text) ILIKE unaccent(@Termo::text);
+                SELECT b.id, b.bairro AS Bairro, c.id AS CidadeId, c.cidade AS CidadeNome, e.id AS EstadoId, e.uf AS Uf
                 FROM bairros b
                 JOIN cidades c ON c.id = b.cidade_id
                 JOIN estados e ON e.id = c.estado_id
@@ -80,24 +81,32 @@ public class BairrosRepository : IBairrosRepository
         return result.SingleOrDefault();
     }
 
-    public Task<Bairros> CriarBairro(Bairros bairro)
+    public async Task<Bairros> CriarBairro(Bairros bairro)
     {
-        return DbSessionExtensions.ExecuteWithConflictCheckAsync(async () =>
+        try
         {
             const string sql = "INSERT INTO bairros (bairro, cidade_id) VALUES (@Bairro, @CidadeId) RETURNING id;";
             var idGerado = await _session.Connection.ExecuteScalarAsync<int>(sql, new { bairro.Bairro, CidadeId = bairro.Cidade.Id }, transaction: _session.Transaction);
             return new Bairros(idGerado, bairro.Bairro, bairro.Cidade);
-        });
+        }
+        catch (PostgresException ex)
+        {
+            throw DbExceptionTranslator.Translate(ex);
+        }
     }
 
-    public Task<Bairros> AtualizarBairro(int id, Bairros bairro)
+    public async Task<Bairros> AtualizarBairro(int id, Bairros bairro)
     {
-        return DbSessionExtensions.ExecuteWithConflictCheckAsync(async () =>
+        try
         {
             const string sql = "UPDATE bairros SET bairro = @Bairro, cidade_id = @CidadeId WHERE id = @Id;";
             await _session.Connection.ExecuteAsync(sql, new { Id = id, bairro.Bairro, CidadeId = bairro.Cidade.Id }, transaction: _session.Transaction);
             return new Bairros(id, bairro.Bairro, bairro.Cidade);
-        });
+        }
+        catch (PostgresException ex)
+        {
+            throw DbExceptionTranslator.Translate(ex);
+        }
     }
 
     public async Task<bool> ExisteBairro(int cidadeId, string bairro, int? ignorarId = null)
@@ -109,8 +118,15 @@ public class BairrosRepository : IBairrosRepository
 
     public async Task<bool> DeletarBairro(int id)
     {
-        const string sql = "DELETE FROM bairros WHERE id = @Id;";
-        var rows = await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
-        return rows > 0;
+        try
+        {
+            const string sql = "DELETE FROM bairros WHERE id = @Id;";
+            var rows = await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+            return rows > 0;
+        }
+        catch (PostgresException ex)
+        {
+            throw DbExceptionTranslator.Translate(ex);
+        }
     }
 }

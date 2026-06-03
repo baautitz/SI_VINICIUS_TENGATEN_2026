@@ -1,18 +1,45 @@
+import { toast } from "sonner";
+import { Resultado, ResultadoErro } from "./types";
+
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    headers: { "Content-Type": "application/json" },
-    ...options,
-  });
+  try {
+    const res = await fetch(`${API_URL}${path}`, {
+      headers: { "Content-Type": "application/json" },
+      ...options,
+    });
 
-  if (!res.ok) {
-    const body = await res.text();
-    throw { status: res.status, response: body };
+    if (!res.ok) {
+      const body = await res.text();
+      
+      if (res.status >= 500) {
+        toast.error("Ocorreu um erro inesperado no servidor (Erro 500).");
+      } else {
+        try {
+          const parsed = JSON.parse(body) as Resultado<unknown>;
+          if (parsed.errors && Array.isArray(parsed.errors)) {
+            const temErroInterno = parsed.errors.some(
+              (e: ResultadoErro) => e.code === "ERRO_INTERNO"
+            );
+            if (temErroInterno) {
+              toast.error("Erro interno no servidor: Ocorreu um erro inesperado.");
+            }
+          }
+        } catch {}
+      }
+
+      throw { status: res.status, response: body };
+    }
+
+    const text = await res.text();
+    return text ? JSON.parse(text) : (undefined as unknown as T);
+  } catch (error: unknown) {
+    if (error && typeof error === "object" && !("status" in error)) {
+      toast.error("Sem conexão com o servidor. Por favor, verifique se o servidor está online.");
+    }
+    throw error;
   }
-
-  const text = await res.text();
-  return text ? JSON.parse(text) : (undefined as unknown as T);
 }
 
 export const http = {

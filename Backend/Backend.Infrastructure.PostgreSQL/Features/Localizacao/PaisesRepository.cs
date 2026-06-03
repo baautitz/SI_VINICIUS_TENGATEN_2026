@@ -4,6 +4,7 @@ using Backend.Core.Features.Localizacao.Entities;
 using Backend.Core.Features.Localizacao.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;
 using Dapper;
+using Npgsql;
 
 namespace Backend.Infrastructure.PostgreSQL.Features.Localizacao;
 
@@ -53,24 +54,32 @@ public class PaisesRepository : IPaisesRepository
         return await _session.Connection.QuerySingleOrDefaultAsync<Paises>(sql, new { Id = id }, transaction: _session.Transaction);
     }
 
-    public Task<Paises> CriarPais(Paises pais)
+    public async Task<Paises> CriarPais(Paises pais)
     {
-        return DbSessionExtensions.ExecuteWithConflictCheckAsync(async () =>
+        try
         {
             const string sql = "INSERT INTO paises (ddi, sigla_iso, moeda, simbolo_moeda, pais) VALUES (@Ddi, @SiglaIso, @Moeda, @SimboloMoeda, @Pais) RETURNING id;";
             var idGerado = await _session.Connection.ExecuteScalarAsync<int>(sql, new { pais.Ddi, pais.SiglaIso, pais.Moeda, pais.SimboloMoeda, pais.Pais }, transaction: _session.Transaction);
             return new Paises(idGerado, pais.Ddi, pais.SiglaIso, pais.Moeda, pais.SimboloMoeda, pais.Pais);
-        });
+        }
+        catch (PostgresException ex)
+        {
+            throw DbExceptionTranslator.Translate(ex);
+        }
     }
 
-    public Task<Paises> AtualizarPais(int id, Paises pais)
+    public async Task<Paises> AtualizarPais(int id, Paises pais)
     {
-        return DbSessionExtensions.ExecuteWithConflictCheckAsync(async () =>
+        try
         {
             const string sql = "UPDATE paises SET ddi = @Ddi, sigla_iso = @SiglaIso, moeda = @Moeda, simbolo_moeda = @SimboloMoeda, pais = @Pais WHERE id = @Id;";
             await _session.Connection.ExecuteAsync(sql, new { Id = id, pais.Ddi, pais.SiglaIso, pais.Moeda, pais.SimboloMoeda, pais.Pais }, transaction: _session.Transaction);
             return new Paises(id, pais.Ddi, pais.SiglaIso, pais.Moeda, pais.SimboloMoeda, pais.Pais);
-        });
+        }
+        catch (PostgresException ex)
+        {
+            throw DbExceptionTranslator.Translate(ex);
+        }
     }
 
     public async Task<bool> ExistePais(string siglaIso, string pais, int? ignorarId = null)
@@ -82,8 +91,15 @@ public class PaisesRepository : IPaisesRepository
 
     public async Task<bool> DeletarPais(int id)
     {
-        const string sql = "DELETE FROM paises WHERE id = @Id;";
-        var rows = await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
-        return rows > 0;
+        try
+        {
+            const string sql = "DELETE FROM paises WHERE id = @Id;";
+            var rows = await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+            return rows > 0;
+        }
+        catch (PostgresException ex)
+        {
+            throw DbExceptionTranslator.Translate(ex);
+        }
     }
 }

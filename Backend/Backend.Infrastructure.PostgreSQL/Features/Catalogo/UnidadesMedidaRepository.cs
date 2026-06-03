@@ -4,6 +4,7 @@ using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Catalogo.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;
 using Dapper;
+using Npgsql;
 
 namespace Backend.Infrastructure.PostgreSQL.Features.Catalogo;
 
@@ -40,9 +41,9 @@ public class UnidadesMedidaRepository : IUnidadesMedidaRepository
         return await _session.Connection.QuerySingleOrDefaultAsync<UnidadesMedida>(sql, new { Id = id }, transaction: _session.Transaction);
     }
 
-    public Task<UnidadesMedida> CriarUnidadeMedida(UnidadesMedida unidadeMedida)
+    public async Task<UnidadesMedida> CriarUnidadeMedida(UnidadesMedida unidadeMedida)
     {
-        return DbSessionExtensions.ExecuteWithConflictCheckAsync(async () =>
+        try
         {
             const string sql = @"
                 INSERT INTO unidades_medida (sigla, descricao, categoria, ativo)
@@ -55,12 +56,16 @@ public class UnidadesMedidaRepository : IUnidadesMedidaRepository
             );
             unidadeMedida.Id = idGerado;
             return unidadeMedida;
-        });
+        }
+        catch (PostgresException ex)
+        {
+            throw DbExceptionTranslator.Translate(ex);
+        }
     }
 
-    public Task<UnidadesMedida> AtualizarUnidadeMedida(int id, UnidadesMedida unidadeMedida)
+    public async Task<UnidadesMedida> AtualizarUnidadeMedida(int id, UnidadesMedida unidadeMedida)
     {
-        return DbSessionExtensions.ExecuteWithConflictCheckAsync(async () =>
+        try
         {
             const string sql = @"
                 UPDATE unidades_medida
@@ -76,14 +81,25 @@ public class UnidadesMedidaRepository : IUnidadesMedidaRepository
             );
             unidadeMedida.Id = id;
             return unidadeMedida;
-        });
+        }
+        catch (PostgresException ex)
+        {
+            throw DbExceptionTranslator.Translate(ex);
+        }
     }
 
     public async Task<bool> DeletarUnidadeMedida(int id)
     {
-        const string sql = "DELETE FROM unidades_medida WHERE id = @Id;";
-        var rows = await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
-        return rows > 0;
+        try
+        {
+            const string sql = "DELETE FROM unidades_medida WHERE id = @Id;";
+            var rows = await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+            return rows > 0;
+        }
+        catch (PostgresException ex)
+        {
+            throw DbExceptionTranslator.Translate(ex);
+        }
     }
 
     public async Task<ResultadoPaginado<UnidadesMedidaResumo>> ObterUnidadesMedidaResumo(int pagina = 1, int tamanhoDaPagina = 20)
