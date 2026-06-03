@@ -18,7 +18,7 @@ interface EntityInputProps<T, TResumo = T> {
   onSelectItem?: (item: T | null) => void;
 
   fetchById: (id: number) => Promise<T | null>;
-  fetchList: (term: string) => Promise<{ itens?: unknown[] } | null>;
+  fetchList: (term: string) => Promise<{ itens?: TResumo[] } | null>;
   getDisplayLabel: (item: T) => string;
   getSearchTerm: (item: TResumo) => string;
   getId: (item: T | TResumo) => number;
@@ -103,9 +103,9 @@ export function EntityInput<T, TResumo = T>({
 
       const listRes = await fetchList(text);
       if (listRes?.itens && listRes.itens.length === 1) {
-        const matched = await fetchById(getId(listRes.itens[0] as TResumo));
+        const matched = await fetchById(getId(listRes.itens[0]));
         if (matched) {
-          applySelection(listRes.itens[0] as TResumo);
+          applySelection(listRes.itens[0]);
           return;
         }
       }

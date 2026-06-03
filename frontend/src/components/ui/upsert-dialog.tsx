@@ -6,6 +6,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Spinner } from "./spinner";
 
 interface UpsertDialogProps {
   open: boolean;
@@ -38,8 +39,10 @@ export function UpsertDialog({
         <div className="flex-1 overflow-y-auto p-4 flex flex-col justify-start relative">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-full gap-4 py-20">
-              <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-              <p className="text-muted-foreground font-medium">Carregando dados...</p>
+              <Spinner className="size-6" />
+              <p className="text-muted-foreground font-medium">
+                Carregando dados...
+              </p>
             </div>
           ) : (
             children

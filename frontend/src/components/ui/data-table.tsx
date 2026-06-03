@@ -124,7 +124,10 @@ export function DataTable<TData, TValue>({
                         key={header.id}
                         className="whitespace-nowrap h-11 py-2 font-bold text-foreground"
                         style={{
-                          width: header.column.getSize() !== 150 ? header.column.getSize() : undefined,
+                          width:
+                            header.column.getSize() !== 150
+                              ? header.column.getSize()
+                              : undefined,
                         }}
                       >
                         {header.isPlaceholder
@@ -152,7 +155,8 @@ export function DataTable<TData, TValue>({
                       {selectAllAcrossPages ? (
                         <>
                           <span className="text-muted-foreground mr-2">
-                            Todas as <strong>{totalItems}</strong> entidades estão selecionadas.
+                            Todas as <strong>{totalItems}</strong> entidades
+                            estão selecionadas.
                           </span>
                           <Button
                             variant="link"
@@ -165,7 +169,9 @@ export function DataTable<TData, TValue>({
                       ) : (
                         <>
                           <span className="text-muted-foreground mr-2">
-                            Todas as <strong>{table.getRowModel().rows.length}</strong> entidades desta página estão selecionadas.
+                            Todas as{" "}
+                            <strong>{table.getRowModel().rows.length}</strong>{" "}
+                            entidades desta página estão selecionadas.
                           </span>
                           <Button
                             variant="link"
@@ -186,8 +192,8 @@ export function DataTable<TData, TValue>({
                     className="h-48 text-center"
                   >
                     <div className="flex flex-col items-center justify-center gap-3 py-8 text-muted-foreground">
-                      <Spinner className="size-8" />
-                      <span className="text-sm font-medium animate-pulse">
+                      <Spinner className="size-6" />
+                      <span className="font-medium animate-pulse">
                         Carregando dados...
                       </span>
                     </div>
@@ -201,11 +207,14 @@ export function DataTable<TData, TValue>({
                     className="group border-b last:border-0"
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell 
-                        key={cell.id} 
+                      <TableCell
+                        key={cell.id}
                         className="py-3"
                         style={{
-                          width: cell.column.getSize() !== 150 ? cell.column.getSize() : undefined,
+                          width:
+                            cell.column.getSize() !== 150
+                              ? cell.column.getSize()
+                              : undefined,
                         }}
                       >
                         {flexRender(
@@ -233,10 +242,8 @@ export function DataTable<TData, TValue>({
 
       <div className="flex items-center justify-between mt-auto">
         <div className="flex-1 text-sm text-muted-foreground font-medium">
-          {selectAllAcrossPages 
-            ? totalItems 
-            : Object.keys(rowSelection).length} de{" "}
-          {totalItems ?? table.getFilteredRowModel().rows.length}{" "}
+          {selectAllAcrossPages ? totalItems : Object.keys(rowSelection).length}{" "}
+          de {totalItems ?? table.getFilteredRowModel().rows.length}{" "}
           selecionado(s).
         </div>
         <div className="flex items-center space-x-6 lg:space-x-8">
