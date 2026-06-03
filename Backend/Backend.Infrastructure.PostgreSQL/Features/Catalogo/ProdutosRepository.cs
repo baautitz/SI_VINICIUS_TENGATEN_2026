@@ -2,7 +2,6 @@ using Backend.Core.Common.Results;
 using Backend.Core.Features.Catalogo.DTOs;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Catalogo.Repositories;
-using Backend.Core.Features.UnidadeMedida.Entities;
 using Backend.Infrastructure.PostgreSQL.Common;
 using Dapper;
 

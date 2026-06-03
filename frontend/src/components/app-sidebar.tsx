@@ -15,6 +15,8 @@ import {
   UserCircle,
   BriefcaseBusiness,
   Car,
+  Scale,
+  Package,
 } from "lucide-react";
 
 import {
@@ -37,6 +39,14 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ChevronRight } from "lucide-react";
+
+const catalogoItems = [
+  {
+    title: "Unidades de Medida",
+    url: "/catalogo/unidades-medida",
+    icon: Scale,
+  },
+];
 
 const localizationItems = [
   {
@@ -113,6 +123,49 @@ export function AppSidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <Collapsible
+                asChild
+                defaultOpen={pathname.startsWith("/catalogo")}
+                className="group/collapsible"
+              >
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton
+                      tooltip="Catálogo"
+                      isActive={pathname.startsWith("/catalogo")}
+                    >
+                      <Package />
+                      <span>Catálogo</span>
+                      <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {catalogoItems.map((item) => {
+                        const Icon = item.icon;
+                        const active = pathname === item.url;
+                        return (
+                          <SidebarMenuSubItem key={item.title}>
+                            <SidebarMenuSubButton asChild isActive={active}>
+                              <Link href={item.url}>
+                                <Icon />
+                                <span>{item.title}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        );
+                      })}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

@@ -8,6 +8,7 @@ using Backend.Core.Features.Localizacao.Repositories;
 using Backend.Core.Features.Logistica.Repositories;
 using Backend.Core.Features.Logistica.Services;
 using Backend.Core.Features.Localizacao.Services;
+using Backend.Core.Features.Catalogo.Services;
 using Backend.Core.Features.NFe.Repositories;
 using Backend.Core.Features.Parceiros.Repositories;
 using Backend.Core.Features.Parceiros.Services;
@@ -53,6 +54,8 @@ public static class DependencyInjection
         services.AddScoped<IMarcasRepository, MarcasRepository>();
         services.AddScoped<IProdutosRepository, ProdutosRepository>();
         services.AddScoped<ISkusRepository, SkusRepository>();
+        services.AddScoped<IUnidadesMedidaRepository, UnidadesMedidaRepository>();
+        services.AddScoped<UnidadesMedidaService>();
 
         services.AddScoped<IMovimentacoesEstoquesRepository, MovimentacoesEstoquesRepository>();
 

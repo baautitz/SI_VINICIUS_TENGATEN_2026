@@ -1,8 +1,9 @@
-namespace Backend.Core.Features.UnidadeMedida.DTOs;
+namespace Backend.Core.Features.Catalogo.DTOs;
 
 public record UnidadesMedidaResumo(
     int Id,
     string Sigla,
     string Descricao,
+    string Categoria,
     bool Ativo
 );

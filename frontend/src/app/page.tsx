@@ -9,10 +9,17 @@ import {
   Truck,
   UserCircle,
   Car,
+  Scale,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 
 const systemModules = [
+  {
+    name: "Catálogo",
+    entities: [
+      { name: "Unidades de Medida", url: "/catalogo/unidades-medida", icon: Scale },
+    ],
+  },
   {
     name: "Localização",
     entities: [

@@ -1,7 +1,6 @@
 using Backend.Core.Common.Exceptions;
 using Backend.Core.Common.Helpers;
 using Backend.Core.Features.Catalogo.Entities;
-using Backend.Core.Features.UnidadeMedida.Entities;
 
 namespace Backend.Core.Features.NFe.Entities;
 

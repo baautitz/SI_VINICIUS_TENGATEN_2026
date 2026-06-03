@@ -7,7 +7,7 @@ CREATE EXTENSION IF NOT EXISTS unaccent;
 CREATE SCHEMA IF NOT EXISTS projeto_sistemas;
 SET search_path TO projeto_sistemas, public;
 
-\ir unidades_medida/schema/unidades_medida.sql
+\ir catalogo/schema/unidades_medida.sql
 
 \ir localizacao/schema/paises.sql
 \ir localizacao/schema/estados.sql
@@ -57,7 +57,7 @@ SET search_path TO projeto_sistemas, public;
 
 \ir auditoria/schema/auditorias.sql
 
-\ir unidades_medida/seeds/seed_unidades_medida.sql
+\ir catalogo/seeds/seed_unidades_medida.sql
 \ir localizacao/seeds/seed_brasil.sql
 \ir pagamentos/seeds/seed_metodos_pagamento.sql
 
