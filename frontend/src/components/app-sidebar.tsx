@@ -125,8 +125,156 @@ const logisticaItems = [
   },
 ];
 
+class LocalStorageStore {
+  private subscribers = new Set<() => void>();
+
+  subscribe = (callback: () => void) => {
+    this.subscribers.add(callback);
+    return () => this.subscribers.delete(callback);
+  };
+
+  get = (key: string): string | null => {
+    if (typeof window === "undefined") return null;
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  };
+
+  set = (key: string, value: string) => {
+    try {
+      localStorage.setItem(key, value);
+      this.subscribers.forEach((cb) => cb());
+    } catch (e) {
+      console.error(e);
+    }
+  };
+}
+
+const sidebarStore = new LocalStorageStore();
+
+function useSidebarSectionOpen(key: string, defaultOpen: boolean): boolean {
+  const getSnapshot = React.useCallback(() => {
+    const val = sidebarStore.get(`sidebar:${key}`);
+    if (val !== null) return val === "true";
+    return defaultOpen;
+  }, [key, defaultOpen]);
+
+  const getServerSnapshot = React.useCallback(() => defaultOpen, [defaultOpen]);
+
+  return React.useSyncExternalStore(
+    sidebarStore.subscribe,
+    getSnapshot,
+    getServerSnapshot
+  );
+}
+
+const groups = [
+  {
+    id: "catalogo",
+    title: "Catálogo",
+    icon: Package,
+    urlPrefix: "/catalogo",
+    items: catalogoItems,
+  },
+  {
+    id: "localizacao",
+    title: "Localização",
+    icon: MapPinned,
+    urlPrefix: "/localizacao",
+    items: localizationItems,
+  },
+  {
+    id: "parceiros",
+    title: "Parceiros",
+    icon: BriefcaseBusiness,
+    urlPrefix: "/parceiros",
+    items: parceirosItems,
+  },
+  {
+    id: "logistica",
+    title: "Logística",
+    icon: Truck,
+    urlPrefix: "/logistica",
+    items: logisticaItems,
+  },
+];
+
+interface SidebarGroupSectionProps {
+  group: typeof groups[number];
+  pathname: string;
+}
+
+function SidebarGroupSection({ group, pathname }: SidebarGroupSectionProps) {
+  const defaultOpen = pathname.startsWith(group.urlPrefix);
+  const isOpen = useSidebarSectionOpen(group.id, defaultOpen);
+  const GroupIcon = group.icon;
+
+  return (
+    <SidebarGroup>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          <Collapsible
+            asChild
+            open={isOpen}
+            onOpenChange={(open) => {
+              sidebarStore.set(`sidebar:${group.id}`, String(open));
+            }}
+            className="group/collapsible"
+          >
+            <SidebarMenuItem>
+              <CollapsibleTrigger asChild>
+                <SidebarMenuButton
+                  tooltip={group.title}
+                  isActive={pathname.startsWith(group.urlPrefix)}
+                >
+                  <GroupIcon />
+                  <span>{group.title}</span>
+                  <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                </SidebarMenuButton>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <SidebarMenuSub>
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const active = pathname === item.url;
+                    return (
+                      <SidebarMenuSubItem key={item.title}>
+                        <SidebarMenuSubButton asChild isActive={active}>
+                          <Link href={item.url}>
+                            <Icon />
+                            <span>{item.title}</span>
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    );
+                  })}
+                </SidebarMenuSub>
+              </CollapsibleContent>
+            </SidebarMenuItem>
+          </Collapsible>
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
+}
+
 export function AppSidebar() {
   const pathname = usePathname();
+
+  const prevPathnameRef = React.useRef(pathname);
+
+  React.useEffect(() => {
+    const prev = prevPathnameRef.current;
+    prevPathnameRef.current = pathname;
+
+    groups.forEach((g) => {
+      if (pathname.startsWith(g.urlPrefix) && !prev.startsWith(g.urlPrefix)) {
+        sidebarStore.set(`sidebar:${g.id}`, "true");
+      }
+    });
+  }, [pathname]);
 
   return (
     <Sidebar collapsible="icon">
@@ -150,176 +298,9 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <Collapsible
-                asChild
-                defaultOpen={pathname.startsWith("/catalogo")}
-                className="group/collapsible"
-              >
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                      tooltip="Catálogo"
-                      isActive={pathname.startsWith("/catalogo")}
-                    >
-                      <Package />
-                      <span>Catálogo</span>
-                      <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {catalogoItems.map((item) => {
-                        const Icon = item.icon;
-                        const active = pathname === item.url;
-                        return (
-                          <SidebarMenuSubItem key={item.title}>
-                            <SidebarMenuSubButton asChild isActive={active}>
-                              <Link href={item.url}>
-                                <Icon />
-                                <span>{item.title}</span>
-                              </Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        );
-                      })}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <Collapsible
-                asChild
-                defaultOpen={pathname.startsWith("/localizacao")}
-                className="group/collapsible"
-              >
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                      tooltip="Localização"
-                      isActive={pathname.startsWith("/localizacao")}
-                    >
-                      <MapPinned />
-                      <span>Localização</span>
-                      <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {localizationItems.map((item) => {
-                        const Icon = item.icon;
-                        const active = pathname === item.url;
-                        return (
-                          <SidebarMenuSubItem key={item.title}>
-                            <SidebarMenuSubButton asChild isActive={active}>
-                              <Link href={item.url}>
-                                <Icon />
-                                <span>{item.title}</span>
-                              </Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        );
-                      })}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <Collapsible
-                asChild
-                defaultOpen={pathname.startsWith("/parceiros")}
-                className="group/collapsible"
-              >
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                      tooltip="Parceiros"
-                      isActive={pathname.startsWith("/parceiros")}
-                    >
-                      <BriefcaseBusiness />
-                      <span>Parceiros</span>
-                      <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {parceirosItems.map((item) => {
-                        const Icon = item.icon;
-                        const active = pathname === item.url;
-                        return (
-                          <SidebarMenuSubItem key={item.title}>
-                            <SidebarMenuSubButton asChild isActive={active}>
-                              <Link href={item.url}>
-                                <Icon />
-                                <span>{item.title}</span>
-                              </Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        );
-                      })}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <Collapsible
-                asChild
-                defaultOpen={pathname.startsWith("/logistica")}
-                className="group/collapsible"
-              >
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                      tooltip="Logística"
-                      isActive={pathname.startsWith("/logistica")}
-                    >
-                      <Truck />
-                      <span>Logística</span>
-                      <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {logisticaItems.map((item) => {
-                        const Icon = item.icon;
-                        const active = pathname === item.url;
-                        return (
-                          <SidebarMenuSubItem key={item.title}>
-                            <SidebarMenuSubButton asChild isActive={active}>
-                              <Link href={item.url}>
-                                <Icon />
-                                <span>{item.title}</span>
-                              </Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        );
-                      })}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {groups.map((group) => (
+          <SidebarGroupSection key={group.id} group={group} pathname={pathname} />
+        ))}
       </SidebarContent>
       <SidebarRail />
     </Sidebar>
