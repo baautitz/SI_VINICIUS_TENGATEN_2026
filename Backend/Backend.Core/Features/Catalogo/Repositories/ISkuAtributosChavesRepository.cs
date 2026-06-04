@@ -14,4 +14,5 @@ public interface ISkuAtributosChavesRepository
     public Task<ResultadoPaginado<SkuAtributosChavesResumo>> ObterAtributosResumo(int pagina = 1, int tamanhoDaPagina = 20);
     public Task<ResultadoPaginado<SkuAtributosChavesResumo>> PesquisarAtributos(string termo, int pagina = 1, int tamanhoDaPagina = 20);
     public Task<bool> ExisteChave(string chave, int? ignorarId = null);
+    public Task<List<SkuAtributosValores>> ObterValoresPorIds(IEnumerable<int> ids);
 }

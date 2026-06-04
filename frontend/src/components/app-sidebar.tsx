@@ -45,9 +45,9 @@ import { ChevronRight } from "lucide-react";
 
 const catalogoItems = [
   {
-    title: "Unidades de Medida",
-    url: "/catalogo/unidades-medida",
-    icon: Scale,
+    title: "Produtos",
+    url: "/catalogo/produtos",
+    icon: Package,
   },
   {
     title: "Marcas",
@@ -63,6 +63,11 @@ const catalogoItems = [
     title: "Atributos",
     url: "/catalogo/atributos",
     icon: Sliders,
+  },
+  {
+    title: "Unidades de Medida",
+    url: "/catalogo/unidades-medida",
+    icon: Scale,
   },
 ];
 

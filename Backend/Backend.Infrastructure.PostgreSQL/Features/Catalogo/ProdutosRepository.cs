@@ -27,10 +27,10 @@ public class ProdutosRepository : IProdutosRepository
         const string countSql = "SELECT COUNT(*) FROM produtos;";
 
         const string querySql = @"
-            SELECT p.id AS Id, p.produto, p.descricao, p.ativo,
-                   c.id AS CategoriaId, c.categoria, c.descricao, c.ativo,
-                   m.id AS MarcaId, m.marca, m.descricao, m.ativo,
-                   u.id AS UnidadeMedidaId, u.sigla, u.descricao, u.categoria, u.ativo
+            SELECT p.id AS Id, p.produto AS Produto, p.descricao AS Descricao, p.ativo AS Ativo,
+                   c.id AS CategoriaId, c.categoria AS CategoriaNome, c.descricao AS CategoriaDescricao, c.ativo AS CategoriaAtivo,
+                   m.id AS MarcaId, m.marca AS MarcaNome, m.descricao AS MarcaDescricao, m.ativo AS MarcaAtivo,
+                   u.id AS UnidadeMedidaId, u.sigla AS UnidadeMedidaSigla, u.descricao AS UnidadeMedidaDescricao, u.categoria AS UnidadeMedidaCategoria, u.ativo AS UnidadeMedidaAtivo
             FROM produtos p
             JOIN categorias c ON c.id = p.categoria_id
             JOIN marcas m ON m.id = p.marca_id
@@ -53,10 +53,10 @@ public class ProdutosRepository : IProdutosRepository
     public async Task<Produtos?> ObterProdutoPorId(int id)
     {
         const string produtoSql = @"
-            SELECT p.id AS Id, p.produto, p.descricao, p.ativo,
-                   c.id AS CategoriaId, c.categoria, c.descricao, c.ativo,
-                   m.id AS MarcaId, m.marca, m.descricao, m.ativo,
-                   u.id AS UnidadeMedidaId, u.sigla, u.descricao, u.categoria, u.ativo
+            SELECT p.id AS Id, p.produto AS Produto, p.descricao AS Descricao, p.ativo AS Ativo,
+                   c.id AS CategoriaId, c.categoria AS CategoriaNome, c.descricao AS CategoriaDescricao, c.ativo AS CategoriaAtivo,
+                   m.id AS MarcaId, m.marca AS MarcaNome, m.descricao AS MarcaDescricao, m.ativo AS MarcaAtivo,
+                   u.id AS UnidadeMedidaId, u.sigla AS UnidadeMedidaSigla, u.descricao AS UnidadeMedidaDescricao, u.categoria AS UnidadeMedidaCategoria, u.ativo AS UnidadeMedidaAtivo
             FROM produtos p
             JOIN categorias c ON c.id = p.categoria_id
             JOIN marcas m ON m.id = p.marca_id
@@ -110,10 +110,10 @@ public class ProdutosRepository : IProdutosRepository
     public async Task<Produtos?> ObterProdutoPorSku(string sku)
     {
         const string sql = @"
-            SELECT p.id AS Id, p.produto, p.descricao, p.ativo,
-                   c.id AS CategoriaId, c.categoria, c.descricao, c.ativo,
-                   m.id AS MarcaId, m.marca, m.descricao, m.ativo,
-                   u.id AS UnidadeMedidaId, u.sigla, u.descricao, u.categoria, u.ativo
+            SELECT p.id AS Id, p.produto AS Produto, p.descricao AS Descricao, p.ativo AS Ativo,
+                   c.id AS CategoriaId, c.categoria AS CategoriaNome, c.descricao AS CategoriaDescricao, c.ativo AS CategoriaAtivo,
+                   m.id AS MarcaId, m.marca AS MarcaNome, m.descricao AS MarcaDescricao, m.ativo AS MarcaAtivo,
+                   u.id AS UnidadeMedidaId, u.sigla AS UnidadeMedidaSigla, u.descricao AS UnidadeMedidaDescricao, u.categoria AS UnidadeMedidaCategoria, u.ativo AS UnidadeMedidaAtivo
             FROM produtos p
             JOIN categorias c ON c.id = p.categoria_id
             JOIN marcas m ON m.id = p.marca_id
@@ -252,6 +252,19 @@ public class ProdutosRepository : IProdutosRepository
         var itens = await multi.ReadAsync<ProdutosResumo>();
 
         return new ResultadoPaginado<ProdutosResumo>(itens, total, pagina, tamanhoDaPagina);
+    }
+
+    public async Task<bool> ExisteProduto(string produto, int? ignorarId = null)
+    {
+        var sql = "SELECT COUNT(1) FROM produtos WHERE unaccent(produto::text) ILIKE unaccent(@Produto::text)";
+        if (ignorarId.HasValue)
+            sql += " AND id != @IgnorarId";
+
+        return await _session.Connection.ExecuteScalarAsync<int>(
+            sql,
+            new { Produto = produto, IgnorarId = ignorarId },
+            transaction: _session.Transaction
+        ) > 0;
     }
 
     private static Produtos BuildProdutoFromDto(ProdutoDto dto)

@@ -36,7 +36,9 @@ export type BairroDto = BairroResumo;
 
 export const bairroSchema = z.object({
   bairro: z.string().min(1, "Bairro é obrigatório."),
-  cidadeId: z.number({ required_error: "Cidade é obrigatória." }).nullable(),
+  cidadeId: z.number({ required_error: "Cidade é obrigatória." }).nullable().refine((val) => val !== null, {
+    message: "Selecione uma cidade.",
+  }),
 })
 
 export type BairroFormValues = z.infer<typeof bairroSchema>

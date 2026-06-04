@@ -26,9 +26,9 @@ export default function RootLayout({
         <Providers>
           <TooltipProvider>
           <SidebarProvider>
-            <div className="flex min-h-screen w-full">
+            <div className="flex h-screen w-full overflow-hidden">
               <AppSidebar />
-              <div className="flex-1 flex flex-col min-h-screen">
+              <div className="flex-1 flex flex-col h-screen overflow-hidden">
                 <header className="flex h-12 shrink-0 items-center gap-2 border-b border-sidebar-border px-4 bg-card">
                   <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground transition-colors duration-200" />
                   <div className="h-4 w-px bg-border mx-2" />
@@ -36,7 +36,7 @@ export default function RootLayout({
                     Painel de Administração
                   </h1>
                 </header>
-                <main className="flex-1 p-6 bg-slate-50/50 dark:bg-slate-900/10">
+                <main className="flex-1 flex flex-col p-6 bg-slate-50/50 dark:bg-slate-900/10 overflow-hidden">
                   {children}
                 </main>
               </div>

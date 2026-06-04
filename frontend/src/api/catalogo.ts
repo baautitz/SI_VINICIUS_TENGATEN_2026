@@ -4,6 +4,7 @@ import type { UnidadeMedida, UnidadeMedidaFormValues, UnidadeMedidaResumo } from
 import type { Marca, MarcaFormValues, MarcaResumo } from "@/features/catalogo/marcas/types";
 import type { Categoria, CategoriaFormValues, CategoriaResumo } from "@/features/catalogo/categorias/types";
 import type { SkuAtributoChave, SkuAtributoChaveFormValues, SkuAtributoChaveResumo } from "@/features/catalogo/atributos/types";
+import type { Produto, ProdutoFormValues, ProdutoResumo } from "@/features/catalogo/produtos/types";
 
 export const unidadesMedidaApi = {
   list: (search?: string, page = 1, pageSize = 20) =>
@@ -48,3 +49,15 @@ export const atributosApi = {
   update: (id: number, data: SkuAtributoChaveFormValues) => http.put<Resultado<SkuAtributoChave>>(`/api/catalogo/atributos/${id}`, data),
   delete: (id: number) => http.delete(`/api/catalogo/atributos/${id}`),
 };
+
+export const produtosApi = {
+  list: (search?: string, page = 1, pageSize = 20) =>
+    http.get<PaginatedResult<ProdutoResumo>>(
+      `/api/catalogo/produtos?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`
+    ),
+  getById: (id: number) => http.get<Produto>(`/api/catalogo/produtos/${id}`),
+  create: (data: ProdutoFormValues) => http.post<Resultado<Produto>>("/api/catalogo/produtos", data),
+  update: (id: number, data: ProdutoFormValues) => http.put<Resultado<Produto>>(`/api/catalogo/produtos/${id}`, data),
+  delete: (id: number) => http.delete(`/api/catalogo/produtos/${id}`),
+};
+

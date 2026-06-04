@@ -4,13 +4,20 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { UpsertDialog } from "@/components/ui/upsert-dialog";
 import { DialogClose } from "@/components/ui/dialog";
+import { FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FormFieldUI } from "@/components/ui/form-field-ui";
 import { TransportadoraInput } from "@/components/entity-inputs/transportadora-input";
 import { EstadoInput } from "@/components/entity-inputs/estado-input";
 import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
-import { veiculoSchema, VeiculoResumo, Veiculo, VeiculoFormValues } from "./types";
+import {
+  veiculoSchema,
+  VeiculoResumo,
+  Veiculo,
+  VeiculoFormValues,
+} from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { veiculosApi } from "@/api/logistica";
 
@@ -54,7 +61,7 @@ export function VeiculosUpsert(props: VeiculosUpsertProps) {
   return (
     <VeiculosUpsertForm
       open={open}
-      editingItem={isEditMode ? fullItem ?? null : null}
+      editingItem={isEditMode ? (fullItem ?? null) : null}
       onClose={onClose}
       onSuccess={onSuccess}
     />
@@ -142,6 +149,19 @@ function VeiculosUpsertForm({
       >
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-start gap-4">
+            {editingItem && (
+              <div className="w-24 shrink-0">
+                <div className="flex flex-col gap-1.5">
+                  <FieldLabel>Código</FieldLabel>
+                  <Input
+                    value={editingItem.id}
+                    disabled
+                    className="h-8 text-xs font-mono"
+                    inputSize="small"
+                  />
+                </div>
+              </div>
+            )}
             <div className="w-fit">
               <form.Field
                 name="placa"

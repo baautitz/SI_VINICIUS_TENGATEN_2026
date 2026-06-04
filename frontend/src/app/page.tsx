@@ -13,6 +13,7 @@ import {
   Tag,
   Layers,
   Sliders,
+  Package,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -20,10 +21,19 @@ const systemModules = [
   {
     name: "Catálogo",
     entities: [
-      { name: "Unidades de Medida", url: "/catalogo/unidades-medida", icon: Scale },
+      {
+        name: "Produtos",
+        url: "/catalogo/produtos",
+        icon: Package,
+      },
       { name: "Marcas", url: "/catalogo/marcas", icon: Tag },
       { name: "Categorias", url: "/catalogo/categorias", icon: Layers },
       { name: "Atributos", url: "/catalogo/atributos", icon: Sliders },
+      {
+        name: "Unidades de Medida",
+        url: "/catalogo/unidades-medida",
+        icon: Scale,
+      },
     ],
   },
   {
@@ -46,7 +56,11 @@ const systemModules = [
   {
     name: "Logística",
     entities: [
-      { name: "Transportadoras", url: "/logistica/transportadoras", icon: Truck },
+      {
+        name: "Transportadoras",
+        url: "/logistica/transportadoras",
+        icon: Truck,
+      },
       { name: "Veículos", url: "/logistica/veiculos", icon: Car },
     ],
   },
@@ -69,7 +83,7 @@ export default function Home() {
               const Icon = entity.icon;
               return (
                 <Link key={entity.name} href={entity.url}>
-                  <Card className="hover:bg-muted/50 transition-colors border-muted shadow-sm">
+                  <Card className="hover:bg-muted/50 transition-colors border-muted">
                     <CardHeader className="flex flex-row items-center gap-4 space-y-0 px-4 py-2">
                       <div className="flex size-10 items-center justify-center rounded-lg bg-primary/5 text-primary">
                         <Icon className="size-5" />

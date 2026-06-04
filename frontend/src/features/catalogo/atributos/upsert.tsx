@@ -145,21 +145,38 @@ function AtributosUpsertForm({
         }}
       >
         <FieldGroup className="gap-6">
-          <form.Field
-            name="chave"
-            validators={{ onChange: skuAtributoChaveSchema.shape.chave }}
-          >
-            {(field) => (
-              <FormFieldUI
-                field={field}
-                label="Atributo"
-                inputSize="medium"
-                getFieldError={getFieldError}
-                maxLength={100}
-                placeholder="Ex: Cor, Voltagem, Tamanho..."
-              />
+          <div className="flex flex-wrap gap-4 items-start w-full">
+            {editingItem && (
+              <div className="w-24 shrink-0">
+                <div className="flex flex-col gap-1.5">
+                  <FieldLabel>Código</FieldLabel>
+                  <Input
+                    value={editingItem.id}
+                    disabled
+                    className="h-8 text-xs font-mono"
+                    inputSize="small"
+                  />
+                </div>
+              </div>
             )}
-          </form.Field>
+            <div className="flex-1 min-w-48">
+              <form.Field
+                name="chave"
+                validators={{ onChange: skuAtributoChaveSchema.shape.chave }}
+              >
+                {(field) => (
+                  <FormFieldUI
+                    field={field}
+                    label="Atributo"
+                    inputSize="full"
+                    getFieldError={getFieldError}
+                    maxLength={100}
+                    placeholder="Ex: Cor, Voltagem, Tamanho..."
+                  />
+                )}
+              </form.Field>
+            </div>
+          </div>
 
           <form.Field
             name="valores"

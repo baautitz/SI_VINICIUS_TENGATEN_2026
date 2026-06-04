@@ -38,7 +38,9 @@ export const cidadeSchema = z.object({
     .int("DDD deve ser um número inteiro.")
     .positive("DDD deve ser maior que zero.")
     .nullable(),
-  estadoId: z.number({ required_error: "Estado é obrigatório." }).nullable(),
+  estadoId: z.number({ required_error: "Estado é obrigatório." }).nullable().refine((val) => val !== null, {
+    message: "Selecione um estado.",
+  }),
 })
 
 export type CidadeFormValues = z.infer<typeof cidadeSchema>

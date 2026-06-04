@@ -15,4 +15,5 @@ public interface IProdutosRepository
   public Task<bool> DeletarProduto(int id);
   public Task<ResultadoPaginado<ProdutosResumo>> ObterProdutosResumo(int pagina = 1, int tamanhoDaPagina = 20);
   public Task<ResultadoPaginado<ProdutosResumo>> PesquisarProdutos(string termo, int pagina = 1, int tamanhoDaPagina = 20);
+  public Task<bool> ExisteProduto(string produto, int? ignorarId = null);
 }

@@ -282,6 +282,15 @@ public class SkuAtributosChavesRepository : ISkuAtributosChavesRepository
         ) > 0;
     }
 
+    public async Task<List<SkuAtributosValores>> ObterValoresPorIds(IEnumerable<int> ids)
+    {
+        if (ids == null || !ids.Any()) return new List<SkuAtributosValores>();
+        const string sql = "SELECT id, chave_id AS ChaveId, valor FROM sku_atributos_valores WHERE id = ANY(@Ids);";
+        var dtos = await _session.Connection.QueryAsync<ValoresDto>(
+            sql, new { Ids = ids.ToArray() }, transaction: _session.Transaction);
+        return dtos.Select(d => new SkuAtributosValores(d.Id, d.ChaveId, d.Valor)).ToList();
+    }
+
     private sealed record ValoresDto(int Id, int ChaveId, string Valor);
     private sealed record ResumoChaveDto(int Id, string Chave);
 }

@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { UpsertDialog } from "@/components/ui/upsert-dialog";
 import { DialogClose } from "@/components/ui/dialog";
+import { FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FormFieldUI } from "@/components/ui/form-field-ui";
 import { BairroInput } from "@/components/entity-inputs/bairro-input";
@@ -11,7 +13,12 @@ import { PaisInput } from "@/components/entity-inputs/pais-input";
 import { TipoPessoaSelect } from "@/components/tipo-pessoa-select";
 import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
-import { clienteSchema, ClienteResumo, Cliente, ClienteFormValues } from "./types";
+import {
+  clienteSchema,
+  ClienteResumo,
+  Cliente,
+  ClienteFormValues,
+} from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { clientesApi } from "@/api/parceiros";
 import { TipoPessoa } from "@/api/types";
@@ -57,7 +64,7 @@ export function ClientesUpsert(props: ClientesUpsertProps) {
   return (
     <ClientesUpsertForm
       open={open}
-      editingItem={isEditMode ? fullItem ?? null : null}
+      editingItem={isEditMode ? (fullItem ?? null) : null}
       onClose={onClose}
       onSuccess={onSuccess}
     />
@@ -70,9 +77,15 @@ function ClientesUpsertForm({
   onClose,
   onSuccess,
 }: ClientesUpsertFormProps) {
-  const [selectedPais, setSelectedPais] = useState<Pais | null>(editingItem?.nacionalidade ?? null);
-  const [tipoPessoa, setTipoPessoa] = useState<TipoPessoa>(editingItem?.tipoPessoa ?? TipoPessoa.FISICA);
-  const [nacionalidadeId, setNacionalidadeId] = useState<number>(editingItem?.nacionalidade?.id ?? 0);
+  const [selectedPais, setSelectedPais] = useState<Pais | null>(
+    editingItem?.nacionalidade ?? null,
+  );
+  const [tipoPessoa, setTipoPessoa] = useState<TipoPessoa>(
+    editingItem?.tipoPessoa ?? TipoPessoa.FISICA,
+  );
+  const [nacionalidadeId, setNacionalidadeId] = useState<number>(
+    editingItem?.nacionalidade?.id ?? 0,
+  );
 
   const { mutation, globalError, getFieldError, resetErrors } =
     useUpsertMutation({
@@ -113,7 +126,9 @@ function ClientesUpsertForm({
     },
   });
 
-  const isBrasil = selectedPais?.siglaIso === "BRA" || (!selectedPais && nacionalidadeId === 1);
+  const isBrasil =
+    selectedPais?.siglaIso === "BRA" ||
+    (!selectedPais && nacionalidadeId === 1);
 
   return (
     <UpsertDialog
@@ -156,6 +171,19 @@ function ClientesUpsertForm({
       >
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-start gap-4">
+            {editingItem && (
+              <div className="w-24 shrink-0">
+                <div className="flex flex-col gap-1.5">
+                  <FieldLabel>Código</FieldLabel>
+                  <Input
+                    value={editingItem.id}
+                    disabled
+                    className="h-8 text-xs font-mono"
+                    inputSize="small"
+                  />
+                </div>
+              </div>
+            )}
             <div className="w-fit">
               <form.Field
                 name="tipoPessoa"
@@ -237,18 +265,18 @@ function ClientesUpsertForm({
                 validators={{ onChange: clienteSchema.shape.cpfCnpj }}
               >
                 {(field) => {
-                   let label = "Documento";
-                   if (isBrasil) {
-                     label = tipoPessoa === TipoPessoa.FISICA ? "CPF" : "CNPJ";
-                   }
-                   return (
+                  let label = "Documento";
+                  if (isBrasil) {
+                    label = tipoPessoa === TipoPessoa.FISICA ? "CPF" : "CNPJ";
+                  }
+                  return (
                     <FormFieldUI
                       field={field}
                       label={label}
                       getFieldError={getFieldError}
                       inputSize="medium"
                     />
-                   );
+                  );
                 }}
               </form.Field>
             </div>
@@ -261,7 +289,11 @@ function ClientesUpsertForm({
                   {(field) => (
                     <FormFieldUI
                       field={field}
-                      label={isBrasil && tipoPessoa === TipoPessoa.JURIDICA ? "Inscrição Estadual" : "RG"}
+                      label={
+                        isBrasil && tipoPessoa === TipoPessoa.JURIDICA
+                          ? "Inscrição Estadual"
+                          : "RG"
+                      }
                       getFieldError={getFieldError}
                       inputSize="medium"
                     />

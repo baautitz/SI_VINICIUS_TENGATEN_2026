@@ -30,7 +30,9 @@ export type EstadoDto = EstadoResumo;
 export const estadoSchema = z.object({
   estado: z.string().min(1, "Estado é obrigatório."),
   uf: z.string().min(1, "UF é obrigatória.").max(2, "UF deve ter no máximo 2 caracteres."),
-  paisId: z.number({ required_error: "País é obrigatório." }).nullable(),
+  paisId: z.number({ required_error: "País é obrigatório." }).nullable().refine((val) => val !== null, {
+    message: "Selecione um país.",
+  }),
 })
 
 export type EstadoFormValues = z.infer<typeof estadoSchema>

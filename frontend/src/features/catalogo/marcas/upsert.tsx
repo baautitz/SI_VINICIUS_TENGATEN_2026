@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { UpsertDialog } from "@/components/ui/upsert-dialog";
 import { DialogClose } from "@/components/ui/dialog";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FormFieldUI } from "@/components/ui/form-field-ui";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -47,22 +48,28 @@ export function MarcasUpsert(props: MarcasUpsertProps) {
   return (
     <MarcasUpsertForm
       {...props}
-      editingItem={isEditMode ? fullItem ?? null : null}
+      editingItem={isEditMode ? (fullItem ?? null) : null}
     />
   );
 }
 
-function MarcasUpsertForm({ open, editingItem, onClose, onSuccess }: MarcasUpsertProps) {
-  const { mutation, globalError, getFieldError, resetErrors } = useUpsertMutation({
-    mutationFn: async (value: MarcaFormValues) => {
-      return editingItem
-        ? await marcasApi.update(editingItem.id, value)
-        : await marcasApi.create(value);
-    },
-    queryKey: ["marcas"],
-    onSuccessCallback: onSuccess,
-    onClose: onClose,
-  });
+function MarcasUpsertForm({
+  open,
+  editingItem,
+  onClose,
+  onSuccess,
+}: MarcasUpsertProps) {
+  const { mutation, globalError, getFieldError, resetErrors } =
+    useUpsertMutation({
+      mutationFn: async (value: MarcaFormValues) => {
+        return editingItem
+          ? await marcasApi.update(editingItem.id, value)
+          : await marcasApi.create(value);
+      },
+      queryKey: ["marcas"],
+      onSuccessCallback: onSuccess,
+      onClose: onClose,
+    });
 
   const form = useForm({
     defaultValues: {
@@ -94,7 +101,11 @@ function MarcasUpsertForm({ open, editingItem, onClose, onSuccess }: MarcasUpser
             selector={(state) => [state.canSubmit, state.isSubmitting]}
           >
             {([canSubmit, isSubmitting]) => (
-              <Button type="submit" form="upsert-marcas" disabled={!canSubmit || isSubmitting}>
+              <Button
+                type="submit"
+                form="upsert-marcas"
+                disabled={!canSubmit || isSubmitting}
+              >
                 {isSubmitting ? "Salvando..." : "Salvar"}
               </Button>
             )}
@@ -112,20 +123,37 @@ function MarcasUpsertForm({ open, editingItem, onClose, onSuccess }: MarcasUpser
         }}
       >
         <FieldGroup className="gap-4">
-          <form.Field
-            name="marca"
-            validators={{ onChange: marcaSchema.shape.marca }}
-          >
-            {(field) => (
-              <FormFieldUI
-                field={field}
-                label="Marca"
-                inputSize="medium"
-                getFieldError={getFieldError}
-                maxLength={100}
-              />
+          <div className="flex flex-wrap gap-4 items-start w-full">
+            {editingItem && (
+              <div className="w-24 shrink-0">
+                <div className="flex flex-col gap-1.5">
+                  <FieldLabel>Código</FieldLabel>
+                  <Input
+                    value={editingItem.id}
+                    disabled
+                    className="h-8 text-xs font-mono"
+                    inputSize="small"
+                  />
+                </div>
+              </div>
             )}
-          </form.Field>
+            <div className="flex-1 min-w-48">
+              <form.Field
+                name="marca"
+                validators={{ onChange: marcaSchema.shape.marca }}
+              >
+                {(field) => (
+                  <FormFieldUI
+                    field={field}
+                    label="Marca"
+                    inputSize="full"
+                    getFieldError={getFieldError}
+                    maxLength={100}
+                  />
+                )}
+              </form.Field>
+            </div>
+          </div>
 
           <form.Field
             name="descricao"
@@ -145,14 +173,19 @@ function MarcasUpsertForm({ open, editingItem, onClose, onSuccess }: MarcasUpser
           {editingItem && (
             <form.Field name="ativo">
               {(field) => {
-                const error = getFieldError(field.name, field.state.meta.errors);
+                const error = getFieldError(
+                  field.name,
+                  field.state.meta.errors,
+                );
                 return (
                   <Field orientation="horizontal" data-invalid={!!error}>
                     <Checkbox
                       id={field.name}
                       name={field.name}
                       checked={field.state.value}
-                      onCheckedChange={(checked) => field.handleChange(!!checked)}
+                      onCheckedChange={(checked) =>
+                        field.handleChange(!!checked)
+                      }
                     />
                     <FieldLabel htmlFor={field.name}>Ativo</FieldLabel>
                   </Field>

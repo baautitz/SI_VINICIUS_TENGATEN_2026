@@ -82,6 +82,9 @@ export function EntityInput<T, TResumo = T>({
       setSelectedItem(null);
       setSearchText("");
       setSelectedLabel("");
+      if (!isBlur) {
+        setIsOpen(true);
+      }
       return;
     }
     if (isBlur && selectedLabel === text) return;
@@ -167,6 +170,7 @@ export function EntityInput<T, TResumo = T>({
             size="icon-xs"
             variant="ghost"
             type="button"
+            tabIndex={-1}
             className="absolute right-1 top-1 h-6 w-6 text-muted-foreground hover:text-foreground"
             onClick={() => setIsOpen(true)}
           >

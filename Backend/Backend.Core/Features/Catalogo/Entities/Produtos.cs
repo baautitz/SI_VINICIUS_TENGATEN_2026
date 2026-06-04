@@ -8,23 +8,20 @@ public class Produtos
 
     public int Id { get; private set; }
     public string Produto { get; private set; }
-    public string Descricao { get; private set; }
+    public string? Descricao { get; private set; }
     public bool Ativo { get; private set; }
     public Categorias Categoria { get; private set; }
     public Marcas Marca { get; private set; }
     public UnidadesMedida UnidadeMedida { get; private set; }
     public IReadOnlyCollection<Skus> Skus => _skus.AsReadOnly();
 
-    public Produtos(string produto, string descricao, Categorias categoria, Marcas marca, UnidadesMedida unidadeMedida)
+    public Produtos(string produto, string? descricao, Categorias categoria, Marcas marca, UnidadesMedida unidadeMedida)
     {
         produto = TextNormalization.Normalize(produto);
-        descricao = TextNormalization.Normalize(descricao);
+        descricao = string.IsNullOrWhiteSpace(descricao) ? "" : TextNormalization.Normalize(descricao);
 
         if (string.IsNullOrWhiteSpace(produto))
             throw new DomainException("Nome do produto é obrigatório.");
-
-        if (string.IsNullOrWhiteSpace(descricao))
-            throw new DomainException("Descrição do produto é obrigatória.");
 
         Categoria = categoria ?? throw new DomainException("Categoria é obrigatória.");
         Marca = marca ?? throw new DomainException("Marca é obrigatória.");
@@ -35,22 +32,19 @@ public class Produtos
         Ativo = true;
     }
 
-    public Produtos(int id, string produto, string descricao, Categorias categoria, Marcas marca, UnidadesMedida unidadeMedida)
+    public Produtos(int id, string produto, string? descricao, Categorias categoria, Marcas marca, UnidadesMedida unidadeMedida)
         : this(produto, descricao, categoria, marca, unidadeMedida)
     {
         Id = id;
     }
 
-    public void Atualizar(string produto, string descricao, Categorias categoria, Marcas marca, UnidadesMedida unidadeMedida)
+    public void Atualizar(string produto, string? descricao, Categorias categoria, Marcas marca, UnidadesMedida unidadeMedida)
     {
         produto = TextNormalization.Normalize(produto);
-        descricao = TextNormalization.Normalize(descricao);
+        descricao = string.IsNullOrWhiteSpace(descricao) ? "" : TextNormalization.Normalize(descricao);
 
         if (string.IsNullOrWhiteSpace(produto))
             throw new DomainException("Nome do produto é obrigatório.");
-
-        if (string.IsNullOrWhiteSpace(descricao))
-            throw new DomainException("Descrição do produto é obrigatória.");
 
         Categoria = categoria ?? throw new DomainException("Categoria é obrigatória.");
         Marca = marca ?? throw new DomainException("Marca é obrigatória.");

@@ -30,8 +30,8 @@ public class SkusRepository : ISkusRepository
             ORDER BY sku;";
 
         const string atributosSql = @"
-            SELECT savr.sku AS Sku, sav.id AS Id, sav.chave_id AS ChaveId, sav.valor AS Valor,
-                   sak.id AS ChaveId, sak.chave AS Chave
+            SELECT savr.sku AS Sku, sav.chave_id AS ChaveId, sav.valor AS Valor,
+                   sav.id AS Id, sak.chave AS Chave
             FROM skus_atributos_valores_relacionamento savr
             JOIN sku_atributos_valores sav ON sav.id = savr.valor_id
             JOIN sku_atributos_chaves sak ON sak.id = sav.chave_id
@@ -77,8 +77,8 @@ public class SkusRepository : ISkusRepository
         const string skuSql = "SELECT sku, gtin_ean AS GtinEan, preco AS Preco, estoque AS Estoque, ativo AS Ativo FROM skus WHERE sku = @Sku;";
 
         const string atributosSql = @"
-            SELECT savr.sku AS Sku, sav.id AS Id, sav.chave_id AS ChaveId, sav.valor AS Valor,
-                   sak.id AS ChaveId, sak.chave AS Chave
+            SELECT savr.sku AS Sku, sav.chave_id AS ChaveId, sav.valor AS Valor,
+                   sav.id AS Id, sak.chave AS Chave
             FROM skus_atributos_valores_relacionamento savr
             JOIN sku_atributos_valores sav ON sav.id = savr.valor_id
             JOIN sku_atributos_chaves sak ON sak.id = sav.chave_id

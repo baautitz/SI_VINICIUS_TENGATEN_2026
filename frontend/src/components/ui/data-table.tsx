@@ -91,8 +91,8 @@ export function DataTable<TData, TValue>({
   });
 
   return (
-    <div className="space-y-4 h-full flex flex-col">
-      <div className="flex items-center justify-between gap-2">
+    <div className="space-y-4 flex-1 min-h-0 flex flex-col">
+      <div className="flex items-center justify-between gap-2 shrink-0">
         <div className="flex flex-1 items-center gap-2">
           {onGlobalFilterChange && (
             <div className="relative max-w-sm flex-1">
@@ -109,135 +109,133 @@ export function DataTable<TData, TValue>({
         </div>
       </div>
 
-      <div className="rounded-xl border bg-card relative overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader className="bg-muted/50">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow
-                  key={headerGroup.id}
-                  className="hover:bg-transparent border-b"
-                >
-                  {headerGroup.headers.map((header) => {
-                    return (
-                      <TableHead
-                        key={header.id}
-                        className="whitespace-nowrap h-11 py-2 font-bold text-foreground"
-                        style={{
-                          width:
-                            header.column.getSize() !== 150
-                              ? header.column.getSize()
-                              : undefined,
-                        }}
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                      </TableHead>
-                    );
-                  })}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getIsAllPageRowsSelected() &&
-                totalItems !== undefined &&
-                totalItems > table.getRowModel().rows.length &&
-                onSelectAllAcrossPagesChange && (
-                  <TableRow className="bg-muted/30 hover:bg-muted/30 border-b">
-                    <TableCell
-                      colSpan={columns.length}
-                      className="py-3 text-center text-sm"
+      <div className="rounded-xl border bg-card relative overflow-hidden flex-1 min-h-0 flex flex-col">
+        <Table>
+          <TableHeader className="sticky top-0 bg-muted z-10">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow
+                key={headerGroup.id}
+                className="hover:bg-transparent border-b"
+              >
+                {headerGroup.headers.map((header) => {
+                  return (
+                    <TableHead
+                      key={header.id}
+                      className="whitespace-nowrap h-11 py-2 font-bold text-foreground"
+                      style={{
+                        width:
+                          header.column.getSize() !== 150
+                            ? header.column.getSize()
+                            : undefined,
+                      }}
                     >
-                      {selectAllAcrossPages ? (
-                        <>
-                          <span className="text-muted-foreground mr-2">
-                            Todas as <strong>{totalItems}</strong> entidades
-                            estão selecionadas.
-                          </span>
-                          <Button
-                            variant="link"
-                            className="h-auto p-0 font-semibold"
-                            onClick={() => onSelectAllAcrossPagesChange(false)}
-                          >
-                            Limpar seleção
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-muted-foreground mr-2">
-                            Todas as{" "}
-                            <strong>{table.getRowModel().rows.length}</strong>{" "}
-                            entidades desta página estão selecionadas.
-                          </span>
-                          <Button
-                            variant="link"
-                            className="h-auto p-0 font-semibold"
-                            onClick={() => onSelectAllAcrossPagesChange(true)}
-                          >
-                            Selecionar todas as {totalItems} entidades
-                          </Button>
-                        </>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                )}
-              {loading ? (
-                <TableRow>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                    </TableHead>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getIsAllPageRowsSelected() &&
+              totalItems !== undefined &&
+              totalItems > table.getRowModel().rows.length &&
+              onSelectAllAcrossPagesChange && (
+                <TableRow className="bg-muted/30 hover:bg-muted/30 border-b">
                   <TableCell
                     colSpan={columns.length}
-                    className="h-48 text-center"
+                    className="py-3 text-center text-sm"
                   >
-                    <div className="flex flex-col items-center justify-center gap-3 py-8 text-muted-foreground">
-                      <Spinner className="size-6" />
-                      <span className="font-medium animate-pulse">
-                        Carregando dados...
-                      </span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    className="group border-b last:border-0"
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell
-                        key={cell.id}
-                        className="py-3"
-                        style={{
-                          width:
-                            cell.column.getSize() !== 150
-                              ? cell.column.getSize()
-                              : undefined,
-                        }}
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-48 text-center text-muted-foreground"
-                  >
-                    Nenhum resultado encontrado.
+                    {selectAllAcrossPages ? (
+                      <>
+                        <span className="text-muted-foreground mr-2">
+                          Todas as <strong>{totalItems}</strong> entidades
+                          estão selecionadas.
+                        </span>
+                        <Button
+                          variant="link"
+                          className="h-auto p-0 font-semibold"
+                          onClick={() => onSelectAllAcrossPagesChange(false)}
+                        >
+                          Limpar seleção
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-muted-foreground mr-2">
+                          Todas as{" "}
+                          <strong>{table.getRowModel().rows.length}</strong>{" "}
+                          entidades desta página estão selecionadas.
+                        </span>
+                        <Button
+                          variant="link"
+                          className="h-auto p-0 font-semibold"
+                          onClick={() => onSelectAllAcrossPagesChange(true)}
+                        >
+                          Selecionar todas as {totalItems} entidades
+                        </Button>
+                      </>
+                    )}
                   </TableCell>
                 </TableRow>
               )}
-            </TableBody>
-          </Table>
-        </div>
+            {loading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-48 text-center"
+                >
+                  <div className="flex flex-col items-center justify-center gap-3 py-8 text-muted-foreground">
+                    <Spinner className="size-6" />
+                    <span className="font-medium animate-pulse">
+                      Carregando dados...
+                    </span>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                  className="group border-b last:border-0"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell
+                      key={cell.id}
+                      className="py-3"
+                      style={{
+                        width:
+                          cell.column.getSize() !== 150
+                            ? cell.column.getSize()
+                            : undefined,
+                      }}
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-48 text-center text-muted-foreground"
+                >
+                  Nenhum resultado encontrado.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
 
       <div className="flex items-center justify-between mt-auto">

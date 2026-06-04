@@ -11,7 +11,7 @@ export function FeatureLayout({
   ...props
 }: FeatureLayoutProps) {
   return (
-    <div className={cn("flex flex-col gap-4 h-full", className)} {...props}>
+    <div className={cn("flex flex-col gap-4 flex-1 min-h-0", className)} {...props}>
       {children}
     </div>
   );

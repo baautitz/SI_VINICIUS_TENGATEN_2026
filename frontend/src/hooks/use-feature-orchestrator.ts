@@ -47,7 +47,7 @@ export function useFeatureOrchestrator<TDto extends { id: number }>({
   const { data, isLoading } = useQuery({
     queryKey: [queryKey, list.deferredSearch, list.page],
     queryFn: async () =>
-      await fetchPage(list.deferredSearch.trim(), list.page, 10),
+      await fetchPage(list.deferredSearch.trim(), list.page, 50),
   });
 
   const deleteMutation = useMutation({

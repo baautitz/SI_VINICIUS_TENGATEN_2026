@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -19,9 +19,24 @@ export function ListDialog({
   title,
   children,
 }: ListDialogProps) {
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      const timer = setTimeout(() => {
+        const input = contentRef.current?.querySelector("input");
+        if (input) {
+          input.focus();
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
+        ref={contentRef}
         className="flex flex-col gap-0 p-0 overflow-hidden"
         style={{ width: "98vw", maxWidth: "98vw", height: "95vh" }}
       >
