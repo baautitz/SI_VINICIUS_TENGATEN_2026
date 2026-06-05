@@ -154,8 +154,8 @@ export function DataTable<TData, TValue>({
                     {selectAllAcrossPages ? (
                       <>
                         <span className="text-muted-foreground mr-2">
-                          Todas as <strong>{totalItems}</strong> entidades
-                          estão selecionadas.
+                          Todas as <strong>{totalItems}</strong> entidades estão
+                          selecionadas.
                         </span>
                         <Button
                           variant="link"
@@ -188,7 +188,7 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-48 text-center"
+                  className="full text-center"
                 >
                   <div className="flex flex-col items-center justify-center gap-3 py-8 text-muted-foreground">
                     <Spinner className="size-6" />
@@ -228,7 +228,7 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-48 text-center text-muted-foreground"
+                  className="h-full text-center text-muted-foreground"
                 >
                   Nenhum resultado encontrado.
                 </TableCell>

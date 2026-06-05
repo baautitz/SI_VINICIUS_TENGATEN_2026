@@ -37,6 +37,7 @@ import {
   SidebarHeader,
   SidebarTrigger,
   useSidebar,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 
 import {
@@ -169,7 +170,7 @@ function useSidebarSectionOpen(key: string, defaultOpen: boolean): boolean {
   return React.useSyncExternalStore(
     sidebarStore.subscribe,
     getSnapshot,
-    getServerSnapshot
+    getServerSnapshot,
   );
 }
 
@@ -205,7 +206,7 @@ const groups = [
 ];
 
 interface SidebarGroupSectionProps {
-  group: typeof groups[number];
+  group: (typeof groups)[number];
   pathname: string;
 }
 
@@ -288,32 +289,33 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="flex h-12 items-center justify-end px-3 group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:px-0 border-b border-sidebar-border shrink-0">
-        <SidebarTrigger />
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={pathname === "/"}
+              tooltip="Início"
+            >
+              <Link href="/">
+                <LayoutDashboard />
+                <span>Início</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === "/"}
-                  tooltip="Início"
-                >
-                  <Link href="/">
-                    <LayoutDashboard />
-                    <span>Início</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
         {groups.map((group) => (
-          <SidebarGroupSection key={group.id} group={group} pathname={pathname} />
+          <SidebarGroupSection
+            key={group.id}
+            group={group}
+            pathname={pathname}
+          />
         ))}
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarTrigger className="ml-auto" />
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );
