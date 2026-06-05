@@ -6,8 +6,21 @@ BEGIN
     'ENTRADA',
     'SAIDA',
     'AJUSTE',
-    'VENDA'
+    'VENDA',
+    'BALANCO'
   );
 EXCEPTION
   WHEN duplicate_object THEN NULL;
 END $$;
+
+DO $$
+BEGIN
+  CREATE TYPE projeto_sistemas.status_movimentacao_estoque_enum AS ENUM (
+    'RASCUNHO',
+    'CONFIRMADA',
+    'CANCELADA'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+

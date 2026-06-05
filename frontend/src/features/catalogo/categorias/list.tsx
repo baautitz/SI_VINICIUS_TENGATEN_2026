@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FeatureLayout } from "@/components/ui/feature-layout";
+import { Badge } from "@/components/ui/badge";
 import { CategoriaResumo } from "./types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 
@@ -73,15 +74,12 @@ export function CategoriasList({
       cell: ({ row }) => {
         const ativo = row.getValue("ativo");
         return (
-          <span
-            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-              ativo
-                ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-            }`}
+          <Badge
+            variant={ativo ? "default" : "secondary"}
+            className={ativo ? "bg-emerald-500 hover:bg-emerald-600 text-white border-none" : ""}
           >
             {ativo ? "Ativo" : "Inativo"}
-          </span>
+          </Badge>
         );
       },
     },

@@ -15,6 +15,8 @@ interface UpsertDialogProps {
   children?: React.ReactNode;
   footer?: React.ReactNode;
   loading?: boolean;
+  onPointerDownOutside?: React.ComponentProps<typeof DialogContent>["onPointerDownOutside"];
+  onEscapeKeyDown?: React.ComponentProps<typeof DialogContent>["onEscapeKeyDown"];
 }
 
 export function UpsertDialog({
@@ -24,6 +26,8 @@ export function UpsertDialog({
   children,
   footer,
   loading = false,
+  onPointerDownOutside,
+  onEscapeKeyDown,
 }: UpsertDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -31,6 +35,8 @@ export function UpsertDialog({
         className="flex flex-col gap-0 p-0 overflow-hidden"
         style={{ width: "98vw", maxWidth: "98vw", height: "95vh" }}
         aria-describedby={undefined}
+        onPointerDownOutside={onPointerDownOutside}
+        onEscapeKeyDown={onEscapeKeyDown}
       >
         <DialogHeader className="p-4 border-b bg-background shrink-0">
           <DialogTitle>{title}</DialogTitle>

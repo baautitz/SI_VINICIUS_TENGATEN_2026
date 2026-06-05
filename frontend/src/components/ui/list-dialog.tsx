@@ -39,6 +39,7 @@ export function ListDialog({
         ref={contentRef}
         className="flex flex-col gap-0 p-0 overflow-hidden"
         style={{ width: "98vw", maxWidth: "98vw", height: "95vh" }}
+        aria-describedby={undefined}
       >
         <DialogHeader className="p-4 border-b bg-background shrink-0">
           <DialogTitle>{title}</DialogTitle>

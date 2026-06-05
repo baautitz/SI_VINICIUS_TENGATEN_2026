@@ -15,7 +15,14 @@ public class Venda
 
     public Emitentes Emitente { get; private set; }
     public Clientes Cliente { get; private set; }
-    public IReadOnlyCollection<VendaItens> Itens => _itens.AsReadOnly();
+        public IReadOnlyCollection<VendaItens> Itens => _itens.AsReadOnly();
+
+    protected Venda() { }
+
+    public Venda(int id)
+    {
+        Id = id;
+    }
 
     public Venda(DateTime dataVenda, Emitentes emitente, Clientes cliente, IEnumerable<VendaItens> itens, string? observacao = null)
     {

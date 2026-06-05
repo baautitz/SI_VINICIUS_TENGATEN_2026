@@ -4,6 +4,7 @@ using Backend.Core.Features.Acesso.Entities;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Estoque.Entities.Enums;
 using Backend.Core.Features.NFe.Entities;
+using Backend.Core.Features.Vendas.Entities;
 
 namespace Backend.Core.Features.Estoque.Entities;
 
@@ -14,22 +15,42 @@ public class MovimentacoesEstoques
     public int Id { get; private set; }
     public DateTime DataMovimentacao { get; private set; }
     public TipoMovimentacaoEstoque TipoMovimentacao { get; private set; }
+    public StatusMovimentacaoEstoque Status { get; private set; }
     public string? Observacao { get; private set; }
     public Usuarios? Usuario { get; private set; }
     public Nfes? Nfe { get; private set; }
+    public Venda? Venda { get; private set; }
     public IReadOnlyCollection<MovimentacoesEstoquesItens> MovimentacoesEstoquesItens => _itens.AsReadOnly();
 
-    public MovimentacoesEstoques(TipoMovimentacaoEstoque tipoMovimentacao, Usuarios? usuario = null, Nfes? nfe = null, string? observacao = null)
+    protected MovimentacoesEstoques() { }
+
+    public MovimentacoesEstoques(
+        TipoMovimentacaoEstoque tipoMovimentacao, 
+        Usuarios? usuario = null, 
+        Nfes? nfe = null, 
+        Venda? venda = null, 
+        string? observacao = null, 
+        StatusMovimentacaoEstoque status = StatusMovimentacaoEstoque.RASCUNHO)
     {
         TipoMovimentacao = tipoMovimentacao;
         Usuario = usuario;
         Nfe = nfe;
+        Venda = venda;
         Observacao = TextNormalization.NormalizeOrNull(observacao);
         DataMovimentacao = DateTime.UtcNow;
+        Status = status;
     }
 
-    public MovimentacoesEstoques(int id, DateTime dataMovimentacao, TipoMovimentacaoEstoque tipoMovimentacao, Usuarios? usuario = null, Nfes? nfe = null, string? observacao = null)
-        : this(tipoMovimentacao, usuario, nfe, observacao)
+    public MovimentacoesEstoques(
+        int id, 
+        DateTime dataMovimentacao, 
+        TipoMovimentacaoEstoque tipoMovimentacao, 
+        Usuarios? usuario = null, 
+        Nfes? nfe = null, 
+        Venda? venda = null, 
+        string? observacao = null, 
+        StatusMovimentacaoEstoque status = StatusMovimentacaoEstoque.RASCUNHO)
+        : this(tipoMovimentacao, usuario, nfe, venda, observacao, status)
     {
         Id = id;
         DataMovimentacao = dataMovimentacao;
@@ -76,5 +97,25 @@ public class MovimentacoesEstoques
     public void AtualizarObservacao(string? observacao)
     {
         Observacao = TextNormalization.NormalizeOrNull(observacao);
+    }
+
+    public void Confirmar()
+    {
+        if (Status != StatusMovimentacaoEstoque.RASCUNHO)
+            throw new DomainException($"Apenas movimentações em rascunho podem ser confirmadas. Status atual: {Status}");
+
+        if (!_itens.Any())
+            throw new DomainException("A movimentação deve conter pelo menos um item para ser confirmada.");
+
+        Status = StatusMovimentacaoEstoque.CONFIRMADA;
+        DataMovimentacao = DateTime.UtcNow;
+    }
+
+    public void Cancelar()
+    {
+        if (Status != StatusMovimentacaoEstoque.CONFIRMADA)
+            throw new DomainException($"Apenas movimentações confirmadas podem ser canceladas. Status atual: {Status}");
+
+        Status = StatusMovimentacaoEstoque.CANCELADA;
     }
 }

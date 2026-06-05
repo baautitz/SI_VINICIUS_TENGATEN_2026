@@ -61,3 +61,20 @@ export const produtosApi = {
   delete: (id: number) => http.delete(`/api/catalogo/produtos/${id}`),
 };
 
+export interface SkuResumo {
+  sku: string;
+  gtinEan?: string | null;
+  preco: number;
+  estoque: number;
+  ativo: boolean;
+}
+
+export const skusApi = {
+  list: (search?: string, page = 1, pageSize = 20) =>
+    http.get<PaginatedResult<SkuResumo>>(
+      `/api/catalogo/skus?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`
+    ),
+  getBySku: (sku: string) => http.get<SkuResumo>(`/api/catalogo/skus/${sku}`),
+};
+
+

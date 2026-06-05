@@ -11,6 +11,8 @@ public class MovimentacoesEstoquesItens
     public decimal CustoUnitario { get; private set; }
     public decimal ValorTotal => Quantidade * CustoUnitario;
 
+    public decimal? QuantidadeAnterior { get; private set; }
+
     public Skus Sku { get; private set; }
 
     public MovimentacoesEstoquesItens(Skus sku, decimal quantidade, decimal custoUnitario)
@@ -29,11 +31,17 @@ public class MovimentacoesEstoquesItens
         CustoUnitario = custoUnitario;
     }
 
-    public MovimentacoesEstoquesItens(int id, int movimentacaoId, Skus sku, decimal quantidade, decimal custoUnitario)
+    public MovimentacoesEstoquesItens(int id, int movimentacaoId, Skus sku, decimal quantidade, decimal custoUnitario, decimal? quantidadeAnterior = null)
         : this(sku, quantidade, custoUnitario)
     {
         Id = id;
         MovimentacaoId = movimentacaoId;
+        QuantidadeAnterior = quantidadeAnterior;
+    }
+
+    public void DefinirQuantidadeAnterior(decimal quantidade)
+    {
+        QuantidadeAnterior = quantidade;
     }
 
     public void AtualizarQuantidade(decimal quantidade)

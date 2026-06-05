@@ -32,6 +32,14 @@ import { produtosApi, atributosApi } from "@/api/catalogo";
 import { Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { CategoriaInput } from "@/components/entity-inputs/categoria-input";
 import { MarcaInput } from "@/components/entity-inputs/marca-input";
 import { UnidadeMedidaInput } from "@/components/entity-inputs/unidade-medida-input";
@@ -691,28 +699,28 @@ function ProdutosUpsertForm({
                     </div>
 
                     <div className="overflow-x-auto border rounded-lg">
-                      <table className="w-full text-sm text-left border-collapse">
-                        <thead>
-                          <tr className="bg-muted/40 border-b text-xs font-semibold text-muted-foreground uppercase">
-                            <th className="p-3">Código SKU</th>
-                            <th className="p-3">Variação</th>
-                            <th className="p-3">Preço (R$)</th>
-                            <th className="p-3">
+                      <Table>
+                        <TableHeader className="bg-muted/40 border-b text-xs font-semibold text-muted-foreground uppercase">
+                          <TableRow className="hover:bg-transparent border-b">
+                            <TableHead className="p-3 h-10 font-semibold text-muted-foreground">Código SKU</TableHead>
+                            <TableHead className="p-3 h-10 font-semibold text-muted-foreground">Variação</TableHead>
+                            <TableHead className="p-3 h-10 font-semibold text-muted-foreground">Preço (R$)</TableHead>
+                            <TableHead className="p-3 h-10 font-semibold text-muted-foreground">
                               {editingItem
                                 ? "Estoque Atual"
                                 : "Estoque Inicial"}
-                            </th>
-                            <th className="p-3">Barras (EAN)</th>
-                            <th className="p-3 text-center">Ativo</th>
-                          </tr>
-                        </thead>
-                        <tbody>
+                            </TableHead>
+                            <TableHead className="p-3 h-10 font-semibold text-muted-foreground">Barras (EAN)</TableHead>
+                            <TableHead className="p-3 text-center h-10 font-semibold text-muted-foreground">Ativo</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
                           {form.getFieldValue("skus").map((sku, index) => (
-                            <tr
+                            <TableRow
                               key={index}
                               className="border-b hover:bg-muted/10 last:border-0"
                             >
-                              <td className="p-3">
+                              <TableCell className="p-3">
                                 <form.Field
                                   name={`skus[${index}].sku`}
                                   validators={{
@@ -762,11 +770,11 @@ function ProdutosUpsertForm({
                                     );
                                   }}
                                 </form.Field>
-                              </td>
-                              <td className="p-3 font-medium text-foreground">
+                              </TableCell>
+                              <TableCell className="p-3 font-medium text-foreground">
                                 {sku.variantLabel || `Variante #${index + 1}`}
-                              </td>
-                              <td className="p-3">
+                              </TableCell>
+                              <TableCell className="p-3">
                                 <form.Field
                                   name={`skus[${index}].preco`}
                                   validators={{ onChange: skuFormSchema.shape.preco }}
@@ -803,8 +811,8 @@ function ProdutosUpsertForm({
                                     );
                                   }}
                                 </form.Field>
-                              </td>
-                              <td className="p-3">
+                              </TableCell>
+                              <TableCell className="p-3">
                                 <form.Field
                                   name={`skus[${index}].estoque`}
                                   validators={{ onChange: skuFormSchema.shape.estoque }}
@@ -842,8 +850,8 @@ function ProdutosUpsertForm({
                                     );
                                   }}
                                 </form.Field>
-                              </td>
-                              <td className="p-3">
+                              </TableCell>
+                              <TableCell className="p-3">
                                 <form.Field
                                   name={`skus[${index}].gtinEan`}
                                   validators={{ onChange: skuFormSchema.shape.gtinEan }}
@@ -878,8 +886,8 @@ function ProdutosUpsertForm({
                                     );
                                   }}
                                 </form.Field>
-                              </td>
-                              <td className="p-3 text-center">
+                              </TableCell>
+                              <TableCell className="p-3 text-center">
                                 <form.Field name={`skus[${index}].ativo`}>
                                   {(field) => (
                                     <Checkbox
@@ -890,11 +898,11 @@ function ProdutosUpsertForm({
                                     />
                                   )}
                                 </form.Field>
-                              </td>
-                            </tr>
+                              </TableCell>
+                            </TableRow>
                           ))}
-                        </tbody>
-                      </table>
+                        </TableBody>
+                      </Table>
                     </div>
                     <form.Field name="skus">
                       {(field) => {

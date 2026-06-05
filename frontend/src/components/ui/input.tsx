@@ -28,16 +28,20 @@ export interface InputProps
   extends React.ComponentProps<"input">,
     VariantProps<typeof inputVariants> {}
 
-function Input({ className, type, inputSize, inputHeight, value, ...props }: InputProps) {
-  return (
-    <input
-      type={type}
-      data-slot="input"
-      className={cn(inputVariants({ inputSize, inputHeight, className }))}
-      value={value ?? ""}
-      {...props}
-    />
-  )
-}
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, inputSize, inputHeight, value, ...props }, ref) => {
+    return (
+      <input
+        ref={ref}
+        type={type}
+        data-slot="input"
+        className={cn(inputVariants({ inputSize, inputHeight, className }))}
+        value={value ?? ""}
+        {...props}
+      />
+    )
+  }
+)
+Input.displayName = "Input"
 
 export { Input, inputVariants }

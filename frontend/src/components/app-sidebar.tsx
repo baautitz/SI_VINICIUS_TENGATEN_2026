@@ -20,6 +20,7 @@ import {
   Tag,
   Layers,
   Sliders,
+  ClipboardList,
 } from "lucide-react";
 
 import {
@@ -181,6 +182,19 @@ const groups = [
     icon: Package,
     urlPrefix: "/catalogo",
     items: catalogoItems,
+  },
+  {
+    id: "estoque",
+    title: "Estoque",
+    icon: ClipboardList,
+    urlPrefix: "/estoque",
+    items: [
+      {
+        title: "Movimentações",
+        url: "/estoque/movimentacoes",
+        icon: ClipboardList,
+      },
+    ],
   },
   {
     id: "localizacao",

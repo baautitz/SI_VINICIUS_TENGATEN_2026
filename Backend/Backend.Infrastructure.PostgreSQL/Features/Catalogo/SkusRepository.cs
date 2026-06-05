@@ -74,8 +74,8 @@ public class SkusRepository : ISkusRepository
 
     public async Task<Skus?> ObterSkuPorSku(string sku)
     {
-        const string skuSql = "SELECT sku, gtin_ean AS GtinEan, preco AS Preco, estoque AS Estoque, ativo AS Ativo FROM skus WHERE sku = @Sku;";
-
+        const string skuSql = "SELECT sku, gtin_ean AS GtinEan, preco AS Preco, estoque AS Estoque, ativo AS Ativo FROM skus WHERE sku = @Sku OR gtin_ean = @Sku;";
+ 
         const string atributosSql = @"
             SELECT savr.sku AS Sku, sav.chave_id AS ChaveId, sav.valor AS Valor,
                    sav.id AS Id, sak.chave AS Chave
@@ -83,25 +83,25 @@ public class SkusRepository : ISkusRepository
             JOIN sku_atributos_valores sav ON sav.id = savr.valor_id
             JOIN sku_atributos_chaves sak ON sak.id = sav.chave_id
             WHERE savr.sku = @Sku;";
-
-        var skuDto = await _session.Connection.QuerySingleOrDefaultAsync<SkuDto>(
+ 
+        var skuDto = await _session.Connection.QueryFirstOrDefaultAsync<SkuDto>(
             skuSql, new { Sku = sku }, transaction: _session.Transaction);
-
+ 
         if (skuDto is null) return null;
-
+ 
         var skuEntity = BuildSku(skuDto);
-
+ 
         var atributos = await _session.Connection.QueryAsync<AtributoDto>(
             atributosSql,
-            new { Sku = sku },
+            new { Sku = skuDto.Sku },
             transaction: _session.Transaction);
-
+ 
         foreach (var atributoDto in atributos)
         {
             var atributo = BuildAtributo(atributoDto);
             skuEntity.AdicionarAtributo(atributo);
         }
-
+ 
         return skuEntity;
     }
 

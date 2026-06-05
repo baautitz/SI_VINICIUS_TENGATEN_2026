@@ -6,6 +6,7 @@ using Backend.Core.Features.Estoque.DTOs;
 using Backend.Core.Features.Estoque.Entities;
 using Backend.Core.Features.Estoque.Entities.Enums;
 using Backend.Core.Features.Estoque.Repositories;
+using Backend.Core.Features.Vendas.Entities;
 using Backend.Infrastructure.PostgreSQL.Common;
 using Dapper;
 
@@ -27,9 +28,10 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
         const string sql = @"
             SELECT COUNT(*) FROM movimentacoes_estoque;
 
-            SELECT me.id, me.data_movimentacao, me.tipo_movimentacao, me.observacao,
+            SELECT me.id, me.data_movimentacao, me.tipo_movimentacao, me.status, me.observacao,
                    u.id AS UsuarioId, u.nome AS UsuarioNome, u.cpf_cnpj AS UsuarioCpfCnpj, u.email AS UsuarioEmail,
-                   u.telefone AS UsuarioTelefone, u.usuario AS UsuarioUsuario, u.senha AS UsuarioSenha, u.ativo AS UsuarioAtivo
+                   u.telefone AS UsuarioTelefone, u.usuario AS UsuarioUsuario, u.senha AS UsuarioSenha, u.ativo AS UsuarioAtivo,
+                   me.venda_id AS VendaId
             FROM movimentacoes_estoque me
             LEFT JOIN usuarios u ON u.id = me.usuario_id
             ORDER BY me.data_movimentacao DESC
@@ -51,7 +53,8 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
 
         const string itensSql = @"
             SELECT mei.id, mei.quantidade, mei.custo_unitario, mei.movimentacao_estoque_id AS MovimentacaoId,
-                   s.sku AS SkuCodigo, s.gtin_ean AS SkuGtinEan, s.preco AS SkuPreco, s.estoque AS SkuEstoque, s.ativo AS SkuAtivo
+                   s.sku AS SkuCodigo, s.gtin_ean AS SkuGtinEan, s.preco AS SkuPreco, s.estoque AS SkuEstoque, s.ativo AS SkuAtivo,
+                   mei.quantidade_anterior AS QuantidadeAnterior
             FROM movimentacoes_estoque_itens mei
             JOIN skus s ON s.sku = mei.sku
             WHERE mei.movimentacao_estoque_id = ANY(@Ids);";
@@ -68,7 +71,8 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
         var movimentacoes = movimentacoesDto.Select(dto =>
         {
             var usuario = dto.UsuarioId.HasValue ? BuildUsuario(new UsuarioDto(dto.UsuarioId.Value, dto.UsuarioNome ?? string.Empty, dto.UsuarioCpfCnpj ?? string.Empty, dto.UsuarioEmail ?? string.Empty, dto.UsuarioTelefone ?? string.Empty, dto.UsuarioUsuario ?? string.Empty, dto.UsuarioSenha ?? string.Empty, dto.UsuarioAtivo ?? false)) : null;
-            var movimentacao = new MovimentacoesEstoques(dto.Id, dto.DataMovimentacao, dto.TipoMovimentacao, usuario, null, dto.Observacao);
+            var venda = dto.VendaId.HasValue ? new Venda(dto.VendaId.Value) : null;
+            var movimentacao = new MovimentacoesEstoques(dto.Id, dto.DataMovimentacao, dto.TipoMovimentacao, usuario, null, venda, dto.Observacao, dto.Status);
 
             if (itensPorMovimentacao.TryGetValue(dto.Id, out var itens))
             {
@@ -87,19 +91,22 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
     public async Task<MovimentacoesEstoques?> ObterMovimentacaoPorId(int id)
     {
         const string movimentacaoSql = @"
-            SELECT me.id, me.data_movimentacao, me.tipo_movimentacao, me.observacao,
+            SELECT me.id, me.data_movimentacao, me.tipo_movimentacao, me.status, me.observacao,
                    u.id AS UsuarioId, u.nome AS UsuarioNome, u.cpf_cnpj AS UsuarioCpfCnpj, u.email AS UsuarioEmail,
-                   u.telefone AS UsuarioTelefone, u.usuario AS UsuarioUsuario, u.senha AS UsuarioSenha, u.ativo AS UsuarioAtivo
+                   u.telefone AS UsuarioTelefone, u.usuario AS UsuarioUsuario, u.senha AS UsuarioSenha, u.ativo AS UsuarioAtivo,
+                   me.venda_id AS VendaId
             FROM movimentacoes_estoque me
             LEFT JOIN usuarios u ON u.id = me.usuario_id
             WHERE me.id = @Id;";
 
         const string itensSql = @"
             SELECT mei.id, mei.quantidade, mei.custo_unitario, mei.movimentacao_estoque_id AS MovimentacaoId,
-                   s.sku AS SkuCodigo, s.gtin_ean AS SkuGtinEan, s.preco AS SkuPreco, s.estoque AS SkuEstoque, s.ativo AS SkuAtivo
+                   s.sku AS SkuCodigo, s.gtin_ean AS SkuGtinEan, s.preco AS SkuPreco, s.estoque AS SkuEstoque, s.ativo AS SkuAtivo,
+                   mei.quantidade_anterior AS QuantidadeAnterior
             FROM movimentacoes_estoque_itens mei
             JOIN skus s ON s.sku = mei.sku
-            WHERE mei.movimentacao_estoque_id = @Id;";
+            WHERE mei.movimentacao_estoque_id = @Id
+            ORDER BY mei.id ASC;";
 
         var dto = await _session.Connection.QuerySingleOrDefaultAsync<MovimentacaoDto>(
             movimentacaoSql,
@@ -109,7 +116,8 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
         if (dto is null) return null;
 
         var usuario = dto.UsuarioId.HasValue ? BuildUsuario(new UsuarioDto(dto.UsuarioId.Value, dto.UsuarioNome ?? string.Empty, dto.UsuarioCpfCnpj ?? string.Empty, dto.UsuarioEmail ?? string.Empty, dto.UsuarioTelefone ?? string.Empty, dto.UsuarioUsuario ?? string.Empty, dto.UsuarioSenha ?? string.Empty, dto.UsuarioAtivo ?? false)) : null;
-        var movimentacao = new MovimentacoesEstoques(dto.Id, dto.DataMovimentacao, dto.TipoMovimentacao, usuario, null, dto.Observacao);
+        var venda = dto.VendaId.HasValue ? new Venda(dto.VendaId.Value) : null;
+        var movimentacao = new MovimentacoesEstoques(dto.Id, dto.DataMovimentacao, dto.TipoMovimentacao, usuario, null, venda, dto.Observacao, dto.Status);
 
         var itensDto = await _session.Connection.QueryAsync<MovimentacaoItemDto>(
             itensSql,
@@ -127,8 +135,8 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
     public async Task<MovimentacoesEstoques> CriarMovimentacao(MovimentacoesEstoques movimentacao)
     {
         const string sql = @"
-            INSERT INTO movimentacoes_estoque (data_movimentacao, tipo_movimentacao, observacao, usuario_id, nfe_id)
-            VALUES (@DataMovimentacao, @TipoMovimentacao, @Observacao, @UsuarioId, @NfeId)
+            INSERT INTO movimentacoes_estoque (data_movimentacao, tipo_movimentacao, status, observacao, usuario_id, nfe_id, venda_id)
+            VALUES (@DataMovimentacao, @TipoMovimentacao::tipo_movimentacao_estoque_enum, @Status::status_movimentacao_estoque_enum, @Observacao, @UsuarioId, @NfeId, @VendaId)
             RETURNING id;";
 
         var idGerado = await _session.Connection.ExecuteScalarAsync<int>(
@@ -136,17 +144,23 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
             new
             {
                 movimentacao.DataMovimentacao,
-                movimentacao.TipoMovimentacao,
+                TipoMovimentacao = movimentacao.TipoMovimentacao.ToString(),
+                Status = movimentacao.Status.ToString(),
                 movimentacao.Observacao,
                 UsuarioId = movimentacao.Usuario?.Id,
-                NfeId = movimentacao.Nfe?.Id
+                NfeId = movimentacao.Nfe?.Id,
+                VendaId = movimentacao.Venda?.Id
             },
             transaction: _session.Transaction);
 
         await InserirItens(idGerado, movimentacao.MovimentacoesEstoquesItens);
-        await AtualizarEstoqueSkus(movimentacao.MovimentacoesEstoquesItens, movimentacao.TipoMovimentacao);
 
-        var persisted = new MovimentacoesEstoques(idGerado, movimentacao.DataMovimentacao, movimentacao.TipoMovimentacao, movimentacao.Usuario, movimentacao.Nfe, movimentacao.Observacao);
+        if (movimentacao.Status == StatusMovimentacaoEstoque.CONFIRMADA)
+        {
+            await AtualizarEstoqueSkus(movimentacao.MovimentacoesEstoquesItens, movimentacao.TipoMovimentacao);
+        }
+
+        var persisted = new MovimentacoesEstoques(idGerado, movimentacao.DataMovimentacao, movimentacao.TipoMovimentacao, movimentacao.Usuario, movimentacao.Nfe, movimentacao.Venda, movimentacao.Observacao, movimentacao.Status);
         foreach (var item in movimentacao.MovimentacoesEstoquesItens)
         {
             persisted.AdicionarItemExistente(new MovimentacoesEstoquesItens(item.Id, idGerado, item.Sku, item.Quantidade, item.CustoUnitario));
@@ -162,10 +176,12 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
         const string sql = @"
             UPDATE movimentacoes_estoque
             SET data_movimentacao = @DataMovimentacao,
-                tipo_movimentacao = @TipoMovimentacao,
+                tipo_movimentacao = @TipoMovimentacao::tipo_movimentacao_estoque_enum,
+                status = @Status::status_movimentacao_estoque_enum,
                 observacao = @Observacao,
                 usuario_id = @UsuarioId,
-                nfe_id = @NfeId
+                nfe_id = @NfeId,
+                venda_id = @VendaId
             WHERE id = @Id;";
 
         await _session.Connection.ExecuteAsync(
@@ -174,20 +190,24 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
             {
                 Id = id,
                 movimentacao.DataMovimentacao,
-                movimentacao.TipoMovimentacao,
+                TipoMovimentacao = movimentacao.TipoMovimentacao.ToString(),
+                Status = movimentacao.Status.ToString(),
                 movimentacao.Observacao,
                 UsuarioId = movimentacao.Usuario?.Id,
-                NfeId = movimentacao.Nfe?.Id
+                NfeId = movimentacao.Nfe?.Id,
+                VendaId = movimentacao.Venda?.Id
             },
             transaction: _session.Transaction);
 
-        if (antiga is not null)
+        if (antiga is not null && antiga.Status == StatusMovimentacaoEstoque.CONFIRMADA)
             await EstornarEstoqueSkus(antiga.MovimentacoesEstoquesItens, antiga.TipoMovimentacao);
 
         await ReplacerItens(id, movimentacao.MovimentacoesEstoquesItens);
-        await AtualizarEstoqueSkus(movimentacao.MovimentacoesEstoquesItens, movimentacao.TipoMovimentacao);
 
-        var updated = new MovimentacoesEstoques(id, movimentacao.DataMovimentacao, movimentacao.TipoMovimentacao, movimentacao.Usuario, movimentacao.Nfe, movimentacao.Observacao);
+        if (movimentacao.Status == StatusMovimentacaoEstoque.CONFIRMADA)
+            await AtualizarEstoqueSkus(movimentacao.MovimentacoesEstoquesItens, movimentacao.TipoMovimentacao);
+
+        var updated = new MovimentacoesEstoques(id, movimentacao.DataMovimentacao, movimentacao.TipoMovimentacao, movimentacao.Usuario, movimentacao.Nfe, movimentacao.Venda, movimentacao.Observacao, movimentacao.Status);
         foreach (var item in movimentacao.MovimentacoesEstoquesItens)
         {
             updated.AdicionarItemExistente(new MovimentacoesEstoquesItens(item.Id, id, item.Sku, item.Quantidade, item.CustoUnitario));
@@ -199,7 +219,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
     public async Task<bool> DeletarMovimentacao(int id)
     {
         var movimentacao = await ObterMovimentacaoPorId(id);
-        if (movimentacao is not null)
+        if (movimentacao is not null && movimentacao.Status == StatusMovimentacaoEstoque.CONFIRMADA)
             await EstornarEstoqueSkus(movimentacao.MovimentacoesEstoquesItens, movimentacao.TipoMovimentacao);
 
         await _session.Connection.ExecuteAsync(
@@ -220,7 +240,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
         const string sql = @"
             SELECT COUNT(*) FROM movimentacoes_estoque;
 
-            SELECT id, data_movimentacao, tipo_movimentacao, observacao
+            SELECT id, data_movimentacao, tipo_movimentacao, status, observacao
             FROM movimentacoes_estoque
             ORDER BY data_movimentacao DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
@@ -242,11 +262,11 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
         const string sql = @"
             SELECT COUNT(*)
             FROM movimentacoes_estoque
-            WHERE observacao ILIKE @Termo OR tipo_movimentacao::text ILIKE @Termo;
+            WHERE observacao ILIKE @Termo OR tipo_movimentacao::text ILIKE @Termo OR status::text ILIKE @Termo;
 
-            SELECT id, data_movimentacao, tipo_movimentacao, observacao
+            SELECT id, data_movimentacao, tipo_movimentacao, status, observacao
             FROM movimentacoes_estoque
-            WHERE observacao ILIKE @Termo OR tipo_movimentacao::text ILIKE @Termo
+            WHERE observacao ILIKE @Termo OR tipo_movimentacao::text ILIKE @Termo OR status::text ILIKE @Termo
             ORDER BY data_movimentacao DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
@@ -264,8 +284,8 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
     private async Task InserirItens(int movimentacaoId, IEnumerable<MovimentacoesEstoquesItens> itens)
     {
         const string sql = @"
-            INSERT INTO movimentacoes_estoque_itens (quantidade, custo_unitario, sku, movimentacao_estoque_id)
-            VALUES (@Quantidade, @CustoUnitario, @SkuCodigo, @MovimentacaoId);";
+            INSERT INTO movimentacoes_estoque_itens (quantidade, custo_unitario, sku, movimentacao_estoque_id, quantidade_anterior)
+            VALUES (@Quantidade, @CustoUnitario, @SkuCodigo, @MovimentacaoId, @QuantidadeAnterior);";
 
         await _session.Connection.ExecuteAsync(
             sql,
@@ -274,7 +294,8 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
                 i.Quantidade,
                 i.CustoUnitario,
                 SkuCodigo = i.Sku.Sku,
-                MovimentacaoId = movimentacaoId
+                MovimentacaoId = movimentacaoId,
+                i.QuantidadeAnterior
             }),
             transaction: _session.Transaction);
     }
@@ -291,23 +312,43 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
 
     private async Task AtualizarEstoqueSkus(IEnumerable<MovimentacoesEstoquesItens> itens, TipoMovimentacaoEstoque tipo)
     {
-        var sinal = tipo == TipoMovimentacaoEstoque.ENTRADA ? 1 : -1;
-
-        const string sql = "UPDATE skus SET estoque = estoque + (@Sinal * @Quantidade) WHERE sku = @SkuCodigo;";
-
-        await _session.Connection.ExecuteAsync(
-            sql,
-            itens.Select(i => new { Sinal = sinal, i.Quantidade, SkuCodigo = i.Sku.Sku }),
-            transaction: _session.Transaction);
+        if (tipo == TipoMovimentacaoEstoque.BALANCO)
+        {
+            const string sql = "UPDATE skus SET estoque = @Quantidade WHERE sku = @SkuCodigo;";
+            await _session.Connection.ExecuteAsync(
+                sql,
+                itens.Select(i => new { i.Quantidade, SkuCodigo = i.Sku.Sku }),
+                transaction: _session.Transaction);
+        }
+        else
+        {
+            var sinal = (tipo == TipoMovimentacaoEstoque.ENTRADA) ? 1 : -1;
+            const string sql = "UPDATE skus SET estoque = estoque + (@Sinal * @Quantidade) WHERE sku = @SkuCodigo;";
+            await _session.Connection.ExecuteAsync(
+                sql,
+                itens.Select(i => new { Sinal = sinal, i.Quantidade, SkuCodigo = i.Sku.Sku }),
+                transaction: _session.Transaction);
+        }
     }
 
-    private Task EstornarEstoqueSkus(IEnumerable<MovimentacoesEstoquesItens> itens, TipoMovimentacaoEstoque tipo)
+    private async Task EstornarEstoqueSkus(IEnumerable<MovimentacoesEstoquesItens> itens, TipoMovimentacaoEstoque tipo)
     {
-        var tipoInverso = tipo == TipoMovimentacaoEstoque.ENTRADA
-            ? TipoMovimentacaoEstoque.SAIDA
-            : TipoMovimentacaoEstoque.ENTRADA;
+        if (tipo == TipoMovimentacaoEstoque.BALANCO)
+        {
+            const string sql = "UPDATE skus SET estoque = @QuantidadeAnterior WHERE sku = @SkuCodigo;";
+            await _session.Connection.ExecuteAsync(
+                sql,
+                itens.Select(i => new { QuantidadeAnterior = i.QuantidadeAnterior ?? 0, SkuCodigo = i.Sku.Sku }),
+                transaction: _session.Transaction);
+        }
+        else
+        {
+            var tipoInverso = tipo == TipoMovimentacaoEstoque.ENTRADA
+                ? TipoMovimentacaoEstoque.SAIDA
+                : TipoMovimentacaoEstoque.ENTRADA;
 
-        return AtualizarEstoqueSkus(itens, tipoInverso);
+            await AtualizarEstoqueSkus(itens, tipoInverso);
+        }
     }
 
     private static MovimentacoesEstoquesItens BuildItem(MovimentacaoItemDto dto, int movimentacaoId)
@@ -316,7 +357,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
         if (!dto.SkuAtivo)
             sku.Desativar();
 
-        return new MovimentacoesEstoquesItens(dto.Id, movimentacaoId, sku, dto.Quantidade, dto.CustoUnitario);
+        return new MovimentacoesEstoquesItens(dto.Id, movimentacaoId, sku, dto.Quantidade, dto.CustoUnitario, dto.QuantidadeAnterior);
     }
 
     private static Usuarios BuildUsuario(UsuarioDto dto)
@@ -324,12 +365,12 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
         return new Usuarios(dto.Id, dto.Nome, dto.CpfCnpj, dto.Email, dto.Usuario, dto.Senha, dto.Telefone, dto.Ativo);
     }
 
-    private sealed record MovimentacaoDto(int Id, DateTime DataMovimentacao, TipoMovimentacaoEstoque TipoMovimentacao, string? Observacao,
+    private sealed record MovimentacaoDto(int Id, DateTime DataMovimentacao, TipoMovimentacaoEstoque TipoMovimentacao, StatusMovimentacaoEstoque Status, string? Observacao,
         int? UsuarioId, string? UsuarioNome, string? UsuarioCpfCnpj, string? UsuarioEmail, string? UsuarioTelefone,
-        string? UsuarioUsuario, string? UsuarioSenha, bool? UsuarioAtivo);
+        string? UsuarioUsuario, string? UsuarioSenha, bool? UsuarioAtivo, int? VendaId);
 
     private sealed record MovimentacaoItemDto(int Id, decimal Quantidade, decimal CustoUnitario, int MovimentacaoId,
-        string SkuCodigo, string SkuGtinEan, decimal SkuPreco, decimal SkuEstoque, bool SkuAtivo);
+        string SkuCodigo, string SkuGtinEan, decimal SkuPreco, decimal SkuEstoque, bool SkuAtivo, decimal? QuantidadeAnterior);
 
     private sealed record UsuarioDto(int Id, string Nome, string CpfCnpj, string Email, string Telefone,
         string Usuario, string Senha, bool Ativo);

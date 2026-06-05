@@ -9,6 +9,7 @@ using Backend.Core.Features.Logistica.Repositories;
 using Backend.Core.Features.Logistica.Services;
 using Backend.Core.Features.Localizacao.Services;
 using Backend.Core.Features.Catalogo.Services;
+using Backend.Core.Features.Estoque.Services;
 using Backend.Core.Features.NFe.Repositories;
 using Backend.Core.Features.Parceiros.Repositories;
 using Backend.Core.Features.Parceiros.Services;
@@ -63,6 +64,7 @@ public static class DependencyInjection
         services.AddScoped<ProdutosService>();
 
         services.AddScoped<IMovimentacoesEstoquesRepository, MovimentacoesEstoquesRepository>();
+        services.AddScoped<MovimentacoesEstoquesService>();
 
         services.AddScoped<IContasPagarRepository, ContasPagarRepository>();
         services.AddScoped<IContasReceberRepository, ContasReceberRepository>();

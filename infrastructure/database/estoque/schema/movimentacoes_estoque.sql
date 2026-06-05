@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS movimentacoes_estoque (
   id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   data_movimentacao TIMESTAMP NOT NULL DEFAULT NOW(),
   tipo_movimentacao tipo_movimentacao_estoque_enum NOT NULL,
+  status status_movimentacao_estoque_enum NOT NULL DEFAULT 'RASCUNHO',
   usuario_id INTEGER,
   nfe_id INTEGER,
   venda_id INTEGER,
