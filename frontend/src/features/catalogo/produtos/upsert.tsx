@@ -17,6 +17,7 @@ import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import {
   produtoBaseSchema,
+  skuFormSchema,
   Produto,
   ProdutoResumo,
   ProdutoFormValues,
@@ -235,7 +236,7 @@ function ProdutosUpsertForm({
 
     const combinations = combine(0, []);
 
-    return combinations.map((combo, comboIdx) => {
+    return combinations.map((combo) => {
       const label = combo.map((c) => c.valor).join(" / ");
 
       const currentSkus = form.getFieldValue("skus") || [];
@@ -254,11 +255,8 @@ function ProdutosUpsertForm({
         };
       }
 
-      const productId = editingItem ? String(editingItem.id) : "novo";
-      const generatedSku = `${productId}-${comboIdx + 1}`;
-
       return {
-        sku: generatedSku,
+        sku: "",
         preco: 0,
         estoque: 0,
         gtinEan: "",
@@ -373,7 +371,15 @@ function ProdutosUpsertForm({
 
           <div className="flex flex-wrap items-start gap-4">
             <div className="flex-1 min-w-50">
-              <form.Field name="categoriaId">
+              <form.Field
+                name="categoriaId"
+                validators={{
+                  onChange: ({ value }) => {
+                    const res = produtoBaseSchema.shape.categoriaId.safeParse(value);
+                    return res.success ? undefined : res.error.errors[0]?.message;
+                  },
+                }}
+              >
                 {(field) => (
                   <CategoriaInput
                     name={field.name}
@@ -384,14 +390,22 @@ function ProdutosUpsertForm({
                         ? (editingItem.categoria as unknown as CategoriaResumo)
                         : null
                     }
-                    onSelectId={(id) => field.handleChange(id ?? 0)}
+                    onSelectId={(id) => field.handleChange(id as unknown as number)}
                   />
                 )}
               </form.Field>
             </div>
 
             <div className="flex-1 min-w-50">
-              <form.Field name="marcaId">
+              <form.Field
+                name="marcaId"
+                validators={{
+                  onChange: ({ value }) => {
+                    const res = produtoBaseSchema.shape.marcaId.safeParse(value);
+                    return res.success ? undefined : res.error.errors[0]?.message;
+                  },
+                }}
+              >
                 {(field) => (
                   <MarcaInput
                     name={field.name}
@@ -402,14 +416,22 @@ function ProdutosUpsertForm({
                         ? (editingItem.marca as unknown as MarcaResumo)
                         : null
                     }
-                    onSelectId={(id) => field.handleChange(id ?? 0)}
+                    onSelectId={(id) => field.handleChange(id as unknown as number)}
                   />
                 )}
               </form.Field>
             </div>
 
             <div className="flex-1 min-w-50">
-              <form.Field name="unidadeMedidaId">
+              <form.Field
+                name="unidadeMedidaId"
+                validators={{
+                  onChange: ({ value }) => {
+                    const res = produtoBaseSchema.shape.unidadeMedidaId.safeParse(value);
+                    return res.success ? undefined : res.error.errors[0]?.message;
+                  },
+                }}
+              >
                 {(field) => (
                   <UnidadeMedidaInput
                     name={field.name}
@@ -420,7 +442,7 @@ function ProdutosUpsertForm({
                         ? (editingItem.unidadeMedida as unknown as UnidadeMedidaResumo)
                         : null
                     }
-                    onSelectId={(id) => field.handleChange(id ?? 0)}
+                    onSelectId={(id) => field.handleChange(id as unknown as number)}
                   />
                 )}
               </form.Field>
@@ -480,7 +502,10 @@ function ProdutosUpsertForm({
 
           {!hasVariants ? (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <form.Field name="skus[0].sku">
+              <form.Field
+                name="skus[0].sku"
+                validators={{ onChange: skuFormSchema.shape.sku }}
+              >
                 {(field) => (
                   <FormFieldUI
                     field={field}
@@ -493,7 +518,10 @@ function ProdutosUpsertForm({
                 )}
               </form.Field>
 
-              <form.Field name="skus[0].preco">
+              <form.Field
+                name="skus[0].preco"
+                validators={{ onChange: skuFormSchema.shape.preco }}
+              >
                 {(field) => (
                   <FormFieldUI
                     field={field}
@@ -506,7 +534,10 @@ function ProdutosUpsertForm({
                 )}
               </form.Field>
 
-              <form.Field name="skus[0].estoque">
+              <form.Field
+                name="skus[0].estoque"
+                validators={{ onChange: skuFormSchema.shape.estoque }}
+              >
                 {(field) => (
                   <FormFieldUI
                     field={field}
@@ -520,7 +551,10 @@ function ProdutosUpsertForm({
                 )}
               </form.Field>
 
-              <form.Field name="skus[0].gtinEan">
+              <form.Field
+                name="skus[0].gtinEan"
+                validators={{ onChange: skuFormSchema.shape.gtinEan }}
+              >
                 {(field) => (
                   <FormFieldUI
                     field={field}
@@ -683,13 +717,14 @@ function ProdutosUpsertForm({
                                   name={`skus[${index}].sku`}
                                   validators={{
                                     onChange: ({ value }) => {
+                                      const val = value?.trim().toLowerCase();
+                                      if (!val) return undefined;
                                       const allSkus =
                                         form.getFieldValue("skus") || [];
                                       const isDuplicate = allSkus.some(
                                         (s, idx) =>
                                           idx !== index &&
-                                          s.sku?.trim().toLowerCase() ===
-                                            value?.trim().toLowerCase(),
+                                          s.sku?.trim().toLowerCase() === val,
                                       );
                                       return isDuplicate
                                         ? "SKU duplicado"
@@ -711,8 +746,7 @@ function ProdutosUpsertForm({
                                             field.handleChange(e.target.value)
                                           }
                                           maxLength={50}
-                                          placeholder="SKU"
-                                          disabled
+                                          placeholder="Ex: 104082"
                                           className={cn(
                                             "h-8 text-xs font-mono",
                                             error &&
@@ -733,56 +767,116 @@ function ProdutosUpsertForm({
                                 {sku.variantLabel || `Variante #${index + 1}`}
                               </td>
                               <td className="p-3">
-                                <form.Field name={`skus[${index}].preco`}>
-                                  {(field) => (
-                                    <Input
-                                      inputSize="full"
-                                      type="number"
-                                      value={field.state.value}
-                                      onChange={(e) =>
-                                        field.handleChange(
-                                          e.target.valueAsNumber || 0,
-                                        )
-                                      }
-                                      placeholder="0,00"
-                                      className="h-8 text-xs"
-                                    />
-                                  )}
+                                <form.Field
+                                  name={`skus[${index}].preco`}
+                                  validators={{ onChange: skuFormSchema.shape.preco }}
+                                >
+                                  {(field) => {
+                                    const error = getFieldError(
+                                      field.name,
+                                      field.state.meta.errors,
+                                    );
+                                    return (
+                                      <div className="flex flex-col gap-1">
+                                        <Input
+                                          inputSize="full"
+                                          type="number"
+                                          value={field.state.value}
+                                          onChange={(e) =>
+                                            field.handleChange(
+                                              e.target.value === "" ? 0 : Number(e.target.value),
+                                            )
+                                          }
+                                          placeholder="0,00"
+                                          className={cn(
+                                            "h-8 text-xs",
+                                            error &&
+                                              "border-destructive focus-visible:ring-destructive",
+                                          )}
+                                        />
+                                        {error && (
+                                          <span className="text-[10px] font-medium text-destructive">
+                                            {error}
+                                          </span>
+                                        )}
+                                      </div>
+                                    );
+                                  }}
                                 </form.Field>
                               </td>
                               <td className="p-3">
-                                <form.Field name={`skus[${index}].estoque`}>
-                                  {(field) => (
-                                    <Input
-                                      inputSize="full"
-                                      type="number"
-                                      value={field.state.value}
-                                      onChange={(e) =>
-                                        field.handleChange(
-                                          e.target.valueAsNumber || 0,
-                                        )
-                                      }
-                                      placeholder="0"
-                                      className="h-8 text-xs"
-                                      disabled={!!editingItem}
-                                    />
-                                  )}
+                                <form.Field
+                                  name={`skus[${index}].estoque`}
+                                  validators={{ onChange: skuFormSchema.shape.estoque }}
+                                >
+                                  {(field) => {
+                                    const error = getFieldError(
+                                      field.name,
+                                      field.state.meta.errors,
+                                    );
+                                    return (
+                                      <div className="flex flex-col gap-1">
+                                        <Input
+                                          inputSize="full"
+                                          type="number"
+                                          value={field.state.value}
+                                          onChange={(e) =>
+                                            field.handleChange(
+                                              e.target.value === "" ? 0 : Number(e.target.value),
+                                            )
+                                          }
+                                          placeholder="0"
+                                          className={cn(
+                                            "h-8 text-xs",
+                                            error &&
+                                              "border-destructive focus-visible:ring-destructive",
+                                          )}
+                                          disabled={!!editingItem}
+                                        />
+                                        {error && (
+                                          <span className="text-[10px] font-medium text-destructive">
+                                            {error}
+                                          </span>
+                                        )}
+                                      </div>
+                                    );
+                                  }}
                                 </form.Field>
                               </td>
                               <td className="p-3">
-                                <form.Field name={`skus[${index}].gtinEan`}>
-                                  {(field) => (
-                                    <Input
-                                      inputSize="full"
-                                      value={field.state.value || ""}
-                                      onChange={(e) =>
-                                        field.handleChange(e.target.value)
-                                      }
-                                      maxLength={14}
-                                      placeholder="EAN"
-                                      className="h-8 text-xs"
-                                    />
-                                  )}
+                                <form.Field
+                                  name={`skus[${index}].gtinEan`}
+                                  validators={{ onChange: skuFormSchema.shape.gtinEan }}
+                                >
+                                  {(field) => {
+                                    const error = getFieldError(
+                                      field.name,
+                                      field.state.meta.errors,
+                                    );
+                                    return (
+                                      <div className="flex flex-col gap-1">
+                                        <Input
+                                          inputSize="full"
+                                          value={field.state.value || ""}
+                                          onChange={(e) =>
+                                            field.handleChange(e.target.value)
+                                          }
+                                          maxLength={14}
+                                          placeholder="EAN"
+                                          className={cn(
+                                            "h-8 text-xs",
+                                            error &&
+                                              "border-destructive focus-visible:ring-destructive",
+                                          )}
+                                        />
+                                        {error && (
+                                          <span className="text-[10px] font-medium text-destructive">
+                                            {error}
+                                          </span>
+                                        )}
+                                      </div>
+                                    );
+                                  }}
                                 </form.Field>
                               </td>
                               <td className="p-3 text-center">

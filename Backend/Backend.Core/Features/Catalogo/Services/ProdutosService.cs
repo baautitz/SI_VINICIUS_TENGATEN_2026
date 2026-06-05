@@ -64,16 +64,15 @@ public sealed class ProdutosService : BaseService
         if (await _produtosRepository.ExisteProduto(dto.Produto))
             return Resultado<Produtos>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe um produto com este nome.", "Produto"));
 
-        // Validate dependencies
-        var categoria = await _categoriasRepository.ObterCategoriaPorId(dto.CategoriaId);
+        var categoria = await _categoriasRepository.ObterCategoriaPorId(dto.CategoriaId.Value);
         if (categoria == null)
             return Resultado<Produtos>.Falha(new ResultadoErro("CATEGORIA_INEXISTENTE", "A categoria informada não existe.", "CategoriaId"));
 
-        var marca = await _marcasRepository.ObterMarcaPorId(dto.MarcaId);
+        var marca = await _marcasRepository.ObterMarcaPorId(dto.MarcaId.Value);
         if (marca == null)
             return Resultado<Produtos>.Falha(new ResultadoErro("MARCA_INEXISTENTE", "A marca informada não existe.", "MarcaId"));
 
-        var unidadeMedida = await ObterUnidadeMedidaPorIdCompativel(dto.UnidadeMedidaId);
+        var unidadeMedida = await ObterUnidadeMedidaPorIdCompativel(dto.UnidadeMedidaId.Value);
         if (unidadeMedida == null)
             return Resultado<Produtos>.Falha(new ResultadoErro("UNIDADE_MEDIDA_INEXISTENTE", "A unidade de medida informada não existe.", "UnidadeMedidaId"));
 
@@ -81,11 +80,11 @@ public sealed class ProdutosService : BaseService
         if (!dto.Ativo)
             produto.Desativar();
 
-        // Start transaction
         _unitOfWork.BeginTransaction();
         try
         {
             var criado = await _produtosRepository.CriarProduto(produto);
+            var assignedSkuCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             int skuIndex = 1;
 
             foreach (var skuDto in dto.Skus)
@@ -93,17 +92,19 @@ public sealed class ProdutosService : BaseService
                 var finalSkuCode = skuDto.Sku;
                 if (string.IsNullOrWhiteSpace(finalSkuCode))
                 {
-                    finalSkuCode = $"{criado.Id}-{skuIndex}";
+                    while (true)
+                    {
+                        var candidate = $"{criado.Id}-{skuIndex}";
+                        if (!assignedSkuCodes.Contains(candidate))
+                        {
+                            finalSkuCode = candidate;
+                            break;
+                        }
+                        skuIndex++;
+                    }
                 }
-                else if (finalSkuCode.StartsWith("0-") || finalSkuCode.StartsWith("novo-"))
-                {
-                    var parts = finalSkuCode.Split('-');
-                    var suffix = parts.Last();
-                    finalSkuCode = $"{criado.Id}-{suffix}";
-                }
-                skuIndex++;
+                assignedSkuCodes.Add(finalSkuCode);
 
-                // Verify SKU uniqueness
                 var existenteSku = await _skusRepository.ObterSkuPorSku(finalSkuCode);
                 if (existenteSku != null)
                 {
@@ -145,49 +146,65 @@ public sealed class ProdutosService : BaseService
         if (await _produtosRepository.ExisteProduto(dto.Produto, id))
             return Resultado<Produtos>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe outro produto com este nome.", "Produto"));
 
-        // Validate dependencies
-        var categoria = await _categoriasRepository.ObterCategoriaPorId(dto.CategoriaId);
+        var categoria = await _categoriasRepository.ObterCategoriaPorId(dto.CategoriaId.Value);
         if (categoria == null)
             return Resultado<Produtos>.Falha(new ResultadoErro("CATEGORIA_INEXISTENTE", "A categoria informada não existe.", "CategoriaId"));
 
-        var marca = await _marcasRepository.ObterMarcaPorId(dto.MarcaId);
+        var marca = await _marcasRepository.ObterMarcaPorId(dto.MarcaId.Value);
         if (marca == null)
             return Resultado<Produtos>.Falha(new ResultadoErro("MARCA_INEXISTENTE", "A marca informada não existe.", "MarcaId"));
 
-        var unidadeMedida = await ObterUnidadeMedidaPorIdCompativel(dto.UnidadeMedidaId);
+        var unidadeMedida = await ObterUnidadeMedidaPorIdCompativel(dto.UnidadeMedidaId.Value);
         if (unidadeMedida == null)
             return Resultado<Produtos>.Falha(new ResultadoErro("UNIDADE_MEDIDA_INEXISTENTE", "A unidade de medida informada não existe.", "UnidadeMedidaId"));
 
         existente.Atualizar(dto.Produto, dto.Descricao, categoria, marca, unidadeMedida);
         if (dto.Ativo) existente.Ativar(); else existente.Desativar();
 
-        // Start transaction
         _unitOfWork.BeginTransaction();
         try
         {
-            // 1. Update the base product
             await _produtosRepository.AtualizarProduto(id, existente);
 
-            // 2. Get current SKUs from database for this product
             var skusPaginado = await _skusRepository.ObterSkusPorProduto(id);
             var skusAtuais = skusPaginado.Itens.ToList();
 
             var skusNovos = dto.Skus;
 
-            // 3. SKUs to delete: currently in db, but not in new list
-            var codigosSkuNovos = skusNovos.Select(s => s.Sku.ToUpperInvariant()).ToHashSet();
+            var codigosSkuNovos = skusNovos
+                .Where(s => !string.IsNullOrWhiteSpace(s.Sku))
+                .Select(s => s.Sku.ToUpperInvariant())
+                .ToHashSet();
             var skusParaDeletar = skusAtuais.Where(s => !codigosSkuNovos.Contains(s.Sku.ToUpperInvariant())).ToList();
 
             foreach (var skuParaDeletar in skusParaDeletar)
             {
                 await _skusRepository.DeletarSku(skuParaDeletar.Sku);
+                skusAtuais.Remove(skuParaDeletar);
             }
 
-            // 4. Process new/updated SKUs
+            var assignedSkuCodes = skusAtuais.Select(s => s.Sku).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            int skuIndex = 1;
             foreach (var skuDto in skusNovos)
             {
-                var skuExistenteDb = skusAtuais.FirstOrDefault(s => s.Sku.Equals(skuDto.Sku, StringComparison.OrdinalIgnoreCase));
-                var skuEntity = new Skus(skuDto.Sku, skuDto.Preco, skuDto.Estoque, skuDto.Ativo, skuDto.GtinEan);
+                var finalSkuCode = skuDto.Sku;
+                if (string.IsNullOrWhiteSpace(finalSkuCode))
+                {
+                    while (true)
+                    {
+                        var candidate = $"{id}-{skuIndex}";
+                        if (!assignedSkuCodes.Contains(candidate))
+                        {
+                            finalSkuCode = candidate;
+                            break;
+                        }
+                        skuIndex++;
+                    }
+                }
+                assignedSkuCodes.Add(finalSkuCode);
+
+                var skuExistenteDb = skusAtuais.FirstOrDefault(s => s.Sku.Equals(finalSkuCode, StringComparison.OrdinalIgnoreCase));
+                var skuEntity = new Skus(finalSkuCode, skuDto.Preco, skuDto.Estoque, skuDto.Ativo, skuDto.GtinEan);
                 
                 if (skuDto.AtributoValorIds != null && skuDto.AtributoValorIds.Any())
                 {
@@ -197,26 +214,23 @@ public sealed class ProdutosService : BaseService
 
                 if (skuExistenteDb == null)
                 {
-                    // SKU is new, check absolute uniqueness across all products
-                    var outroSkuExistente = await _skusRepository.ObterSkuPorSku(skuDto.Sku);
+                    var outroSkuExistente = await _skusRepository.ObterSkuPorSku(finalSkuCode);
                     if (outroSkuExistente != null)
                     {
                         _unitOfWork.Rollback();
-                        return Resultado<Produtos>.Falha(new ResultadoErro("SKU_DUPLICADO", $"O SKU '{skuDto.Sku}' já está em uso por outro produto.", "Skus"));
+                        return Resultado<Produtos>.Falha(new ResultadoErro("SKU_DUPLICADO", $"O SKU '{finalSkuCode}' já está em uso por outro produto.", "Skus"));
                     }
 
                     await _skusRepository.CriarSku(id, skuEntity);
                 }
                 else
                 {
-                    // SKU already exists for this product, update it
-                    await _skusRepository.AtualizarSku(skuDto.Sku, skuEntity);
+                    await _skusRepository.AtualizarSku(finalSkuCode, skuEntity);
                 }
             }
 
             _unitOfWork.Commit();
             
-            // Reload updated complete product
             var atualizado = await _produtosRepository.ObterProdutoPorId(id);
             return Resultado<Produtos>.Sucesso(atualizado!);
         }
@@ -229,15 +243,12 @@ public sealed class ProdutosService : BaseService
 
     public async Task<bool> DeletarProduto(int id)
     {
-        // Start transaction for clean cascading if required, but repository deletes are single statements
-        // Let's delete the SKUs and attributes relations first, then delete product.
         var produto = await _produtosRepository.ObterProdutoPorId(id);
         if (produto == null) return false;
 
         _unitOfWork.BeginTransaction();
         try
         {
-            // Delete all SKUs for this product
             var skusResult = await _skusRepository.ObterSkusPorProduto(id);
             foreach (var sku in skusResult.Itens)
             {

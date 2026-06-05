@@ -34,6 +34,9 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarRail,
+  SidebarHeader,
+  SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 import {
@@ -210,6 +213,7 @@ function SidebarGroupSection({ group, pathname }: SidebarGroupSectionProps) {
   const defaultOpen = pathname.startsWith(group.urlPrefix);
   const isOpen = useSidebarSectionOpen(group.id, defaultOpen);
   const GroupIcon = group.icon;
+  const { state, setOpen } = useSidebar();
 
   return (
     <SidebarGroup>
@@ -219,7 +223,12 @@ function SidebarGroupSection({ group, pathname }: SidebarGroupSectionProps) {
             asChild
             open={isOpen}
             onOpenChange={(open) => {
-              sidebarStore.set(`sidebar:${group.id}`, String(open));
+              if (state === "collapsed") {
+                sidebarStore.set(`sidebar:${group.id}`, "true");
+                setOpen(true);
+              } else {
+                sidebarStore.set(`sidebar:${group.id}`, String(open));
+              }
             }}
             className="group/collapsible"
           >
@@ -278,6 +287,9 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
+      <SidebarHeader className="flex h-12 items-center justify-end px-3 group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:px-0 border-b border-sidebar-border shrink-0">
+        <SidebarTrigger />
+      </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>

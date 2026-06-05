@@ -16,21 +16,34 @@ public sealed class CreateProdutoDtoValidator : AbstractValidator<CreateProdutoD
 
 
         RuleFor(x => x.CategoriaId)
+            .NotNull().WithMessage("Categoria é obrigatória.")
+            .WithErrorCode("CATEGORIA_OBRIGATORIA")
             .GreaterThan(0).WithMessage("Categoria é obrigatória.")
             .WithErrorCode("CATEGORIA_OBRIGATORIA");
 
         RuleFor(x => x.MarcaId)
+            .NotNull().WithMessage("Marca é obrigatória.")
+            .WithErrorCode("MARCA_OBRIGATORIA")
             .GreaterThan(0).WithMessage("Marca é obrigatória.")
             .WithErrorCode("MARCA_OBRIGATORIA");
 
         RuleFor(x => x.UnidadeMedidaId)
+            .NotNull().WithMessage("Unidade de medida é obrigatória.")
+            .WithErrorCode("UNIDADE_MEDIDA_OBRIGATORIA")
             .GreaterThan(0).WithMessage("Unidade de medida é obrigatória.")
             .WithErrorCode("UNIDADE_MEDIDA_OBRIGATORIA");
 
         RuleFor(x => x.Skus)
             .NotEmpty().WithMessage("O produto deve possuir pelo menos um SKU.")
             .WithErrorCode("SKUS_OBRIGATORIOS")
-            .Must(skus => skus == null || skus.Select(s => s.Sku?.Trim().ToUpperInvariant()).Distinct().Count() == skus.Count)
+            .Must(skus => {
+                if (skus == null) return true;
+                var nonBgCodes = skus
+                    .Select(s => s.Sku?.Trim().ToUpperInvariant())
+                    .Where(code => !string.IsNullOrWhiteSpace(code))
+                    .ToList();
+                return nonBgCodes.Distinct().Count() == nonBgCodes.Count;
+            })
             .WithMessage("Não podem existir códigos SKU duplicados no mesmo produto.")
             .WithErrorCode("SKU_DUPLICADO");
 
@@ -43,8 +56,6 @@ public sealed class CreateSkuDtoValidator : AbstractValidator<CreateSkuDto>
     public CreateSkuDtoValidator()
     {
         RuleFor(x => x.Sku)
-            .NotEmpty().WithMessage("Código SKU é obrigatório.")
-            .WithErrorCode("SKU_OBRIGATORIO")
             .MaximumLength(50).WithMessage("SKU deve ter no máximo 50 caracteres.")
             .WithErrorCode("SKU_TAMANHO_INVALIDO");
 

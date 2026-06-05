@@ -57,8 +57,8 @@ export function formatProdutoLabel(p?: Produto | ProdutoResumo | null): string {
 export const skuFormSchema = z.object({
   sku: z
     .string()
-    .min(1, "Código SKU é obrigatório.")
-    .max(50, "SKU deve ter no máximo 50 caracteres."),
+    .max(50, "SKU deve ter no máximo 50 caracteres.")
+    .optional(),
   preco: z
     .number({ invalid_type_error: "Preço deve ser um número." })
     .min(0, "Preço não pode ser negativo."),

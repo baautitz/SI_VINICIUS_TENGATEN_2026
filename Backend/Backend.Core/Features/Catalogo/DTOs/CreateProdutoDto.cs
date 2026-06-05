@@ -5,9 +5,9 @@ namespace Backend.Core.Features.Catalogo.DTOs;
 public record CreateProdutoDto(
     string Produto,
     string? Descricao,
-    int CategoriaId,
-    int MarcaId,
-    int UnidadeMedidaId,
+    int? CategoriaId,
+    int? MarcaId,
+    int? UnidadeMedidaId,
     bool Ativo,
     List<CreateSkuDto> Skus
 );

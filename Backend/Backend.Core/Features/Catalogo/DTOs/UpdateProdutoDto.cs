@@ -5,9 +5,9 @@ namespace Backend.Core.Features.Catalogo.DTOs;
 public record UpdateProdutoDto(
     string Produto,
     string? Descricao,
-    int CategoriaId,
-    int MarcaId,
-    int UnidadeMedidaId,
+    int? CategoriaId,
+    int? MarcaId,
+    int? UnidadeMedidaId,
     bool Ativo,
     List<UpdateSkuDto> Skus
 );
