@@ -7,7 +7,7 @@ public class SkuAtributosValores
 {
     public int Id { get; set; }
     public int ChaveId { get; private set; }
-    public string Valor { get; private set; }
+    public string Valor { get; private set; } = null!;
 
     protected SkuAtributosValores() { }
 

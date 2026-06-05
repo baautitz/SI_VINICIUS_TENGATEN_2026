@@ -5,7 +5,7 @@ namespace Backend.Core.Features.Catalogo.Entities;
 public class Categorias
 {
     public int Id { get; private set; }
-    public string Categoria { get; private set; }
+    public string Categoria { get; private set; } = null!;
     public string? Descricao { get; private set; }
     public bool Ativo { get; private set; }
 

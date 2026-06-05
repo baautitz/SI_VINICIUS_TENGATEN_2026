@@ -8,14 +8,13 @@ public class Skus
 {
     private readonly List<SkuAtributosValores> _atributos = new();
 
-    public string Sku { get; private set; }
+    public string Sku { get; private set; } = null!;
     public string? GtinEan { get; private set; }
     public decimal Preco { get; private set; }
     public decimal Estoque { get; private set; }
     public bool Ativo { get; private set; }
     public IReadOnlyCollection<SkuAtributosValores> SkuAtributosValores => _atributos.AsReadOnly();
 
-    
     protected Skus() { }
 
     public Skus(string sku, decimal preco, decimal estoque = 0, string? gtinEan = null)

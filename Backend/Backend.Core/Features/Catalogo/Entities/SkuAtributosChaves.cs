@@ -8,7 +8,7 @@ public class SkuAtributosChaves
     private readonly List<SkuAtributosValores> _skuAtributosValores = new();
 
     public int Id { get; private set; }
-    public string Chave { get; private set; }
+    public string Chave { get; private set; } = null!;
     public IReadOnlyCollection<SkuAtributosValores> SkuAtributosValores => _skuAtributosValores.AsReadOnly();
 
     protected SkuAtributosChaves() { }

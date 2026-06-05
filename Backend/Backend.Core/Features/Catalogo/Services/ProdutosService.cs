@@ -64,15 +64,15 @@ public sealed class ProdutosService : BaseService
         if (await _produtosRepository.ExisteProduto(dto.Produto))
             return Resultado<Produtos>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe um produto com este nome.", "Produto"));
 
-        var categoria = await _categoriasRepository.ObterCategoriaPorId(dto.CategoriaId.Value);
+        var categoria = await _categoriasRepository.ObterCategoriaPorId(dto.CategoriaId!.Value);
         if (categoria == null)
             return Resultado<Produtos>.Falha(new ResultadoErro("CATEGORIA_INEXISTENTE", "A categoria informada não existe.", "CategoriaId"));
 
-        var marca = await _marcasRepository.ObterMarcaPorId(dto.MarcaId.Value);
+        var marca = await _marcasRepository.ObterMarcaPorId(dto.MarcaId!.Value);
         if (marca == null)
             return Resultado<Produtos>.Falha(new ResultadoErro("MARCA_INEXISTENTE", "A marca informada não existe.", "MarcaId"));
 
-        var unidadeMedida = await ObterUnidadeMedidaPorIdCompativel(dto.UnidadeMedidaId.Value);
+        var unidadeMedida = await ObterUnidadeMedidaPorIdCompativel(dto.UnidadeMedidaId!.Value);
         if (unidadeMedida == null)
             return Resultado<Produtos>.Falha(new ResultadoErro("UNIDADE_MEDIDA_INEXISTENTE", "A unidade de medida informada não existe.", "UnidadeMedidaId"));
 
@@ -126,7 +126,7 @@ public sealed class ProdutosService : BaseService
             _unitOfWork.Commit();
             return Resultado<Produtos>.Sucesso(criado);
         }
-        catch (Exception ex)
+        catch
         {
             _unitOfWork.Rollback();
             throw;
@@ -146,15 +146,15 @@ public sealed class ProdutosService : BaseService
         if (await _produtosRepository.ExisteProduto(dto.Produto, id))
             return Resultado<Produtos>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe outro produto com este nome.", "Produto"));
 
-        var categoria = await _categoriasRepository.ObterCategoriaPorId(dto.CategoriaId.Value);
+        var categoria = await _categoriasRepository.ObterCategoriaPorId(dto.CategoriaId!.Value);
         if (categoria == null)
             return Resultado<Produtos>.Falha(new ResultadoErro("CATEGORIA_INEXISTENTE", "A categoria informada não existe.", "CategoriaId"));
 
-        var marca = await _marcasRepository.ObterMarcaPorId(dto.MarcaId.Value);
+        var marca = await _marcasRepository.ObterMarcaPorId(dto.MarcaId!.Value);
         if (marca == null)
             return Resultado<Produtos>.Falha(new ResultadoErro("MARCA_INEXISTENTE", "A marca informada não existe.", "MarcaId"));
 
-        var unidadeMedida = await ObterUnidadeMedidaPorIdCompativel(dto.UnidadeMedidaId.Value);
+        var unidadeMedida = await ObterUnidadeMedidaPorIdCompativel(dto.UnidadeMedidaId!.Value);
         if (unidadeMedida == null)
             return Resultado<Produtos>.Falha(new ResultadoErro("UNIDADE_MEDIDA_INEXISTENTE", "A unidade de medida informada não existe.", "UnidadeMedidaId"));
 
@@ -234,7 +234,7 @@ public sealed class ProdutosService : BaseService
             var atualizado = await _produtosRepository.ObterProdutoPorId(id);
             return Resultado<Produtos>.Sucesso(atualizado!);
         }
-        catch (Exception ex)
+        catch
         {
             _unitOfWork.Rollback();
             throw;
@@ -260,7 +260,7 @@ public sealed class ProdutosService : BaseService
             _unitOfWork.Commit();
             return deletado;
         }
-        catch (Exception ex)
+        catch
         {
             _unitOfWork.Rollback();
             throw;
