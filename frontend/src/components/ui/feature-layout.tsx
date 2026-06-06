@@ -1,18 +1,13 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
-interface FeatureLayoutProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: React.ReactNode;
-}
+type FeatureLayoutProps = React.ComponentPropsWithRef<"div">;
 
-export function FeatureLayout({
-  children,
-  className,
-  ...props
-}: FeatureLayoutProps) {
+export const FeatureLayout = ({ children, className, ref, ...props }: FeatureLayoutProps) => {
   return (
-    <div className={cn("flex flex-col gap-4 flex-1 min-h-0", className)} {...props}>
+    <div ref={ref} className={cn("flex flex-col gap-4 flex-1 min-h-0", className)} {...props}>
       {children}
     </div>
   );
-}
+};
+

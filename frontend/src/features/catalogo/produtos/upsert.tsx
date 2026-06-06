@@ -1,12 +1,20 @@
 "use client";
 
-import { Kbd } from "@/components/ui/kbd";
-import { useHotkeys } from "react-hotkeys-hook";
-import React from "react";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { useHotkeys } from "@tanstack/react-hotkeys";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { UpsertDialog } from "@/components/ui/upsert-dialog";
-import { DialogClose } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import {
   Field,
   FieldGroup,
@@ -15,6 +23,7 @@ import {
 } from "@/components/ui/field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FormFieldUI } from "@/components/ui/form-field-ui";
+import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import {
@@ -25,6 +34,7 @@ import {
   ProdutoFormValues,
   VariantOption,
   SkuFormValues,
+  UnidadeMedidaResumida,
 } from "./types";
 import type { CategoriaResumo } from "@/features/catalogo/categorias/types";
 import type { MarcaResumo } from "@/features/catalogo/marcas/types";
@@ -33,6 +43,7 @@ import { useQuery } from "@tanstack/react-query";
 import { produtosApi, atributosApi } from "@/api/catalogo";
 import { Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
@@ -47,12 +58,15 @@ import { MarcaInput } from "@/components/entity-inputs/marca-input";
 import { UnidadeMedidaInput } from "@/components/entity-inputs/unidade-medida-input";
 import { AtributoChaveInput } from "@/components/entity-inputs/atributo-chave-input";
 import { AtributoValorMultiInput } from "@/components/entity-inputs/atributo-valor-multi-input";
+import { ItemLinha } from "../../estoque/movimentacoes/upsert";
+import type { Resultado } from "@/api/types";
 
 interface ProdutosUpsertProps {
   open: boolean;
   editingItem: ProdutoResumo | null;
   onClose: () => void;
   onSuccess: () => void;
+  onSuccessWithAdjustment?: (items: ItemLinha[]) => void;
 }
 
 interface ProdutosUpsertFormProps {
@@ -60,6 +74,7 @@ interface ProdutosUpsertFormProps {
   editingItem: Produto | null;
   onClose: () => void;
   onSuccess: () => void;
+  onSuccessWithAdjustment?: (items: ItemLinha[]) => void;
 }
 
 export function ProdutosUpsert(props: ProdutosUpsertProps) {
@@ -91,6 +106,7 @@ export function ProdutosUpsert(props: ProdutosUpsertProps) {
       editingItem={isEditMode ? (fullItem ?? null) : null}
       onClose={onClose}
       onSuccess={props.onSuccess}
+      onSuccessWithAdjustment={props.onSuccessWithAdjustment}
     />
   );
 }
@@ -100,9 +116,17 @@ function ProdutosUpsertForm({
   editingItem,
   onClose,
   onSuccess,
+  onSuccessWithAdjustment,
 }: ProdutosUpsertFormProps) {
   const isEditMode = !!editingItem;
-  
+  const [selectedUM, setSelectedUM] = useState<UnidadeMedidaResumida | null>(
+    editingItem?.unidadeMedida ?? null,
+  );
+  const [confirmUomTransitionOpen, setConfirmUomTransitionOpen] =
+    useState(false);
+  const [pendingFormValue, setPendingFormValue] =
+    useState<ProdutoFormValues | null>(null);
+
   const { data: atributosList } = useQuery({
     queryKey: ["atributos", "list-all"],
     queryFn: () => atributosApi.list(undefined, 1, 100),
@@ -115,12 +139,38 @@ function ProdutosUpsertForm({
           ? await produtosApi.update(editingItem.id, value)
           : await produtosApi.create(value);
       },
-      queryKey: ["produtos"],
-      onSuccessCallback: onSuccess,
+      queryKey: [["produtos"], ["skus"]],
+      onSuccessCallback: (res) => {
+        const isTransition =
+          editingItem?.unidadeMedida.permiteDecimais &&
+          selectedUM &&
+          !selectedUM.permiteDecimais;
+
+        const typedRes = res as Resultado<Produto>;
+
+        if (isTransition && onSuccessWithAdjustment && typedRes.data) {
+          const product = typedRes.data;
+          const itemsToAdjust: ItemLinha[] = product.skus.map((s) => ({
+            sku: s.sku,
+            produtoNome: product.produto,
+            quantidade: Math.floor(Number(s.estoque)),
+            custoUnitario: Number(s.custoMedio),
+            estoqueAtual: Number(s.estoque),
+            precoSugerido: Number(s.preco),
+            custoMedio: Number(s.custoMedio),
+            custoUltimaCompra: Number(s.custoUltimaCompra),
+            unidadeMedidaSigla: product.unidadeMedida.sigla,
+            permiteDecimais: false,
+          }));
+          onSuccessWithAdjustment(itemsToAdjust);
+        } else {
+          onSuccess();
+        }
+      },
       onClose: onClose,
     });
 
-  const [hasVariants, setHasVariants] = React.useState<boolean>(() => {
+  const [hasVariants, setHasVariants] = useState<boolean>(() => {
     if (editingItem && editingItem.skus) {
       return editingItem.skus.some(
         (s) => s.skuAtributosValores && s.skuAtributosValores.length > 0,
@@ -129,7 +179,7 @@ function ProdutosUpsertForm({
     return false;
   });
 
-  const [options, setOptions] = React.useState<VariantOption[]>(() => {
+  const [options, setOptions] = useState<VariantOption[]>(() => {
     if (editingItem && editingItem.skus) {
       const skus = editingItem.skus;
       const tempOptionsMap: Record<
@@ -164,11 +214,20 @@ function ProdutosUpsertForm({
     return [];
   });
 
-  useHotkeys("alt+o", (e) => {
-    e.preventDefault();
-    setHasVariants(true);
-    setOptions(prev => [...prev, { keyId: 0, keyName: "", valores: [] }]);
-  }, { enableOnFormTags: true, enabled: open }, [open]);
+  useHotkeys([
+    {
+      hotkey: "Alt+O",
+      callback: (e: KeyboardEvent) => {
+        e.preventDefault();
+        setHasVariants(true);
+        setOptions((prev) => [...prev, { keyId: 0, keyName: "", valores: [] }]);
+      },
+      options: {
+        enabled: open,
+        ignoreInputs: false,
+      },
+    },
+  ], { conflictBehavior: "allow" });
 
   const getDisplayKeyName = (option: VariantOption) => {
     const found = atributosList?.itens?.find(
@@ -219,6 +278,17 @@ function ProdutosUpsertForm({
     } as ProdutoFormValues,
     onSubmit: async ({ value }) => {
       resetErrors();
+      
+      const isChangingToNonDecimal = 
+        editingItem?.unidadeMedida.permiteDecimais && 
+        selectedUM && !selectedUM.permiteDecimais;
+
+      if (isChangingToNonDecimal) {
+        setPendingFormValue(value);
+        setConfirmUomTransitionOpen(true);
+        return;
+      }
+
       const submissionValue = { ...value };
       if (!hasVariants) {
         const singleSku = { ...submissionValue.skus[0], atributoValorIds: [] };
@@ -227,6 +297,18 @@ function ProdutosUpsertForm({
       mutation.mutate(submissionValue);
     },
   });
+
+  const confirmUomTransition = () => {
+    if (pendingFormValue) {
+      const submissionValue = { ...pendingFormValue };
+      if (!hasVariants) {
+        const singleSku = { ...submissionValue.skus[0], atributoValorIds: [] };
+        submissionValue.skus = [singleSku];
+      }
+      mutation.mutate(submissionValue);
+      setConfirmUomTransitionOpen(false);
+    }
+  };
 
   const generateCartesianCombinations = (
     opts: VariantOption[],
@@ -301,7 +383,7 @@ function ProdutosUpsertForm({
         <>
           <DialogClose asChild>
             <Button type="button" variant="outline">
-              Cancelar <Kbd className="ml-2">Esc</Kbd>
+              Cancelar <Kbd>Esc</Kbd>
             </Button>
           </DialogClose>
           <form.Subscribe
@@ -313,7 +395,13 @@ function ProdutosUpsertForm({
                 form="upsert-produtos"
                 disabled={!canSubmit || isSubmitting}
               >
-                {isSubmitting ? "Salvando..." : <span className="flex items-center gap-2">Salvar Produto <Kbd className="bg-primary-foreground/20 text-primary-foreground">Ctrl+Enter</Kbd></span>}
+                {isSubmitting ? (
+                  "Salvando..."
+                ) : (
+                  <span className="flex items-center gap-2">
+                    Salvar Produto <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup>
+                  </span>
+                )}
               </Button>
             )}
           </form.Subscribe>
@@ -332,7 +420,7 @@ function ProdutosUpsertForm({
         <FieldGroup className="gap-4">
           <div className="flex flex-wrap gap-4 items-start w-full">
             {editingItem && (
-              <div className="w-24 shrink-0">
+              <div className="w-fit">
                 <div className="flex flex-col gap-1.5">
                   <FieldLabel>Código</FieldLabel>
                   <Input
@@ -372,10 +460,9 @@ function ProdutosUpsertForm({
               return (
                 <Field data-invalid={!!error} className="w-full">
                   <FieldLabel htmlFor={field.name}>Descrição</FieldLabel>
-                  <textarea
+                  <Textarea
                     id={field.name}
                     rows={3}
-                    className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                     value={field.state.value ?? ""}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="Descrição do produto..."
@@ -392,8 +479,11 @@ function ProdutosUpsertForm({
                 name="categoriaId"
                 validators={{
                   onChange: ({ value }) => {
-                    const res = produtoBaseSchema.shape.categoriaId.safeParse(value);
-                    return res.success ? undefined : res.error.errors[0]?.message;
+                    const res =
+                      produtoBaseSchema.shape.categoriaId.safeParse(value);
+                    return res.success
+                      ? undefined
+                      : res.error.errors[0]?.message;
                   },
                 }}
               >
@@ -402,12 +492,10 @@ function ProdutosUpsertForm({
                     name={field.name}
                     label="Categoria"
                     error={getFieldError(field.name, field.state.meta.errors)}
-                    initialItem={
-                      editingItem?.categoria
-                        ? (editingItem.categoria as unknown as CategoriaResumo)
-                        : null
+                    initialItem={editingItem?.categoria as unknown as CategoriaResumo}
+                    onSelectId={(id) =>
+                      field.handleChange(id as number)
                     }
-                    onSelectId={(id) => field.handleChange(id as unknown as number)}
                   />
                 )}
               </form.Field>
@@ -418,8 +506,11 @@ function ProdutosUpsertForm({
                 name="marcaId"
                 validators={{
                   onChange: ({ value }) => {
-                    const res = produtoBaseSchema.shape.marcaId.safeParse(value);
-                    return res.success ? undefined : res.error.errors[0]?.message;
+                    const res =
+                      produtoBaseSchema.shape.marcaId.safeParse(value);
+                    return res.success
+                      ? undefined
+                      : res.error.errors[0]?.message;
                   },
                 }}
               >
@@ -428,12 +519,10 @@ function ProdutosUpsertForm({
                     name={field.name}
                     label="Marca"
                     error={getFieldError(field.name, field.state.meta.errors)}
-                    initialItem={
-                      editingItem?.marca
-                        ? (editingItem.marca as unknown as MarcaResumo)
-                        : null
+                    initialItem={editingItem?.marca as unknown as MarcaResumo}
+                    onSelectId={(id) =>
+                      field.handleChange(id as number)
                     }
-                    onSelectId={(id) => field.handleChange(id as unknown as number)}
                   />
                 )}
               </form.Field>
@@ -444,8 +533,11 @@ function ProdutosUpsertForm({
                 name="unidadeMedidaId"
                 validators={{
                   onChange: ({ value }) => {
-                    const res = produtoBaseSchema.shape.unidadeMedidaId.safeParse(value);
-                    return res.success ? undefined : res.error.errors[0]?.message;
+                    const res =
+                      produtoBaseSchema.shape.unidadeMedidaId.safeParse(value);
+                    return res.success
+                      ? undefined
+                      : res.error.errors[0]?.message;
                   },
                 }}
               >
@@ -454,12 +546,12 @@ function ProdutosUpsertForm({
                     name={field.name}
                     label="Unidade de Medida"
                     error={getFieldError(field.name, field.state.meta.errors)}
-                    initialItem={
-                      editingItem?.unidadeMedida
-                        ? (editingItem.unidadeMedida as unknown as UnidadeMedidaResumo)
-                        : null
-                    }
-                    onSelectId={(id) => field.handleChange(id as unknown as number)}
+                    initialItem={editingItem?.unidadeMedida as unknown as UnidadeMedidaResumo}
+                    onSelectItem={(item) => {
+                      setSelectedUM(item as unknown as UnidadeMedidaResumida);
+                      field.handleChange(item?.id as number);
+                    }}
+                    onSelectId={() => {}}
                   />
                 )}
               </form.Field>
@@ -501,6 +593,7 @@ function ProdutosUpsertForm({
                       preco: 0,
                       gtinEan: "",
                       ativo: true,
+                      estoque: 0,
                       atributoValorIds: [],
                       variantLabel: "",
                     },
@@ -544,6 +637,7 @@ function ProdutosUpsertForm({
                     label="Preço de Venda (R$)"
                     inputSize="full"
                     type="number"
+                    decimals={2}
                     getFieldError={getFieldError}
                     placeholder="0,00"
                   />
@@ -574,6 +668,7 @@ function ProdutosUpsertForm({
                       label="Estoque Atual"
                       inputSize="full"
                       type="number"
+                      decimals={0}
                       disabled
                       getFieldError={getFieldError}
                     />
@@ -599,7 +694,8 @@ function ProdutosUpsertForm({
                       setOptions(newOptions);
                     }}
                   >
-                    <Plus className="size-3.5" /> Adicionar Opção <Kbd className="ml-1 bg-background text-foreground border shadow-xs">Alt+O</Kbd>
+                    <Plus className="size-3.5" /> Adicionar Opção{" "}
+                    <KbdGroup><Kbd>Alt</Kbd><Kbd>O</Kbd></KbdGroup>
                   </Button>
                 </div>
 
@@ -708,12 +804,26 @@ function ProdutosUpsertForm({
                       <Table>
                         <TableHeader className="bg-muted/40 border-b text-xs font-semibold text-muted-foreground uppercase">
                           <TableRow className="hover:bg-transparent border-b">
-                            <TableHead className="p-3 h-10 font-semibold text-muted-foreground">Código SKU</TableHead>
-                            <TableHead className="p-3 h-10 font-semibold text-muted-foreground">Variação</TableHead>
-                            <TableHead className="p-3 h-10 font-semibold text-muted-foreground">Preço (R$)</TableHead>
-                            <TableHead className="p-3 h-10 font-semibold text-muted-foreground">Barras (EAN)</TableHead>
-                            {isEditMode && <TableHead className="p-3 h-10 font-semibold text-muted-foreground">Estoque</TableHead>}
-                            <TableHead className="p-3 text-center h-10 font-semibold text-muted-foreground">Ativo</TableHead>
+                            <TableHead className="p-3 h-10 font-semibold text-muted-foreground">
+                              Código SKU
+                            </TableHead>
+                            <TableHead className="p-3 h-10 font-semibold text-muted-foreground">
+                              Variação
+                            </TableHead>
+                            <TableHead className="p-3 h-10 font-semibold text-muted-foreground">
+                              Preço (R$)
+                            </TableHead>
+                            <TableHead className="p-3 h-10 font-semibold text-muted-foreground">
+                              Barras (EAN)
+                            </TableHead>
+                            {isEditMode && (
+                              <TableHead className="p-3 h-10 font-semibold text-muted-foreground">
+                                Estoque
+                              </TableHead>
+                            )}
+                            <TableHead className="p-3 text-center h-10 font-semibold text-muted-foreground">
+                              Ativo
+                            </TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -779,7 +889,9 @@ function ProdutosUpsertForm({
                               <TableCell className="p-3">
                                 <form.Field
                                   name={`skus[${index}].preco`}
-                                  validators={{ onChange: skuFormSchema.shape.preco }}
+                                  validators={{
+                                    onChange: skuFormSchema.shape.preco,
+                                  }}
                                 >
                                   {(field) => {
                                     const error = getFieldError(
@@ -788,15 +900,13 @@ function ProdutosUpsertForm({
                                     );
                                     return (
                                       <div className="flex flex-col gap-1">
-                                        <Input
+                                        <NumberInput
                                           inputSize="full"
-                                          type="number"
+                                          decimals={2}
                                           value={field.state.value}
-                                          onChange={(e) =>
-                                            field.handleChange(
-                                              e.target.value === "" ? 0 : Number(e.target.value),
-                                            )
-                                          }
+                                          onNumberChange={(num) => {
+                                            field.handleChange(num);
+                                          }}
                                           placeholder="0,00"
                                           className={cn(
                                             "h-8 text-xs",
@@ -817,7 +927,9 @@ function ProdutosUpsertForm({
                               <TableCell className="p-3">
                                 <form.Field
                                   name={`skus[${index}].gtinEan`}
-                                  validators={{ onChange: skuFormSchema.shape.gtinEan }}
+                                  validators={{
+                                    onChange: skuFormSchema.shape.gtinEan,
+                                  }}
                                 >
                                   {(field) => {
                                     const error = getFieldError(
@@ -855,10 +967,10 @@ function ProdutosUpsertForm({
                                   <form.Field name={`skus[${index}].estoque`}>
                                     {(field) => (
                                       <div className="flex flex-col gap-1">
-                                        <Input
+                                        <NumberInput
                                           inputSize="full"
-                                          type="number"
-                                          value={field.state.value}
+                                          decimals={0}
+                                          value={field.state.value ?? 0}
                                           disabled
                                           className="h-8 text-xs bg-muted"
                                         />
@@ -909,6 +1021,55 @@ function ProdutosUpsertForm({
           </Alert>
         )}
       </form>
+
+      <Dialog
+        open={confirmUomTransitionOpen}
+        onOpenChange={setConfirmUomTransitionOpen}
+      >
+        <DialogContent
+          className="max-w-md"
+          onKeyDown={(e) => {
+            if (e.altKey && e.key === "Enter") {
+              e.preventDefault();
+              confirmUomTransition();
+            }
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>Ajuste de Estoque Necessário</DialogTitle>
+            <DialogDescription>
+              Você está alterando a unidade de medida para uma que{" "}
+              <strong>não permite quantidades decimais</strong> (ex: Unidade).
+              <br />
+              <br />
+              Isso exige um ajuste de estoque obrigatório para garantir que
+              todos os SKUs tenham quantidades inteiras. Uma movimentação de
+              balanço será gerada automaticamente após salvar.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="mt-4 flex gap-2 justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmUomTransitionOpen(false)}
+            >
+              Cancelar <Kbd>Esc</Kbd>
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              onClick={confirmUomTransition}
+            >
+              Entendi e Confirmar
+              <KbdGroup className="ml-2">
+                <Kbd>Alt</Kbd>
+                <Kbd>Enter</Kbd>
+              </KbdGroup>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </UpsertDialog>
   );
 }

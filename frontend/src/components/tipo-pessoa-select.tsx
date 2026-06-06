@@ -1,25 +1,25 @@
-"use client"
+"use client";
 
-import React from "react"
-import { TipoPessoa } from "@/api/types"
-import { Field, FieldLabel, FieldError } from "@/components/ui/field"
-import { cn } from "@/lib/utils"
+import React from "react";
+import { TipoPessoa } from "@/api/types";
+import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 
 interface TipoPessoaSelectProps {
-  name: string
-  label?: string
-  error?: string
-  value: TipoPessoa
-  onChange: (value: TipoPessoa) => void
-  inputSize?: "small" | "medium" | "large" | "full"
-  disabled?: boolean
+  name: string;
+  label?: string;
+  error?: string;
+  value: TipoPessoa;
+  onChange: (value: TipoPessoa) => void;
+  inputSize?: "small" | "medium" | "large" | "full";
+  disabled?: boolean;
 }
 
 export function TipoPessoaSelect({
@@ -31,8 +31,7 @@ export function TipoPessoaSelect({
   inputSize = "full",
   disabled = false,
 }: TipoPessoaSelectProps) {
-  // Radix select requires string values
-  const stringValue = String(value)
+  const stringValue = String(value);
 
   return (
     <Field data-invalid={!!error}>
@@ -45,10 +44,14 @@ export function TipoPessoaSelect({
         <SelectTrigger
           id={name}
           className={cn(
-            inputSize === "full" ? "w-full" : 
-            inputSize === "large" ? "w-64" : 
-            inputSize === "medium" ? "w-48" : "w-32",
-            "h-8 text-xs rounded-lg"
+            inputSize === "full"
+              ? "w-full"
+              : inputSize === "large"
+                ? "w-64"
+                : inputSize === "medium"
+                  ? "w-48"
+                  : "w-32",
+            "h-8 rounded-lg",
           )}
         >
           <SelectValue placeholder="Selecione o tipo..." />
@@ -60,6 +63,5 @@ export function TipoPessoaSelect({
       </Select>
       {error && <FieldError>{error}</FieldError>}
     </Field>
-  )
+  );
 }
-

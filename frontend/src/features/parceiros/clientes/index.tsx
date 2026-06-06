@@ -37,8 +37,8 @@ export function ClientesFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
-    deleteItem: async (id) => {
-      await clientesApi.delete(id);
+    deleteItem: async (item) => {
+      await clientesApi.delete(item.id);
     },
   });
 

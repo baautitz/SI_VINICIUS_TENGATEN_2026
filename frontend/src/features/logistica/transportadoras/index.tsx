@@ -39,8 +39,8 @@ export function TransportadorasFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
-    deleteItem: async (id) => {
-      await transportadorasApi.delete(id);
+    deleteItem: async (item) => {
+      await transportadorasApi.delete(item.id);
     },
   });
 

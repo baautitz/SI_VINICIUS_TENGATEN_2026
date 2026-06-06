@@ -4,8 +4,12 @@ import type { SkuResumo } from "@/api/catalogo";
 export interface MovimentacaoEstoqueItem {
   id: number;
   sku: SkuResumo;
+  produtoNome: string;
+  unidadeMedidaSigla: string;
   quantidade: number;
   custoUnitario: number;
+  quantidadeAnterior?: number | null;
+  custoMedioAnterior?: number | null;
 }
 
 export interface MovimentacaoEstoque {
@@ -18,15 +22,7 @@ export interface MovimentacaoEstoque {
   nfe?: { id: number; chaveAcesso?: string | null } | null;
   venda?: { id: number } | null;
   movimentacoesEstoquesItens: MovimentacaoEstoqueItem[];
-}
-
-export interface MovimentacaoEstoqueResumo {
-  id: number;
-  dataMovimentacao: string;
-  tipoMovimentacao: string;
-  status: string;
-  observacao?: string | null;
-  valorTotal: number;
+  valorTotal?: number; // Opcional, calculado ou enviado pelo backend
 }
 
 export const tipoMovimentacaoLabels: Record<string, string> = {
@@ -38,8 +34,8 @@ export const tipoMovimentacaoLabels: Record<string, string> = {
 
 export const statusLabels: Record<string, string> = {
   RASCUNHO: "Rascunho",
-  CONFIRMADA: "Confirmada",
-  CANCELADA: "Cancelada",
+  CONFIRMADA: "Efetivada",
+  CANCELADA: "Estornada",
 };
 
 export const TIPOS_SEM_CUSTO = ["BALANCO"] as const;
@@ -87,8 +83,12 @@ export const movimentacaoEstoqueSchema = movimentacaoEstoqueBaseSchema.refine(
   {
     message: "A venda correspondente é obrigatória para movimentação de venda.",
     path: ["vendaId"],
-  }
+  },
 );
 
-export type MovimentacaoEstoqueItemFormValues = z.infer<typeof movimentacaoEstoqueItemSchema>;
-export type MovimentacaoEstoqueFormValues = z.infer<typeof movimentacaoEstoqueSchema>;
+export type MovimentacaoEstoqueItemFormValues = z.infer<
+  typeof movimentacaoEstoqueItemSchema
+>;
+export type MovimentacaoEstoqueFormValues = z.infer<
+  typeof movimentacaoEstoqueSchema
+>;

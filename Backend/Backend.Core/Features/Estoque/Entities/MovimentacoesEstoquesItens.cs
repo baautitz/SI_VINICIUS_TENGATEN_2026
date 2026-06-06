@@ -15,11 +15,16 @@ public class MovimentacoesEstoquesItens
     public decimal? CustoMedioAnterior { get; private set; }
 
     public Skus Sku { get; private set; }
+    public string ProdutoNome { get; private set; }
+    public string UnidadeMedidaSigla { get; private set; }
 
-    public MovimentacoesEstoquesItens(Skus sku, decimal quantidade, decimal custoUnitario)
+    public MovimentacoesEstoquesItens(Skus sku, decimal quantidade, decimal custoUnitario, string produtoNome, string unidadeMedidaSigla)
     {
         if (sku == null)
             throw new DomainException("SKU é obrigatório para item de movimentação.");
+        
+        if (string.IsNullOrWhiteSpace(produtoNome))
+            throw new DomainException("Nome do produto é obrigatório.");
 
         if (quantidade <= 0)
             throw new DomainException("Quantidade deve ser maior que zero.");
@@ -28,12 +33,14 @@ public class MovimentacoesEstoquesItens
             throw new DomainException("Custo unitário não pode ser negativo.");
 
         Sku = sku;
+        ProdutoNome = produtoNome;
+        UnidadeMedidaSigla = unidadeMedidaSigla;
         Quantidade = quantidade;
         CustoUnitario = custoUnitario;
     }
 
-    public MovimentacoesEstoquesItens(int id, int movimentacaoId, Skus sku, decimal quantidade, decimal custoUnitario, decimal? quantidadeAnterior = null, decimal? custoMedioAnterior = null)
-        : this(sku, quantidade, custoUnitario)
+    public MovimentacoesEstoquesItens(int id, int movimentacaoId, Skus sku, decimal quantidade, decimal custoUnitario, decimal? quantidadeAnterior = null, decimal? custoMedioAnterior = null, string produtoNome = "", string unidadeMedidaSigla = "")
+        : this(sku, quantidade, custoUnitario, produtoNome, unidadeMedidaSigla)
     {
         Id = id;
         MovimentacaoId = movimentacaoId;

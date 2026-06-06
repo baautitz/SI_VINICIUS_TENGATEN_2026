@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS fornecedores (
   telefone VARCHAR(20),
   email VARCHAR(254),
   ativo BOOLEAN NOT NULL DEFAULT TRUE,
-  criado_em TIMESTAMP NOT NULL DEFAULT NOW(),
+  criado_em TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   observacao TEXT,
   CONSTRAINT fornecedores_bairro_fk FOREIGN KEY (bairro_id) REFERENCES bairros (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT fornecedores_nacionalidade_fk FOREIGN KEY (nacionalidade_id) REFERENCES paises (id) ON DELETE NO ACTION ON UPDATE NO ACTION,

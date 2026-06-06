@@ -39,8 +39,8 @@ export function PaisesFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
-    deleteItem: async (id) => {
-      await paisesApi.delete(id);
+    deleteItem: async (item) => {
+      await paisesApi.delete(item.id);
     },
   });
 

@@ -37,8 +37,8 @@ export function FornecedoresFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
-    deleteItem: async (id) => {
-      await fornecedoresApi.delete(id);
+    deleteItem: async (item) => {
+      await fornecedoresApi.delete(item.id);
     },
   });
 

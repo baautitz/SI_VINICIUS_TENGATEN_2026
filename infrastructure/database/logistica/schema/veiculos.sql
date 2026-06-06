@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS veiculos (
   tipo_veiculo VARCHAR(50),
   marca_modelo VARCHAR(100),
   ativo BOOLEAN NOT NULL DEFAULT TRUE,
-  criado_em TIMESTAMP NOT NULL DEFAULT NOW(),
-  atualizado_em TIMESTAMP,
+  criado_em TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  atualizado_em TIMESTAMP WITH TIME ZONE,
   observacao TEXT,
   CONSTRAINT veiculos_transportadora_fk
     FOREIGN KEY (transportadora_id)

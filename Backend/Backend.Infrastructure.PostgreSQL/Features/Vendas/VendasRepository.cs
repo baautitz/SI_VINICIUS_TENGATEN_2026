@@ -26,8 +26,8 @@ public class VendasRepository : IVendasRepository
 
         const string querySql = @"
             SELECT v.id AS Id, v.data_venda, v.valor_total, v.observacao,
-                   e.id AS EmitenteId, e.nome_razao_social, e.cpf_cnpj, e.ativo,
-                   c.id AS ClienteId, c.nome_razao_social, c.cpf_cnpj, c.ativo
+                   e.id AS EmitenteId, e.nome_razaosocial, e.cpf_cnpj, e.ativo,
+                   c.id AS ClienteId, c.nome_razaosocial, c.cpf_cnpj, c.ativo
             FROM vendas v
             JOIN emitentes e ON e.id = v.emitente_id
             JOIN clientes c ON c.id = v.cliente_id
@@ -92,10 +92,10 @@ public class VendasRepository : IVendasRepository
     {
         const string vendaSql = @"
             SELECT v.id AS Id, v.data_venda, v.valor_total, v.observacao,
-                   e.id AS EmitenteId, e.nome_razao_social, e.cpf_cnpj, e.apelido_nome_fantasia,
+                   e.id AS EmitenteId, e.nome_razaosocial, e.cpf_cnpj, e.apelido_nomefantasia,
                    e.endereco, e.telefone, e.email, e.rg_ie, e.inscricao_municipal,
                    e.regime_tributario, e.ativo, e.criado_em, e.observacao,
-                   c.id AS ClienteId, c.nome_razao_social, c.cpf_cnpj, c.rg_ie, c.apelido_nome_fantasia,
+                   c.id AS ClienteId, c.nome_razaosocial, c.cpf_cnpj, c.rg_ie, c.apelido_nomefantasia,
                    c.endereco, c.telefone, c.email, c.limite_credito, c.ativo, c.criado_em,
                    c.observacao
             FROM vendas v
@@ -214,7 +214,7 @@ public class VendasRepository : IVendasRepository
         const string sql = @"
             SELECT COUNT(*) FROM vendas;
 
-            SELECT v.id, v.data_venda, c.nome_razao_social AS cliente_nome, v.valor_total
+            SELECT v.id, v.data_venda, c.nome_razaosocial AS cliente_nome, v.valor_total
             FROM vendas v
             JOIN clientes c ON c.id = v.cliente_id
             ORDER BY v.data_venda DESC
@@ -237,12 +237,12 @@ public class VendasRepository : IVendasRepository
         const string sql = @"
             SELECT COUNT(*) FROM vendas v
             JOIN clientes c ON c.id = v.cliente_id
-            WHERE c.nome_razao_social ILIKE @Termo OR v.observacao ILIKE @Termo;
+            WHERE c.nome_razaosocial ILIKE @Termo OR v.observacao ILIKE @Termo;
 
-            SELECT v.id, v.data_venda, c.nome_razao_social AS cliente_nome, v.valor_total
+            SELECT v.id, v.data_venda, c.nome_razaosocial AS cliente_nome, v.valor_total
             FROM vendas v
             JOIN clientes c ON c.id = v.cliente_id
-            WHERE c.nome_razao_social ILIKE @Termo OR v.observacao ILIKE @Termo
+            WHERE c.nome_razaosocial ILIKE @Termo OR v.observacao ILIKE @Termo
             ORDER BY v.data_venda DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 

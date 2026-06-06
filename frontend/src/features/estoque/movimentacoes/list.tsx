@@ -1,20 +1,27 @@
 "use client";
 
-import { useHotkeys } from "react-hotkeys-hook";
+import * as React from "react";
+
+import { useFeatureHotkeys } from "@/hooks/use-feature-hotkeys";
 import { FeatureHeader } from "@/components/ui/feature-header";
-import { Check, ClipboardList, Pencil, Trash2, Eye, Ban } from "lucide-react"
+import { Check, ClipboardList, Pencil, Trash2, Eye, Ban } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { FeatureLayout } from "@/components/ui/feature-layout";
 import { Badge } from "@/components/ui/badge";
-import { MovimentacaoEstoqueResumo, tipoMovimentacaoLabels, statusLabels } from "./types";
+import {
+  MovimentacaoEstoque,
+  tipoMovimentacaoLabels,
+  statusLabels,
+} from "./types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
+import { formatToLocal } from "@/utils/date-utils";
 
-interface MovimentacoesListProps extends FeatureListProps<MovimentacaoEstoqueResumo> {
-  onConfirm: (item: MovimentacaoEstoqueResumo) => void;
-  onCancel: (item: MovimentacaoEstoqueResumo) => void;
-  onView: (item: MovimentacaoEstoqueResumo) => void;
+interface MovimentacoesListProps extends FeatureListProps<MovimentacaoEstoque> {
+  onConfirm: (item: MovimentacaoEstoque) => void;
+  onCancel: (item: MovimentacaoEstoque) => void;
+  onView: (item: MovimentacaoEstoque) => void;
 }
 
 export function MovimentacoesList({
@@ -32,28 +39,25 @@ export function MovimentacoesList({
   onCancel,
   onView,
   onPageChange,
-  selectionMode = false,
 }: MovimentacoesListProps) {
-  useHotkeys("alt+n", (e) => {
-    e.preventDefault();
-    if (!selectionMode && document.querySelector('[role="dialog"]')) return;
-    onAdd();
-  }, { enableOnFormTags: true }, [selectionMode, onAdd]);
+  const listRef = React.useRef<HTMLDivElement>(null);
+  useFeatureHotkeys({ onAdd, listRef });
 
-  const columns: ColumnDef<MovimentacaoEstoqueResumo>[] = [
+  const columns: ColumnDef<MovimentacaoEstoque>[] = [
     {
       accessorKey: "id",
       header: "Código",
       size: 80,
-      cell: ({ row }) => <span className="font-semibold">{row.getValue("id")}</span>,
+      cell: ({ row }) => (
+        <span className="font-semibold">{row.getValue("id")}</span>
+      ),
     },
     {
       accessorKey: "dataMovimentacao",
       header: "Data/Hora",
-      cell: ({ row }) => {
-        const val = row.getValue("dataMovimentacao") as string;
-        return <span>{new Date(val).toLocaleString("pt-BR")}</span>;
-      },
+      cell: ({ row }) => (
+        <span>{formatToLocal(row.getValue("dataMovimentacao"))}</span>
+      ),
     },
     {
       accessorKey: "tipoMovimentacao",
@@ -72,16 +76,18 @@ export function MovimentacoesList({
       header: "Status",
       cell: ({ row }) => {
         const status = row.getValue("status") as string;
-        let variant: "default" | "secondary" | "destructive" | "outline" = "secondary";
+        let variant: "default" | "secondary" | "destructive" | "outline" =
+          "secondary";
         let className = "";
-        
+
         if (status === "CONFIRMADA") {
-          className = "bg-emerald-500 hover:bg-emerald-600 text-white border-none";
+          className =
+            "bg-emerald-500 hover:bg-emerald-600 text-white border-none";
           variant = "default";
         } else if (status === "CANCELADA") {
           variant = "destructive";
         }
-        
+
         return (
           <Badge variant={variant} className={className}>
             {statusLabels[status] || status}
@@ -99,16 +105,23 @@ export function MovimentacoesList({
       ),
     },
     {
-      accessorKey: "valorTotal",
+      id: "valorTotal",
       header: () => <div className="text-right">Valor Total</div>,
       cell: ({ row }) => {
-        const valor: number = row.getValue("valorTotal");
+        const item = row.original;
+        const total =
+          item.valorTotal ??
+          item.movimentacoesEstoquesItens?.reduce(
+            (sum, i) => sum + (Number(i.quantidade) * Number(i.custoUnitario)),
+            0,
+          );
+
         return (
           <div className="text-right font-medium">
             {new Intl.NumberFormat("pt-BR", {
               style: "currency",
               currency: "BRL",
-            }).format(valor || 0)}
+            }).format(total || 0)}
           </div>
         );
       },
@@ -181,27 +194,37 @@ export function MovimentacoesList({
   ];
 
   return (
-    <FeatureLayout>
-      <FeatureHeader
-        title="Movimentações de Estoque"
-        icon={<ClipboardList />}
-        onAdd={onAdd}
-        addButtonLabel="Nova Movimentação"
-      />
+    <div ref={listRef} className="flex-1 min-h-0 flex flex-col h-full">
+      <FeatureLayout>
+        <FeatureHeader
+          title="Movimentações de Estoque"
+          icon={<ClipboardList />}
+          onAdd={onAdd}
+          addButtonLabel="Nova Movimentação"
+        />
 
-      <DataTable
-        columns={columns}
-        data={movimentacoes}
-        loading={loading}
-        pageCount={totalPages}
-        pageIndex={page}
-        onPageChange={onPageChange}
-        totalItems={totalItems}
-        globalFilter={searchTerm}
-        onGlobalFilterChange={onSearchChange}
-        searchPlaceholder="Pesquisar movimentações..."
-        getRowId={(row) => row.id.toString()}
-      />
-    </FeatureLayout>
+        <DataTable
+          columns={columns}
+          data={movimentacoes}
+          loading={loading}
+          pageCount={totalPages}
+          pageIndex={page}
+          onPageChange={onPageChange}
+          totalItems={totalItems}
+          globalFilter={searchTerm}
+          onGlobalFilterChange={onSearchChange}
+          searchPlaceholder="Pesquisar movimentações..."
+          getRowId={(row) => row.id.toString()}
+          onEditRow={onEdit}
+          onDeleteRow={(item) => {
+            if (item.status === "CONFIRMADA") {
+              onCancel(item);
+            } else if (item.status === "RASCUNHO") {
+              onDelete(item);
+            }
+          }}
+        />
+      </FeatureLayout>
+    </div>
   );
 }

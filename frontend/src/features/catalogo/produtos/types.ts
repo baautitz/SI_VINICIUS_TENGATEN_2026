@@ -11,6 +11,8 @@ export interface Sku {
   gtinEan?: string | null;
   preco: number;
   estoque: number;
+  custoMedio: number;
+  custoUltimaCompra: number;
   ativo: boolean;
   skuAtributosValores: SkuAtributoValor[];
 }
@@ -29,6 +31,7 @@ export interface UnidadeMedidaResumida {
   id: number;
   sigla: string;
   descricao: string;
+  permiteDecimais: boolean;
 }
 
 export interface Produto {

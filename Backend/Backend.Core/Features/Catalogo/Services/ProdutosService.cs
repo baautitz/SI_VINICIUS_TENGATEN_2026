@@ -255,7 +255,6 @@ public sealed class ProdutosService : BaseService
                 await _skusRepository.DeletarSku(sku.Sku);
             }
 
-            // Delete product
             var deletado = await _produtosRepository.DeletarProduto(id);
             _unitOfWork.Commit();
             return deletado;

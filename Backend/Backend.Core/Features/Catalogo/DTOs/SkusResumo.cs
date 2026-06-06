@@ -10,5 +10,6 @@ public record SkusResumo(
     decimal CustoUltimaCompra,
     bool PermiteDecimais,
     int ProdutoId,
-    string ProdutoNome
+    string ProdutoNome,
+    string UnidadeMedidaSigla
 );

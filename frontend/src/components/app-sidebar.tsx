@@ -2,28 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import {
-  Globe,
-  Map,
-  MapPin,
-  MapPinned,
-  Milestone,
-  LayoutDashboard,
-  Users,
-  Truck,
-  UserCircle,
-  BriefcaseBusiness,
-  Car,
-  Scale,
-  Package,
-  Tag,
-  Layers,
-  Sliders,
-  ClipboardList,
-  ChevronRight,
-  Search,
-} from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { ChevronRight, Search } from "lucide-react";
 
 import {
   Sidebar,
@@ -48,91 +28,10 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
-import { useHotkeys } from "react-hotkeys-hook";
-
-const catalogoItems = [
-  {
-    title: "Produtos",
-    url: "/catalogo/produtos",
-    icon: Package,
-  },
-  {
-    title: "Marcas",
-    url: "/catalogo/marcas",
-    icon: Tag,
-  },
-  {
-    title: "Categorias",
-    url: "/catalogo/categorias",
-    icon: Layers,
-  },
-  {
-    title: "Atributos",
-    url: "/catalogo/atributos",
-    icon: Sliders,
-  },
-  {
-    title: "Unidades de Medida",
-    url: "/catalogo/unidades-medida",
-    icon: Scale,
-  },
-];
-
-const localizationItems = [
-  {
-    title: "Países",
-    url: "/localizacao/paises",
-    icon: Globe,
-  },
-  {
-    title: "Estados",
-    url: "/localizacao/estados",
-    icon: Map,
-  },
-  {
-    title: "Cidades",
-    url: "/localizacao/cidades",
-    icon: MapPin,
-  },
-  {
-    title: "Bairros",
-    url: "/localizacao/bairros",
-    icon: Milestone,
-  },
-];
-
-const parceirosItems = [
-  {
-    title: "Clientes",
-    url: "/parceiros/clientes",
-    icon: Users,
-  },
-  {
-    title: "Fornecedores",
-    url: "/parceiros/fornecedores",
-    icon: Truck,
-  },
-  {
-    title: "Emitentes",
-    url: "/parceiros/emitentes",
-    icon: UserCircle,
-  },
-];
-
-const logisticaItems = [
-  {
-    title: "Transportadoras",
-    url: "/logistica/transportadoras",
-    icon: Truck,
-  },
-  {
-    title: "Veículos",
-    url: "/logistica/veiculos",
-    icon: Car,
-  },
-];
+import { useHotkeys } from "@tanstack/react-hotkeys";
+import { InputGroup, InputGroupInput, InputGroupAddon } from "./ui/input-group";
+import { navigationConfig as groups, homeItem } from "@/config/navigation";
 
 class LocalStorageStore {
   private subscribers = new Set<() => void>();
@@ -178,50 +77,6 @@ function useSidebarSectionOpen(key: string, defaultOpen: boolean): boolean {
     getServerSnapshot,
   );
 }
-
-const groups = [
-  {
-    id: "catalogo",
-    title: "Catálogo",
-    icon: Package,
-    urlPrefix: "/catalogo",
-    items: catalogoItems,
-  },
-  {
-    id: "estoque",
-    title: "Estoque",
-    icon: ClipboardList,
-    urlPrefix: "/estoque",
-    items: [
-      {
-        title: "Movimentações",
-        url: "/estoque/movimentacoes",
-        icon: ClipboardList,
-      },
-    ],
-  },
-  {
-    id: "localizacao",
-    title: "Localização",
-    icon: MapPinned,
-    urlPrefix: "/localizacao",
-    items: localizationItems,
-  },
-  {
-    id: "parceiros",
-    title: "Parceiros",
-    icon: BriefcaseBusiness,
-    urlPrefix: "/parceiros",
-    items: parceirosItems,
-  },
-  {
-    id: "logistica",
-    title: "Logística",
-    icon: Truck,
-    urlPrefix: "/logistica",
-    items: logisticaItems,
-  },
-];
 
 const normalizeStr = (str: string) =>
   str
@@ -313,25 +168,39 @@ function SidebarGroupSection({
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = React.useState("");
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const { state, setOpen } = useSidebar();
 
-  useHotkeys(
-    "alt+s",
-    (e) => {
-      e.preventDefault();
-      if (state === "collapsed") {
-        setOpen(true);
-      }
-      setTimeout(() => {
-        searchInputRef.current?.focus();
-        searchInputRef.current?.select();
-      }, 50);
+  useHotkeys([
+    {
+      hotkey: "Alt+S",
+      callback: (e) => {
+        e.preventDefault();
+        if (state === "collapsed") {
+          setOpen(true);
+        }
+        setTimeout(() => {
+          searchInputRef.current?.focus();
+          searchInputRef.current?.select();
+        }, 50);
+      },
+      options: {
+        ignoreInputs: false,
+      },
     },
-    { enableOnFormTags: true },
-    [state, setOpen],
-  );
+    {
+      hotkey: "Alt+H",
+      callback: (e) => {
+        e.preventDefault();
+        router.push(homeItem.url);
+      },
+      options: {
+        ignoreInputs: false,
+      },
+    },
+  ], { conflictBehavior: "allow" });
 
   const prevPathnameRef = React.useRef(pathname);
 
@@ -346,69 +215,140 @@ export function AppSidebar() {
     });
   }, [pathname]);
 
-  const filteredGroups = React.useMemo(() => {
-    if (!searchTerm.trim()) return groups;
-
+  const flatItems = React.useMemo(() => {
+    if (!searchTerm.trim()) return [];
     const term = normalizeStr(searchTerm);
-    return groups
-      .map((group) => {
-        const groupMatches = normalizeStr(group.title).includes(term);
-        const matchedItems = group.items.filter(
-          (item) => groupMatches || normalizeStr(item.title).includes(term),
-        );
-
-        return {
-          ...group,
-          items: matchedItems,
-        };
-      })
-      .filter((group) => group.items.length > 0);
+    const results: Array<{
+      title: string;
+      url: string;
+      icon: React.ComponentType;
+    }> = [];
+    groups.forEach((group) => {
+      const groupMatches = normalizeStr(group.title).includes(term);
+      group.items.forEach((item) => {
+        if (groupMatches || normalizeStr(item.title).includes(term)) {
+          if (!results.some((r) => r.url === item.url)) {
+            results.push(item);
+          }
+        }
+      });
+    });
+    return results;
   }, [searchTerm]);
+
+  const handleSearchInputKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const firstItem = document.getElementById(
+        "sidebar-search-item-0",
+      ) as HTMLAnchorElement | null;
+      firstItem?.focus();
+    } else if (e.key === "Enter") {
+      if (flatItems.length === 1) {
+        e.preventDefault();
+        router.push(flatItems[0].url);
+        setSearchTerm("");
+      }
+    }
+  };
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="flex h-12 items-center justify-end px-3 group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:px-0 border-b border-sidebar-border shrink-0">
-        <SidebarMenu>
+      <SidebarHeader className="gap-2 border-b border-sidebar-border shrink-0 px-2 py-2 group-data-[state=collapsed]:items-center group-data-[state=collapsed]:px-0">
+        <SidebarMenu className="gap-2">
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              isActive={pathname === "/"}
-              tooltip="Início"
+              isActive={pathname === homeItem.url}
+              tooltip={homeItem.title}
+              className="group-data-[state=collapsed]:size-8"
             >
-              <Link href="/">
-                <LayoutDashboard />
-                <span>Início</span>
+              <Link href={homeItem.url}>
+                <homeItem.icon />
+                <span>{homeItem.title}</span>
               </Link>
             </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem className="group-data-[state=collapsed]:hidden">
+            <InputGroup>
+              <InputGroupInput
+                ref={searchInputRef}
+                placeholder="Buscar menu..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={handleSearchInputKeyDown}
+                className="h-8 text-xs rounded-lg border-none "
+              />
+
+              <InputGroupAddon>
+                <Search className="size-3 text-muted-foreground" />
+              </InputGroupAddon>
+
+              <InputGroupAddon align="inline-end">
+                <Kbd>Alt</Kbd>
+                <Kbd>S</Kbd>
+              </InputGroupAddon>
+            </InputGroup>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <div className="px-3 py-2 group-data-[state=collapsed]:hidden border-b border-sidebar-border/50 shrink-0">
-          <div className="relative">
-            <Input
-              ref={searchInputRef}
-              placeholder="Buscar menu..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="h-8 pl-8 pr-10 text-xs rounded-lg bg-background"
+        {searchTerm.trim() ? (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {flatItems.map((item, index) => {
+                  const Icon = item.icon;
+                  const active = pathname === item.url;
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild isActive={active}>
+                        <Link
+                          id={`sidebar-search-item-${index}`}
+                          href={item.url}
+                          onClick={() => setSearchTerm("")}
+                          onKeyDown={(e) => {
+                            if (e.key === "ArrowDown") {
+                              e.preventDefault();
+                              const nextItem = document.getElementById(
+                                `sidebar-search-item-${index + 1}`,
+                              ) as HTMLAnchorElement | null;
+                              nextItem?.focus();
+                            } else if (e.key === "ArrowUp") {
+                              e.preventDefault();
+                              if (index === 0) {
+                                searchInputRef.current?.focus();
+                              } else {
+                                const prevItem = document.getElementById(
+                                  `sidebar-search-item-${index - 1}`,
+                                ) as HTMLAnchorElement | null;
+                                prevItem?.focus();
+                              }
+                            }
+                          }}
+                        >
+                          <Icon />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : (
+          groups.map((group) => (
+            <SidebarGroupSection
+              key={group.id}
+              group={group}
+              pathname={pathname}
+              searchTerm={searchTerm}
             />
-            <Search className="absolute left-2.5 top-2.5 size-3 text-muted-foreground" />
-            <div className="absolute right-2.5 top-1.5 flex items-center gap-0.5 pointer-events-none select-none">
-              <Kbd className="h-5 text-[9px] px-1 bg-muted/40 border-none shadow-none">
-                Alt+S
-              </Kbd>
-            </div>
-          </div>
-        </div>
-        {filteredGroups.map((group) => (
-          <SidebarGroupSection
-            key={group.id}
-            group={group}
-            pathname={pathname}
-            searchTerm={searchTerm}
-          />
-        ))}
+          ))
+        )}
       </SidebarContent>
       <SidebarFooter>
         <SidebarTrigger className="ml-auto" />

@@ -1,7 +1,9 @@
 "use client";
 
+import * as React from "react";
+
 import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
-import { useHotkeys } from "react-hotkeys-hook";
+import { useFeatureHotkeys } from "@/hooks/use-feature-hotkeys";
 import { FeatureHeader } from "@/components/ui/feature-header";
 import { Globe } from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table";
@@ -32,11 +34,8 @@ export function PaisesList({
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<PaisDto>) {
-  useHotkeys("alt+n", (e) => {
-    e.preventDefault();
-    if (!selectionMode && document.querySelector('[role="dialog"]')) return;
-    onAdd();
-  }, { enableOnFormTags: true }, [selectionMode, onAdd]);
+  const listRef = React.useRef<HTMLDivElement>(null);
+  useFeatureHotkeys({ onAdd, listRef });
 
   const columns: ColumnDef<PaisDto>[] = [
     getSelectColumn<PaisDto>(),
@@ -75,7 +74,8 @@ export function PaisesList({
   ];
 
   return (
-    <FeatureLayout>
+    <div ref={listRef} className="flex-1 min-h-0 flex flex-col h-full">
+      <FeatureLayout>
       <FeatureHeader
         title="Países"
         icon={<Globe />}
@@ -100,7 +100,10 @@ export function PaisesList({
         onSelectAllAcrossPagesChange={onSelectAllAcrossPagesChange}
         getRowId={(row) => row.id.toString()}
         onRowSelect={selectionMode ? onSelect : undefined}
-      />
+        onEditRow={onEdit}
+        onDeleteRow={onDelete}
+        />
     </FeatureLayout>
+    </div>
   );
 }

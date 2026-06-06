@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS contas_pagar (
   status status_titulo_financeiro_enum NOT NULL DEFAULT 'ABERTO',
   condicao_pagamento_id INTEGER,
   observacao TEXT,
-  criado_em TIMESTAMP NOT NULL DEFAULT NOW(),
-  atualizado_em TIMESTAMP,
+  criado_em TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  atualizado_em TIMESTAMP WITH TIME ZONE,
   CONSTRAINT contas_pagar_fornecedor_fk
     FOREIGN KEY (fornecedor_id)
     REFERENCES fornecedores (id)

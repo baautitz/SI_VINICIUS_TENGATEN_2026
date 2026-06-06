@@ -26,6 +26,15 @@ export function FeatureHeader({
   onAdd,
   selectionMode = false,
 }: FeatureHeaderProps) {
+  const searchInputRef = React.useRef<HTMLInputElement>(null)
+
+  React.useEffect(() => {
+    const timeout = setTimeout(() => {
+      searchInputRef.current?.focus()
+    }, 100)
+    return () => clearTimeout(timeout)
+  }, [])
+
   return (
     <div className="flex flex-col gap-4">
       {!selectionMode && (
@@ -47,6 +56,7 @@ export function FeatureHeader({
             <Search />
           </InputGroupAddon>
           <InputGroupInput
+            ref={searchInputRef}
             placeholder={searchPlaceholder}
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}

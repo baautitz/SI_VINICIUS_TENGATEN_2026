@@ -71,9 +71,8 @@ public class Skus
 
         if (custoUnitarioPago < 0)
             throw new DomainException("O custo unitário não pode ser negativo.");
-
-        // Cálculo da Média Ponderada
-        // NovoCustoMedio = ((Estoque Atual * Custo Medio Atual) + (Qtd Entrada * Custo Pago)) / (Estoque Atual + Qtd Entrada)
+            
+         // NovoCustoMedio = ((Estoque Atual * Custo Medio Atual) + (Qtd Entrada * Custo Pago)) / (Estoque Atual + Qtd Entrada)
         decimal valorEstoqueAtual = Estoque * CustoMedio;
         decimal valorEntrada = quantidadeEntrada * custoUnitarioPago;
         decimal novoEstoqueTotal = Estoque + quantidadeEntrada;
@@ -90,7 +89,6 @@ public class Skus
 
         Estoque -= quantidadeCancelada;
         CustoMedio = custoMedioAnterior;
-        // Não revertemos o custo última compra pois é apenas informativo, e manter o histórico não quebra balancetes.
     }
 
     public void AjustarEstoque(decimal quantidade)

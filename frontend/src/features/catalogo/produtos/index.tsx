@@ -7,6 +7,7 @@ import { ProdutoResumo } from "./types";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
 import { produtosApi } from "@/api/catalogo";
+import { MovimentacoesUpsert, ItemLinha } from "../../estoque/movimentacoes/upsert";
 
 export * from "./types";
 
@@ -21,6 +22,8 @@ export function ProdutosFeature({
   onSelect,
   initialSearchTerm = "",
 }: ProdutosFeatureProps) {
+  const [adjustmentItems, setAdjustmentItems] = React.useState<ItemLinha[] | null>(null);
+
   const {
     listProps,
     upsertProps,
@@ -29,6 +32,7 @@ export function ProdutosFeature({
   } = useFeatureOrchestrator<ProdutoResumo>({
     queryKey: "produtos",
     initialSearchTerm,
+    additionalKeysToInvalidate: [["skus"]],
     fetchPage: async (searchTerm, page, pageSize) => {
       const res = await produtosApi.list(searchTerm || undefined, page, pageSize);
       if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
@@ -39,8 +43,8 @@ export function ProdutosFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
-    deleteItem: async (id) => {
-      await produtosApi.delete(id);
+    deleteItem: async (item) => {
+      await produtosApi.delete(item.id);
     },
   });
 
@@ -53,7 +57,28 @@ export function ProdutosFeature({
       />
 
       {list.isUpsertOpen && (
-        <ProdutosUpsert key={list.editingItem?.id ?? "new"} {...upsertProps} />
+        <ProdutosUpsert 
+          key={list.editingItem?.id ?? "new"} 
+          {...upsertProps} 
+          onSuccessWithAdjustment={(items) => {
+            setAdjustmentItems(items);
+            upsertProps.onSuccess();
+          }}
+        />
+      )}
+
+      {adjustmentItems && (
+        <MovimentacoesUpsert
+          open={!!adjustmentItems}
+          editingItem={null}
+          initialItems={adjustmentItems}
+          fixedTipo="BALANCO"
+          onClose={() => setAdjustmentItems(null)}
+          onSuccess={() => {
+            setAdjustmentItems(null);
+            listProps.onPageChange(1);
+          }}
+        />
       )}
 
       <DeleteDialog

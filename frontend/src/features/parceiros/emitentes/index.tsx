@@ -37,8 +37,8 @@ export function EmitentesFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
-    deleteItem: async (id) => {
-      await emitentesApi.delete(id);
+    deleteItem: async (item) => {
+      await emitentesApi.delete(item.id);
     },
   });
 

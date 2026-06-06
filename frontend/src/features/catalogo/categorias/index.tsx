@@ -29,6 +29,7 @@ export function CategoriasFeature({
   } = useFeatureOrchestrator<CategoriaResumo>({
     queryKey: "categorias",
     initialSearchTerm,
+    additionalKeysToInvalidate: [["produtos"], ["skus"]],
     fetchPage: async (searchTerm, page, pageSize) => {
       const res = await categoriasApi.list(searchTerm || undefined, page, pageSize);
       if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
@@ -39,8 +40,8 @@ export function CategoriasFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
-    deleteItem: async (id) => {
-      await categoriasApi.delete(id);
+    deleteItem: async (item) => {
+      await categoriasApi.delete(item.id);
     },
   });
 

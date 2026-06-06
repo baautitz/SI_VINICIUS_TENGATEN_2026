@@ -1,13 +1,13 @@
-using Backend.Core.Features.Estoque.DTOs;
+using Backend.Core.Features.Estoque.Commands;
 using Backend.Core.Features.Estoque.Entities.Enums;
 using FluentValidation;
 using System;
 
-namespace Backend.Core.Features.Estoque.Validators;
+namespace Backend.Core.Features.Estoque.Validators.Commands;
 
-public sealed class UpdateMovimentacaoDtoValidator : AbstractValidator<UpdateMovimentacaoDto>
+public sealed class CriarMovimentacaoCommandValidator : AbstractValidator<CriarMovimentacaoCommand>
 {
-    public UpdateMovimentacaoDtoValidator()
+    public CriarMovimentacaoCommandValidator()
     {
         RuleFor(x => x.TipoMovimentacao)
             .NotEmpty().WithMessage("Tipo de movimentação é obrigatório.")

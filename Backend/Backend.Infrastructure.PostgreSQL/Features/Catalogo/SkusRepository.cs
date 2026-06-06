@@ -179,14 +179,15 @@ public class SkusRepository : ISkusRepository
 
         const string sql = @"
             SELECT COUNT(*)
-            FROM skus
-            WHERE sku ILIKE @Termo OR gtin_ean ILIKE @Termo;
+            FROM skus s
+            JOIN produtos p ON p.id = s.produto_id
+            WHERE s.sku ILIKE @Termo OR s.gtin_ean ILIKE @Termo OR p.produto ILIKE @Termo;
 
-            SELECT s.sku, s.gtin_ean AS GtinEan, s.preco AS Preco, s.estoque AS Estoque, s.ativo AS Ativo, s.custo_medio AS CustoMedio, s.custo_ultima_compra AS CustoUltimaCompra, um.permite_decimais AS PermiteDecimais, p.id AS ProdutoId, p.produto AS ProdutoNome
+            SELECT s.sku, s.gtin_ean AS GtinEan, s.preco AS Preco, s.estoque AS Estoque, s.ativo AS Ativo, s.custo_medio AS CustoMedio, s.custo_ultima_compra AS CustoUltimaCompra, um.permite_decimais AS PermiteDecimais, p.id AS ProdutoId, p.produto AS ProdutoNome, um.sigla AS UnidadeMedidaSigla
             FROM skus s
             JOIN produtos p ON p.id = s.produto_id
             JOIN unidades_medida um ON um.id = p.unidade_medida_id
-            WHERE s.sku ILIKE @Termo OR s.gtin_ean ILIKE @Termo
+            WHERE s.sku ILIKE @Termo OR s.gtin_ean ILIKE @Termo OR p.produto ILIKE @Termo
             ORDER BY s.sku
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
@@ -204,13 +205,25 @@ public class SkusRepository : ISkusRepository
     public async Task<SkusResumo?> ObterResumoPorSku(string sku)
     {
         const string sql = @"
-            SELECT s.sku, s.gtin_ean AS GtinEan, s.preco AS Preco, s.estoque AS Estoque, s.ativo AS Ativo, s.custo_medio AS CustoMedio, s.custo_ultima_compra AS CustoUltimaCompra, um.permite_decimais AS PermiteDecimais, p.id AS ProdutoId, p.produto AS ProdutoNome
+            SELECT s.sku, s.gtin_ean AS GtinEan, s.preco AS Preco, s.estoque AS Estoque, s.ativo AS Ativo, s.custo_medio AS CustoMedio, s.custo_ultima_compra AS CustoUltimaCompra, um.permite_decimais AS PermiteDecimais, p.id AS ProdutoId, p.produto AS ProdutoNome, um.sigla AS UnidadeMedidaSigla
             FROM skus s
             JOIN produtos p ON p.id = s.produto_id
             JOIN unidades_medida um ON um.id = p.unidade_medida_id
             WHERE s.sku = @Sku OR s.gtin_ean = @Sku;";
 
-        return await _session.Connection.QuerySingleOrDefaultAsync<SkusResumo>(
+        return await _session.Connection.QueryFirstOrDefaultAsync<SkusResumo>(
+            sql, new { Sku = sku }, transaction: _session.Transaction);
+    }
+
+    public async Task<Produtos?> ObterProdutoPorSku(string sku)
+    {
+        const string sql = @"
+            SELECT p.id, p.produto, p.descricao, p.ativo
+            FROM produtos p
+            JOIN skus s ON s.produto_id = p.id
+            WHERE s.sku = @Sku OR s.gtin_ean = @Sku;";
+
+        return await _session.Connection.QueryFirstOrDefaultAsync<Produtos>(
             sql, new { Sku = sku }, transaction: _session.Transaction);
     }
 

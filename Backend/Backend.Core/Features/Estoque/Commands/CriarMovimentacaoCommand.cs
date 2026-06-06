@@ -1,17 +1,17 @@
 using System.Collections.Generic;
 
-namespace Backend.Core.Features.Estoque.DTOs;
+namespace Backend.Core.Features.Estoque.Commands;
 
-public record UpdateMovimentacaoDto(
+public record CriarMovimentacaoCommand(
     string TipoMovimentacao,
     int? UsuarioId,
     int? NfeId,
     int? VendaId,
     string? Observacao,
-    List<UpdateMovimentacaoItemDto> Itens
+    List<MovimentacaoItemCommand> Itens
 );
 
-public record UpdateMovimentacaoItemDto(
+public record MovimentacaoItemCommand(
     string Sku,
     decimal Quantidade,
     decimal? CustoUnitario

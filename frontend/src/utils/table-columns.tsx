@@ -30,8 +30,8 @@ export function getSelectColumn<T>(): ColumnDef<T> {
 }
 
 interface ActionColumnOptions<T> {
-  onEdit: (item: T) => void;
-  onDelete: (item: T) => void;
+  onEdit?: (item: T) => void;
+  onDelete?: (item: T) => void;
   selectionMode?: boolean;
   onSelect?: (item: T) => void;
 }
@@ -49,12 +49,16 @@ export function getActionsColumn<T>({
       const item = row.original;
       return (
         <div className="flex justify-end gap-2 px-4">
-          <Button size="icon-sm" variant="outline" onClick={() => onEdit(item)}>
-            <Pencil className="size-4" />
-          </Button>
-          <Button size="icon-sm" variant="destructive" onClick={() => onDelete(item)}>
-            <Trash2 className="size-4" />
-          </Button>
+          {onEdit && (
+            <Button size="icon-sm" variant="outline" onClick={() => onEdit(item)}>
+              <Pencil className="size-4" />
+            </Button>
+          )}
+          {onDelete && (
+            <Button size="icon-sm" variant="destructive" onClick={() => onDelete(item)}>
+              <Trash2 className="size-4" />
+            </Button>
+          )}
           {selectionMode && onSelect && (
             <Button size="sm" variant="secondary" onClick={() => onSelect(item)}>
               <Check className="mr-2 size-4" />

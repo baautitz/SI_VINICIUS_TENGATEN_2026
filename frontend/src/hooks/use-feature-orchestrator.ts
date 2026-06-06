@@ -22,9 +22,10 @@ export interface FeatureListProps<TDto> {
   onRowSelectionChange: OnChangeFn<RowSelectionState>;
   selectAllAcrossPages?: boolean;
   onSelectAllAcrossPagesChange?: (value: boolean) => void;
+  searchInputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
-interface UseFeatureOrchestratorProps<TDto extends { id: number }> {
+interface UseFeatureOrchestratorProps<TDto> {
   queryKey: string;
   initialSearchTerm?: string;
   fetchPage: (
@@ -32,17 +33,29 @@ interface UseFeatureOrchestratorProps<TDto extends { id: number }> {
     page: number,
     pageSize: number,
   ) => Promise<{ itens: TDto[]; totalPages: number; totalItems: number }>;
-  deleteItem: (id: number) => Promise<void>;
+  deleteItem?: (item: TDto) => Promise<void>;
+  additionalKeysToInvalidate?: string[][];
 }
 
-export function useFeatureOrchestrator<TDto extends { id: number }>({
+export function useFeatureOrchestrator<TDto>({
   queryKey,
   initialSearchTerm = "",
   fetchPage,
   deleteItem,
+  additionalKeysToInvalidate = [],
 }: UseFeatureOrchestratorProps<TDto>) {
   const list = useFeatureList<TDto>({ initialSearchTerm });
   const queryClient = useQueryClient();
+
+  const allKeysToInvalidate = [[queryKey], ...additionalKeysToInvalidate];
+
+  const invalidateAll = async () => {
+    await Promise.all(
+      allKeysToInvalidate.map((key) =>
+        queryClient.invalidateQueries({ queryKey: key }),
+      ),
+    );
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: [queryKey, list.deferredSearch, list.page],
@@ -51,9 +64,13 @@ export function useFeatureOrchestrator<TDto extends { id: number }>({
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: number) => await deleteItem(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [queryKey] });
+    mutationFn: async (item: TDto) => {
+      if (deleteItem) {
+        await deleteItem(item);
+      }
+    },
+    onSuccess: async () => {
+      await invalidateAll();
       list.setDeleteDialogVisible(false);
     },
     onError: (e) => {
@@ -64,7 +81,7 @@ export function useFeatureOrchestrator<TDto extends { id: number }>({
 
   const handleConfirmDelete = () => {
     if (list.itemToDelete) {
-      deleteMutation.mutate(list.itemToDelete.id);
+      deleteMutation.mutate(list.itemToDelete);
     }
   };
 
@@ -90,7 +107,9 @@ export function useFeatureOrchestrator<TDto extends { id: number }>({
       open: list.isUpsertOpen,
       editingItem: list.editingItem,
       onClose: () => list.setIsUpsertOpen(false),
-      onSuccess: () => {},
+      onSuccess: async () => {
+        await invalidateAll();
+      },
     },
     deleteDialogProps: {
       open: list.deleteDialogOpen,

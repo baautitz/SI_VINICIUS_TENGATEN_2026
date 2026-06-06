@@ -40,8 +40,8 @@ export function AtributosFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
-    deleteItem: async (id) => {
-      await atributosApi.delete(id);
+    deleteItem: async (item) => {
+      await atributosApi.delete(item.id);
     },
   });
 

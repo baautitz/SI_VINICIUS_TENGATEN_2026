@@ -38,8 +38,8 @@ export function BairrosFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
-    deleteItem: async (id) => {
-      await bairrosApi.delete(id);
+    deleteItem: async (item) => {
+      await bairrosApi.delete(item.id);
     },
   });
 

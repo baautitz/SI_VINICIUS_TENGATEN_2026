@@ -224,7 +224,7 @@ public class ContasReceberRepository : IContasReceberRepository
         const string sql = @"
             SELECT COUNT(*) FROM contas_receber;
 
-            SELECT cr.id, c.nome_razao_social AS cliente_nome, cr.descricao,
+            SELECT cr.id, c.nome_razaosocial AS cliente_nome, cr.descricao,
                    cr.data_vencimento, cr.valor_saldo, cr.status
             FROM contas_receber cr
             JOIN clientes c ON c.id = cr.cliente_id
@@ -249,13 +249,13 @@ public class ContasReceberRepository : IContasReceberRepository
             SELECT COUNT(*)
             FROM contas_receber cr
             JOIN clientes c ON c.id = cr.cliente_id
-            WHERE cr.descricao ILIKE @Termo OR c.nome_razao_social ILIKE @Termo;
+            WHERE cr.descricao ILIKE @Termo OR c.nome_razaosocial ILIKE @Termo;
 
-            SELECT cr.id, c.nome_razao_social AS cliente_nome, cr.descricao,
+            SELECT cr.id, c.nome_razaosocial AS cliente_nome, cr.descricao,
                    cr.data_vencimento, cr.valor_saldo, cr.status
             FROM contas_receber cr
             JOIN clientes c ON c.id = cr.cliente_id
-            WHERE cr.descricao ILIKE @Termo OR c.nome_razao_social ILIKE @Termo
+            WHERE cr.descricao ILIKE @Termo OR c.nome_razaosocial ILIKE @Termo
             ORDER BY cr.data_vencimento
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 

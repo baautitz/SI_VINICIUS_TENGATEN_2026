@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { extractApiErrors } from "@/utils/api-error";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -17,36 +18,16 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
       } else {
         try {
           const parsed = JSON.parse(body);
-          if (parsed.errors) {
-            if (Array.isArray(parsed.errors)) {
-              (parsed.errors as Array<unknown>).forEach((e) => {
-                if (e && typeof e === "object" && "message" in e) {
-                  toast.error(String((e as { message: unknown }).message || e));
-                } else {
-                  toast.error(String(e));
-                }
-              });
-            } else if (typeof parsed.errors === "object" && parsed.errors !== null) {
-              Object.values(parsed.errors as Record<string, unknown>).forEach((messages) => {
-                if (Array.isArray(messages)) {
-                  (messages as Array<unknown>).forEach((msg) => toast.error(String(msg)));
-                } else {
-                  toast.error(String(messages));
-                }
-              });
-            }
-          } else if (parsed.message) {
-            toast.error(parsed.message);
-          } else if (parsed.result && Array.isArray(parsed.result.errors)) {
-            (parsed.result.errors as Array<unknown>).forEach((e) => {
-              if (e && typeof e === "object" && "message" in e) {
-                toast.error(String((e as { message: unknown }).message || "Erro de validação."));
-              } else {
-                toast.error("Erro de validação.");
-              }
-            });
+          const { globalError, fieldErrors } = extractApiErrors(parsed);
+          
+          if (globalError) {
+            toast.error(globalError);
           }
-        } catch {}
+
+          Object.values(fieldErrors).forEach((msg) => toast.error(msg));
+        } catch {
+          toast.error("Erro ao processar resposta do servidor.");
+        }
       }
 
       throw { status: res.status, response: body };

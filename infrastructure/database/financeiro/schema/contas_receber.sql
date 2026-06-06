@@ -13,8 +13,8 @@ CREATE TABLE IF NOT EXISTS contas_receber (
   status status_titulo_financeiro_enum NOT NULL DEFAULT 'ABERTO',
   condicao_pagamento_id INTEGER,
   observacao TEXT,
-  criado_em TIMESTAMP NOT NULL DEFAULT NOW(),
-  atualizado_em TIMESTAMP,
+  criado_em TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  atualizado_em TIMESTAMP WITH TIME ZONE,
   CONSTRAINT contas_receber_cliente_fk
     FOREIGN KEY (cliente_id)
     REFERENCES clientes (id)

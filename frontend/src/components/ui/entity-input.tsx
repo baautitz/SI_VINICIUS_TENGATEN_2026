@@ -34,7 +34,7 @@ interface EntityInputProps<T, TResumo = T> {
 export function EntityInput<T, TResumo = T>({
   name,
   label,
-  placeholder = "Digite, ou Ctrl+Espaço para buscar...",
+  placeholder = "Digite, ou Alt+Espaço para buscar...",
   error,
   initialItem = null,
   onSelectId,
@@ -157,8 +157,9 @@ export function EntityInput<T, TResumo = T>({
                 e.preventDefault();
                 handleSearch(searchText);
               }
-              if (e.ctrlKey && (e.key === " " || e.code === "Space")) {
+              if (e.altKey && (e.key === "q" || e.key === "Q")) {
                 e.preventDefault();
+                e.stopPropagation();
                 setIsOpen(true);
               }
             }}

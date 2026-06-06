@@ -1,6 +1,6 @@
 "use client";
 
-import { Kbd } from "@/components/ui/kbd";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { UpsertDialog } from "@/components/ui/upsert-dialog";
@@ -120,7 +120,7 @@ function VeiculosUpsertForm({
         <>
           <DialogClose asChild>
             <Button type="button" variant="outline">
-              Cancelar <Kbd className="ml-2">Esc</Kbd>
+              Cancelar <Kbd>Esc</Kbd>
             </Button>
           </DialogClose>
           <form.Subscribe
@@ -132,7 +132,13 @@ function VeiculosUpsertForm({
                 form="upsert-veiculos"
                 disabled={!canSubmit || isSubmitting}
               >
-                {isSubmitting ? "Salvando..." : <span className="flex items-center gap-2">Salvar <Kbd className="bg-primary-foreground/20 text-primary-foreground">Ctrl+Enter</Kbd></span>}
+                {isSubmitting ? (
+                  "Salvando..."
+                ) : (
+                  <span className="flex items-center gap-2">
+                    Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup>
+                  </span>
+                )}
               </Button>
             )}
           </form.Subscribe>
@@ -151,7 +157,7 @@ function VeiculosUpsertForm({
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-start gap-4">
             {editingItem && (
-              <div className="w-24 shrink-0">
+              <div className="w-fit">
                 <div className="flex flex-col gap-1.5">
                   <FieldLabel>Código</FieldLabel>
                   <Input

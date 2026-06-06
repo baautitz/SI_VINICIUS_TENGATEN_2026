@@ -29,6 +29,7 @@ export function MarcasFeature({
   } = useFeatureOrchestrator<MarcaResumo>({
     queryKey: "marcas",
     initialSearchTerm,
+    additionalKeysToInvalidate: [["produtos"], ["skus"]],
     fetchPage: async (searchTerm, page, pageSize) => {
       const res = await marcasApi.list(searchTerm || undefined, page, pageSize);
       if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
@@ -39,8 +40,8 @@ export function MarcasFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
-    deleteItem: async (id) => {
-      await marcasApi.delete(id);
+    deleteItem: async (item) => {
+      await marcasApi.delete(item.id);
     },
   });
 

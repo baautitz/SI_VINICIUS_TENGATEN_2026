@@ -39,8 +39,8 @@ export function EstadosFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
-    deleteItem: async (id) => {
-      await estadosApi.delete(id);
+    deleteItem: async (item) => {
+      await estadosApi.delete(item.id);
     },
   });
 

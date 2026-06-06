@@ -66,10 +66,16 @@ public class MovimentacoesEstoques
 
     public decimal TotalCusto => _itens.Sum(item => item.Quantidade * item.CustoUnitario);
 
-    public void AdicionarItem(Skus sku, decimal quantidade, decimal custoUnitario)
+    public void AdicionarItem(Skus sku, decimal quantidade, decimal custoUnitario, string produtoNome, string unidadeMedidaSigla)
     {
         if (sku == null)
             throw new DomainException("SKU é obrigatório para item de movimentação de estoque.");
+        
+        if (string.IsNullOrWhiteSpace(produtoNome))
+            throw new DomainException("Nome do produto é obrigatório.");
+
+        if (string.IsNullOrWhiteSpace(unidadeMedidaSigla))
+            throw new DomainException("Unidade de medida é obrigatória.");
 
         if (quantidade <= 0)
             throw new DomainException("Quantidade deve ser maior que zero.");
@@ -80,7 +86,7 @@ public class MovimentacoesEstoques
         if (_itens.Any(x => x.Sku.Sku == sku.Sku))
             throw new DomainException("Já existe um item com este SKU na movimentação.");
 
-        _itens.Add(new MovimentacoesEstoquesItens(sku, quantidade, custoUnitario));
+        _itens.Add(new MovimentacoesEstoquesItens(sku, quantidade, custoUnitario, produtoNome, unidadeMedidaSigla));
     }
 
     public void RemoverItem(MovimentacoesEstoquesItens item)

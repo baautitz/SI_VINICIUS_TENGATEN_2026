@@ -7,6 +7,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Spinner } from "./spinner";
+import { useHotkeys } from "@tanstack/react-hotkeys";
 
 interface UpsertDialogProps {
   open: boolean;
@@ -17,6 +18,7 @@ interface UpsertDialogProps {
   loading?: boolean;
   onPointerDownOutside?: React.ComponentProps<typeof DialogContent>["onPointerDownOutside"];
   onEscapeKeyDown?: React.ComponentProps<typeof DialogContent>["onEscapeKeyDown"];
+  disableHotkey?: boolean;
 }
 
 export function UpsertDialog({
@@ -28,10 +30,48 @@ export function UpsertDialog({
   loading = false,
   onPointerDownOutside,
   onEscapeKeyDown,
+  disableHotkey = false,
 }: UpsertDialogProps) {
+  const contentRef = React.useRef<HTMLDivElement>(null);
+
+  useHotkeys([
+    {
+      hotkey: "Alt+Enter",
+      callback: (e) => {
+        if (typeof document !== 'undefined' && contentRef.current) {
+          const dialogs = document.querySelectorAll('[role="dialog"]');
+          const topDialog = dialogs.length > 0 ? dialogs[dialogs.length - 1] : null;
+          const myDialog = contentRef.current.closest('[role="dialog"]') || contentRef.current;
+          if (dialogs.length > 0 && myDialog !== topDialog) return;
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+        if (contentRef.current) {
+          const submitBtn = contentRef.current.querySelector(
+            'button[type="submit"]'
+          ) as HTMLButtonElement | null;
+          if (submitBtn && !submitBtn.disabled) {
+            submitBtn.click();
+          } else {
+            const formEl = contentRef.current.querySelector("form");
+            if (formEl) {
+              formEl.requestSubmit();
+            }
+          }
+        }
+      },
+      options: {
+        enabled: open && !loading && !disableHotkey,
+        ignoreInputs: false,
+      },
+    },
+  ], { conflictBehavior: "allow" });
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
+        ref={contentRef}
         className="flex flex-col gap-0 p-0 overflow-hidden"
         style={{ width: "98vw", maxWidth: "98vw", height: "95vh" }}
         aria-describedby={undefined}

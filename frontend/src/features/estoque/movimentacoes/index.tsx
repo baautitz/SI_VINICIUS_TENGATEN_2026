@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { MovimentacoesList } from "./list";
 import { MovimentacoesUpsert } from "./upsert";
-import { MovimentacaoEstoqueResumo, MovimentacaoEstoque } from "./types";
+import { MovimentacaoEstoque } from "./types";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
 import { estoqueApi } from "@/api/estoque";
@@ -18,24 +18,25 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 
 export * from "./types";
 
 export function MovimentacoesFeature() {
   const queryClient = useQueryClient();
-  const [actionItem, setActionItem] =
-    useState<MovimentacaoEstoqueResumo | null>(null);
+  const [actionItem, setActionItem] = useState<MovimentacaoEstoque | null>(
+    null,
+  );
   const [actionType, setActionType] = useState<"CONFIRM" | "CANCEL" | null>(
     null,
   );
-  const [viewOnly, setViewOnly] = useState(false);
 
   const {
     listProps,
     upsertProps,
     deleteDialogProps,
     featureList: list,
-  } = useFeatureOrchestrator<MovimentacaoEstoqueResumo>({
+  } = useFeatureOrchestrator<MovimentacaoEstoque>({
     queryKey: "movimentacoes",
     initialSearchTerm: "",
     fetchPage: async (searchTerm, page, pageSize) => {
@@ -52,12 +53,11 @@ export function MovimentacoesFeature() {
         totalItems: res.totalDeItens ?? 0,
       };
     },
-    deleteItem: async (id) => {
-      await estoqueApi.delete(id);
+    deleteItem: async (item) => {
+      await estoqueApi.delete(item.id);
     },
   });
 
-  // Confirm (Efetivar) Mutation
   const confirmMutation = useMutation({
     mutationFn: (id: number) => estoqueApi.confirmar(id),
     onSuccess: () => {
@@ -72,7 +72,6 @@ export function MovimentacoesFeature() {
     },
   });
 
-  // Cancel (Estornar) Mutation
   const cancelMutation = useMutation({
     mutationFn: (id: number) => estoqueApi.cancelar(id),
     onSuccess: () => {
@@ -87,28 +86,25 @@ export function MovimentacoesFeature() {
     },
   });
 
-  const handleConfirmAction = (item: MovimentacaoEstoqueResumo) => {
+  const handleConfirmAction = (item: MovimentacaoEstoque) => {
     setActionItem(item);
     setActionType("CONFIRM");
   };
 
-  const handleCancelAction = (item: MovimentacaoEstoqueResumo) => {
+  const handleCancelAction = (item: MovimentacaoEstoque) => {
     setActionItem(item);
     setActionType("CANCEL");
   };
 
-  const handleViewAction = (item: MovimentacaoEstoqueResumo) => {
-    setViewOnly(true);
+  const handleViewAction = (item: MovimentacaoEstoque) => {
     listProps.onEdit(item);
   };
 
   const handleAddWrapper = () => {
-    setViewOnly(false);
     listProps.onAdd();
   };
 
-  const handleEditWrapper = (item: MovimentacaoEstoqueResumo) => {
-    setViewOnly(false);
+  const handleEditWrapper = (item: MovimentacaoEstoque) => {
     listProps.onEdit(item);
   };
 
@@ -127,10 +123,7 @@ export function MovimentacoesFeature() {
         <MovimentacoesUpsert
           key={list.editingItem?.id ?? "new"}
           {...upsertProps}
-          editingItem={
-            list.editingItem as unknown as MovimentacaoEstoque | null
-          }
-          readOnly={viewOnly}
+          editingItem={list.editingItem}
         />
       )}
 
@@ -155,7 +148,24 @@ export function MovimentacoesFeature() {
           }
         }}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent
+          className="max-w-md"
+          onKeyDown={(e) => {
+            if (e.altKey && e.key === "Enter") {
+              e.preventDefault();
+              e.stopPropagation();
+              if (actionItem) {
+                if (actionType === "CONFIRM") {
+                  confirmMutation.mutate(actionItem.id);
+                } else {
+                  cancelMutation.mutate(actionItem.id);
+                }
+              }
+              setActionItem(null);
+              setActionType(null);
+            }
+          }}
+        >
           <DialogHeader>
             <DialogTitle>
               {actionType === "CONFIRM"
@@ -179,7 +189,7 @@ export function MovimentacoesFeature() {
                 setActionType(null);
               }}
             >
-              Cancelar
+              Cancelar <Kbd>Esc</Kbd>
             </Button>
             <Button
               type="button"
@@ -193,13 +203,29 @@ export function MovimentacoesFeature() {
                     cancelMutation.mutate(actionItem.id);
                   }
                 }
+                setActionItem(null);
+                setActionType(null);
               }}
             >
-              {confirmMutation.isPending || cancelMutation.isPending
-                ? "Processando..."
-                : actionType === "CONFIRM"
-                  ? "Efetivar"
-                  : "Confirmar Estorno"}
+              {confirmMutation.isPending || cancelMutation.isPending ? (
+                "Processando..."
+              ) : actionType === "CONFIRM" ? (
+                <span className="flex items-center gap-1.5">
+                  Efetivar
+                  <KbdGroup>
+                    <Kbd>Alt</Kbd>
+                    <Kbd>Enter</Kbd>
+                  </KbdGroup>
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5">
+                  Confirmar Estorno
+                  <KbdGroup>
+                    <Kbd>Alt</Kbd>
+                    <Kbd>Enter</Kbd>
+                  </KbdGroup>
+                </span>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

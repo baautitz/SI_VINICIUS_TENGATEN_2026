@@ -4,7 +4,7 @@ SET search_path TO projeto_sistemas;
 
 CREATE TABLE IF NOT EXISTS movimentacoes_estoque (
   id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  data_movimentacao TIMESTAMP NOT NULL DEFAULT NOW(),
+  data_movimentacao TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   tipo_movimentacao tipo_movimentacao_estoque_enum NOT NULL,
   status status_movimentacao_estoque_enum NOT NULL DEFAULT 'RASCUNHO',
   usuario_id INTEGER,

@@ -29,6 +29,7 @@ export function UnidadesMedidaFeature({
   } = useFeatureOrchestrator<UnidadeMedidaResumo>({
     queryKey: "unidades-medida",
     initialSearchTerm,
+    additionalKeysToInvalidate: [["produtos"], ["skus"]],
     fetchPage: async (searchTerm, page, pageSize) => {
       const res = await unidadesMedidaApi.list(searchTerm || undefined, page, pageSize);
       if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
@@ -39,8 +40,8 @@ export function UnidadesMedidaFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
-    deleteItem: async (id) => {
-      await unidadesMedidaApi.delete(id);
+    deleteItem: async (item) => {
+      await unidadesMedidaApi.delete(item.id);
     },
   });
 

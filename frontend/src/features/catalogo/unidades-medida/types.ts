@@ -5,6 +5,7 @@ export interface UnidadeMedida {
   sigla: string;
   descricao: string;
   categoria: string;
+  permiteDecimais: boolean;
   ativo: boolean;
 }
 
@@ -13,6 +14,7 @@ export interface UnidadeMedidaResumo {
   sigla: string;
   descricao: string;
   categoria: string;
+  permiteDecimais: boolean;
   ativo: boolean;
 }
 
@@ -35,6 +37,7 @@ export const unidadeMedidaSchema = z.object({
     .string()
     .min(1, "Categoria é obrigatória.")
     .max(50, "Categoria deve ter no máximo 50 caracteres."),
+  permiteDecimais: z.boolean().default(false),
   ativo: z.boolean().default(true),
 });
 

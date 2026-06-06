@@ -1,10 +1,10 @@
 import { http } from "./http";
 import type { PaginatedResult, Resultado } from "./types";
-import type { MovimentacaoEstoque, MovimentacaoEstoqueFormValues, MovimentacaoEstoqueResumo } from "@/features/estoque/movimentacoes/types";
+import type { MovimentacaoEstoque, MovimentacaoEstoqueFormValues } from "@/features/estoque/movimentacoes/types";
 
 export const estoqueApi = {
   list: (search?: string, page = 1, pageSize = 20) =>
-    http.get<PaginatedResult<MovimentacaoEstoqueResumo>>(
+    http.get<PaginatedResult<MovimentacaoEstoque>>(
       `/api/estoque/movimentacoes?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`
     ),
   getById: (id: number) => http.get<MovimentacaoEstoque>(`/api/estoque/movimentacoes/${id}`),

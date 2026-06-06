@@ -1,13 +1,13 @@
-using Backend.Core.Features.Estoque.DTOs;
+using Backend.Core.Features.Estoque.Commands;
 using Backend.Core.Features.Estoque.Entities.Enums;
 using FluentValidation;
 using System;
 
-namespace Backend.Core.Features.Estoque.Validators;
+namespace Backend.Core.Features.Estoque.Validators.Commands;
 
-public sealed class CreateMovimentacaoDtoValidator : AbstractValidator<CreateMovimentacaoDto>
+public sealed class AtualizarMovimentacaoCommandValidator : AbstractValidator<AtualizarMovimentacaoCommand>
 {
-    public CreateMovimentacaoDtoValidator()
+    public AtualizarMovimentacaoCommandValidator()
     {
         RuleFor(x => x.TipoMovimentacao)
             .NotEmpty().WithMessage("Tipo de movimentação é obrigatório.")
@@ -15,12 +15,6 @@ public sealed class CreateMovimentacaoDtoValidator : AbstractValidator<CreateMov
             .IsEnumName(typeof(TipoMovimentacaoEstoque), caseSensitive: false)
             .WithMessage("Tipo de movimentação inválido.")
             .WithErrorCode("TIPO_MOVIMENTACAO_INVALIDO");
-
-        RuleFor(x => x.VendaId)
-            .NotNull()
-            .When(x => string.Equals(x.TipoMovimentacao, nameof(TipoMovimentacaoEstoque.VENDA), StringComparison.OrdinalIgnoreCase))
-            .WithMessage("Venda é obrigatória para movimentações do tipo VENDA.")
-            .WithErrorCode("VENDA_OBRIGATORIA");
 
         RuleFor(x => x.Observacao)
             .MaximumLength(500).WithMessage("Observação deve ter no máximo 500 caracteres.")

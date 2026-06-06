@@ -105,12 +105,9 @@ export function useComboboxAnchor() {
   return React.useRef<HTMLDivElement>(null);
 }
 
-interface ComboboxChipsProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: React.ReactNode;
-}
+type ComboboxChipsProps = React.ComponentPropsWithRef<"div">;
 
-export const ComboboxChips = React.forwardRef<HTMLDivElement, ComboboxChipsProps>(
-  ({ children, className, ...props }, ref) => {
+export const ComboboxChips = ({ children, className, ref, ...props }: ComboboxChipsProps) => {
     const context = React.useContext(ComboboxContext);
     if (!context) return null;
 
@@ -140,9 +137,8 @@ export const ComboboxChips = React.forwardRef<HTMLDivElement, ComboboxChipsProps
         </div>
       </PopoverTrigger>
     );
-  }
-);
-ComboboxChips.displayName = "ComboboxChips";
+};
+
 
 interface ComboboxValueProps {
   children: (values: string[]) => React.ReactNode;
@@ -198,7 +194,7 @@ export function ComboboxChip({ children, className, onRemove, ...props }: Combob
 
 type ComboboxChipsInputProps = React.InputHTMLAttributes<HTMLInputElement>;
 
-export function ComboboxChipsInput({ className, ...props }: ComboboxChipsInputProps) {
+export function ComboboxChipsInput({ className, autoComplete = "off", ...props }: ComboboxChipsInputProps) {
   const context = React.useContext(ComboboxContext);
   if (!context) return null;
 
@@ -237,6 +233,7 @@ export function ComboboxChipsInput({ className, ...props }: ComboboxChipsInputPr
   return (
     <input
       type="text"
+      autoComplete={autoComplete}
       value={context.searchText}
       onChange={(e) => {
         context.setSearchText(e.target.value);

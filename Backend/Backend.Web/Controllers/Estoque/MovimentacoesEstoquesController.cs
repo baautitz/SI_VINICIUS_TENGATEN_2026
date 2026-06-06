@@ -1,5 +1,5 @@
 using Backend.Core.Common.Results;
-using Backend.Core.Features.Estoque.DTOs;
+using Backend.Core.Features.Estoque.Commands;
 using Backend.Core.Features.Estoque.Entities;
 using Backend.Core.Features.Estoque.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -22,7 +22,7 @@ public class MovimentacoesEstoquesController : ControllerBase
     }
 
     [HttpGet]
-    public Task<ResultadoPaginado<MovimentacoesEstoquesResumo>> GetMovimentacoes([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public Task<ResultadoPaginado<MovimentacoesEstoques>> GetMovimentacoes([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         => _movimentacoesService.ObterMovimentacoes(search, page, pageSize);
 
     [HttpGet("{id:int}")]
@@ -37,9 +37,9 @@ public class MovimentacoesEstoquesController : ControllerBase
 
     [HttpPost]
     [ProducesResponseType(typeof(Resultado<MovimentacoesEstoques>), StatusCodes.Status201Created)]
-    public async Task<ActionResult<Resultado<MovimentacoesEstoques>>> CreateMovimentacao([FromBody] CreateMovimentacaoDto dto)
+    public async Task<ActionResult<Resultado<MovimentacoesEstoques>>> CreateMovimentacao([FromBody] CriarMovimentacaoCommand command)
     {
-        var result = await _movimentacoesService.CriarMovimentacao(dto);
+        var result = await _movimentacoesService.CriarMovimentacao(command);
         if (!result.Success)
             return BadRequest(result);
 
@@ -47,9 +47,9 @@ public class MovimentacoesEstoquesController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<Resultado<MovimentacoesEstoques>>> UpdateMovimentacao(int id, [FromBody] UpdateMovimentacaoDto dto)
+    public async Task<ActionResult<Resultado<MovimentacoesEstoques>>> UpdateMovimentacao(int id, [FromBody] AtualizarMovimentacaoCommand command)
     {
-        var result = await _movimentacoesService.AtualizarMovimentacao(id, dto);
+        var result = await _movimentacoesService.AtualizarMovimentacao(id, command);
         if (!result.Success)
         {
             if (result.Errors is not null && result.Errors.Any(error => error.Code == "MOVIMENTACAO_INEXISTENTE"))

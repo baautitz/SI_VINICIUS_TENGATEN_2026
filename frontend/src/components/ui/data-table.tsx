@@ -26,8 +26,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { useHotkeys } from "@tanstack/react-hotkeys";
+import { InputGroup, InputGroupInput, InputGroupAddon } from "./input-group";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -53,11 +55,11 @@ interface DataTableProps<TData, TValue> {
 
   getRowId?: (originalRow: TData, index: number, parent?: unknown) => string;
 
-  /** When provided, the table enters "selection mode": rows are keyboard-navigable
-   *  (↑↓ arrows, Enter to select) and auto-focus on the first row when data loads. */
   onRowSelect?: (row: TData) => void;
 
-  /** Ref forwarded to the search input so parents can focus it on open */
+  onEditRow?: (row: TData) => void;
+  onDeleteRow?: (row: TData) => void;
+
   searchInputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
@@ -79,11 +81,14 @@ export function DataTable<TData, TValue>({
   actions,
   getRowId,
   onRowSelect,
+  onEditRow,
+  onDeleteRow,
   searchInputRef,
 }: DataTableProps<TData, TValue>) {
   "use no memo";
 
   const isSelectionMode = !!onRowSelect;
+  const hasKeyboardNav = true;
   const [focusedRowIndex, setFocusedRowIndex] = React.useState<number | null>(
     null,
   );
@@ -91,10 +96,143 @@ export function DataTable<TData, TValue>({
   const internalSearchInputRef = React.useRef<HTMLInputElement>(null);
   const activeSearchInputRef = searchInputRef || internalSearchInputRef;
 
-  // Attach ArrowDown listener to the external search input if provided
+  useHotkeys([
+    {
+      hotkey: "Alt+Q",
+      callback: (e: KeyboardEvent) => {
+        const isInsideDialog =
+          !!activeSearchInputRef?.current?.closest('[role="dialog"]');
+        const anyDialogOpen =
+          typeof document !== "undefined" &&
+          !!document.querySelectorAll('[role="dialog"]').length;
+
+        if (anyDialogOpen && !isInsideDialog) {
+          return;
+        }
+
+        e.preventDefault();
+        activeSearchInputRef?.current?.focus();
+        activeSearchInputRef?.current?.select();
+      },
+      options: {
+        ignoreInputs: false,
+      },
+    },
+    {
+      hotkey: "Enter",
+      callback: (e: KeyboardEvent) => {
+        if (focusedRowIndex === null || rows.length === 0) return;
+
+        const activeElement = document.activeElement as HTMLElement;
+        if (
+          activeElement?.tagName === "INPUT" ||
+          activeElement?.tagName === "TEXTAREA" ||
+          activeElement?.tagName === "SELECT" ||
+          activeElement?.tagName === "A" ||
+          activeElement?.tagName === "BUTTON"
+        ) {
+          return;
+        }
+
+        const rowData = rows[focusedRowIndex].original;
+        const dialogs =
+          typeof document !== "undefined"
+            ? document.querySelectorAll('[role="dialog"]')
+            : [];
+        const topDialog =
+          dialogs.length > 0 ? dialogs[dialogs.length - 1] : null;
+
+        if (
+          topDialog &&
+          rowRefs.current[focusedRowIndex]?.closest('[role="dialog"]') !==
+            topDialog
+        ) {
+          return;
+        }
+
+        e.preventDefault();
+        if (onRowSelect) {
+          onRowSelect(rowData);
+        } else if (onEditRow) {
+          onEditRow(rowData);
+        }
+      },
+      options: {
+        enabled: focusedRowIndex !== null,
+        ignoreInputs: true,
+      },
+    },
+    {
+      hotkey: "Alt+E",
+      callback: (e: KeyboardEvent) => {
+        if (focusedRowIndex === null || rows.length === 0 || !onEditRow) return;
+        const rowData = rows[focusedRowIndex].original;
+        e.preventDefault();
+        onEditRow(rowData);
+      },
+      options: {
+        enabled: focusedRowIndex !== null && !!onEditRow,
+        ignoreInputs: false,
+      },
+    },
+    {
+      hotkey: "Delete",
+      callback: (e: KeyboardEvent) => {
+        if (focusedRowIndex === null || rows.length === 0 || !onDeleteRow)
+          return;
+
+        if (
+          document.activeElement?.tagName === "INPUT" ||
+          document.activeElement?.tagName === "TEXTAREA" ||
+          document.activeElement?.tagName === "SELECT"
+        ) {
+          return;
+        }
+
+        const rowData = rows[focusedRowIndex].original;
+        e.preventDefault();
+        onDeleteRow(rowData);
+      },
+      options: {
+        enabled: focusedRowIndex !== null && !!onDeleteRow,
+        ignoreInputs: true,
+      },
+    },
+    {
+      hotkey: "Backspace",
+      callback: (e: KeyboardEvent) => {
+        if (focusedRowIndex === null || rows.length === 0 || !onDeleteRow)
+          return;
+
+        if (
+          document.activeElement?.tagName === "INPUT" ||
+          document.activeElement?.tagName === "TEXTAREA" ||
+          document.activeElement?.tagName === "SELECT"
+        ) {
+          return;
+        }
+
+        const rowData = rows[focusedRowIndex].original;
+        e.preventDefault();
+        onDeleteRow(rowData);
+      },
+      options: {
+        enabled: focusedRowIndex !== null && !!onDeleteRow,
+        ignoreInputs: true,
+      },
+    },
+  ], { conflictBehavior: "allow" });
+
+  React.useEffect(() => {
+    const timeout = setTimeout(() => {
+      activeSearchInputRef?.current?.focus();
+    }, 100);
+    return () => clearTimeout(timeout);
+  }, [activeSearchInputRef]);
+
   React.useEffect(() => {
     const input = activeSearchInputRef?.current;
-    if (!input || !isSelectionMode) return;
+    if (!input || !hasKeyboardNav) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowDown") {
@@ -103,20 +241,16 @@ export function DataTable<TData, TValue>({
           rowRefs.current[0]?.focus();
           setFocusedRowIndex(0);
         }
-      } else if (e.key === "Enter") {
-        // Optionally, if they press Enter in the search input and there's exactly 1 row,
-        // we could select it. But the user just asked to move up/down.
       }
     };
 
     input.addEventListener("keydown", handleKeyDown);
     return () => input.removeEventListener("keydown", handleKeyDown);
-  }, [activeSearchInputRef, isSelectionMode, data]);
+  }, [activeSearchInputRef, hasKeyboardNav, data]);
 
-  // Reset focus index when data changes (search/page)
   React.useEffect(() => {
     setFocusedRowIndex(null);
-  }, [data, pageIndex]);
+  }, [pageIndex]);
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -143,7 +277,21 @@ export function DataTable<TData, TValue>({
   ) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      onRowSelect?.(rowData);
+      if (onRowSelect) {
+        onRowSelect(rowData);
+      } else if (onEditRow) {
+        onEditRow(rowData);
+      }
+    } else if ((e.altKey && e.key === "e") || (e.altKey && e.key === "E")) {
+      e.preventDefault();
+      if (onEditRow) {
+        onEditRow(rowData);
+      }
+    } else if (e.key === "Delete" || e.key === "Backspace") {
+      e.preventDefault();
+      if (onDeleteRow) {
+        onDeleteRow(rowData);
+      }
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
       const next = index + 1;
@@ -154,7 +302,6 @@ export function DataTable<TData, TValue>({
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       if (index === 0) {
-        // Go back to search input
         activeSearchInputRef?.current?.focus();
         setFocusedRowIndex(null);
       } else {
@@ -165,29 +312,90 @@ export function DataTable<TData, TValue>({
     }
   };
 
+  React.useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    let dialogCount = document.querySelectorAll('[role="dialog"]').length;
+
+    const observer = new MutationObserver(() => {
+      const currentCount = document.querySelectorAll('[role="dialog"]').length;
+
+      if (currentCount < dialogCount) {
+        const input = activeSearchInputRef?.current;
+        if (!input) return;
+
+        const isTableInsideDialog = !!input.closest('[role="dialog"]');
+
+        const restoreFocus = () => {
+          if (focusedRowIndex !== null && rowRefs.current[focusedRowIndex]) {
+            rowRefs.current[focusedRowIndex]?.focus();
+          } else {
+            input.focus();
+            input.select();
+            setFocusedRowIndex(null);
+          }
+        };
+
+        if (currentCount === 0 && !isTableInsideDialog) {
+          setTimeout(restoreFocus, 100);
+        } else if (currentCount > 0 && isTableInsideDialog) {
+          const dialogs = document.querySelectorAll('[role="dialog"]');
+          const topDialog = dialogs[dialogs.length - 1];
+          if (input.closest('[role="dialog"]') === topDialog) {
+            setTimeout(restoreFocus, 100);
+          }
+        }
+      }
+      dialogCount = currentCount;
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [activeSearchInputRef, focusedRowIndex]);
+
   return (
-    <div className="space-y-4 flex-1 min-h-0 flex flex-col">
+    <div
+      className="space-y-4 flex-1 min-h-0 flex flex-col"
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          setFocusedRowIndex(null);
+        }
+      }}
+    >
       <div className="flex items-center justify-between gap-2 shrink-0">
         <div className="flex flex-1 items-center gap-2">
           {onGlobalFilterChange && (
-            <div className="relative max-w-sm flex-1">
-              <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-              <Input
-                ref={activeSearchInputRef}
-                placeholder={searchPlaceholder}
-                value={globalFilter ?? ""}
-                onChange={(event) => onGlobalFilterChange(event.target.value)}
-                className="pl-9 h-9"
-                onKeyDown={(e) => {
-                  if (e.key === "ArrowDown" && isSelectionMode) {
-                    e.preventDefault();
-                    if (rows.length > 0) {
-                      rowRefs.current[0]?.focus();
-                      setFocusedRowIndex(0);
+            <div className="w-full flex-1">
+              <InputGroup>
+                <InputGroupInput
+                  ref={activeSearchInputRef}
+                  placeholder={searchPlaceholder}
+                  value={globalFilter ?? ""}
+                  onChange={(event) => onGlobalFilterChange(event.target.value)}
+                  className="h-9"
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowDown" && hasKeyboardNav) {
+                      e.preventDefault();
+
+                      if (rows.length > 0) {
+                        rowRefs.current[0]?.focus();
+                        setFocusedRowIndex(0);
+                      }
                     }
-                  }
-                }}
-              />
+                  }}
+                />
+
+                <InputGroupAddon>
+                  <Search className="size-4 text-muted-foreground" />
+                </InputGroupAddon>
+
+                <InputGroupAddon align="inline-end">
+                  <KbdGroup>
+                    <Kbd>Alt</Kbd>
+                    <Kbd>Q</Kbd>
+                  </KbdGroup>
+                </InputGroupAddon>
+              </InputGroup>
             </div>
           )}
           {actions}
@@ -292,21 +500,21 @@ export function DataTable<TData, TValue>({
                   }}
                   data-state={row.getIsSelected() && "selected"}
                   data-focused={
-                    isSelectionMode && focusedRowIndex === index
+                    hasKeyboardNav && focusedRowIndex === index
                       ? "true"
                       : undefined
                   }
-                  tabIndex={isSelectionMode ? 0 : -1}
+                  tabIndex={hasKeyboardNav ? 0 : -1}
                   className={[
                     "group border-b last:border-0 transition-colors",
-                    isSelectionMode ? "cursor-pointer focus:outline-none" : "",
-                    isSelectionMode && focusedRowIndex === index
+                    hasKeyboardNav ? "cursor-pointer focus:outline-none" : "",
+                    hasKeyboardNav && focusedRowIndex === index
                       ? "bg-primary/5 relative z-10 outline-2 outline-primary -outline-offset-2"
                       : "",
                   ].join(" ")}
-                  onFocus={() => isSelectionMode && setFocusedRowIndex(index)}
+                  onFocus={() => hasKeyboardNav && setFocusedRowIndex(index)}
                   onKeyDown={(e) =>
-                    isSelectionMode && handleRowKeyDown(e, index, row.original)
+                    hasKeyboardNav && handleRowKeyDown(e, index, row.original)
                   }
                 >
                   {row.getVisibleCells().map((cell) => (
@@ -343,19 +551,24 @@ export function DataTable<TData, TValue>({
       </div>
 
       <div className="flex items-center justify-between mt-auto">
-        <div className="flex-1 text-sm text-muted-foreground font-medium">
+        <div className="flex-1 flex flex-col gap-0.5">
           {isSelectionMode ? (
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-muted-foreground font-medium">
               ↑↓ para navegar · Enter para selecionar
             </span>
           ) : (
-            <>
+            <span className="text-xs text-muted-foreground font-medium">
+              ↑↓ para navegar · Alt+E para editar
+            </span>
+          )}
+          {!isSelectionMode && Object.keys(rowSelection).length > 0 && (
+            <span className="text-xs text-primary font-semibold">
               {selectAllAcrossPages
                 ? totalItems
                 : Object.keys(rowSelection).length}{" "}
               de {totalItems ?? table.getFilteredRowModel().rows.length}{" "}
               selecionado(s).
-            </>
+            </span>
           )}
         </div>
         <div className="flex items-center space-x-6 lg:space-x-8">

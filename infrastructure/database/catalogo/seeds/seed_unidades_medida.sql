@@ -1,20 +1,26 @@
 SET search_path TO projeto_sistemas;
 
-INSERT INTO unidades_medida (sigla, descricao, categoria, ativo)
+INSERT INTO unidades_medida (
+    sigla,
+    descricao,
+    categoria,
+    permite_decimais,
+    ativo
+)
 VALUES
-  ('UN', 'UNIDADE', 'QUANTIDADE', TRUE),
-  ('KG', 'QUILOGRAMA', 'PESO', TRUE),
-  ('G', 'GRAMA', 'PESO', TRUE),
-  ('L', 'LITRO', 'VOLUME', TRUE),
-  ('ML', 'MILILITRO', 'VOLUME', TRUE),
-  ('M', 'METRO', 'COMPRIMENTO', TRUE),
-  ('CM', 'CENTIMETRO', 'COMPRIMENTO', TRUE),
-  ('M2', 'METRO QUADRADO', 'AREA', TRUE),
-  ('M3', 'METRO CUBICO', 'VOLUME', TRUE),
-  ('CX', 'CAIXA', 'QUANTIDADE', TRUE),
-  ('PT', 'POTE', 'QUANTIDADE', TRUE),
-  ('SC', 'SACO', 'QUANTIDADE', TRUE),
-  ('PCT', 'PACOTE', 'QUANTIDADE', TRUE),
-  ('DZ', 'DUZIA', 'QUANTIDADE', TRUE),
-  ('PC', 'PECA', 'QUANTIDADE', TRUE)
+    ('UN',  'UNIDADE',          'QUANTIDADE', FALSE, TRUE),
+    ('KG',  'QUILOGRAMA',       'PESO',       TRUE,  TRUE),
+    ('G',   'GRAMA',            'PESO',       TRUE,  TRUE),
+    ('L',   'LITRO',            'VOLUME',     TRUE,  TRUE),
+    ('ML',  'MILILITRO',        'VOLUME',     TRUE,  TRUE),
+    ('M',   'METRO',            'COMPRIMENTO',TRUE,  TRUE),
+    ('CM',  'CENTIMETRO',       'COMPRIMENTO',TRUE,  TRUE),
+    ('M2',  'METRO QUADRADO',   'AREA',       TRUE,  TRUE),
+    ('M3',  'METRO CUBICO',     'VOLUME',     TRUE,  TRUE),
+    ('CX',  'CAIXA',            'QUANTIDADE', FALSE, TRUE),
+    ('PT',  'POTE',             'QUANTIDADE', FALSE, TRUE),
+    ('SC',  'SACO',             'QUANTIDADE', FALSE, TRUE),
+    ('PCT', 'PACOTE',           'QUANTIDADE', FALSE, TRUE),
+    ('DZ',  'DUZIA',            'QUANTIDADE', FALSE, TRUE),
+    ('PC',  'PECA',             'QUANTIDADE', FALSE, TRUE)
 ON CONFLICT (sigla) DO NOTHING;

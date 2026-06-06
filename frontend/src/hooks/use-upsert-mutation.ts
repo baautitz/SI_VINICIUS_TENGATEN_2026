@@ -4,7 +4,7 @@ import { extractApiErrors } from "@/utils/api-error";
 
 interface UseUpsertMutationOptions<TValue, TResponse> {
   mutationFn: (value: TValue) => Promise<TResponse>;
-  queryKey: string[];
+  queryKey: string[] | string[][];
   onSuccessCallback?: (data?: TResponse) => void;
   onClose?: () => void;
 }
@@ -17,7 +17,7 @@ export interface BackendError {
 export interface BackendResult<TData = unknown> {
   success?: boolean;
   errors?: BackendError[];
-  value?: TData;
+  data?: TData; // Standardize to match backend Resultado<T>
 }
 
 export function useUpsertMutation<TValue, TResponse = BackendResult>({
@@ -35,10 +35,18 @@ export function useUpsertMutation<TValue, TResponse = BackendResult>({
 
   const mutation = useMutation<TResponse, unknown, TValue>({
     mutationFn,
-    onSuccess: (res) => {
+    onSuccess: async (res) => {
       const typedRes = res as BackendResult<unknown>;
       if (!typedRes || typedRes.success || typedRes.success === undefined) {
-        queryClient.invalidateQueries({ queryKey });
+        // Handle both single key array ["key"] or multiple keys [["key1"], ["key2"]]
+        const keysToInvalidate = Array.isArray(queryKey[0]) 
+          ? (queryKey as string[][]) 
+          : [queryKey as string[]];
+
+        await Promise.all(
+          keysToInvalidate.map(key => queryClient.invalidateQueries({ queryKey: key }))
+        );
+
         onSuccessCallback?.(res);
         onClose?.();
       } else if (typedRes.errors) {
