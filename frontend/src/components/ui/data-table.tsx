@@ -52,6 +52,13 @@ interface DataTableProps<TData, TValue> {
   actions?: React.ReactNode;
 
   getRowId?: (originalRow: TData, index: number, parent?: unknown) => string;
+
+  /** When provided, the table enters "selection mode": rows are keyboard-navigable
+   *  (↑↓ arrows, Enter to select) and auto-focus on the first row when data loads. */
+  onRowSelect?: (row: TData) => void;
+
+  /** Ref forwarded to the search input so parents can focus it on open */
+  searchInputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
 export function DataTable<TData, TValue>({
@@ -71,8 +78,45 @@ export function DataTable<TData, TValue>({
   onSelectAllAcrossPagesChange,
   actions,
   getRowId,
+  onRowSelect,
+  searchInputRef,
 }: DataTableProps<TData, TValue>) {
   "use no memo";
+
+  const isSelectionMode = !!onRowSelect;
+  const [focusedRowIndex, setFocusedRowIndex] = React.useState<number | null>(
+    null,
+  );
+  const rowRefs = React.useRef<(HTMLTableRowElement | null)[]>([]);
+  const internalSearchInputRef = React.useRef<HTMLInputElement>(null);
+  const activeSearchInputRef = searchInputRef || internalSearchInputRef;
+
+  // Attach ArrowDown listener to the external search input if provided
+  React.useEffect(() => {
+    const input = activeSearchInputRef?.current;
+    if (!input || !isSelectionMode) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (rowRefs.current.length > 0) {
+          rowRefs.current[0]?.focus();
+          setFocusedRowIndex(0);
+        }
+      } else if (e.key === "Enter") {
+        // Optionally, if they press Enter in the search input and there's exactly 1 row,
+        // we could select it. But the user just asked to move up/down.
+      }
+    };
+
+    input.addEventListener("keydown", handleKeyDown);
+    return () => input.removeEventListener("keydown", handleKeyDown);
+  }, [activeSearchInputRef, isSelectionMode, data]);
+
+  // Reset focus index when data changes (search/page)
+  React.useEffect(() => {
+    setFocusedRowIndex(null);
+  }, [data, pageIndex]);
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -90,6 +134,37 @@ export function DataTable<TData, TValue>({
     getRowId: getRowId,
   });
 
+  const rows = table.getRowModel().rows;
+
+  const handleRowKeyDown = (
+    e: React.KeyboardEvent<HTMLTableRowElement>,
+    index: number,
+    rowData: TData,
+  ) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      onRowSelect?.(rowData);
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const next = index + 1;
+      if (next < rows.length) {
+        rowRefs.current[next]?.focus();
+        setFocusedRowIndex(next);
+      }
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (index === 0) {
+        // Go back to search input
+        activeSearchInputRef?.current?.focus();
+        setFocusedRowIndex(null);
+      } else {
+        const prev = index - 1;
+        rowRefs.current[prev]?.focus();
+        setFocusedRowIndex(prev);
+      }
+    }
+  };
+
   return (
     <div className="space-y-4 flex-1 min-h-0 flex flex-col">
       <div className="flex items-center justify-between gap-2 shrink-0">
@@ -98,10 +173,20 @@ export function DataTable<TData, TValue>({
             <div className="relative max-w-sm flex-1">
               <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
               <Input
+                ref={activeSearchInputRef}
                 placeholder={searchPlaceholder}
                 value={globalFilter ?? ""}
                 onChange={(event) => onGlobalFilterChange(event.target.value)}
                 className="pl-9 h-9"
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowDown" && isSelectionMode) {
+                    e.preventDefault();
+                    if (rows.length > 0) {
+                      rowRefs.current[0]?.focus();
+                      setFocusedRowIndex(0);
+                    }
+                  }
+                }}
               />
             </div>
           )}
@@ -198,12 +283,31 @@ export function DataTable<TData, TValue>({
                   </div>
                 </TableCell>
               </TableRow>
-            ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
+            ) : rows?.length ? (
+              rows.map((row, index) => (
                 <TableRow
                   key={row.id}
+                  ref={(el) => {
+                    rowRefs.current[index] = el;
+                  }}
                   data-state={row.getIsSelected() && "selected"}
-                  className="group border-b last:border-0"
+                  data-focused={
+                    isSelectionMode && focusedRowIndex === index
+                      ? "true"
+                      : undefined
+                  }
+                  tabIndex={isSelectionMode ? 0 : -1}
+                  className={[
+                    "group border-b last:border-0 transition-colors",
+                    isSelectionMode ? "cursor-pointer focus:outline-none" : "",
+                    isSelectionMode && focusedRowIndex === index
+                      ? "bg-primary/5 relative z-10 outline-2 outline-primary -outline-offset-2"
+                      : "",
+                  ].join(" ")}
+                  onFocus={() => isSelectionMode && setFocusedRowIndex(index)}
+                  onKeyDown={(e) =>
+                    isSelectionMode && handleRowKeyDown(e, index, row.original)
+                  }
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
@@ -240,9 +344,19 @@ export function DataTable<TData, TValue>({
 
       <div className="flex items-center justify-between mt-auto">
         <div className="flex-1 text-sm text-muted-foreground font-medium">
-          {selectAllAcrossPages ? totalItems : Object.keys(rowSelection).length}{" "}
-          de {totalItems ?? table.getFilteredRowModel().rows.length}{" "}
-          selecionado(s).
+          {isSelectionMode ? (
+            <span className="text-xs text-muted-foreground">
+              ↑↓ para navegar · Enter para selecionar
+            </span>
+          ) : (
+            <>
+              {selectAllAcrossPages
+                ? totalItems
+                : Object.keys(rowSelection).length}{" "}
+              de {totalItems ?? table.getFilteredRowModel().rows.length}{" "}
+              selecionado(s).
+            </>
+          )}
         </div>
         <div className="flex items-center space-x-6 lg:space-x-8">
           <div className="flex items-center space-x-2">

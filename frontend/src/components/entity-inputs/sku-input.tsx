@@ -5,6 +5,14 @@ import { Search, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ListDialog } from "@/components/ui/list-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { skusApi, SkuResumo } from "@/api/catalogo";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,7 +27,7 @@ interface SkuInputProps {
   label?: string;
   error?: string;
   initialSku?: string | null;
-  onSelectSku: (sku: SkuResumo | null) => void;
+  onSelectSku: (sku: SkuResumo | null, quantidade?: number) => void;
   disabled?: boolean;
 }
 
@@ -39,6 +47,10 @@ export function SkuInput({
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 10;
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  
+  const [quantityModalItem, setQuantityModalItem] = useState<SkuResumo | null>(null);
+  const [quantityInput, setQuantityInput] = useState("1");
 
   // Sync prop changes during render to avoid cascading renders in useEffect
   const [prevInitialSku, setPrevInitialSku] = useState(initialSku);
@@ -57,7 +69,7 @@ export function SkuInput({
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleLookup = async (code: string, refocusAfter = false) => {
+  const handleLookup = async (code: string, qtde: number = 1, refocusAfter = false) => {
     const trimmedCode = code.trim();
     if (!trimmedCode) {
       onSelectSku(null);
@@ -77,9 +89,9 @@ export function SkuInput({
           if (refocusAfter) inputRef.current?.focus();
           return;
         }
-        onSelectSku(match);
+        onSelectSku(match, qtde);
         setSelectedSku(match.sku);
-        setSkuText(match.sku);
+        setSkuText(""); // Clear text to be ready for next SKU immediately, matching POS behavior
         if (refocusAfter) inputRef.current?.focus();
       } else {
         onSelectSku(null);
@@ -97,11 +109,25 @@ export function SkuInput({
     }
   };
 
-  const selectItem = (item: SkuResumo) => {
-    onSelectSku(item);
-    setSelectedSku(item.sku);
-    setSkuText(item.sku);
-    setIsOpen(false);
+  const selectItemFromList = (item: SkuResumo) => {
+    setQuantityModalItem(item);
+    setQuantityInput("1");
+  };
+
+  const confirmQuantity = () => {
+    if (quantityModalItem) {
+      const qtde = parseFloat(quantityInput);
+      if (!isNaN(qtde) && qtde !== 0) {
+        onSelectSku(quantityModalItem, qtde);
+        setSelectedSku(quantityModalItem.sku);
+        setSkuText(""); // clear main input ready for next
+        setIsOpen(false);
+        setQuantityModalItem(null);
+        inputRef.current?.focus();
+      } else {
+        toast.error("Quantidade inválida.");
+      }
+    }
   };
 
   const columns: ColumnDef<SkuResumo>[] = [
@@ -150,7 +176,7 @@ export function SkuInput({
         <div className="flex justify-end px-4">
           <Button
             size="sm"
-            onClick={() => selectItem(row.original)}
+            onClick={() => selectItemFromList(row.original)}
             disabled={!row.original.ativo}
           >
             Selecionar
@@ -174,15 +200,26 @@ export function SkuInput({
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
-                if (!skuText.trim()) {
+                const text = skuText.trim();
+                if (!text) {
                   setIsOpen(true);
                 } else {
-                  handleLookup(skuText, true);
+                  let qtde = 1;
+                  let codeToSearch = text;
+                  if (text.includes("*")) {
+                    const parts = text.split("*");
+                    const parsedQtde = parseFloat(parts[0]);
+                    if (!isNaN(parsedQtde) && parsedQtde !== 0) {
+                      qtde = parsedQtde;
+                      codeToSearch = parts.slice(1).join("*").trim();
+                    }
+                  }
+                  handleLookup(codeToSearch, qtde, true);
                 }
               }
             }}
             onBlur={() => {
-              if (skuText !== selectedSku) {
+              if (skuText !== selectedSku && skuText.trim() && !skuText.includes("*")) {
                 handleLookup(skuText);
               }
             }}
@@ -214,6 +251,7 @@ export function SkuInput({
         <div className="flex flex-col gap-4 h-full flex-1">
           <div className="flex items-center justify-between gap-2 shrink-0">
             <Input
+              ref={searchInputRef}
               placeholder="Pesquisar por SKU ou código..."
               value={searchTerm}
               onChange={(e) => {
@@ -243,10 +281,45 @@ export function SkuInput({
               onPageChange={setPage}
               totalItems={data?.totalDeItens ?? 0}
               getRowId={(row) => row.sku}
+              onRowSelect={selectItemFromList}
+              searchInputRef={searchInputRef}
             />
           </div>
         </div>
       </ListDialog>
+
+      <Dialog open={!!quantityModalItem} onOpenChange={(o) => { if (!o) setQuantityModalItem(null); }}>
+        <DialogContent className="max-w-[320px]">
+          <DialogHeader>
+            <DialogTitle>Informe a Quantidade</DialogTitle>
+            <DialogDescription>
+              SKU selecionado: <strong>{quantityModalItem?.sku}</strong>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <FieldLabel htmlFor="qty-input">Quantidade a adicionar</FieldLabel>
+            <Input
+              id="qty-input"
+              type="number"
+              autoFocus
+              className="mt-1.5"
+              value={quantityInput}
+              step="any"
+              onChange={(e) => setQuantityInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  confirmQuantity();
+                }
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQuantityModalItem(null)}>Cancelar</Button>
+            <Button onClick={confirmQuantity}>Confirmar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {isProductCreateOpen && (
         <ProdutosUpsert

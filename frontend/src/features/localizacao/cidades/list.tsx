@@ -142,6 +142,7 @@ export function CidadesList({
         selectAllAcrossPages={selectAllAcrossPages}
         onSelectAllAcrossPagesChange={onSelectAllAcrossPagesChange}
         getRowId={(row) => row.id.toString()}
+        onRowSelect={selectionMode ? onSelect : undefined}
       />
     </FeatureLayout>
   );

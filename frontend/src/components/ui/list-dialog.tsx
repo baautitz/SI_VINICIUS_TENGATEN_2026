@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import {
   Dialog,
   DialogContent,
@@ -19,9 +19,9 @@ export function ListDialog({
   title,
   children,
 }: ListDialogProps) {
-  const contentRef = useRef<HTMLDivElement>(null);
+  const contentRef = React.useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (open) {
       const timer = setTimeout(() => {
         const input = contentRef.current?.querySelector("input");

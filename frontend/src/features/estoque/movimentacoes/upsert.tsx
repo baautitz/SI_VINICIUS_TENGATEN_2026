@@ -224,27 +224,27 @@ function MovimentacoesUpsertForm({
     }
   };
 
-  const handleSkuAdded = (skuRes: SkuResumo | null) => {
+  const handleSkuAdded = (skuRes: SkuResumo | null, qtdeAdicionada: number = 1) => {
     if (!skuRes) return;
 
     const existingIndex = itens.findIndex((i) => i.sku === skuRes.sku);
     if (existingIndex > -1) {
       const updated = [...itens];
-      updated[existingIndex].quantidade += 1;
+      updated[existingIndex].quantidade += qtdeAdicionada;
       setItens(updated);
-      toast.success(`Quantidade do SKU "${skuRes.sku}" incrementada.`);
+      toast.success(`Quantidade do SKU "${skuRes.sku}" incrementada (+${qtdeAdicionada}).`);
     } else {
       setItens([
         ...itens,
         {
           sku: skuRes.sku,
-          quantidade: 1,
+          quantidade: qtdeAdicionada,
           custoUnitario: Number(skuRes.preco),
           estoqueAtual: Number(skuRes.estoque),
           precoSugerido: Number(skuRes.preco),
         },
       ]);
-      toast.success(`SKU "${skuRes.sku}" adicionado.`);
+      toast.success(`SKU "${skuRes.sku}" adicionado (Qtde: ${qtdeAdicionada}).`);
     }
     setSkuInputKey((k) => k + 1);
   };
