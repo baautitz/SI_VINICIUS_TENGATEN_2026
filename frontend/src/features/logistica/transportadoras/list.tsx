@@ -1,11 +1,14 @@
 "use client";
 
+import { StatusBadge } from "@/components/ui/status-badge";
+import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
+import { useHotkeys } from "react-hotkeys-hook";
 import { FeatureHeader } from "@/components/ui/feature-header";
-import { Check, Truck, Pencil, Trash2 } from "lucide-react";
+import { Truck } from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
+
 import { DataTable } from "@/components/ui/data-table";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import { FeatureLayout } from "@/components/ui/feature-layout";
 import { Badge } from "@/components/ui/badge";
 import { TransportadoraResumo } from "./types";
@@ -32,29 +35,14 @@ export function TransportadorasList({
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<TransportadoraResumo>) {
+  useHotkeys("alt+n", (e) => {
+    e.preventDefault();
+    if (!selectionMode && document.querySelector('[role="dialog"]')) return;
+    onAdd();
+  }, { enableOnFormTags: true }, [selectionMode, onAdd]);
+
   const columns: ColumnDef<TransportadoraResumo>[] = [
-    {
-      id: "select",
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Selecionar tudo"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Selecionar linha"
-        />
-      ),
-      enableHiding: false,
-      size: 50,
-    },
+    getSelectColumn<TransportadoraResumo>(),
     {
       accessorKey: "id",
       header: "ID",
@@ -98,50 +86,9 @@ export function TransportadorasList({
     {
       accessorKey: "ativo",
       header: "Status",
-      cell: ({ row }) => {
-        const ativo = row.getValue("ativo") as boolean;
-        return (
-          <span className={ativo ? "text-green-600" : "text-red-600"}>
-            {ativo ? "Ativo" : "Inativo"}
-          </span>
-        );
-      },
+      cell: ({ row }) => <StatusBadge ativo={row.getValue("ativo") as boolean} />,
     },
-    {
-      id: "actions",
-      header: () => <div className="text-right px-4">Ações</div>,
-      cell: ({ row }) => {
-        const item = row.original;
-        return (
-          <div className="flex justify-end gap-2 px-4 items-center">
-            <Button
-              size="icon-sm"
-              variant="outline"
-              onClick={() => onEdit(item)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              size="icon-sm"
-              variant="destructive"
-              onClick={() => onDelete(item)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-            {selectionMode && (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => onSelect?.(item)}
-              >
-                <Check className="mr-2 h-4 w-4" />
-                Selecionar
-              </Button>
-            )}
-          </div>
-        );
-      },
-    },
+    getActionsColumn<TransportadoraResumo>({ onEdit, onDelete, selectionMode, onSelect }),
   ];
 
   return (

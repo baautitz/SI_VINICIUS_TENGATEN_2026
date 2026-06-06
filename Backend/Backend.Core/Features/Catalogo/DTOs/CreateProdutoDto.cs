@@ -15,7 +15,6 @@ public record CreateProdutoDto(
 public record CreateSkuDto(
     string Sku,
     decimal Preco,
-    decimal Estoque,
     string? GtinEan,
     bool Ativo,
     List<int> AtributoValorIds

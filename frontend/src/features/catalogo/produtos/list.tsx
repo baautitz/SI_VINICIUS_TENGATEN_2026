@@ -1,13 +1,16 @@
 "use client";
 
+import { StatusBadge } from "@/components/ui/status-badge";
+import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
+import { useHotkeys } from "react-hotkeys-hook";
 import { FeatureHeader } from "@/components/ui/feature-header";
-import { Check, Package, Pencil, Trash2 } from "lucide-react";
+import { Package } from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
+
 import { DataTable } from "@/components/ui/data-table";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import { FeatureLayout } from "@/components/ui/feature-layout";
-import { Badge } from "@/components/ui/badge";
+
 import { ProdutoResumo } from "./types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 
@@ -30,29 +33,14 @@ export function ProdutosList({
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<ProdutoResumo>) {
+  useHotkeys("alt+n", (e) => {
+    e.preventDefault();
+    if (!selectionMode && document.querySelector('[role="dialog"]')) return;
+    onAdd();
+  }, { enableOnFormTags: true }, [selectionMode, onAdd]);
+
   const columns: ColumnDef<ProdutoResumo>[] = [
-    {
-      id: "select",
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Selecionar tudo"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Selecionar linha"
-        />
-      ),
-      enableHiding: false,
-      size: 50,
-    },
+    getSelectColumn<ProdutoResumo>(),
     {
       accessorKey: "id",
       header: "ID",
@@ -83,55 +71,22 @@ export function ProdutosList({
       },
     },
     {
+      accessorKey: "estoqueTotal",
+      header: "Estoque",
+      size: 100,
+      cell: ({ row }) => (
+        <span className="font-semibold text-muted-foreground">
+          {Number(row.original.estoqueTotal ?? 0).toLocaleString()}
+        </span>
+      ),
+    },
+    {
       accessorKey: "ativo",
       header: "Status",
       size: 100,
-      cell: ({ row }) => {
-        const active: boolean = row.getValue("ativo");
-        return (
-          <Badge variant={active ? "default" : "secondary"} className={active ? "bg-emerald-500 hover:bg-emerald-600 text-white border-none" : ""}>
-            {active ? "Ativo" : "Inativo"}
-          </Badge>
-        );
-      },
+      cell: ({ row }) => <StatusBadge ativo={row.getValue("ativo") as boolean} />,
     },
-    {
-      id: "actions",
-      header: () => <div className="text-right px-4">Ações</div>,
-      cell: ({ row }) => {
-        const item = row.original;
-        return (
-          <div className="flex justify-end gap-2 px-4">
-            <Button
-              size="icon-sm"
-              variant="outline"
-              onClick={() => onEdit(item)}
-              title="Editar produto"
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              size="icon-sm"
-              variant="destructive"
-              onClick={() => onDelete(item)}
-              title="Excluir produto"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-            {selectionMode && (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => onSelect?.(item)}
-              >
-                <Check className="mr-2 h-4 w-4" />
-                Selecionar
-              </Button>
-            )}
-          </div>
-        );
-      },
-    },
+    getActionsColumn<ProdutoResumo>({ onEdit, onDelete, selectionMode, onSelect }),
   ];
 
   return (

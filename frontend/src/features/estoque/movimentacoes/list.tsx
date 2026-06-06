@@ -1,7 +1,8 @@
 "use client";
 
+import { useHotkeys } from "react-hotkeys-hook";
 import { FeatureHeader } from "@/components/ui/feature-header";
-import { Check, ClipboardList, Pencil, Trash2, Eye, Ban } from "lucide-react";
+import { Check, ClipboardList, Pencil, Trash2, Eye, Ban } from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
@@ -31,7 +32,14 @@ export function MovimentacoesList({
   onCancel,
   onView,
   onPageChange,
+  selectionMode = false,
 }: MovimentacoesListProps) {
+  useHotkeys("alt+n", (e) => {
+    e.preventDefault();
+    if (!selectionMode && document.querySelector('[role="dialog"]')) return;
+    onAdd();
+  }, { enableOnFormTags: true }, [selectionMode, onAdd]);
+
   const columns: ColumnDef<MovimentacaoEstoqueResumo>[] = [
     {
       accessorKey: "id",
@@ -89,6 +97,21 @@ export function MovimentacoesList({
           {row.getValue("observacao") || "-"}
         </span>
       ),
+    },
+    {
+      accessorKey: "valorTotal",
+      header: () => <div className="text-right">Valor Total</div>,
+      cell: ({ row }) => {
+        const valor: number = row.getValue("valorTotal");
+        return (
+          <div className="text-right font-medium">
+            {new Intl.NumberFormat("pt-BR", {
+              style: "currency",
+              currency: "BRL",
+            }).format(valor || 0)}
+          </div>
+        );
+      },
     },
     {
       id: "actions",

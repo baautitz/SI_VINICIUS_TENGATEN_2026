@@ -4,5 +4,6 @@ public record ProdutosResumo(
     int Id,
     string Produto,
     string Descricao,
-    bool Ativo
+    bool Ativo,
+    decimal EstoqueTotal
 );

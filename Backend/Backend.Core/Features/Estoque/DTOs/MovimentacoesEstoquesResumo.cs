@@ -5,5 +5,6 @@ public record MovimentacoesEstoquesResumo(
     DateTime DataMovimentacao,
     string TipoMovimentacao,
     string Status,
-    string? Observacao
+    string? Observacao,
+    decimal ValorTotal
 );

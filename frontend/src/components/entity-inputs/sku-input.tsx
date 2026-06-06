@@ -86,13 +86,21 @@ export function SkuInput({
           onSelectSku(null);
           setSelectedSku(null);
           setSkuText("");
-          if (refocusAfter) inputRef.current?.focus();
+          if (refocusAfter) {
+            setTimeout(() => {
+              inputRef.current?.focus();
+            }, 50);
+          }
           return;
         }
         onSelectSku(match, qtde);
         setSelectedSku(match.sku);
         setSkuText(""); // Clear text to be ready for next SKU immediately, matching POS behavior
-        if (refocusAfter) inputRef.current?.focus();
+        if (refocusAfter) {
+          setTimeout(() => {
+            inputRef.current?.focus();
+          }, 50);
+        }
       } else {
         onSelectSku(null);
         setSelectedSku(null);
@@ -123,7 +131,9 @@ export function SkuInput({
         setSkuText(""); // clear main input ready for next
         setIsOpen(false);
         setQuantityModalItem(null);
-        inputRef.current?.focus();
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 150);
       } else {
         toast.error("Quantidade inválida.");
       }

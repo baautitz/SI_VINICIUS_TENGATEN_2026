@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS movimentacoes_estoque_itens (
   quantidade NUMERIC(14, 4) NOT NULL,
   custo_unitario NUMERIC(14, 4) NOT NULL DEFAULT 0,
   quantidade_anterior NUMERIC(14, 4),
+  custo_medio_anterior NUMERIC(14, 4),
   CONSTRAINT movimentacoes_estoque_itens_mov_fk
     FOREIGN KEY (movimentacao_estoque_id)
     REFERENCES movimentacoes_estoque (id)

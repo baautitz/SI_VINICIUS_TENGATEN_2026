@@ -12,7 +12,7 @@ public static class DbExceptionTranslator
         {
             "23505" => new UniqueConstraintException("Este registro já existe.", ex),
             "23503" => new ConflictException("Este registro não pode ser alterado ou excluído pois está sendo utilizado em outro lugar.", ex),
-            _ => ex
+            _ => new ConflictException($"DEBUG - SqlState não mapeado: {ex.SqlState} - Msg: {ex.MessageText}", ex)
         };
     }
 }

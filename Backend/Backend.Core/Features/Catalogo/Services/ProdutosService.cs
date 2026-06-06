@@ -112,7 +112,7 @@ public sealed class ProdutosService : BaseService
                     return Resultado<Produtos>.Falha(new ResultadoErro("SKU_DUPLICADO", $"O SKU '{finalSkuCode}' já está em uso por outro produto.", "Skus"));
                 }
 
-                var sku = new Skus(finalSkuCode, skuDto.Preco, skuDto.Estoque, skuDto.Ativo, skuDto.GtinEan);
+                var sku = new Skus(finalSkuCode, skuDto.Preco, 0, skuDto.Ativo, skuDto.GtinEan);
                 
                 if (skuDto.AtributoValorIds != null && skuDto.AtributoValorIds.Any())
                 {
@@ -204,7 +204,7 @@ public sealed class ProdutosService : BaseService
                 assignedSkuCodes.Add(finalSkuCode);
 
                 var skuExistenteDb = skusAtuais.FirstOrDefault(s => s.Sku.Equals(finalSkuCode, StringComparison.OrdinalIgnoreCase));
-                var skuEntity = new Skus(finalSkuCode, skuDto.Preco, skuDto.Estoque, skuDto.Ativo, skuDto.GtinEan);
+                var skuEntity = new Skus(finalSkuCode, skuDto.Preco, skuExistenteDb?.Estoque ?? 0, skuDto.Ativo, skuDto.GtinEan, skuExistenteDb?.CustoMedio ?? 0, skuExistenteDb?.CustoUltimaCompra ?? 0);
                 
                 if (skuDto.AtributoValorIds != null && skuDto.AtributoValorIds.Any())
                 {

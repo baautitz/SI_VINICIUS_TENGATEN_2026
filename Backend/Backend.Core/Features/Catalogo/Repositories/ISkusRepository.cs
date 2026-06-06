@@ -12,4 +12,5 @@ public interface ISkusRepository {
     public Task<Skus> AtualizarSku(string sku, Skus skuData);
     public Task<bool> DeletarSku(string sku);
     public Task<ResultadoPaginado<SkusResumo>> PesquisarSkus(string termo, int pagina = 1, int tamanhoDaPagina = 20);
+    public Task<SkusResumo?> ObterResumoPorSku(string sku);
 }

@@ -13,8 +13,8 @@ public class Venda
     public decimal ValorTotal { get; private set; }
     public string? Observacao { get; private set; }
 
-    public Emitentes Emitente { get; private set; }
-    public Clientes Cliente { get; private set; }
+    public Emitentes Emitente { get; private set; } = null!;
+    public Clientes Cliente { get; private set; } = null!;
         public IReadOnlyCollection<VendaItens> Itens => _itens.AsReadOnly();
 
     protected Venda() { }

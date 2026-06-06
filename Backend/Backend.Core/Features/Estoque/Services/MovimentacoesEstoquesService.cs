@@ -175,7 +175,24 @@ public sealed class MovimentacoesEstoquesService : BaseService
             var sku = await _skusRepository.ObterSkuPorSku(item.Sku.Sku);
             if (sku != null)
             {
-                item.DefinirQuantidadeAnterior(sku.Estoque);
+                // Save state for rollback
+                item.DefinirQuantidadesECustosAnteriores(sku.Estoque, sku.CustoMedio);
+
+                if (existente.TipoMovimentacao == TipoMovimentacaoEstoque.ENTRADA)
+                {
+                    sku.RegistrarEntradaDeEstoque(item.Quantidade, item.CustoUnitario);
+                }
+                else if (existente.TipoMovimentacao == TipoMovimentacaoEstoque.SAIDA || existente.TipoMovimentacao == TipoMovimentacaoEstoque.VENDA)
+                {
+                    sku.AjustarEstoque(-item.Quantidade);
+                }
+                else if (existente.TipoMovimentacao == TipoMovimentacaoEstoque.BALANCO)
+                {
+                    sku.AjustarEstoque(item.Quantidade - sku.Estoque); // Set exactly to the counted amount
+                }
+
+                // Persist the SKU modifications
+                await _skusRepository.AtualizarSku(sku.Sku, sku);
             }
         }
 
@@ -210,6 +227,28 @@ public sealed class MovimentacoesEstoquesService : BaseService
 
                 if (sku.Estoque < item.Quantidade)
                     return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("ESTOQUE_INSUFICIENTE", $"Não é possível estornar esta entrada. A dedução das mercadorias deixaria o SKU '{sku.Sku}' com saldo negativo. Disponível: {sku.Estoque:0.####}, Necessário deduzir: {item.Quantidade:0.####}", $"itens.{i}.quantidade"));
+            }
+        }
+
+        foreach (var item in existente.MovimentacoesEstoquesItens)
+        {
+            var sku = await _skusRepository.ObterSkuPorSku(item.Sku.Sku);
+            if (sku != null)
+            {
+                if (existente.TipoMovimentacao == TipoMovimentacaoEstoque.ENTRADA)
+                {
+                    sku.ReverterEntradaDeEstoque(item.Quantidade, item.CustoMedioAnterior ?? 0);
+                }
+                else if (existente.TipoMovimentacao == TipoMovimentacaoEstoque.SAIDA || existente.TipoMovimentacao == TipoMovimentacaoEstoque.VENDA)
+                {
+                    sku.AjustarEstoque(item.Quantidade);
+                }
+                else if (existente.TipoMovimentacao == TipoMovimentacaoEstoque.BALANCO)
+                {
+                    sku.AjustarEstoque((item.QuantidadeAnterior ?? 0) - sku.Estoque); // Set back to exactly what it was before the count
+                }
+
+                await _skusRepository.AtualizarSku(sku.Sku, sku);
             }
         }
 

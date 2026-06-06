@@ -1,5 +1,6 @@
 "use client";
 
+import { Kbd } from "@/components/ui/kbd";
 import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FormFieldUI } from "@/components/ui/form-field-ui";
 import {
@@ -27,12 +29,12 @@ import {
 } from "@/components/ui/table";
 import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { estoqueApi } from "@/api/estoque";
 import type { Resultado } from "@/api/types";
 import { SkuInput } from "@/components/entity-inputs/sku-input";
 import { SkuResumo } from "@/api/catalogo";
-import { Trash2 } from "lucide-react";
+import { Trash2, ArrowRight } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -107,6 +109,8 @@ function MovimentacoesUpsertForm({
     custoUnitario: number;
     estoqueAtual?: number;
     precoSugerido?: number;
+    custoMedio?: number;
+    custoUltimaCompra?: number;
   }
 
   const [itens, setItens] = useState<ItemLinha[]>(
@@ -116,10 +120,12 @@ function MovimentacoesUpsertForm({
       custoUnitario: Number(i.custoUnitario),
       estoqueAtual: i.sku.estoque,
       precoSugerido: i.sku.preco,
+      custoMedio: i.sku.custoMedio,
+      custoUltimaCompra: i.sku.custoUltimaCompra,
     })) ?? [],
   );
 
-  const [skuInputKey, setSkuInputKey] = useState(0);
+  const [skuInputKey] = useState(0);
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
@@ -128,44 +134,53 @@ function MovimentacoesUpsertForm({
   const [pendingPayload, setPendingPayload] =
     useState<MovimentacaoEstoqueFormValues | null>(null);
 
-  // Tracks the ID created on first save when creating a new movimentacao.
-  // Prevents creating a duplicate if efetivar fails and user retries.
+  const queryClient = useQueryClient();
+
   const createdIdRef = useRef<number | null>(null);
 
-  const { mutation, globalError, getFieldError, resetErrors, backendFieldErrors } =
-    useUpsertMutation<
-      { values: MovimentacaoEstoqueFormValues; efetivar: boolean },
-      Resultado<MovimentacaoEstoque>
-    >({
-      mutationFn: async ({ values, efetivar }) => {
-        const existingId = editingItem?.id ?? createdIdRef.current;
+  const {
+    mutation,
+    globalError,
+    getFieldError,
+    resetErrors,
+    backendFieldErrors,
+  } = useUpsertMutation<
+    { values: MovimentacaoEstoqueFormValues; efetivar: boolean },
+    Resultado<MovimentacaoEstoque>
+  >({
+    mutationFn: async ({ values, efetivar }) => {
+      const existingId = editingItem?.id ?? createdIdRef.current;
 
-        const saveRes = existingId
-          ? await estoqueApi.update(existingId, values)
-          : await estoqueApi.create(values);
+      const saveRes = existingId
+        ? await estoqueApi.update(existingId, values)
+        : await estoqueApi.create(values);
 
-        if (!saveRes.success || !saveRes.data) {
-          return saveRes;
-        }
-
-        if (!editingItem) {
-          createdIdRef.current = saveRes.data.id;
-        }
-
-        if (efetivar) {
-          const confirmRes = await estoqueApi.confirmar(saveRes.data.id);
-          return confirmRes;
-        }
-
+      if (!saveRes.success || !saveRes.data) {
         return saveRes;
-      },
-      queryKey: ["movimentacoes"],
-      onSuccessCallback: onSuccess,
-      onClose: () => {
-        createdIdRef.current = null;
-        onClose();
-      },
-    });
+      }
+
+      if (!editingItem) {
+        createdIdRef.current = saveRes.data.id;
+      }
+
+      if (efetivar) {
+        const confirmRes = await estoqueApi.confirmar(saveRes.data.id);
+        return confirmRes;
+      }
+
+      return saveRes;
+    },
+    queryKey: ["movimentacoes"],
+    onSuccessCallback: () => {
+      queryClient.invalidateQueries({ queryKey: ["skus"] });
+      queryClient.invalidateQueries({ queryKey: ["produtos"] });
+      onSuccess();
+    },
+    onClose: () => {
+      createdIdRef.current = null;
+      onClose();
+    },
+  });
 
   const form = useForm({
     defaultValues: {
@@ -224,29 +239,43 @@ function MovimentacoesUpsertForm({
     }
   };
 
-  const handleSkuAdded = (skuRes: SkuResumo | null, qtdeAdicionada: number = 1) => {
+  const handleSkuAdded = (
+    skuRes: SkuResumo | null,
+    qtdeAdicionada: number = 1,
+  ) => {
     if (!skuRes) return;
+
+    const tipoMov = form.getFieldValue("tipoMovimentacao");
+    // Saídas e vendas usam o custo médio. Entradas usam o último custo como sugestão
+    const custoInicial = (tipoMov === "SAIDA" || tipoMov === "VENDA") 
+      ? Number(skuRes.custoMedio) 
+      : Number(skuRes.custoUltimaCompra || 0);
 
     const existingIndex = itens.findIndex((i) => i.sku === skuRes.sku);
     if (existingIndex > -1) {
       const updated = [...itens];
       updated[existingIndex].quantidade += qtdeAdicionada;
       setItens(updated);
-      toast.success(`Quantidade do SKU "${skuRes.sku}" incrementada (+${qtdeAdicionada}).`);
+      toast.success(
+        `Quantidade do SKU "${skuRes.sku}" incrementada (+${qtdeAdicionada}).`,
+      );
     } else {
       setItens([
         ...itens,
         {
           sku: skuRes.sku,
           quantidade: qtdeAdicionada,
-          custoUnitario: Number(skuRes.preco),
+          custoUnitario: custoInicial,
           estoqueAtual: Number(skuRes.estoque),
           precoSugerido: Number(skuRes.preco),
+          custoMedio: Number(skuRes.custoMedio) || 0,
+          custoUltimaCompra: Number(skuRes.custoUltimaCompra) || 0,
         },
       ]);
-      toast.success(`SKU "${skuRes.sku}" adicionado (Qtde: ${qtdeAdicionada}).`);
+      toast.success(
+        `SKU "${skuRes.sku}" adicionado (Qtde: ${qtdeAdicionada}).`,
+      );
     }
-    setSkuInputKey((k) => k + 1);
   };
 
   const removeItemRow = (index: number) => {
@@ -306,7 +335,7 @@ function MovimentacoesUpsertForm({
               variant="outline"
               onClick={handleCloseAttempt}
             >
-              {readOnly ? "Fechar" : "Cancelar"}
+              {readOnly ? "Fechar" : <span className="flex items-center gap-2">Cancelar <Kbd className="ml-2">Esc</Kbd></span>}
             </Button>
             {!readOnly && (
               <form.Subscribe
@@ -318,9 +347,13 @@ function MovimentacoesUpsertForm({
                     form="upsert-movimentacao"
                     disabled={!canSubmit || isSubmitting || mutation.isPending}
                   >
-                    {isSubmitting || mutation.isPending
-                      ? "Salvando..."
-                      : "Salvar"}
+                    {isSubmitting || mutation.isPending ? (
+                      "Salvando..."
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        Salvar <Kbd className="bg-primary-foreground/20 text-primary-foreground">Ctrl+Enter</Kbd>
+                      </span>
+                    )}
                   </Button>
                 )}
               </form.Subscribe>
@@ -364,11 +397,30 @@ function MovimentacoesUpsertForm({
                           </FieldLabel>
                           <Select
                             value={field.state.value}
-                            onValueChange={(val) =>
+                            onValueChange={(val) => {
                               field.handleChange(
                                 val as MovimentacaoEstoqueFormValues["tipoMovimentacao"],
-                              )
-                            }
+                              );
+                              if (!readOnly && !isEditMode) {
+                                setItens((prev) =>
+                                  prev.map((item) => {
+                                    if (val === "SAIDA" || val === "VENDA") {
+                                      return {
+                                        ...item,
+                                        custoUnitario: item.custoMedio ?? 0,
+                                      };
+                                    } else if (val === "ENTRADA") {
+                                      return {
+                                        ...item,
+                                        custoUnitario:
+                                          item.custoUltimaCompra ?? 0,
+                                      };
+                                    }
+                                    return item;
+                                  }),
+                                );
+                              }
+                            }}
                             disabled={readOnly || isEditMode}
                           >
                             <SelectTrigger
@@ -459,12 +511,20 @@ function MovimentacoesUpsertForm({
           <form.Subscribe selector={(state) => [state.values.tipoMovimentacao]}>
             {([tipoMovimentacao]) => {
               const comCusto = tipoPrecisaDeCusto(tipoMovimentacao);
-              const colSpanVazio = readOnly ? (comCusto ? 4 : 3) : (comCusto ? 5 : 4);
+              const colSpanVazio = readOnly
+                ? comCusto
+                  ? 4
+                  : 3
+                : comCusto
+                  ? 5
+                  : 4;
 
               return (
                 <div className="flex flex-col gap-3 border-t pt-4">
                   <div className="flex flex-col gap-2">
-                    <h3 className="text-base font-semibold">Itens da Movimentação</h3>
+                    <h3 className="text-base font-semibold">
+                      Itens da Movimentação
+                    </h3>
                     {!readOnly && (
                       <div className="max-w-md">
                         <SkuInput
@@ -490,16 +550,26 @@ function MovimentacoesUpsertForm({
                     <Table>
                       <TableHeader className="bg-muted border-b">
                         <TableRow className="hover:bg-transparent border-b">
-                          <TableHead className="px-4 py-2 text-left h-10">SKU</TableHead>
-                          <TableHead className="px-4 py-2 text-left w-36 h-10">Quantidade</TableHead>
+                          <TableHead className="px-4 py-2 text-left h-10">
+                            SKU
+                          </TableHead>
+                          <TableHead className="px-4 py-2 text-left w-36 h-10">
+                            Quantidade
+                          </TableHead>
                           {comCusto && (
-                            <TableHead className="px-4 py-2 text-left w-36 h-10">Custo Unitário</TableHead>
+                            <TableHead className="px-4 py-2 text-left w-36 h-10">
+                              Custo Unitário
+                            </TableHead>
                           )}
                           {comCusto && (
-                            <TableHead className="px-4 py-2 text-right w-36 h-10">Valor Total</TableHead>
+                            <TableHead className="px-4 py-2 text-right w-36 h-10">
+                              Valor Total
+                            </TableHead>
                           )}
                           {!readOnly && (
-                            <TableHead className="px-4 py-2 text-center w-16 h-10">Ação</TableHead>
+                            <TableHead className="px-4 py-2 text-center w-16 h-10">
+                              Ação
+                            </TableHead>
                           )}
                         </TableRow>
                       </TableHeader>
@@ -516,16 +586,25 @@ function MovimentacoesUpsertForm({
                         ) : (
                           itens.map((item, index) => {
                             const itemTotal =
-                              (item.quantidade || 0) * (item.custoUnitario || 0);
+                              (item.quantidade || 0) *
+                              (item.custoUnitario || 0);
                             const skuErr =
                               validationErrors[`itens.${index}.sku`] ||
-                              backendFieldErrors[`itens.${index}.sku`.toLowerCase()];
+                              backendFieldErrors[
+                                `itens.${index}.sku`.toLowerCase()
+                              ];
                             const qtdErr =
                               validationErrors[`itens.${index}.quantidade`] ||
-                              backendFieldErrors[`itens.${index}.quantidade`.toLowerCase()];
+                              backendFieldErrors[
+                                `itens.${index}.quantidade`.toLowerCase()
+                              ];
                             const custoErr =
-                              validationErrors[`itens.${index}.custoUnitario`] ||
-                              backendFieldErrors[`itens.${index}.custoUnitario`.toLowerCase()];
+                              validationErrors[
+                                `itens.${index}.custoUnitario`
+                              ] ||
+                              backendFieldErrors[
+                                `itens.${index}.custoUnitario`.toLowerCase()
+                              ];
 
                             return (
                               <TableRow key={index}>
@@ -534,19 +613,53 @@ function MovimentacoesUpsertForm({
                                     <span className="font-mono font-medium text-xs">
                                       {item.sku}
                                     </span>
-                                    {(item.estoqueAtual !== undefined ||
-                                      item.precoSugerido !== undefined) && (
-                                      <span className="text-[10px] text-muted-foreground mt-0.5">
-                                        {item.estoqueAtual !== undefined &&
-                                          `Estoque: ${item.estoqueAtual}`}
-                                        {item.estoqueAtual !== undefined &&
-                                          item.precoSugerido !== undefined &&
-                                          " | "}
-                                        {item.precoSugerido !== undefined &&
-                                          !comCusto === false &&
-                                          `Preço Base: ${item.precoSugerido.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`}
-                                      </span>
+                                  <div className="flex flex-col gap-1.5 mt-1">
+                                    {(item.estoqueAtual !== undefined || item.precoSugerido !== undefined) && (
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        {item.estoqueAtual !== undefined && (
+                                          <>
+                                            <Badge variant="outline" className="text-[10px] font-normal px-1.5 h-5 bg-muted/50 text-muted-foreground border-muted">
+                                              Estoque: {item.estoqueAtual}
+                                            </Badge>
+                                            {!readOnly && (
+                                              <>
+                                                <ArrowRight className="size-3 text-muted-foreground" />
+                                                {(() => {
+                                                  const estoqueApos =
+                                                    tipoMovimentacao === "ENTRADA"
+                                                      ? item.estoqueAtual + item.quantidade
+                                                      : tipoMovimentacao === "SAIDA" || tipoMovimentacao === "VENDA"
+                                                        ? item.estoqueAtual - item.quantidade
+                                                        : item.quantidade;
+                                                  
+                                                  return (
+                                                    <Badge 
+                                                      variant={estoqueApos < 0 ? "destructive" : "secondary"} 
+                                                      className="text-[10px] font-normal px-1.5 h-5"
+                                                    >
+                                                      Após: {estoqueApos}
+                                                    </Badge>
+                                                  );
+                                                })()}
+                                              </>
+                                            )}
+                                          </>
+                                        )}
+                                      </div>
                                     )}
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      {item.precoSugerido !== undefined && !comCusto === false && (
+                                        <Badge variant="outline" className="text-[10px] text-muted-foreground font-normal px-1.5 h-5 border-dashed">
+                                          Preço Venda: {item.precoSugerido.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                                        </Badge>
+                                      )}
+                                      {comCusto && item.custoMedio !== undefined && (
+                                        <Badge variant="outline" className="text-[10px] text-muted-foreground font-normal px-1.5 h-5 border-dashed">
+                                          Custo Médio Real: {item.custoMedio.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
                                   </div>
                                   {skuErr && (
                                     <p className="text-[10px] text-red-500 mt-1">
@@ -573,7 +686,8 @@ function MovimentacoesUpsertForm({
                                     }}
                                     className={cn(
                                       "h-8 text-xs",
-                                      qtdErr && "border-destructive focus-visible:ring-destructive"
+                                      qtdErr &&
+                                        "border-destructive focus-visible:ring-destructive",
                                     )}
                                     min={0.0001}
                                     step="any"
@@ -593,9 +707,11 @@ function MovimentacoesUpsertForm({
                                           ? ""
                                           : item.custoUnitario
                                       }
-                                      disabled={readOnly}
+                                      disabled={readOnly || tipoMovimentacao === "SAIDA" || tipoMovimentacao === "VENDA"}
                                       onChange={(e) => {
-                                        const parsed = parseFloat(e.target.value);
+                                        const parsed = parseFloat(
+                                          e.target.value,
+                                        );
                                         updateItemRow(
                                           index,
                                           "custoUnitario",
@@ -604,7 +720,8 @@ function MovimentacoesUpsertForm({
                                       }}
                                       className={cn(
                                         "h-8 text-xs",
-                                        custoErr && "border-destructive focus-visible:ring-destructive"
+                                        custoErr &&
+                                          "border-destructive focus-visible:ring-destructive",
                                       )}
                                       min={0}
                                       step="any"
@@ -645,7 +762,10 @@ function MovimentacoesUpsertForm({
                       {comCusto && itens.length > 0 && (
                         <TableFooter className="bg-muted/30 font-semibold border-t">
                           <TableRow>
-                            <TableCell colSpan={2} className="px-4 py-3 text-left">
+                            <TableCell
+                              colSpan={2}
+                              className="px-4 py-3 text-left"
+                            >
                               Total Geral
                             </TableCell>
                             <TableCell className="px-4 py-3"></TableCell>

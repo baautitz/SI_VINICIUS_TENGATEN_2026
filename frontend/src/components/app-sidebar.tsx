@@ -21,6 +21,8 @@ import {
   Layers,
   Sliders,
   ClipboardList,
+  ChevronRight,
+  Search,
 } from "lucide-react";
 
 import {
@@ -46,7 +48,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ChevronRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Kbd } from "@/components/ui/kbd";
+import { useHotkeys } from "react-hotkeys-hook";
 
 const catalogoItems = [
   {
@@ -219,14 +223,34 @@ const groups = [
   },
 ];
 
+const normalizeStr = (str: string) =>
+  str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
 interface SidebarGroupSectionProps {
   group: (typeof groups)[number];
   pathname: string;
+  searchTerm: string;
 }
 
-function SidebarGroupSection({ group, pathname }: SidebarGroupSectionProps) {
+function SidebarGroupSection({
+  group,
+  pathname,
+  searchTerm,
+}: SidebarGroupSectionProps) {
   const defaultOpen = pathname.startsWith(group.urlPrefix);
-  const isOpen = useSidebarSectionOpen(group.id, defaultOpen);
+
+  const hasMatchedItems = React.useMemo(() => {
+    if (!searchTerm.trim()) return false;
+    const term = normalizeStr(searchTerm);
+    return group.items.some((item) => normalizeStr(item.title).includes(term));
+  }, [group.items, searchTerm]);
+
+  const localIsOpen = useSidebarSectionOpen(group.id, defaultOpen);
+  const isOpen = hasMatchedItems || localIsOpen;
+
   const GroupIcon = group.icon;
   const { state, setOpen } = useSidebar();
 
@@ -238,6 +262,9 @@ function SidebarGroupSection({ group, pathname }: SidebarGroupSectionProps) {
             asChild
             open={isOpen}
             onOpenChange={(open) => {
+              if (searchTerm.trim()) {
+                return;
+              }
               if (state === "collapsed") {
                 sidebarStore.set(`sidebar:${group.id}`, "true");
                 setOpen(true);
@@ -286,6 +313,25 @@ function SidebarGroupSection({ group, pathname }: SidebarGroupSectionProps) {
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const { state, setOpen } = useSidebar();
+
+  useHotkeys(
+    "alt+s",
+    (e) => {
+      e.preventDefault();
+      if (state === "collapsed") {
+        setOpen(true);
+      }
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }, 50);
+    },
+    { enableOnFormTags: true },
+    [state, setOpen],
+  );
 
   const prevPathnameRef = React.useRef(pathname);
 
@@ -299,6 +345,25 @@ export function AppSidebar() {
       }
     });
   }, [pathname]);
+
+  const filteredGroups = React.useMemo(() => {
+    if (!searchTerm.trim()) return groups;
+
+    const term = normalizeStr(searchTerm);
+    return groups
+      .map((group) => {
+        const groupMatches = normalizeStr(group.title).includes(term);
+        const matchedItems = group.items.filter(
+          (item) => groupMatches || normalizeStr(item.title).includes(term),
+        );
+
+        return {
+          ...group,
+          items: matchedItems,
+        };
+      })
+      .filter((group) => group.items.length > 0);
+  }, [searchTerm]);
 
   return (
     <Sidebar collapsible="icon">
@@ -319,11 +384,29 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        {groups.map((group) => (
+        <div className="px-3 py-2 group-data-[state=collapsed]:hidden border-b border-sidebar-border/50 shrink-0">
+          <div className="relative">
+            <Input
+              ref={searchInputRef}
+              placeholder="Buscar menu..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="h-8 pl-8 pr-10 text-xs rounded-lg bg-background"
+            />
+            <Search className="absolute left-2.5 top-2.5 size-3 text-muted-foreground" />
+            <div className="absolute right-2.5 top-1.5 flex items-center gap-0.5 pointer-events-none select-none">
+              <Kbd className="h-5 text-[9px] px-1 bg-muted/40 border-none shadow-none">
+                Alt+S
+              </Kbd>
+            </div>
+          </div>
+        </div>
+        {filteredGroups.map((group) => (
           <SidebarGroupSection
             key={group.id}
             group={group}
             pathname={pathname}
+            searchTerm={searchTerm}
           />
         ))}
       </SidebarContent>

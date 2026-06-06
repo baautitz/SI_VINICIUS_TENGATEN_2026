@@ -1,11 +1,13 @@
 "use client";
 
+import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
+import { useHotkeys } from "react-hotkeys-hook";
 import { FeatureHeader } from "@/components/ui/feature-header";
-import { Check, MapPin, Pencil, Trash2 } from "lucide-react";
+import { MapPin } from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
+
 import { DataTable } from "@/components/ui/data-table";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import { FeatureLayout } from "@/components/ui/feature-layout";
 import { CidadeDto } from "./types";
 
@@ -30,29 +32,14 @@ export function CidadesList({
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<CidadeDto>) {
+  useHotkeys("alt+n", (e) => {
+    e.preventDefault();
+    if (!selectionMode && document.querySelector('[role="dialog"]')) return;
+    onAdd();
+  }, { enableOnFormTags: true }, [selectionMode, onAdd]);
+
   const columns: ColumnDef<CidadeDto>[] = [
-    {
-      id: "select",
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Selecionar tudo"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Selecionar linha"
-        />
-      ),
-      enableHiding: false,
-      size: 50,
-    },
+    getSelectColumn<CidadeDto>(),
     {
       accessorKey: "id",
       header: "ID",
@@ -80,41 +67,7 @@ export function CidadesList({
         return `${item.estadoNome} (${item.uf})`;
       },
     },
-    {
-      id: "actions",
-      header: () => <div className="text-right px-4">Ações</div>,
-      cell: ({ row }) => {
-        const item = row.original;
-        return (
-          <div className="flex justify-end gap-2 px-4">
-            <Button
-              size="icon-sm"
-              variant="outline"
-              onClick={() => onEdit(item)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              size="icon-sm"
-              variant="destructive"
-              onClick={() => onDelete(item)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-            {selectionMode && (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => onSelect?.(item)}
-              >
-                <Check className="mr-2 h-4 w-4" />
-                Selecionar
-              </Button>
-            )}
-          </div>
-        );
-      },
-    },
+    getActionsColumn<CidadeDto>({ onEdit, onDelete, selectionMode, onSelect }),
   ];
 
   return (

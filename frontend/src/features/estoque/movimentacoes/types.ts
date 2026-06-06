@@ -26,6 +26,7 @@ export interface MovimentacaoEstoqueResumo {
   tipoMovimentacao: string;
   status: string;
   observacao?: string | null;
+  valorTotal: number;
 }
 
 export const tipoMovimentacaoLabels: Record<string, string> = {

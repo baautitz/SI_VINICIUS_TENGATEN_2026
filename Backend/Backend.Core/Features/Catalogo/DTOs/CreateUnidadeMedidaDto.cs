@@ -5,5 +5,6 @@ public sealed class CreateUnidadeMedidaDto
     public string Sigla { get; init; } = null!;
     public string Descricao { get; init; } = null!;
     public string Categoria { get; init; } = null!;
+    public bool PermiteDecimais { get; init; } = false;
     public bool Ativo { get; init; } = true;
 }

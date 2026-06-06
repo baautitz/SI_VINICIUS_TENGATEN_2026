@@ -5,5 +5,6 @@ public record UnidadesMedidaResumo(
     string Sigla,
     string Descricao,
     string Categoria,
+    bool PermiteDecimais,
     bool Ativo
 );

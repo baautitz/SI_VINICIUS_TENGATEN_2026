@@ -1,5 +1,7 @@
 "use client";
 
+import { Kbd } from "@/components/ui/kbd";
+import { useHotkeys } from "react-hotkeys-hook";
 import React from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -99,6 +101,8 @@ function ProdutosUpsertForm({
   onClose,
   onSuccess,
 }: ProdutosUpsertFormProps) {
+  const isEditMode = !!editingItem;
+  
   const { data: atributosList } = useQuery({
     queryKey: ["atributos", "list-all"],
     queryFn: () => atributosApi.list(undefined, 1, 100),
@@ -160,6 +164,12 @@ function ProdutosUpsertForm({
     return [];
   });
 
+  useHotkeys("alt+o", (e) => {
+    e.preventDefault();
+    setHasVariants(true);
+    setOptions(prev => [...prev, { keyId: 0, keyName: "", valores: [] }]);
+  }, { enableOnFormTags: true, enabled: open }, [open]);
+
   const getDisplayKeyName = (option: VariantOption) => {
     const found = atributosList?.itens?.find(
       (item) => item.id === option.keyId,
@@ -176,9 +186,9 @@ function ProdutosUpsertForm({
         return {
           sku: s.sku,
           preco: s.preco,
-          estoque: s.estoque,
           gtinEan: s.gtinEan ?? "",
           ativo: s.ativo,
+          estoque: s.estoque,
           atributoValorIds: attributeIds,
           variantLabel,
         };
@@ -188,9 +198,9 @@ function ProdutosUpsertForm({
       {
         sku: "",
         preco: 0,
-        estoque: 0,
         gtinEan: "",
         ativo: true,
+        estoque: 0,
         atributoValorIds: [],
         variantLabel: "",
       },
@@ -266,7 +276,6 @@ function ProdutosUpsertForm({
       return {
         sku: "",
         preco: 0,
-        estoque: 0,
         gtinEan: "",
         ativo: true,
         atributoValorIds: combo.map((c) => c.id),
@@ -292,7 +301,7 @@ function ProdutosUpsertForm({
         <>
           <DialogClose asChild>
             <Button type="button" variant="outline">
-              Cancelar
+              Cancelar <Kbd className="ml-2">Esc</Kbd>
             </Button>
           </DialogClose>
           <form.Subscribe
@@ -304,7 +313,7 @@ function ProdutosUpsertForm({
                 form="upsert-produtos"
                 disabled={!canSubmit || isSubmitting}
               >
-                {isSubmitting ? "Salvando..." : "Salvar Produto"}
+                {isSubmitting ? "Salvando..." : <span className="flex items-center gap-2">Salvar Produto <Kbd className="bg-primary-foreground/20 text-primary-foreground">Ctrl+Enter</Kbd></span>}
               </Button>
             )}
           </form.Subscribe>
@@ -490,7 +499,6 @@ function ProdutosUpsertForm({
                     {
                       sku: "",
                       preco: 0,
-                      estoque: 0,
                       gtinEan: "",
                       ativo: true,
                       atributoValorIds: [],
@@ -543,23 +551,6 @@ function ProdutosUpsertForm({
               </form.Field>
 
               <form.Field
-                name="skus[0].estoque"
-                validators={{ onChange: skuFormSchema.shape.estoque }}
-              >
-                {(field) => (
-                  <FormFieldUI
-                    field={field}
-                    label={editingItem ? "Estoque Atual" : "Estoque Inicial"}
-                    inputSize="full"
-                    type="number"
-                    getFieldError={getFieldError}
-                    placeholder="0"
-                    disabled={!!editingItem}
-                  />
-                )}
-              </form.Field>
-
-              <form.Field
                 name="skus[0].gtinEan"
                 validators={{ onChange: skuFormSchema.shape.gtinEan }}
               >
@@ -574,6 +565,21 @@ function ProdutosUpsertForm({
                   />
                 )}
               </form.Field>
+
+              {isEditMode && (
+                <form.Field name="skus[0].estoque">
+                  {(field) => (
+                    <FormFieldUI
+                      field={field}
+                      label="Estoque Atual"
+                      inputSize="full"
+                      type="number"
+                      disabled
+                      getFieldError={getFieldError}
+                    />
+                  )}
+                </form.Field>
+              )}
             </div>
           ) : (
             <div className="flex flex-col gap-4">
@@ -593,7 +599,7 @@ function ProdutosUpsertForm({
                       setOptions(newOptions);
                     }}
                   >
-                    <Plus className="size-3.5" /> Adicionar Opção
+                    <Plus className="size-3.5" /> Adicionar Opção <Kbd className="ml-1 bg-background text-foreground border shadow-xs">Alt+O</Kbd>
                   </Button>
                 </div>
 
@@ -705,12 +711,8 @@ function ProdutosUpsertForm({
                             <TableHead className="p-3 h-10 font-semibold text-muted-foreground">Código SKU</TableHead>
                             <TableHead className="p-3 h-10 font-semibold text-muted-foreground">Variação</TableHead>
                             <TableHead className="p-3 h-10 font-semibold text-muted-foreground">Preço (R$)</TableHead>
-                            <TableHead className="p-3 h-10 font-semibold text-muted-foreground">
-                              {editingItem
-                                ? "Estoque Atual"
-                                : "Estoque Inicial"}
-                            </TableHead>
                             <TableHead className="p-3 h-10 font-semibold text-muted-foreground">Barras (EAN)</TableHead>
+                            {isEditMode && <TableHead className="p-3 h-10 font-semibold text-muted-foreground">Estoque</TableHead>}
                             <TableHead className="p-3 text-center h-10 font-semibold text-muted-foreground">Ativo</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -814,45 +816,6 @@ function ProdutosUpsertForm({
                               </TableCell>
                               <TableCell className="p-3">
                                 <form.Field
-                                  name={`skus[${index}].estoque`}
-                                  validators={{ onChange: skuFormSchema.shape.estoque }}
-                                >
-                                  {(field) => {
-                                    const error = getFieldError(
-                                      field.name,
-                                      field.state.meta.errors,
-                                    );
-                                    return (
-                                      <div className="flex flex-col gap-1">
-                                        <Input
-                                          inputSize="full"
-                                          type="number"
-                                          value={field.state.value}
-                                          onChange={(e) =>
-                                            field.handleChange(
-                                              e.target.value === "" ? 0 : Number(e.target.value),
-                                            )
-                                          }
-                                          placeholder="0"
-                                          className={cn(
-                                            "h-8 text-xs",
-                                            error &&
-                                              "border-destructive focus-visible:ring-destructive",
-                                          )}
-                                          disabled={!!editingItem}
-                                        />
-                                        {error && (
-                                          <span className="text-[10px] font-medium text-destructive">
-                                            {error}
-                                          </span>
-                                        )}
-                                      </div>
-                                    );
-                                  }}
-                                </form.Field>
-                              </TableCell>
-                              <TableCell className="p-3">
-                                <form.Field
                                   name={`skus[${index}].gtinEan`}
                                   validators={{ onChange: skuFormSchema.shape.gtinEan }}
                                 >
@@ -887,7 +850,24 @@ function ProdutosUpsertForm({
                                   }}
                                 </form.Field>
                               </TableCell>
-                              <TableCell className="p-3 text-center">
+                              {isEditMode && (
+                                <TableCell className="p-3">
+                                  <form.Field name={`skus[${index}].estoque`}>
+                                    {(field) => (
+                                      <div className="flex flex-col gap-1">
+                                        <Input
+                                          inputSize="full"
+                                          type="number"
+                                          value={field.state.value}
+                                          disabled
+                                          className="h-8 text-xs bg-muted"
+                                        />
+                                      </div>
+                                    )}
+                                  </form.Field>
+                                </TableCell>
+                              )}
+                              <TableCell className="p-3 text-center align-middle">
                                 <form.Field name={`skus[${index}].ativo`}>
                                   {(field) => (
                                     <Checkbox

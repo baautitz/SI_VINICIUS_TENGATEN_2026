@@ -12,12 +12,15 @@ public class Skus
     public string? GtinEan { get; private set; }
     public decimal Preco { get; private set; }
     public decimal Estoque { get; private set; }
+    public decimal CustoMedio { get; private set; }
+    public decimal CustoUltimaCompra { get; private set; }
     public bool Ativo { get; private set; }
+
     public IReadOnlyCollection<SkuAtributosValores> SkuAtributosValores => _atributos.AsReadOnly();
 
     protected Skus() { }
 
-    public Skus(string sku, decimal preco, decimal estoque = 0, string? gtinEan = null)
+    public Skus(string sku, decimal preco, decimal estoque = 0, string? gtinEan = null, decimal custoMedio = 0, decimal custoUltimaCompra = 0)
     {
         sku = TextNormalization.Normalize(sku);
         var gtinEanVo = string.IsNullOrWhiteSpace(gtinEan) ? null : new DocumentoGenerico(gtinEan);
@@ -31,15 +34,23 @@ public class Skus
         if (estoque < 0)
             throw new DomainException("Estoque não pode ser negativo.");
 
+        if (custoMedio < 0)
+            throw new DomainException("Custo médio não pode ser negativo.");
+
+        if (custoUltimaCompra < 0)
+            throw new DomainException("Custo de última compra não pode ser negativo.");
+
         Sku = sku;
         Preco = preco;
         Estoque = estoque;
         GtinEan = gtinEanVo?.Valor;
+        CustoMedio = custoMedio;
+        CustoUltimaCompra = custoUltimaCompra;
         Ativo = true;
     }
 
-    public Skus(string sku, decimal preco, decimal estoque, bool ativo, string? gtinEan = null)
-        : this(sku, preco, estoque, gtinEan)
+    public Skus(string sku, decimal preco, decimal estoque, bool ativo, string? gtinEan = null, decimal custoMedio = 0, decimal custoUltimaCompra = 0)
+        : this(sku, preco, estoque, gtinEan, custoMedio, custoUltimaCompra)
     {
         if (!ativo)
             Desativar();
@@ -51,6 +62,35 @@ public class Skus
             throw new DomainException("Preço não pode ser negativo.");
 
         Preco = preco;
+    }
+
+    public void RegistrarEntradaDeEstoque(decimal quantidadeEntrada, decimal custoUnitarioPago)
+    {
+        if (quantidadeEntrada <= 0)
+            throw new DomainException("A quantidade de entrada deve ser maior que zero.");
+
+        if (custoUnitarioPago < 0)
+            throw new DomainException("O custo unitário não pode ser negativo.");
+
+        // Cálculo da Média Ponderada
+        // NovoCustoMedio = ((Estoque Atual * Custo Medio Atual) + (Qtd Entrada * Custo Pago)) / (Estoque Atual + Qtd Entrada)
+        decimal valorEstoqueAtual = Estoque * CustoMedio;
+        decimal valorEntrada = quantidadeEntrada * custoUnitarioPago;
+        decimal novoEstoqueTotal = Estoque + quantidadeEntrada;
+
+        CustoMedio = novoEstoqueTotal == 0 ? 0 : Math.Round((valorEstoqueAtual + valorEntrada) / novoEstoqueTotal, 4);
+        CustoUltimaCompra = custoUnitarioPago;
+        Estoque = novoEstoqueTotal;
+    }
+
+    public void ReverterEntradaDeEstoque(decimal quantidadeCancelada, decimal custoMedioAnterior)
+    {
+        if (Estoque - quantidadeCancelada < 0)
+            throw new DomainException("Estoque não pode ficar negativo ao reverter a entrada.");
+
+        Estoque -= quantidadeCancelada;
+        CustoMedio = custoMedioAnterior;
+        // Não revertemos o custo última compra pois é apenas informativo, e manter o histórico não quebra balancetes.
     }
 
     public void AjustarEstoque(decimal quantidade)

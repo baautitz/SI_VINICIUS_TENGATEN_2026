@@ -1,5 +1,6 @@
 "use client";
 
+import { Kbd } from "@/components/ui/kbd";
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { UpsertDialog } from "@/components/ui/upsert-dialog";
@@ -116,7 +117,7 @@ function AtributosUpsertForm({
         <>
           <DialogClose asChild>
             <Button type="button" variant="outline">
-              Cancelar
+              Cancelar <Kbd className="ml-2">Esc</Kbd>
             </Button>
           </DialogClose>
           <form.Subscribe
@@ -128,7 +129,7 @@ function AtributosUpsertForm({
                 form="upsert-atributos"
                 disabled={!canSubmit || isSubmitting}
               >
-                {isSubmitting ? "Salvando..." : "Salvar"}
+                {isSubmitting ? "Salvando..." : <span className="flex items-center gap-2">Salvar <Kbd className="bg-primary-foreground/20 text-primary-foreground">Ctrl+Enter</Kbd></span>}
               </Button>
             )}
           </form.Subscribe>

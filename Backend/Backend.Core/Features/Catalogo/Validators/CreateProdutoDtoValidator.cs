@@ -63,9 +63,6 @@ public sealed class CreateSkuDtoValidator : AbstractValidator<CreateSkuDto>
             .GreaterThanOrEqualTo(0).WithMessage("Preço não pode ser negativo.")
             .WithErrorCode("PRECO_INVALIDO");
 
-        RuleFor(x => x.Estoque)
-            .GreaterThanOrEqualTo(0).WithMessage("Estoque não pode ser negativo.")
-            .WithErrorCode("ESTOQUE_INVALIDO");
 
         RuleFor(x => x.GtinEan)
             .MaximumLength(14).WithMessage("Código de barras deve ter no máximo 14 caracteres.")

@@ -9,12 +9,13 @@ public class UnidadesMedida
     public string Sigla { get; private set; } = null!;
     public string Descricao { get; private set; } = null!;
     public string Categoria { get; private set; } = null!;
+    public bool PermiteDecimais { get; private set; }
     public bool Ativo { get; private set; }
 
     
     protected UnidadesMedida() { }
 
-    public UnidadesMedida(string sigla, string descricao, string categoria, bool ativo = true)
+    public UnidadesMedida(string sigla, string descricao, string categoria, bool permiteDecimais = false, bool ativo = true)
     {
         sigla = TextNormalization.Normalize(sigla);
         descricao = TextNormalization.Normalize(descricao);
@@ -32,10 +33,11 @@ public class UnidadesMedida
         Sigla = sigla;
         Descricao = descricao;
         Categoria = categoria;
+        PermiteDecimais = permiteDecimais;
         Ativo = ativo;
     }
 
-    public void Atualizar(string sigla, string descricao, string categoria, bool ativo)
+    public void Atualizar(string sigla, string descricao, string categoria, bool permiteDecimais, bool ativo)
     {
         sigla = TextNormalization.Normalize(sigla);
         descricao = TextNormalization.Normalize(descricao);
@@ -53,6 +55,7 @@ public class UnidadesMedida
         Sigla = sigla;
         Descricao = descricao;
         Categoria = categoria;
+        PermiteDecimais = permiteDecimais;
         Ativo = ativo;
     }
 

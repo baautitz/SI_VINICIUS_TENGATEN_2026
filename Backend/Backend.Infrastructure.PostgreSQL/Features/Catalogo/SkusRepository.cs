@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Backend.Core.Common.Exceptions;
 using Backend.Core.Common.Results;
 using Backend.Core.Features.Catalogo.DTOs;
 using Backend.Core.Features.Catalogo.Entities;
@@ -24,7 +25,7 @@ public class SkusRepository : ISkusRepository
         const string countSql = "SELECT COUNT(*) FROM skus WHERE produto_id = @ProdutoId;";
 
         const string skusSql = @"
-            SELECT sku, gtin_ean AS GtinEan, preco AS Preco, estoque AS Estoque, ativo AS Ativo
+            SELECT sku, gtin_ean AS GtinEan, preco AS Preco, estoque AS Estoque, ativo AS Ativo, custo_medio AS CustoMedio, custo_ultima_compra AS CustoUltimaCompra
             FROM skus
             WHERE produto_id = @ProdutoId
             ORDER BY sku;";
@@ -74,7 +75,7 @@ public class SkusRepository : ISkusRepository
 
     public async Task<Skus?> ObterSkuPorSku(string sku)
     {
-        const string skuSql = "SELECT sku, gtin_ean AS GtinEan, preco AS Preco, estoque AS Estoque, ativo AS Ativo FROM skus WHERE sku = @Sku OR gtin_ean = @Sku;";
+        const string skuSql = "SELECT sku, gtin_ean AS GtinEan, preco AS Preco, estoque AS Estoque, ativo AS Ativo, custo_medio AS CustoMedio, custo_ultima_compra AS CustoUltimaCompra FROM skus WHERE sku = @Sku OR gtin_ean = @Sku;";
  
         const string atributosSql = @"
             SELECT savr.sku AS Sku, sav.chave_id AS ChaveId, sav.valor AS Valor,
@@ -108,8 +109,8 @@ public class SkusRepository : ISkusRepository
     public async Task<Skus> CriarSku(int produtoId, Skus skuData)
     {
         const string sql = @"
-            INSERT INTO skus (sku, gtin_ean, preco, estoque, ativo, produto_id)
-            VALUES (@Sku, @GtinEan, @Preco, @Estoque, @Ativo, @ProdutoId);";
+            INSERT INTO skus (sku, gtin_ean, preco, estoque, ativo, produto_id, custo_medio, custo_ultima_compra)
+            VALUES (@Sku, @GtinEan, @Preco, @Estoque, @Ativo, @ProdutoId, @CustoMedio, @CustoUltimaCompra);";
 
         await _session.Connection.ExecuteAsync(
             sql,
@@ -120,6 +121,8 @@ public class SkusRepository : ISkusRepository
                 skuData.Preco,
                 skuData.Estoque,
                 skuData.Ativo,
+                skuData.CustoMedio,
+                skuData.CustoUltimaCompra,
                 ProdutoId = produtoId
             },
             transaction: _session.Transaction);
@@ -133,12 +136,12 @@ public class SkusRepository : ISkusRepository
     {
         const string sql = @"
             UPDATE skus
-            SET gtin_ean = @GtinEan, preco = @Preco, estoque = @Estoque, ativo = @Ativo
+            SET gtin_ean = @GtinEan, preco = @Preco, estoque = @Estoque, ativo = @Ativo, custo_medio = @CustoMedio, custo_ultima_compra = @CustoUltimaCompra
             WHERE sku = @Sku;";
 
         await _session.Connection.ExecuteAsync(
             sql,
-            new { Sku = sku, skuData.GtinEan, skuData.Preco, skuData.Estoque, skuData.Ativo },
+            new { Sku = sku, skuData.GtinEan, skuData.Preco, skuData.Estoque, skuData.Ativo, skuData.CustoMedio, skuData.CustoUltimaCompra },
             transaction: _session.Transaction);
 
         await ReplacerAtributos(sku, skuData.SkuAtributosValores);
@@ -148,15 +151,26 @@ public class SkusRepository : ISkusRepository
 
     public async Task<bool> DeletarSku(string sku)
     {
-        await _session.Connection.ExecuteAsync(
-            "DELETE FROM skus_atributos_valores_relacionamento WHERE sku = @Sku;",
-            new { Sku = sku }, transaction: _session.Transaction);
+        try
+        {
+            await _session.Connection.ExecuteAsync(
+                "DELETE FROM skus_atributos_valores_relacionamento WHERE sku = @Sku;",
+                new { Sku = sku }, transaction: _session.Transaction);
 
-        var linhasAfetadas = await _session.Connection.ExecuteAsync(
-            "DELETE FROM skus WHERE sku = @Sku;",
-            new { Sku = sku }, transaction: _session.Transaction);
+            var linhasAfetadas = await _session.Connection.ExecuteAsync(
+                "DELETE FROM skus WHERE sku = @Sku;",
+                new { Sku = sku }, transaction: _session.Transaction);
 
-        return linhasAfetadas > 0;
+            return linhasAfetadas > 0;
+        }
+        catch (Npgsql.PostgresException ex)
+        {
+            throw DbExceptionTranslator.Translate(ex);
+        }
+        catch (Exception ex)
+        {
+            throw new ConflictException($"DEBUG - Tipo: {ex.GetType().Name}, Mensagem: {ex.Message}");
+        }
     }
 
     public async Task<ResultadoPaginado<SkusResumo>> PesquisarSkus(string termo, int pagina = 1, int tamanhoDaPagina = 20)
@@ -168,10 +182,12 @@ public class SkusRepository : ISkusRepository
             FROM skus
             WHERE sku ILIKE @Termo OR gtin_ean ILIKE @Termo;
 
-            SELECT sku, gtin_ean AS GtinEan, preco AS Preco, estoque AS Estoque, ativo AS Ativo
-            FROM skus
-            WHERE sku ILIKE @Termo OR gtin_ean ILIKE @Termo
-            ORDER BY sku
+            SELECT s.sku, s.gtin_ean AS GtinEan, s.preco AS Preco, s.estoque AS Estoque, s.ativo AS Ativo, s.custo_medio AS CustoMedio, s.custo_ultima_compra AS CustoUltimaCompra, um.permite_decimais AS PermiteDecimais, p.id AS ProdutoId, p.produto AS ProdutoNome
+            FROM skus s
+            JOIN produtos p ON p.id = s.produto_id
+            JOIN unidades_medida um ON um.id = p.unidade_medida_id
+            WHERE s.sku ILIKE @Termo OR s.gtin_ean ILIKE @Termo
+            ORDER BY s.sku
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(
@@ -183,6 +199,19 @@ public class SkusRepository : ISkusRepository
         var itens = await multi.ReadAsync<SkusResumo>();
 
         return new ResultadoPaginado<SkusResumo>(itens, total, pagina, tamanhoDaPagina);
+    }
+
+    public async Task<SkusResumo?> ObterResumoPorSku(string sku)
+    {
+        const string sql = @"
+            SELECT s.sku, s.gtin_ean AS GtinEan, s.preco AS Preco, s.estoque AS Estoque, s.ativo AS Ativo, s.custo_medio AS CustoMedio, s.custo_ultima_compra AS CustoUltimaCompra, um.permite_decimais AS PermiteDecimais, p.id AS ProdutoId, p.produto AS ProdutoNome
+            FROM skus s
+            JOIN produtos p ON p.id = s.produto_id
+            JOIN unidades_medida um ON um.id = p.unidade_medida_id
+            WHERE s.sku = @Sku OR s.gtin_ean = @Sku;";
+
+        return await _session.Connection.QuerySingleOrDefaultAsync<SkusResumo>(
+            sql, new { Sku = sku }, transaction: _session.Transaction);
     }
 
     private async Task InserirAtributos(string skuCodigo, IEnumerable<SkuAtributosValores> atributos)
@@ -212,7 +241,7 @@ public class SkusRepository : ISkusRepository
 
     private static Skus BuildSku(SkuDto dto)
     {
-        return new Skus(dto.Sku, dto.Preco, dto.Estoque, dto.Ativo, dto.GtinEan);
+        return new Skus(dto.Sku, dto.Preco, dto.Estoque, dto.Ativo, dto.GtinEan, dto.CustoMedio, dto.CustoUltimaCompra);
     }
 
     private static SkuAtributosValores BuildAtributo(AtributoDto dto)
@@ -220,6 +249,6 @@ public class SkusRepository : ISkusRepository
         return new SkuAtributosValores(dto.Id, dto.ChaveId, dto.Valor);
     }
 
-    private sealed record SkuDto(string Sku, string? GtinEan, decimal Preco, decimal Estoque, bool Ativo);
+    private sealed record SkuDto(string Sku, string? GtinEan, decimal Preco, decimal Estoque, bool Ativo, decimal CustoMedio, decimal CustoUltimaCompra);
     private sealed record AtributoDto(string Sku, int ChaveId, string Valor, int Id, string Chave);
 }

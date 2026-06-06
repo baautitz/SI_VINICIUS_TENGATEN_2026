@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS unidades_medida (
   sigla VARCHAR(10) NOT NULL UNIQUE,
   descricao VARCHAR(100) NOT NULL,
   categoria VARCHAR(50) NOT NULL,
+  permite_decimais BOOLEAN NOT NULL DEFAULT FALSE,
   ativo BOOLEAN NOT NULL DEFAULT TRUE,
   CONSTRAINT unidades_medida_sigla_not_empty CHECK (LENGTH(TRIM(sigla)) > 0),
   CONSTRAINT unidades_medida_descricao_not_empty CHECK (LENGTH(TRIM(descricao)) > 0),

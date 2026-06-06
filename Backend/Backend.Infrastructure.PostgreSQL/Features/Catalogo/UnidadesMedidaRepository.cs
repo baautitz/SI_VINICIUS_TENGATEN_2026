@@ -23,7 +23,7 @@ public class UnidadesMedidaRepository : IUnidadesMedidaRepository
 
         const string sql = @"
             SELECT COUNT(*) FROM unidades_medida;
-            SELECT id, sigla, descricao, categoria, ativo
+            SELECT id, sigla, descricao, categoria, permite_decimais AS PermiteDecimais, ativo
             FROM unidades_medida
             ORDER BY descricao
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
@@ -37,7 +37,7 @@ public class UnidadesMedidaRepository : IUnidadesMedidaRepository
 
     public async Task<UnidadesMedida?> ObterUnidadeMedidaPorId(int id)
     {
-        const string sql = "SELECT id, sigla, descricao, categoria, ativo FROM unidades_medida WHERE id = @Id;";
+        const string sql = "SELECT id, sigla, descricao, categoria, permite_decimais AS PermiteDecimais, ativo FROM unidades_medida WHERE id = @Id;";
         return await _session.Connection.QuerySingleOrDefaultAsync<UnidadesMedida>(sql, new { Id = id }, transaction: _session.Transaction);
     }
 
@@ -46,12 +46,12 @@ public class UnidadesMedidaRepository : IUnidadesMedidaRepository
         try
         {
             const string sql = @"
-                INSERT INTO unidades_medida (sigla, descricao, categoria, ativo)
-                VALUES (@Sigla, @Descricao, @Categoria, @Ativo)
+                INSERT INTO unidades_medida (sigla, descricao, categoria, permite_decimais, ativo)
+                VALUES (@Sigla, @Descricao, @Categoria, @PermiteDecimais, @Ativo)
                 RETURNING id;";
             var idGerado = await _session.Connection.ExecuteScalarAsync<int>(
                 sql,
-                new { unidadeMedida.Sigla, unidadeMedida.Descricao, unidadeMedida.Categoria, unidadeMedida.Ativo },
+                new { unidadeMedida.Sigla, unidadeMedida.Descricao, unidadeMedida.Categoria, unidadeMedida.PermiteDecimais, unidadeMedida.Ativo },
                 transaction: _session.Transaction
             );
             unidadeMedida.Id = idGerado;
@@ -72,11 +72,12 @@ public class UnidadesMedidaRepository : IUnidadesMedidaRepository
                 SET sigla = @Sigla,
                     descricao = @Descricao,
                     categoria = @Categoria,
+                    permite_decimais = @PermiteDecimais,
                     ativo = @Ativo
                 WHERE id = @Id;";
             await _session.Connection.ExecuteAsync(
                 sql,
-                new { Id = id, unidadeMedida.Sigla, unidadeMedida.Descricao, unidadeMedida.Categoria, unidadeMedida.Ativo },
+                new { Id = id, unidadeMedida.Sigla, unidadeMedida.Descricao, unidadeMedida.Categoria, unidadeMedida.PermiteDecimais, unidadeMedida.Ativo },
                 transaction: _session.Transaction
             );
             unidadeMedida.Id = id;
@@ -108,7 +109,7 @@ public class UnidadesMedidaRepository : IUnidadesMedidaRepository
 
         const string sql = @"
             SELECT COUNT(*) FROM unidades_medida;
-            SELECT id, sigla, descricao, categoria, ativo
+            SELECT id, sigla, descricao, categoria, permite_decimais AS PermiteDecimais, ativo
             FROM unidades_medida
             ORDER BY descricao
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
@@ -130,7 +131,7 @@ public class UnidadesMedidaRepository : IUnidadesMedidaRepository
                OR unaccent(descricao::text) ILIKE unaccent(@Termo::text)
                OR unaccent(categoria::text) ILIKE unaccent(@Termo::text);
 
-            SELECT id, sigla, descricao, categoria, ativo
+            SELECT id, sigla, descricao, categoria, permite_decimais AS PermiteDecimais, ativo
             FROM unidades_medida
             WHERE unaccent(sigla::text) ILIKE unaccent(@Termo::text)
                OR unaccent(descricao::text) ILIKE unaccent(@Termo::text)

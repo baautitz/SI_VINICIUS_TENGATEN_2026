@@ -39,7 +39,7 @@ public sealed class UnidadesMedidaService : BaseService
         if (await _unidadesMedidaRepository.ExisteSigla(dto.Sigla))
             return Resultado<UnidadesMedida>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe uma unidade de medida com esta sigla.", "Sigla"));
 
-        var entidade = new UnidadesMedida(dto.Sigla, dto.Descricao, dto.Categoria, dto.Ativo);
+        var entidade = new UnidadesMedida(dto.Sigla, dto.Descricao, dto.Categoria, dto.PermiteDecimais, dto.Ativo);
 
         return await ExecuteResultAsync(async () =>
         {
@@ -61,7 +61,7 @@ public sealed class UnidadesMedidaService : BaseService
         if (await _unidadesMedidaRepository.ExisteSigla(dto.Sigla, id))
             return Resultado<UnidadesMedida>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe outra unidade de medida com esta sigla.", "Sigla"));
 
-        existente.Atualizar(dto.Sigla, dto.Descricao, dto.Categoria, dto.Ativo);
+        existente.Atualizar(dto.Sigla, dto.Descricao, dto.Categoria, dto.PermiteDecimais, dto.Ativo);
 
         return await ExecuteResultAsync(async () =>
         {

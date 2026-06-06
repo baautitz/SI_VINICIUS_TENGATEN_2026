@@ -210,9 +210,11 @@ public class ProdutosRepository : IProdutosRepository
         const string sql = @"
             SELECT COUNT(*) FROM produtos;
 
-            SELECT id, produto, descricao, ativo
-            FROM produtos
-            ORDER BY produto
+            SELECT p.id, p.produto, p.descricao, p.ativo, COALESCE(SUM(s.estoque), 0) AS EstoqueTotal
+            FROM produtos p
+            LEFT JOIN skus s ON s.produto_id = p.id
+            GROUP BY p.id, p.produto, p.descricao, p.ativo
+            ORDER BY p.produto
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(
@@ -236,10 +238,12 @@ public class ProdutosRepository : IProdutosRepository
             FROM produtos
             WHERE produto ILIKE @Termo OR descricao ILIKE @Termo;
 
-            SELECT id, produto, descricao, ativo
-            FROM produtos
-            WHERE produto ILIKE @Termo OR descricao ILIKE @Termo
-            ORDER BY produto
+            SELECT p.id, p.produto, p.descricao, p.ativo, COALESCE(SUM(s.estoque), 0) AS EstoqueTotal
+            FROM produtos p
+            LEFT JOIN skus s ON s.produto_id = p.id
+            WHERE p.produto ILIKE @Termo OR p.descricao ILIKE @Termo
+            GROUP BY p.id, p.produto, p.descricao, p.ativo
+            ORDER BY p.produto
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(

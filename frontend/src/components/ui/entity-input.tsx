@@ -34,7 +34,7 @@ interface EntityInputProps<T, TResumo = T> {
 export function EntityInput<T, TResumo = T>({
   name,
   label,
-  placeholder = "Digite o código, nome ou clique na lupa...",
+  placeholder = "Digite, ou Ctrl+Espaço para buscar...",
   error,
   initialItem = null,
   onSelectId,
@@ -156,6 +156,10 @@ export function EntityInput<T, TResumo = T>({
               if (e.key === "Enter") {
                 e.preventDefault();
                 handleSearch(searchText);
+              }
+              if (e.ctrlKey && (e.key === " " || e.code === "Space")) {
+                e.preventDefault();
+                setIsOpen(true);
               }
             }}
             onBlur={() => {

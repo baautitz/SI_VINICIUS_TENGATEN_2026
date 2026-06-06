@@ -47,6 +47,7 @@ export interface ProdutoResumo {
   produto: string;
   descricao?: string | null;
   ativo: boolean;
+  estoqueTotal: number;
 }
 
 export function formatProdutoLabel(p?: Produto | ProdutoResumo | null): string {
@@ -59,12 +60,10 @@ export const skuFormSchema = z.object({
     .string()
     .max(50, "SKU deve ter no máximo 50 caracteres.")
     .optional(),
+  estoque: z.number().optional(),
   preco: z
     .number({ invalid_type_error: "Preço deve ser um número." })
     .min(0, "Preço não pode ser negativo."),
-  estoque: z
-    .number({ invalid_type_error: "Estoque deve ser um número." })
-    .min(0, "Estoque não pode ser negativo."),
   gtinEan: z
     .string()
     .max(14, "Código de barras deve ter no máximo 14 caracteres.")

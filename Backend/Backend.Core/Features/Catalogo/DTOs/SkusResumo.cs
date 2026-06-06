@@ -5,5 +5,10 @@ public record SkusResumo(
     string? GtinEan,
     decimal Preco,
     decimal Estoque,
-    bool Ativo
+    bool Ativo,
+    decimal CustoMedio,
+    decimal CustoUltimaCompra,
+    bool PermiteDecimais,
+    int ProdutoId,
+    string ProdutoNome
 );

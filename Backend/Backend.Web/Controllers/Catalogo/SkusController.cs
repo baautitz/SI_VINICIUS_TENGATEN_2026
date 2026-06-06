@@ -25,9 +25,9 @@ public class SkusController : ControllerBase
     }
 
     [HttpGet("{sku}")]
-    public async Task<ActionResult<Skus>> GetSkuBySku(string sku)
+    public async Task<ActionResult<SkusResumo>> GetSkuBySku(string sku)
     {
-        var result = await _skusRepository.ObterSkuPorSku(sku);
+        var result = await _skusRepository.ObterResumoPorSku(sku);
         if (result == null)
             return NotFound();
 

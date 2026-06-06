@@ -15,7 +15,6 @@ public record UpdateProdutoDto(
 public record UpdateSkuDto(
     string Sku,
     decimal Preco,
-    decimal Estoque,
     string? GtinEan,
     bool Ativo,
     List<int> AtributoValorIds

@@ -66,6 +66,8 @@ export interface SkuResumo {
   gtinEan?: string | null;
   preco: number;
   estoque: number;
+  custoMedio: number;
+  custoUltimaCompra: number;
   ativo: boolean;
 }
 
