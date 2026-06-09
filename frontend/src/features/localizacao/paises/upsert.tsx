@@ -11,13 +11,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FormFieldUI } from "@/components/ui/form-field-ui";
 import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
-import { paisSchema, PaisDto } from "./types";
+import { paisSchema, Pais } from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { paisesApi } from "@/api/localizacao";
 
 interface PaisesUpsertProps {
   open: boolean;
-  editingItem: PaisDto | null;
+  editingItem: Pais | null;
   onClose: () => void;
   onSuccess: () => void;
 }

@@ -15,7 +15,6 @@ import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import {
   veiculoSchema,
-  VeiculoResumo,
   Veiculo,
   VeiculoFormValues,
 } from "./types";
@@ -24,7 +23,7 @@ import { veiculosApi } from "@/api/logistica";
 
 interface VeiculosUpsertProps {
   open: boolean;
-  editingItem: VeiculoResumo | null;
+  editingItem: Veiculo | null;
   onClose: () => void;
   onSuccess: () => void;
 }

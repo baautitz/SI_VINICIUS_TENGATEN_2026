@@ -1,23 +1,19 @@
 "use client";
 
 import * as React from "react";
-
-import { StatusBadge } from "@/components/ui/status-badge";
 import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
 import { useFeatureHotkeys } from "@/hooks/use-feature-hotkeys";
 import { FeatureHeader } from "@/components/ui/feature-header";
-import { Scale } from "lucide-react"
+import { Scale } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
-
 import { DataTable } from "@/components/ui/data-table";
-
 import { FeatureLayout } from "@/components/ui/feature-layout";
-
-import { UnidadeMedidaResumo } from "./types";
+import { Badge } from "@/components/ui/badge";
+import { UnidadeMedida } from "./types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 
 export function UnidadesMedidaList({
-  items: unidadesMedida,
+  items: unidades,
   loading,
   searchTerm,
   page,
@@ -34,12 +30,12 @@ export function UnidadesMedidaList({
   onRowSelectionChange,
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
-}: FeatureListProps<UnidadeMedidaResumo>) {
+}: FeatureListProps<UnidadeMedida>) {
   const listRef = React.useRef<HTMLDivElement>(null);
   useFeatureHotkeys({ onAdd, listRef });
 
-  const columns: ColumnDef<UnidadeMedidaResumo>[] = [
-    getSelectColumn<UnidadeMedidaResumo>(),
+  const columns: ColumnDef<UnidadeMedida>[] = [
+    getSelectColumn<UnidadeMedida>(),
     {
       accessorKey: "id",
       header: "ID",
@@ -51,9 +47,6 @@ export function UnidadesMedidaList({
     {
       accessorKey: "sigla",
       header: "Sigla",
-      cell: ({ row }) => (
-        <span className="font-medium">{row.getValue("sigla")}</span>
-      ),
     },
     {
       accessorKey: "descricao",
@@ -66,51 +59,55 @@ export function UnidadesMedidaList({
     {
       accessorKey: "permiteDecimais",
       header: "Decimais",
-      cell: ({ row }) => (
-        <span className="text-xs font-medium">
-          {row.original.permiteDecimais ? "Sim" : "Não"}
-        </span>
-      ),
+      cell: ({ row }) => (row.getValue("permiteDecimais") ? "Sim" : "Não"),
     },
     {
       accessorKey: "ativo",
       header: "Status",
-      cell: ({ row }) => <StatusBadge ativo={row.getValue("ativo") as boolean} />,
+      size: 100,
+      cell: ({ row }) => {
+        const ativo = row.getValue("ativo") as boolean;
+        return (
+          <Badge variant={ativo ? "default" : "secondary"}>
+            {ativo ? "Ativo" : "Inativo"}
+          </Badge>
+        );
+      },
     },
-    getActionsColumn<UnidadeMedidaResumo>({ onEdit, onDelete, selectionMode, onSelect }),
+    getActionsColumn<UnidadeMedida>({ onEdit, onDelete, selectionMode, onSelect }),
   ];
 
   return (
     <div ref={listRef} className="flex-1 min-h-0 flex flex-col h-full">
       <FeatureLayout>
-      <FeatureHeader
-        title="Unidades de Medida"
-        icon={<Scale />}
-        onAdd={onAdd}
-        addButtonLabel="Nova Unidade"
-      />
-
-      <DataTable
-        columns={columns}
-        data={unidadesMedida}
-        loading={loading}
-        pageCount={totalPages}
-        pageIndex={page}
-        onPageChange={onPageChange}
-        totalItems={totalItems}
-        globalFilter={searchTerm}
-        onGlobalFilterChange={onSearchChange}
-        searchPlaceholder="Pesquisar por sigla, descrição ou categoria..."
-        rowSelection={rowSelection}
-        onRowSelectionChange={onRowSelectionChange}
-        selectAllAcrossPages={selectAllAcrossPages}
-        onSelectAllAcrossPagesChange={onSelectAllAcrossPagesChange}
-        getRowId={(row) => row.id.toString()}
-        onRowSelect={selectionMode ? onSelect : undefined}
-        onEditRow={onEdit}
-        onDeleteRow={onDelete}
+        <FeatureHeader
+          title="Unidades de Medida"
+          icon={<Scale />}
+          onAdd={onAdd}
+          addButtonLabel="Nova Unidade"
         />
-    </FeatureLayout>
+
+        <DataTable
+          columns={columns}
+          data={unidades}
+          loading={loading}
+          pageCount={totalPages}
+          pageIndex={page}
+          onPageChange={onPageChange}
+          totalItems={totalItems}
+          globalFilter={searchTerm}
+          onGlobalFilterChange={onSearchChange}
+          searchPlaceholder="Pesquisar..."
+          rowSelection={rowSelection}
+          onRowSelectionChange={onRowSelectionChange}
+          selectAllAcrossPages={selectAllAcrossPages}
+          onSelectAllAcrossPagesChange={onSelectAllAcrossPagesChange}
+          getRowId={(row) => row.id.toString()}
+          onRowSelect={selectionMode ? onSelect : undefined}
+          onEditRow={onEdit}
+          onDeleteRow={onDelete}
+        />
+      </FeatureLayout>
     </div>
   );
 }

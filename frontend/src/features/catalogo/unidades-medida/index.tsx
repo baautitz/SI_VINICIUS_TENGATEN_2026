@@ -3,7 +3,7 @@
 import React from "react";
 import { UnidadesMedidaList } from "./list";
 import { UnidadesMedidaUpsert } from "./upsert";
-import { UnidadeMedida, UnidadeMedidaResumo } from "./types";
+import { UnidadeMedida } from "./types";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
 import { unidadesMedidaApi } from "@/api/catalogo";
@@ -12,7 +12,7 @@ export * from "./types";
 
 interface UnidadesMedidaFeatureProps {
   selectionMode?: boolean;
-  onSelect?: (um: UnidadeMedida) => void;
+  onSelect?: (unidade: UnidadeMedida) => void;
   initialSearchTerm?: string;
 }
 
@@ -26,10 +26,9 @@ export function UnidadesMedidaFeature({
     upsertProps,
     deleteDialogProps,
     featureList: list,
-  } = useFeatureOrchestrator<UnidadeMedidaResumo>({
-    queryKey: "unidades-medida",
+  } = useFeatureOrchestrator<UnidadeMedida>({
+    queryKey: "unidadesMedida",
     initialSearchTerm,
-    additionalKeysToInvalidate: [["produtos"], ["skus"]],
     fetchPage: async (searchTerm, page, pageSize) => {
       const res = await unidadesMedidaApi.list(searchTerm || undefined, page, pageSize);
       if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
@@ -54,7 +53,11 @@ export function UnidadesMedidaFeature({
       />
 
       {list.isUpsertOpen && (
-        <UnidadesMedidaUpsert key={list.editingItem?.id ?? "new"} {...upsertProps} />
+        <UnidadesMedidaUpsert 
+          key={list.editingItem?.id ?? "new"} 
+          {...upsertProps} 
+          editingItem={list.editingItem}
+        />
       )}
 
       <DeleteDialog
@@ -63,8 +66,7 @@ export function UnidadesMedidaFeature({
         description={
           <p>
             Deseja realmente excluir a unidade de medida{" "}
-            <strong>{list.itemToDelete?.descricao}</strong> (
-            {list.itemToDelete?.sigla})? Esta ação não poderá ser desfeita.
+            <strong>{list.itemToDelete?.descricao}</strong>? Esta ação não poderá ser desfeita.
           </p>
         }
       />

@@ -1,19 +1,15 @@
 "use client";
 
 import * as React from "react";
-
-import { StatusBadge } from "@/components/ui/status-badge";
 import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
 import { useFeatureHotkeys } from "@/hooks/use-feature-hotkeys";
 import { FeatureHeader } from "@/components/ui/feature-header";
-import { Layers } from "lucide-react"
+import { Tag } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
-
 import { DataTable } from "@/components/ui/data-table";
-
 import { FeatureLayout } from "@/components/ui/feature-layout";
-
-import { CategoriaResumo } from "./types";
+import { Badge } from "@/components/ui/badge";
+import { Categoria } from "./types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 
 export function CategoriasList({
@@ -34,12 +30,12 @@ export function CategoriasList({
   onRowSelectionChange,
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
-}: FeatureListProps<CategoriaResumo>) {
+}: FeatureListProps<Categoria>) {
   const listRef = React.useRef<HTMLDivElement>(null);
   useFeatureHotkeys({ onAdd, listRef });
 
-  const columns: ColumnDef<CategoriaResumo>[] = [
-    getSelectColumn<CategoriaResumo>(),
+  const columns: ColumnDef<Categoria>[] = [
+    getSelectColumn<Categoria>(),
     {
       accessorKey: "id",
       header: "ID",
@@ -51,49 +47,59 @@ export function CategoriasList({
     {
       accessorKey: "categoria",
       header: "Categoria",
-      cell: ({ row }) => (
-        <span className="font-medium">{row.getValue("categoria")}</span>
-      ),
+    },
+    {
+      accessorKey: "descricao",
+      header: "Descrição",
+      cell: ({ row }) => row.getValue("descricao") || "-",
     },
     {
       accessorKey: "ativo",
       header: "Status",
-      cell: ({ row }) => <StatusBadge ativo={row.getValue("ativo") as boolean} />,
+      size: 100,
+      cell: ({ row }) => {
+        const ativo = row.getValue("ativo") as boolean;
+        return (
+          <Badge variant={ativo ? "default" : "secondary"}>
+            {ativo ? "Ativo" : "Inativo"}
+          </Badge>
+        );
+      },
     },
-    getActionsColumn<CategoriaResumo>({ onEdit, onDelete, selectionMode, onSelect }),
+    getActionsColumn<Categoria>({ onEdit, onDelete, selectionMode, onSelect }),
   ];
 
   return (
     <div ref={listRef} className="flex-1 min-h-0 flex flex-col h-full">
       <FeatureLayout>
-      <FeatureHeader
-        title="Categorias"
-        icon={<Layers />}
-        onAdd={onAdd}
-        addButtonLabel="Nova Categoria"
-      />
-
-      <DataTable
-        columns={columns}
-        data={categorias}
-        loading={loading}
-        pageCount={totalPages}
-        pageIndex={page}
-        onPageChange={onPageChange}
-        totalItems={totalItems}
-        globalFilter={searchTerm}
-        onGlobalFilterChange={onSearchChange}
-        searchPlaceholder="Pesquisar por categoria..."
-        rowSelection={rowSelection}
-        onRowSelectionChange={onRowSelectionChange}
-        selectAllAcrossPages={selectAllAcrossPages}
-        onSelectAllAcrossPagesChange={onSelectAllAcrossPagesChange}
-        getRowId={(row) => row.id.toString()}
-        onRowSelect={selectionMode ? onSelect : undefined}
-        onEditRow={onEdit}
-        onDeleteRow={onDelete}
+        <FeatureHeader
+          title="Categorias"
+          icon={<Tag />}
+          onAdd={onAdd}
+          addButtonLabel="Nova Categoria"
         />
-    </FeatureLayout>
+
+        <DataTable
+          columns={columns}
+          data={categorias}
+          loading={loading}
+          pageCount={totalPages}
+          pageIndex={page}
+          onPageChange={onPageChange}
+          totalItems={totalItems}
+          globalFilter={searchTerm}
+          onGlobalFilterChange={onSearchChange}
+          searchPlaceholder="Pesquisar..."
+          rowSelection={rowSelection}
+          onRowSelectionChange={onRowSelectionChange}
+          selectAllAcrossPages={selectAllAcrossPages}
+          onSelectAllAcrossPagesChange={onSelectAllAcrossPagesChange}
+          getRowId={(row) => row.id.toString()}
+          onRowSelect={selectionMode ? onSelect : undefined}
+          onEditRow={onEdit}
+          onDeleteRow={onDelete}
+        />
+      </FeatureLayout>
     </div>
   );
 }

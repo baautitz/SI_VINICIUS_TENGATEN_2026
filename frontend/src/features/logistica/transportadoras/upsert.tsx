@@ -16,7 +16,6 @@ import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import {
   transportadoraSchema,
-  TransportadoraResumo,
   Transportadora,
   TransportadoraFormValues,
 } from "./types";
@@ -27,7 +26,7 @@ import { Pais } from "@/features/localizacao/paises";
 
 interface TransportadorasUpsertProps {
   open: boolean;
-  editingItem: TransportadoraResumo | null;
+  editingItem: Transportadora | null;
   onClose: () => void;
   onSuccess: () => void;
 }

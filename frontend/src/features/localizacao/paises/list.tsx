@@ -11,7 +11,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
 
 import { FeatureLayout } from "@/components/ui/feature-layout";
-import { PaisDto } from "./types";
+import { Pais } from "./types";
 
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 
@@ -33,12 +33,12 @@ export function PaisesList({
   onRowSelectionChange,
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
-}: FeatureListProps<PaisDto>) {
+}: FeatureListProps<Pais>) {
   const listRef = React.useRef<HTMLDivElement>(null);
   useFeatureHotkeys({ onAdd, listRef });
 
-  const columns: ColumnDef<PaisDto>[] = [
-    getSelectColumn<PaisDto>(),
+  const columns: ColumnDef<Pais>[] = [
+    getSelectColumn<Pais>(),
     {
       accessorKey: "id",
       header: "ID",
@@ -70,7 +70,7 @@ export function PaisesList({
       accessorKey: "simboloMoeda",
       header: "Símbolo",
     },
-    getActionsColumn<PaisDto>({ onEdit, onDelete, selectionMode, onSelect }),
+    getActionsColumn<Pais>({ onEdit, onDelete, selectionMode, onSelect }),
   ];
 
   return (

@@ -5,14 +5,14 @@ import * as React from "react";
 import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
 import { useFeatureHotkeys } from "@/hooks/use-feature-hotkeys";
 import { FeatureHeader } from "@/components/ui/feature-header";
-import { Users } from "lucide-react"
+import { Users } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 
 import { DataTable } from "@/components/ui/data-table";
 
 import { FeatureLayout } from "@/components/ui/feature-layout";
 import { Badge } from "@/components/ui/badge";
-import { ClienteDto } from "./types";
+import { Cliente } from "./types";
 import { TipoPessoa } from "@/api/types";
 
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
@@ -35,12 +35,12 @@ export function ClientesList({
   onRowSelectionChange,
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
-}: FeatureListProps<ClienteDto>) {
+}: FeatureListProps<Cliente>) {
   const listRef = React.useRef<HTMLDivElement>(null);
   useFeatureHotkeys({ onAdd, listRef });
 
-  const columns: ColumnDef<ClienteDto>[] = [
-    getSelectColumn<ClienteDto>(),
+  const columns: ColumnDef<Cliente>[] = [
+    getSelectColumn<Cliente>(),
     {
       accessorKey: "id",
       header: "ID",
@@ -86,40 +86,50 @@ export function ClientesList({
         <span className="text-muted-foreground">{row.getValue("cpfCnpj")}</span>
       ),
     },
-    getActionsColumn<ClienteDto>({ onEdit, onDelete, selectionMode, onSelect }),
+    {
+      accessorKey: "email",
+      header: "E-mail",
+      cell: ({ row }) => row.getValue("email") || "-",
+    },
+    {
+        accessorKey: "telefone",
+        header: "Telefone",
+        cell: ({ row }) => row.getValue("telefone") || "-",
+    },
+    getActionsColumn<Cliente>({ onEdit, onDelete, selectionMode, onSelect }),
   ];
 
   return (
     <div ref={listRef} className="flex-1 min-h-0 flex flex-col h-full">
       <FeatureLayout>
-      <FeatureHeader
-        title="Clientes"
-        icon={<Users />}
-        onAdd={onAdd}
-        addButtonLabel="Novo Cliente"
-      />
-
-      <DataTable
-        columns={columns}
-        data={clientes}
-        loading={loading}
-        pageCount={totalPages}
-        pageIndex={page}
-        onPageChange={onPageChange}
-        totalItems={totalItems}
-        globalFilter={searchTerm}
-        onGlobalFilterChange={onSearchChange}
-        searchPlaceholder="Pesquisar por nome ou CNPJ/CPF..."
-        rowSelection={rowSelection}
-        onRowSelectionChange={onRowSelectionChange}
-        selectAllAcrossPages={selectAllAcrossPages}
-        onSelectAllAcrossPagesChange={onSelectAllAcrossPagesChange}
-        getRowId={(row) => row.id.toString()}
-        onRowSelect={selectionMode ? onSelect : undefined}
-        onEditRow={onEdit}
-        onDeleteRow={onDelete}
+        <FeatureHeader
+          title="Clientes"
+          icon={<Users />}
+          onAdd={onAdd}
+          addButtonLabel="Novo Cliente"
         />
-    </FeatureLayout>
+
+        <DataTable
+          columns={columns}
+          data={clientes}
+          loading={loading}
+          pageCount={totalPages}
+          pageIndex={page}
+          onPageChange={onPageChange}
+          totalItems={totalItems}
+          globalFilter={searchTerm}
+          onGlobalFilterChange={onSearchChange}
+          searchPlaceholder="Pesquisar por nome ou CNPJ/CPF..."
+          rowSelection={rowSelection}
+          onRowSelectionChange={rowSelection ? onRowSelectionChange : undefined}
+          selectAllAcrossPages={selectAllAcrossPages}
+          onSelectAllAcrossPagesChange={onSelectAllAcrossPagesChange}
+          getRowId={(row) => row.id.toString()}
+          onRowSelect={selectionMode ? onSelect : undefined}
+          onEditRow={onEdit}
+          onDeleteRow={onDelete}
+        />
+      </FeatureLayout>
     </div>
   );
 }

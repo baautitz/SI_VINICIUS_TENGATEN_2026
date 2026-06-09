@@ -7,17 +7,6 @@ export interface Marca {
   ativo: boolean;
 }
 
-export interface MarcaResumo {
-  id: number;
-  marca: string;
-  ativo: boolean;
-}
-
-export function formatMarcaLabel(marca?: MarcaResumo | Marca | null): string {
-  if (!marca) return "";
-  return marca.marca;
-}
-
 export const marcaSchema = z.object({
   marca: z
     .string()

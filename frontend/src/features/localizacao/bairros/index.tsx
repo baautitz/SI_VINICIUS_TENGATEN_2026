@@ -2,7 +2,7 @@
 
 import { BairrosList } from "./list";
 import { BairrosUpsert } from "./upsert";
-import { BairroResumo } from "./types";
+import { Bairro } from "./types";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
 import { bairrosApi } from "@/api/localizacao";
@@ -11,7 +11,7 @@ export * from "./types";
 
 interface BairrosFeatureProps {
   selectionMode?: boolean;
-  onSelect?: (bairro: BairroResumo) => void;
+  onSelect?: (bairro: Bairro) => void;
   initialSearchTerm?: string;
 }
 
@@ -25,7 +25,7 @@ export function BairrosFeature({
     upsertProps,
     deleteDialogProps,
     featureList: list,
-  } = useFeatureOrchestrator<BairroResumo>({
+  } = useFeatureOrchestrator<Bairro>({
     queryKey: "bairros",
     initialSearchTerm,
     fetchPage: async (searchTerm, page, pageSize) => {
@@ -63,7 +63,7 @@ export function BairrosFeature({
             Deseja realmente excluir o bairro{" "}
             <strong>{list.itemToDelete?.bairro}</strong> de{" "}
             <strong>
-              {list.itemToDelete?.cidadeNome} ({list.itemToDelete?.uf})
+              {list.itemToDelete?.cidade.cidade} ({list.itemToDelete?.cidade.estado.uf})
             </strong>
             ? Esta ação não poderá ser desfeita.
           </p>

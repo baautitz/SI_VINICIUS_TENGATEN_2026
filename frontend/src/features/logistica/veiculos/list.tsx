@@ -12,7 +12,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
 
 import { FeatureLayout } from "@/components/ui/feature-layout";
-import { VeiculoResumo } from "./types";
+import { Veiculo } from "./types";
 
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 
@@ -34,12 +34,12 @@ export function VeiculosList({
   onRowSelectionChange,
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
-}: FeatureListProps<VeiculoResumo>) {
+}: FeatureListProps<Veiculo>) {
   const listRef = React.useRef<HTMLDivElement>(null);
   useFeatureHotkeys({ onAdd, listRef });
 
-  const columns: ColumnDef<VeiculoResumo>[] = [
-    getSelectColumn<VeiculoResumo>(),
+  const columns: ColumnDef<Veiculo>[] = [
+    getSelectColumn<Veiculo>(),
     {
       accessorKey: "id",
       header: "ID",
@@ -55,7 +55,7 @@ export function VeiculosList({
         const item = row.original;
         return (
           <div className="flex flex-col">
-            <span className="font-medium">{item.placa} / {item.estadoSigla}</span>
+            <span className="font-medium">{item.placa} / {item.estado.uf}</span>
             {item.marcaModelo && (
               <span className="text-xs text-muted-foreground">
                 {item.marcaModelo}
@@ -66,18 +66,21 @@ export function VeiculosList({
       },
     },
     {
-      accessorKey: "transportadoraNome",
+      accessorKey: "transportadora",
       header: "Transportadora",
-      cell: ({ row }) => (
-        <span className="text-muted-foreground">{row.getValue("transportadoraNome") || "N/A"}</span>
-      ),
+      cell: ({ row }) => {
+        const item = row.original;
+        return (
+          <span className="text-muted-foreground">{item.transportadora?.nomeRazaosocial || "N/A"}</span>
+        );
+      },
     },
     {
       accessorKey: "ativo",
       header: "Status",
       cell: ({ row }) => <StatusBadge ativo={row.getValue("ativo") as boolean} />,
     },
-    getActionsColumn<VeiculoResumo>({ onEdit, onDelete, selectionMode, onSelect }),
+    getActionsColumn<Veiculo>({ onEdit, onDelete, selectionMode, onSelect }),
   ];
 
   return (

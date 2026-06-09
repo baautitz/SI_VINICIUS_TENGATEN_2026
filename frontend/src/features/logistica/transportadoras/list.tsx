@@ -13,7 +13,7 @@ import { DataTable } from "@/components/ui/data-table";
 
 import { FeatureLayout } from "@/components/ui/feature-layout";
 import { Badge } from "@/components/ui/badge";
-import { TransportadoraResumo } from "./types";
+import { Transportadora } from "./types";
 import { TipoPessoa } from "@/api/types";
 
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
@@ -36,12 +36,12 @@ export function TransportadorasList({
   onRowSelectionChange,
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
-}: FeatureListProps<TransportadoraResumo>) {
+}: FeatureListProps<Transportadora>) {
   const listRef = React.useRef<HTMLDivElement>(null);
   useFeatureHotkeys({ onAdd, listRef });
 
-  const columns: ColumnDef<TransportadoraResumo>[] = [
-    getSelectColumn<TransportadoraResumo>(),
+  const columns: ColumnDef<Transportadora>[] = [
+    getSelectColumn<Transportadora>(),
     {
       accessorKey: "id",
       header: "ID",
@@ -87,7 +87,7 @@ export function TransportadorasList({
       header: "Status",
       cell: ({ row }) => <StatusBadge ativo={row.getValue("ativo") as boolean} />,
     },
-    getActionsColumn<TransportadoraResumo>({ onEdit, onDelete, selectionMode, onSelect }),
+    getActionsColumn<Transportadora>({ onEdit, onDelete, selectionMode, onSelect }),
   ];
 
   return (

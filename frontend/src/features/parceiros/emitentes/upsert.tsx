@@ -16,7 +16,6 @@ import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import {
   emitenteSchema,
-  EmitenteResumo,
   Emitente,
   EmitenteFormValues,
 } from "./types";
@@ -27,7 +26,7 @@ import { Pais } from "@/features/localizacao/paises";
 
 interface EmitentesUpsertProps {
   open: boolean;
-  editingItem: EmitenteResumo | null;
+  editingItem: Emitente | null;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -46,7 +45,7 @@ export function EmitentesUpsert(props: EmitentesUpsertProps) {
   const { data: fullItem, isLoading } = useQuery({
     queryKey: ["emitentes", "detail", editingItem?.id],
     queryFn: () => emitentesApi.getById(editingItem!.id),
-    enabled: isEditMode,
+    enabled: isEditMode && open,
   });
 
   if (isEditMode && isLoading) {

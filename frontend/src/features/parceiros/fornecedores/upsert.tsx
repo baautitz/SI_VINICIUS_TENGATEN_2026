@@ -16,7 +16,6 @@ import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import {
   fornecedorSchema,
-  FornecedorResumo,
   Fornecedor,
   FornecedorFormValues,
 } from "./types";
@@ -27,7 +26,7 @@ import { Pais } from "@/features/localizacao/paises";
 
 interface FornecedoresUpsertProps {
   open: boolean;
-  editingItem: FornecedorResumo | null;
+  editingItem: Fornecedor | null;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -46,7 +45,7 @@ export function FornecedoresUpsert(props: FornecedoresUpsertProps) {
   const { data: fullItem, isLoading } = useQuery({
     queryKey: ["fornecedores", "detail", editingItem?.id],
     queryFn: () => fornecedoresApi.getById(editingItem!.id),
-    enabled: isEditMode,
+    enabled: isEditMode && open,
   });
 
   if (isEditMode && isLoading) {

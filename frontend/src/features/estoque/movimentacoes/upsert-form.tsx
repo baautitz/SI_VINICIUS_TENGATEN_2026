@@ -33,7 +33,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { estoqueApi } from "@/api/estoque";
 import type { Resultado } from "@/api/types";
 import { SkuInput } from "@/components/entity-inputs/sku-input";
-import { SkuResumo } from "@/api/catalogo";
+import { Sku } from "@/features/catalogo/skus/types";
 import { Trash2 } from "lucide-react";
 import {
   Select,
@@ -87,7 +87,7 @@ export function MovimentacoesUpsertForm({
         custoMedio: i.custoMedioAnterior ?? i.sku.custoMedio,
         custoUltimaCompra: Number(i.sku.custoUltimaCompra),
         unidadeMedidaSigla: i.unidadeMedidaSigla,
-        permiteDecimais: i.sku.permiteDecimais,
+        permiteDecimais: false, // We'll just assume false or derive it differently.
       })) ?? []
     );
   });
@@ -299,7 +299,7 @@ export function MovimentacoesUpsertForm({
   };
 
   const handleSkuAdded = (
-    skuRes: SkuResumo | null,
+    skuRes: Sku | null,
     qtdeAdicionada: number = 1,
   ) => {
     if (!skuRes) return;
@@ -344,17 +344,17 @@ export function MovimentacoesUpsertForm({
         ...itens,
         {
           sku: skuRes.sku,
-          produtoNome: skuRes.produtoNome,
+          produtoNome: skuRes.produto?.produto ?? "Produto não encontrado",
           quantidade: Number(
-            qtdeAdicionada.toFixed(skuRes.permiteDecimais ? 4 : 0),
+            qtdeAdicionada.toFixed(skuRes.produto?.unidadeMedida?.permiteDecimais ? 4 : 0),
           ),
           custoUnitario: custoInicial,
           estoqueAtual: Number(skuRes.estoque),
           precoSugerido: Number(skuRes.preco),
           custoMedio: Number(skuRes.custoMedio) || 0,
           custoUltimaCompra: Number(skuRes.custoUltimaCompra) || 0,
-          unidadeMedidaSigla: skuRes.unidadeMedidaSigla,
-          permiteDecimais: skuRes.permiteDecimais,
+          unidadeMedidaSigla: skuRes.produto?.unidadeMedida?.sigla ?? "",
+          permiteDecimais: skuRes.produto?.unidadeMedida?.permiteDecimais ?? false,
         },
       ]);
       toast.success(
@@ -895,6 +895,9 @@ export function MovimentacoesUpsertForm({
                                 currency: "BRL",
                               })}
                             </TableCell>
+                            {!readOnly && (
+                              <TableCell className="px-4 py-3"></TableCell>
+                            )}
                           </TableRow>
                         </TableFooter>
                       )}

@@ -1,16 +1,16 @@
 "use client";
 
 import * as React from "react";
-
-import { StatusBadge } from "@/components/ui/status-badge";
-import { getActionsColumn } from "@/utils/table-columns";
+import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
+import { useFeatureHotkeys } from "@/hooks/use-feature-hotkeys";
+import { FeatureHeader } from "@/components/ui/feature-header";
+import { Package } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
-import { SkuResumo } from "./types";
+import { FeatureLayout } from "@/components/ui/feature-layout";
+import { Badge } from "@/components/ui/badge";
+import { Sku } from "./types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
-import { FeatureHeader } from "@/components/ui/feature-header";
-import { PackagePlus } from "lucide-react";
-import { useFeatureHotkeys } from "@/hooks/use-feature-hotkeys";
 
 export function SkusList({
   items: skus,
@@ -23,99 +23,83 @@ export function SkusList({
   onSearchChange,
   onAdd,
   onEdit,
+  onDelete,
   onSelect,
   onPageChange,
-  searchInputRef,
-}: FeatureListProps<SkuResumo>) {
+  rowSelection,
+  onRowSelectionChange,
+  selectAllAcrossPages,
+  onSelectAllAcrossPagesChange,
+}: FeatureListProps<Sku>) {
   const listRef = React.useRef<HTMLDivElement>(null);
-  
-  useFeatureHotkeys({
-    onAdd,
-    listRef,
-  });
+  useFeatureHotkeys({ onAdd, listRef });
 
-  const columns: ColumnDef<SkuResumo>[] = [
-    {
-      accessorKey: "produtoId",
-      header: "ID",
-      size: 80,
-      cell: ({ row }) => (
-        <span className="font-semibold text-muted-foreground">
-          #{row.original.produtoId}
-        </span>
-      ),
-    },
+  const columns: ColumnDef<Sku>[] = [
+    getSelectColumn<Sku>(),
     {
       accessorKey: "sku",
-      header: "Código SKU",
+      header: "SKU",
       cell: ({ row }) => (
-        <span className="font-mono font-medium">{row.original.sku}</span>
-      ),
-    },
-    {
-      accessorKey: "produtoNome",
-      header: "Produto",
-      cell: ({ row }) => (
-        <span className="font-medium">{row.original.produtoNome}</span>
-      ),
-    },
-    {
-      accessorKey: "estoque",
-      header: "Estoque",
-      cell: ({ row }) => (
-        <span className="font-semibold text-muted-foreground">
-          {Number(row.original.estoque).toLocaleString()}
-        </span>
+        <span className="font-semibold">{row.getValue("sku")}</span>
       ),
     },
     {
       accessorKey: "preco",
       header: "Preço",
-      cell: ({ row }) => (
-        <span>
-          {Number(row.original.preco).toLocaleString("pt-BR", {
-            style: "currency",
-            currency: "BRL",
-          })}
-        </span>
-      ),
+      cell: ({ row }) => <span>{Number(row.getValue("preco")).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>,
+    },
+    {
+      accessorKey: "estoque",
+      header: "Estoque",
+      cell: ({ row }) => <span>{Number(row.getValue("estoque")).toLocaleString("pt-BR")}</span>,
     },
     {
       accessorKey: "ativo",
       header: "Status",
-      cell: ({ row }) => <StatusBadge ativo={row.original.ativo} />,
+      size: 100,
+      cell: ({ row }) => {
+        const ativo = row.getValue("ativo") as boolean;
+        return (
+          <Badge variant={ativo ? "default" : "secondary"}>
+            {ativo ? "Ativo" : "Inativo"}
+          </Badge>
+        );
+      },
     },
-    getActionsColumn<SkuResumo>({
-      onEdit,
-      selectionMode,
-      onSelect,
-    }),
+    getActionsColumn<Sku>({ onEdit, onDelete, selectionMode, onSelect }),
   ];
 
   return (
-    <div ref={listRef} className="flex-1 min-h-0 flex flex-col gap-4">
-      <FeatureHeader
-        title="Selecionar Produto (SKU)"
-        icon={<PackagePlus className="size-5" />}
-        onAdd={onAdd}
-        addButtonLabel="Novo Produto"
-      />
+    <div ref={listRef} className="flex-1 min-h-0 flex flex-col h-full">
+      <FeatureLayout>
+        <FeatureHeader
+          title="SKUs"
+          icon={<Package />}
+          onAdd={onAdd}
+          addButtonLabel="Novo SKU"
+        />
 
-      <DataTable
-        columns={columns}
-        data={skus}
-        loading={loading}
-        pageCount={totalPages}
-        pageIndex={page}
-        onPageChange={onPageChange}
-        totalItems={totalItems}
-        globalFilter={searchTerm}
-        onGlobalFilterChange={onSearchChange}
-        getRowId={(row) => row.sku}
-        onRowSelect={selectionMode ? onSelect : undefined}
-        onEditRow={onEdit}
-        searchInputRef={searchInputRef}
-      />
+        <DataTable
+          columns={columns}
+          data={skus}
+          loading={loading}
+          pageCount={totalPages}
+          pageIndex={page}
+          onPageChange={onPageChange}
+          totalItems={totalItems}
+          globalFilter={searchTerm}
+          onGlobalFilterChange={onSearchChange}
+          searchPlaceholder="Pesquisar..."
+          rowSelection={rowSelection}
+          onRowSelectionChange={onRowSelectionChange}
+          selectAllAcrossPages={selectAllAcrossPages}
+          onSelectAllAcrossPagesChange={onSelectAllAcrossPagesChange}
+          getRowId={(row) => row.sku}
+          onRowSelect={selectionMode ? onSelect : undefined}
+          onEditRow={onEdit}
+          onDeleteRow={onDelete}
+        />
+      </FeatureLayout>
     </div>
   );
 }

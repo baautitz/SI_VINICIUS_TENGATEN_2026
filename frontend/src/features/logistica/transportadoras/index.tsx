@@ -3,14 +3,14 @@
 import React from "react";
 import { TransportadorasList } from "./list";
 import { TransportadorasUpsert } from "./upsert";
-import { TransportadoraResumo } from "./types";
+import { Transportadora } from "./types";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
 import { transportadorasApi } from "@/api/logistica";
 
 interface TransportadorasFeatureProps {
   selectionMode?: boolean;
-  onSelect?: (transportadora: TransportadoraResumo) => void;
+  onSelect?: (transportadora: Transportadora) => void;
   initialSearchTerm?: string;
 }
 
@@ -26,7 +26,7 @@ export function TransportadorasFeature({
     upsertProps,
     deleteDialogProps,
     featureList: list,
-  } = useFeatureOrchestrator<TransportadoraResumo>({
+  } = useFeatureOrchestrator<Transportadora>({
     queryKey: "transportadoras",
     initialSearchTerm,
     fetchPage: async (searchTerm, page, pageSize) => {

@@ -1,17 +1,16 @@
-"use client";
-
-import React from "react";
-import { EntityInput } from "@/components/ui/entity-input";
-import { ProdutosFeature, Produto, ProdutoResumo, formatProdutoLabel } from "@/features/catalogo/produtos";
-import { produtosApi } from "@/api/catalogo";
+"use client"
+import React from "react"
+import { EntityInput } from "@/components/ui/entity-input"
+import { ProdutosFeature, Produto } from "@/features/catalogo/produtos"
+import { produtosApi } from "@/api/catalogo"
 
 interface ProdutoInputProps {
-  name: string;
-  label?: string;
-  error?: string;
-  initialItem?: Produto | ProdutoResumo | null;
-  onSelectId: (id: number | null) => void;
-  onSelectItem?: (item: Produto | null) => void;
+  name: string
+  label?: string
+  error?: string
+  initialItem?: Produto | null
+  onSelectId: (id: number | null) => void
+  onSelectItem?: (item: Produto | null) => void
 }
 
 export function ProdutoInput({
@@ -23,7 +22,7 @@ export function ProdutoInput({
   onSelectItem,
 }: ProdutoInputProps) {
   return (
-    <EntityInput<Produto, ProdutoResumo>
+    <EntityInput<Produto, Produto>
       name={name}
       label={label}
       error={error}
@@ -31,24 +30,21 @@ export function ProdutoInput({
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
       modalTitle="Selecionar Produto"
-      getDisplayLabel={formatProdutoLabel}
+      getDisplayLabel={(item) => item?.produto ?? ""}
       getSearchTerm={(item) => item.produto}
       getId={(item) => item.id}
       fetchById={async (id) => {
         try {
-          return await produtosApi.getById(id);
-        } catch {
-          return null;
-        }
+          return await produtosApi.getById(id)
+        } catch { return null }
       }}
       fetchList={async (term) => {
         try {
-          return await produtosApi.list(term.trim() || undefined, 1, 10);
-        } catch {
-          return null;
-        }
+          const res = await produtosApi.list(term.trim() || undefined, 1, 10)
+          return res ? { itens: res.itens } : null
+        } catch { return null }
       }}
       renderFeature={(props) => <ProdutosFeature {...props} />}
     />
-  );
+  )
 }

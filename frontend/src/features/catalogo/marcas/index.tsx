@@ -3,7 +3,7 @@
 import React from "react";
 import { MarcasList } from "./list";
 import { MarcasUpsert } from "./upsert";
-import { MarcaResumo } from "./types";
+import { Marca } from "./types";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
 import { marcasApi } from "@/api/catalogo";
@@ -12,7 +12,7 @@ export * from "./types";
 
 interface MarcasFeatureProps {
   selectionMode?: boolean;
-  onSelect?: (marca: MarcaResumo) => void;
+  onSelect?: (marca: Marca) => void;
   initialSearchTerm?: string;
 }
 
@@ -26,10 +26,9 @@ export function MarcasFeature({
     upsertProps,
     deleteDialogProps,
     featureList: list,
-  } = useFeatureOrchestrator<MarcaResumo>({
+  } = useFeatureOrchestrator<Marca>({
     queryKey: "marcas",
     initialSearchTerm,
-    additionalKeysToInvalidate: [["produtos"], ["skus"]],
     fetchPage: async (searchTerm, page, pageSize) => {
       const res = await marcasApi.list(searchTerm || undefined, page, pageSize);
       if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
@@ -54,7 +53,11 @@ export function MarcasFeature({
       />
 
       {list.isUpsertOpen && (
-        <MarcasUpsert key={list.editingItem?.id ?? "new"} {...upsertProps} />
+        <MarcasUpsert 
+          key={list.editingItem?.id ?? "new"} 
+          {...upsertProps} 
+          editingItem={list.editingItem}
+        />
       )}
 
       <DeleteDialog

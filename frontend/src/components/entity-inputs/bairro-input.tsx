@@ -1,20 +1,19 @@
-"use client";
-
-import { EntityInput } from "@/components/ui/entity-input";
+"use client"
+import React from "react"
+import { EntityInput } from "@/components/ui/entity-input"
 import {
   BairrosFeature,
   Bairro,
-  BairroResumo,
-  formatBairroLabel,
-} from "@/features/localizacao/bairros";
-import { bairrosApi } from "@/api/localizacao";
+} from "@/features/localizacao/bairros"
+import { bairrosApi } from "@/api/localizacao"
 
 interface BairroInputProps {
-  name: string;
-  label?: string;
-  error?: string;
-  initialItem?: Bairro | BairroResumo | null;
-  onSelectId: (id: number | null) => void;
+  name: string
+  label?: string
+  error?: string
+  initialItem?: Bairro | null
+  onSelectId: (id: number | null) => void
+  onSelectItem?: (item: Bairro | null) => void
 }
 
 export function BairroInput({
@@ -23,33 +22,36 @@ export function BairroInput({
   error,
   initialItem,
   onSelectId,
+  onSelectItem,
 }: BairroInputProps) {
   return (
-    <EntityInput<Bairro, BairroResumo>
+    <EntityInput<Bairro, Bairro>
       name={name}
       label={label}
       error={error}
       initialItem={initialItem}
       onSelectId={onSelectId}
+      onSelectItem={onSelectItem}
       modalTitle="Selecionar Bairro"
-      getDisplayLabel={formatBairroLabel}
+      getDisplayLabel={(item) => item?.bairro ?? ""}
       getSearchTerm={(item) => item.bairro}
       getId={(item) => item.id}
       fetchById={async (id) => {
         try {
-          return await bairrosApi.getById(id);
+          return await bairrosApi.getById(id)
         } catch {
-          return null;
+          return null
         }
       }}
       fetchList={async (term) => {
         try {
-          return await bairrosApi.list(term.trim() || undefined, 1, 10);
+          const res = await bairrosApi.list(term.trim() || undefined, 1, 10)
+          return res ? { itens: res.itens } : null
         } catch {
-          return null;
+          return null
         }
       }}
       renderFeature={(props) => <BairrosFeature {...props} />}
     />
-  );
+  )
 }

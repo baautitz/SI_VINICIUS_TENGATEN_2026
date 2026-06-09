@@ -3,15 +3,6 @@ import type { Bairro } from "@/features/localizacao/bairros/types"
 import type { Pais } from "@/features/localizacao/paises/types"
 import { TipoPessoa } from "@/api/types"
 
-export interface EmitenteResumo {
-  id: number
-  tipoPessoa: TipoPessoa
-  nomeRazaoSocial: string
-  cpfCnpj: string
-  apelidoNomeFantasia?: string
-  nacionalidadeId: number
-}
-
 export interface Emitente {
   id: number
   tipoPessoa: TipoPessoa
@@ -29,8 +20,6 @@ export interface Emitente {
   observacao?: string
   ativo: boolean
 }
-
-export type EmitenteDto = EmitenteResumo;
 
 export const emitenteSchema = z.object({
   tipoPessoa: z.nativeEnum(TipoPessoa, { required_error: "Tipo de Pessoa é obrigatório." }),

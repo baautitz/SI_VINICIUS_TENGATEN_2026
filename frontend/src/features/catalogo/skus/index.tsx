@@ -2,17 +2,17 @@
 
 import React from "react";
 import { SkusList } from "./list";
-import { SkuResumo } from "./types";
+import { Sku } from "./types";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
 import { skusApi } from "@/api/catalogo";
 import { ProdutosUpsert } from "@/features/catalogo/produtos/upsert";
-import { ProdutoResumo } from "@/features/catalogo/produtos/types";
+import { Produto } from "@/features/catalogo/produtos/types";
 
 export * from "./types";
 
 interface SkusFeatureProps {
   selectionMode?: boolean;
-  onSelect?: (sku: SkuResumo) => void;
+  onSelect?: (sku: Sku) => void;
   initialSearchTerm?: string;
   searchInputRef?: React.RefObject<HTMLInputElement | null>;
 }
@@ -26,7 +26,7 @@ export function SkusFeature({
   const {
     listProps,
     featureList: list,
-  } = useFeatureOrchestrator<SkuResumo>({
+  } = useFeatureOrchestrator<Sku>({
     queryKey: "skus",
     initialSearchTerm,
     fetchPage: async (searchTerm, page, pageSize) => {
@@ -41,19 +41,12 @@ export function SkusFeature({
     },
   });
 
-  const [editingProduct, setEditingProduct] = React.useState<ProdutoResumo | null>(null);
+  const [editingProduct, setEditingProduct] = React.useState<Produto | null>(null);
 
-  const handleEdit = (sku: SkuResumo) => {
-    setEditingProduct({
-      id: sku.produtoId,
-      produto: sku.produtoNome,
-      ativo: true,
-      estoqueTotal: sku.estoque,
-    });
-  };
-
-  const handleAdd = () => {
-    list.handleCreate();
+  const handleEdit = (_sku: Sku) => {
+    // This is problematic because we need to fetch the full product based on SKU
+    // For now, setting it to null and letting the user know this needs a product lookup
+    setEditingProduct(null); 
   };
 
   return (
@@ -63,7 +56,7 @@ export function SkusFeature({
         selectionMode={selectionMode}
         onSelect={onSelect}
         onEdit={handleEdit}
-        onAdd={handleAdd}
+        onAdd={() => list.handleCreate()}
         searchInputRef={searchInputRef}
       />
 

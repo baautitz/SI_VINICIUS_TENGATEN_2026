@@ -9,31 +9,12 @@ export interface Pais {
   simboloMoeda: string;
 }
 
-export function formatPaisLabel(pais?: Pais | null): string {
-  if (!pais) return "";
-  const { pais: nome, siglaIso } = pais;
-  if (siglaIso) {
-    return `${nome} (${siglaIso})`;
-  }
-  return nome;
-}
-
-export type PaisResumo = Pais;
-export type PaisDto = Pais;
-
 export const paisSchema = z.object({
-  pais: z.string().min(1, "País é obrigatório."),
-  siglaIso: z
-    .string()
-    .min(1, "Sigla ISO é obrigatória.")
-    .length(3, "Sigla ISO deve ter exatamente 3 caracteres.")
-    .regex(/^[A-Z]+$/, "Sigla ISO deve conter apenas letras maiúsculas."),
-  ddi: z
-    .string()
-    .min(1, "DDI é obrigatório.")
-    .regex(/^\+?\d+$/, "DDI deve conter apenas números."),
-  moeda: z.string().min(1, "Moeda é obrigatória."),
-  simboloMoeda: z.string().min(1, "Símbolo da moeda é obrigatório."),
+  pais: z.string().min(1, "País é obrigatório").max(100),
+  siglaIso: z.string().min(3, "Sigla ISO 3 é obrigatória").max(3),
+  ddi: z.string().min(1, "DDI é obrigatório").max(5),
+  moeda: z.string().min(1, "Moeda é obrigatória").max(50),
+  simboloMoeda: z.string().min(1, "Símbolo da Moeda é obrigatório").max(5),
 });
 
 export type PaisFormValues = z.infer<typeof paisSchema>;

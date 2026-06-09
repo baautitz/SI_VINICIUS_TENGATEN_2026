@@ -1,17 +1,14 @@
 "use client";
 
 import * as React from "react";
-
 import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
 import { useFeatureHotkeys } from "@/hooks/use-feature-hotkeys";
 import { FeatureHeader } from "@/components/ui/feature-header";
-import { Sliders } from "lucide-react"
+import { SlidersHorizontal } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
-
 import { DataTable } from "@/components/ui/data-table";
-
 import { FeatureLayout } from "@/components/ui/feature-layout";
-import { SkuAtributoChaveResumo } from "./types";
+import { SkuAtributoChave } from "./types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 
 export function AtributosList({
@@ -32,12 +29,12 @@ export function AtributosList({
   onRowSelectionChange,
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
-}: FeatureListProps<SkuAtributoChaveResumo>) {
+}: FeatureListProps<SkuAtributoChave>) {
   const listRef = React.useRef<HTMLDivElement>(null);
   useFeatureHotkeys({ onAdd, listRef });
 
-  const columns: ColumnDef<SkuAtributoChaveResumo>[] = [
-    getSelectColumn<SkuAtributoChaveResumo>(),
+  const columns: ColumnDef<SkuAtributoChave>[] = [
+    getSelectColumn<SkuAtributoChave>(),
     {
       accessorKey: "id",
       header: "ID",
@@ -49,68 +46,53 @@ export function AtributosList({
     {
       accessorKey: "chave",
       header: "Atributo",
-      cell: ({ row }) => (
-        <span className="font-medium">{row.getValue("chave")}</span>
-      ),
     },
     {
-      accessorKey: "valores",
-      header: "Valores Possíveis",
+      accessorKey: "skuAtributosValores",
+      header: "Valores",
       cell: ({ row }) => {
-        const valores: string[] = row.getValue("valores") || [];
+        const item = row.original;
         return (
-          <div className="flex flex-wrap gap-1 max-w-125">
-            {valores.length > 0 ? (
-              valores.map((v, i) => (
-                <span
-                  key={i}
-                  className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold"
-                >
-                  {v}
-                </span>
-              ))
-            ) : (
-              <span className="text-muted-foreground text-xs italic">
-                Nenhum valor cadastrado
-              </span>
-            )}
-          </div>
+          <span className="text-muted-foreground truncate block max-w-sm">
+            {item.skuAtributosValores?.map(v => v.valor).join(", ")}
+          </span>
         );
       },
     },
-    getActionsColumn<SkuAtributoChaveResumo>({ onEdit, onDelete, selectionMode, onSelect }),
+    getActionsColumn<SkuAtributoChave>({ onEdit, onDelete, selectionMode, onSelect }),
   ];
 
   return (
     <div ref={listRef} className="flex-1 min-h-0 flex flex-col h-full">
       <FeatureLayout>
-      <FeatureHeader
-        title="Atributos"
-        icon={<Sliders />}
-        onAdd={onAdd}
-        addButtonLabel="Novo Atributo"
-      />
-
-      <DataTable
-        columns={columns}
-        data={atributos}
-        loading={loading}
-        pageCount={totalPages}
-        pageIndex={page}
-        onPageChange={onPageChange}
-        totalItems={totalItems}
-        globalFilter={searchTerm}
-        onGlobalFilterChange={onSearchChange}
-        searchPlaceholder="Pesquisar por atributo..."
-        rowSelection={rowSelection}
-        onRowSelectionChange={onRowSelectionChange}
-        selectAllAcrossPages={selectAllAcrossPages}
-        onSelectAllAcrossPagesChange={onSelectAllAcrossPagesChange}
-        getRowId={(row) => row.id.toString()}
-        onEditRow={onEdit}
-        onDeleteRow={onDelete}
+        <FeatureHeader
+          title="Atributos"
+          icon={<SlidersHorizontal />}
+          onAdd={onAdd}
+          addButtonLabel="Novo Atributo"
         />
-    </FeatureLayout>
+
+        <DataTable
+          columns={columns}
+          data={atributos}
+          loading={loading}
+          pageCount={totalPages}
+          pageIndex={page}
+          onPageChange={onPageChange}
+          totalItems={totalItems}
+          globalFilter={searchTerm}
+          onGlobalFilterChange={onSearchChange}
+          searchPlaceholder="Pesquisar..."
+          rowSelection={rowSelection}
+          onRowSelectionChange={onRowSelectionChange}
+          selectAllAcrossPages={selectAllAcrossPages}
+          onSelectAllAcrossPagesChange={onSelectAllAcrossPagesChange}
+          getRowId={(row) => row.id.toString()}
+          onRowSelect={selectionMode ? onSelect : undefined}
+          onEditRow={onEdit}
+          onDeleteRow={onDelete}
+        />
+      </FeatureLayout>
     </div>
   );
 }

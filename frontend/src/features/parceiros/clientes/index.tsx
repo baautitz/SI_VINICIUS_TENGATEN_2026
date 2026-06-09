@@ -3,14 +3,14 @@
 import React from "react";
 import { ClientesList } from "./list";
 import { ClientesUpsert } from "./upsert";
-import { ClienteResumo } from "./types";
+import { Cliente } from "./types";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
 import { clientesApi } from "@/api/parceiros";
 
 interface ClientesFeatureProps {
   selectionMode?: boolean;
-  onSelect?: (cliente: ClienteResumo) => void;
+  onSelect?: (cliente: Cliente) => void;
   initialSearchTerm?: string;
 }
 
@@ -24,7 +24,7 @@ export function ClientesFeature({
     upsertProps,
     deleteDialogProps,
     featureList: list,
-  } = useFeatureOrchestrator<ClienteResumo>({
+  } = useFeatureOrchestrator<Cliente>({
     queryKey: "clientes",
     initialSearchTerm,
     fetchPage: async (searchTerm, page, pageSize) => {
@@ -51,7 +51,11 @@ export function ClientesFeature({
       />
 
       {list.isUpsertOpen && (
-        <ClientesUpsert key={list.editingItem?.id ?? "new"} {...upsertProps} />
+        <ClientesUpsert 
+          key={list.editingItem?.id ?? "new"} 
+          {...upsertProps} 
+          editingItem={list.editingItem}
+        />
       )}
 
       <DeleteDialog

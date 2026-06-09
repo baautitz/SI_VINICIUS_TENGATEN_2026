@@ -3,14 +3,14 @@
 import React from "react";
 import { EmitentesList } from "./list";
 import { EmitentesUpsert } from "./upsert";
-import { EmitenteResumo } from "./types";
+import { Emitente } from "./types";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
 import { emitentesApi } from "@/api/parceiros";
 
 interface EmitentesFeatureProps {
   selectionMode?: boolean;
-  onSelect?: (emitente: EmitenteResumo) => void;
+  onSelect?: (emitente: Emitente) => void;
   initialSearchTerm?: string;
 }
 
@@ -24,7 +24,7 @@ export function EmitentesFeature({
     upsertProps,
     deleteDialogProps,
     featureList: list,
-  } = useFeatureOrchestrator<EmitenteResumo>({
+  } = useFeatureOrchestrator<Emitente>({
     queryKey: "emitentes",
     initialSearchTerm,
     fetchPage: async (searchTerm, page, pageSize) => {
@@ -51,7 +51,11 @@ export function EmitentesFeature({
       />
 
       {list.isUpsertOpen && (
-        <EmitentesUpsert key={list.editingItem?.id ?? "new"} {...upsertProps} />
+        <EmitentesUpsert 
+          key={list.editingItem?.id ?? "new"} 
+          {...upsertProps} 
+          editingItem={list.editingItem}
+        />
       )}
 
       <DeleteDialog

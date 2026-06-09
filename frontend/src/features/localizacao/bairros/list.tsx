@@ -11,7 +11,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
 
 import { FeatureLayout } from "@/components/ui/feature-layout";
-import { BairroDto } from "./types";
+import { Bairro } from "./types";
 
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 
@@ -33,12 +33,12 @@ export function BairrosList({
   onRowSelectionChange,
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
-}: FeatureListProps<BairroDto>) {
+}: FeatureListProps<Bairro>) {
   const listRef = React.useRef<HTMLDivElement>(null);
   useFeatureHotkeys({ onAdd, listRef });
 
-  const columns: ColumnDef<BairroDto>[] = [
-    getSelectColumn<BairroDto>(),
+  const columns: ColumnDef<Bairro>[] = [
+    getSelectColumn<Bairro>(),
     {
       accessorKey: "id",
       header: "ID",
@@ -55,14 +55,14 @@ export function BairrosList({
       ),
     },
     {
-      accessorKey: "cidadeNome",
+      accessorKey: "cidade",
       header: "Cidade",
       cell: ({ row }) => {
         const item = row.original;
-        return `${item.cidadeNome} (${item.uf})`;
+        return `${item.cidade.cidade} (${item.cidade.estado.uf})`;
       },
     },
-    getActionsColumn<BairroDto>({ onEdit, onDelete, selectionMode, onSelect }),
+    getActionsColumn<Bairro>({ onEdit, onDelete, selectionMode, onSelect }),
   ];
 
   return (

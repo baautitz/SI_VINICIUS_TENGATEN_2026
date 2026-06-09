@@ -1,9 +1,9 @@
 import { z } from "zod";
-import type { SkuResumo } from "@/api/catalogo";
+import type { Sku } from "@/features/catalogo/skus/types";
 
 export interface MovimentacaoEstoqueItem {
   id: number;
-  sku: SkuResumo;
+  sku: Sku;
   produtoNome: string;
   unidadeMedidaSigla: string;
   quantidade: number;

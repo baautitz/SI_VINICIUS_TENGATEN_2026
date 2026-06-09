@@ -3,16 +3,18 @@
 import React from "react";
 import { PaisesList } from "./list";
 import { PaisesUpsert } from "./upsert";
-import { PaisDto, PaisResumo } from "./types";
+import { Pais } from "./types";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
 import { paisesApi } from "@/api/localizacao";
 
 export * from "./types";
 
+export const formatPaisLabel = (item: Pais) => `${item.pais} (${item.siglaIso})`;
+
 interface PaisesFeatureProps {
   selectionMode?: boolean;
-  onSelect?: (pais: PaisDto) => void;
+  onSelect?: (pais: Pais) => void;
   initialSearchTerm?: string;
 }
 
@@ -26,7 +28,7 @@ export function PaisesFeature({
     upsertProps,
     deleteDialogProps,
     featureList: list,
-  } = useFeatureOrchestrator<PaisResumo>({
+  } = useFeatureOrchestrator<Pais>({
     queryKey: "paises",
     initialSearchTerm,
     fetchPage: async (searchTerm, page, pageSize) => {

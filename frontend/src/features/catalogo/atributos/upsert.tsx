@@ -18,7 +18,6 @@ import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import {
   skuAtributoChaveSchema,
   SkuAtributoChave,
-  SkuAtributoChaveResumo,
   SkuAtributoChaveFormValues,
 } from "./types";
 import { useQuery } from "@tanstack/react-query";
@@ -27,10 +26,11 @@ import { Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { useHotkeys } from "@tanstack/react-hotkeys";
 
 interface AtributosUpsertProps {
   open: boolean;
-  editingItem: SkuAtributoChaveResumo | null;
+  editingItem: SkuAtributoChave | null;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -82,16 +82,16 @@ function AtributosUpsertForm({
   onSuccess,
 }: AtributosUpsertFormProps) {
   const { mutation, globalError, getFieldError, resetErrors } =
-  useUpsertMutation({
-    mutationFn: async (value: SkuAtributoChaveFormValues) => {
-      return editingItem
-        ? await atributosApi.update(editingItem.id, value)
-        : await atributosApi.create(value);
-    },
-    queryKey: [["atributos"], ["produtos"]],
-    onSuccessCallback: onSuccess,
-    onClose: onClose,
-  });
+    useUpsertMutation({
+      mutationFn: async (value: SkuAtributoChaveFormValues) => {
+        return editingItem
+          ? await atributosApi.update(editingItem.id, value)
+          : await atributosApi.create(value);
+      },
+      queryKey: [["atributos"], ["produtos"]],
+      onSuccessCallback: onSuccess,
+      onClose: onClose,
+    });
 
   const form = useForm({
     defaultValues: {
@@ -105,6 +105,22 @@ function AtributosUpsertForm({
   });
 
   const [newValue, setNewValue] = React.useState("");
+
+  useHotkeys(
+    [
+      {
+        hotkey: "Alt+Enter",
+        callback: (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log("Alt+Enter pressed, submitting form...");
+          form.handleSubmit();
+        },
+        options: { enabled: open, ignoreInputs: false },
+      },
+    ],
+    { conflictBehavior: "replace" },
+  );
 
   return (
     <UpsertDialog
@@ -156,7 +172,7 @@ function AtributosUpsertForm({
         }}
       >
         <FieldGroup className="gap-6">
-          <div className="flex flex-wrap gap-4 items-start w-full">
+          <div className="flex w-full flex-wrap items-start gap-4">
             {editingItem && (
               <div className="w-fit">
                 <div className="flex flex-col gap-1.5">
@@ -164,13 +180,13 @@ function AtributosUpsertForm({
                   <Input
                     value={editingItem.id}
                     disabled
-                    className="h-8 text-xs font-mono"
+                    className="h-8 font-mono text-xs"
                     inputSize="small"
                   />
                 </div>
               </div>
             )}
-            <div className="flex-1 min-w-48">
+            <div className="min-w-48 flex-1">
               <form.Field
                 name="chave"
                 validators={{ onChange: skuAtributoChaveSchema.shape.chave }}
@@ -235,7 +251,7 @@ function AtributosUpsertForm({
                       value={newValue}
                       onChange={(e) => setNewValue(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") {
+                        if (e.key === "Enter" && !e.altKey) {
                           e.preventDefault();
                           e.stopPropagation();
                           handleAddValue(e);
@@ -255,22 +271,22 @@ function AtributosUpsertForm({
 
                   <Card
                     size="sm"
-                    className="w-full mt-2 border-dashed bg-muted/10"
+                    className="bg-muted/10 mt-2 w-full border-dashed"
                   >
-                    <CardContent className="flex flex-wrap gap-2 py-3 min-h-20">
+                    <CardContent className="flex min-h-20 flex-wrap gap-2 py-3">
                       {currentValues.length > 0 ? (
                         currentValues.map((val, idx) => (
                           <Badge
                             key={idx}
                             variant="secondary"
-                            className="pl-3 pr-1 py-1 h-7 text-sm font-medium gap-1 flex items-center rounded-md"
+                            className="flex h-7 items-center gap-1 rounded-md py-1 pr-1 pl-3 text-sm font-medium"
                           >
                             {val}
                             <Button
                               type="button"
                               variant="ghost"
                               size="icon-xs"
-                              className="h-5 w-5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted/80 p-0"
+                              className="text-muted-foreground hover:text-foreground hover:bg-muted/80 h-5 w-5 rounded-sm p-0"
                               onClick={() => handleRemoveValue(idx)}
                             >
                               <X className="size-3" />
@@ -278,7 +294,7 @@ function AtributosUpsertForm({
                           </Badge>
                         ))
                       ) : (
-                        <span className="text-muted-foreground text-sm m-auto">
+                        <span className="text-muted-foreground m-auto text-sm">
                           Nenhum valor adicionado ainda. Digite e adicione
                           valores para este atributo.
                         </span>

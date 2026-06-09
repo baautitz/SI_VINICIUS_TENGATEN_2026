@@ -16,7 +16,6 @@ import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import {
   clienteSchema,
-  ClienteResumo,
   Cliente,
   ClienteFormValues,
 } from "./types";
@@ -27,7 +26,7 @@ import { Pais } from "@/features/localizacao/paises";
 
 interface ClientesUpsertProps {
   open: boolean;
-  editingItem: ClienteResumo | null;
+  editingItem: Cliente | null;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -46,7 +45,7 @@ export function ClientesUpsert(props: ClientesUpsertProps) {
   const { data: fullItem, isLoading } = useQuery({
     queryKey: ["clientes", "detail", editingItem?.id],
     queryFn: () => clientesApi.getById(editingItem!.id),
-    enabled: isEditMode,
+    enabled: isEditMode && open,
   });
 
   if (isEditMode && isLoading) {

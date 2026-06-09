@@ -1,18 +1,29 @@
-export interface SkuResumo {
+import { z } from "zod";
+import type { SkuAtributoValor } from "@/features/catalogo/atributos/types";
+import type { UnidadeMedida } from "@/features/catalogo/unidades-medida/types";
+
+export interface Sku {
   sku: string;
   gtinEan?: string | null;
   preco: number;
   estoque: number;
+  ativo: boolean;
   custoMedio: number;
   custoUltimaCompra: number;
-  ativo: boolean;
-  produtoId: number;
-  produtoNome: string;
-  unidadeMedidaSigla: string;
-  permiteDecimais: boolean;
+  atributos: SkuAtributoValor[];
+  produto?: {
+    id: number;
+    produto: string;
+    unidadeMedida: UnidadeMedida;
+  };
 }
 
-export function formatSkuLabel(s?: SkuResumo | null): string {
-  if (!s) return "";
-  return `${s.sku} - ${s.produtoNome}`;
-}
+export const skuSchema = z.object({
+  sku: z.string().min(1, "SKU é obrigatório."),
+  gtinEan: z.string().nullable().optional(),
+  preco: z.coerce.number().min(0, "Preço não pode ser negativo."),
+  ativo: z.boolean().default(true),
+  atributoValorIds: z.array(z.number()).optional(),
+});
+
+export type SkuFormValues = z.infer<typeof skuSchema>;

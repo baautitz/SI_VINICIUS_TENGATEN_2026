@@ -11,7 +11,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
 
 import { FeatureLayout } from "@/components/ui/feature-layout";
-import { EstadoDto } from "./types";
+import { Estado } from "./types";
 
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 
@@ -33,12 +33,12 @@ export function EstadosList({
   onRowSelectionChange,
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
-}: FeatureListProps<EstadoDto>) {
+}: FeatureListProps<Estado>) {
   const listRef = React.useRef<HTMLDivElement>(null);
   useFeatureHotkeys({ onAdd, listRef });
 
-  const columns: ColumnDef<EstadoDto>[] = [
-    getSelectColumn<EstadoDto>(),
+  const columns: ColumnDef<Estado>[] = [
+    getSelectColumn<Estado>(),
     {
       accessorKey: "id",
       header: "ID",
@@ -59,10 +59,11 @@ export function EstadosList({
       header: "UF",
     },
     {
-      accessorKey: "paisNome",
+      accessorKey: "pais",
       header: "País",
+      cell: ({ row }) => row.original.pais.pais,
     },
-    getActionsColumn<EstadoDto>({ onEdit, onDelete, selectionMode, onSelect }),
+    getActionsColumn<Estado>({ onEdit, onDelete, selectionMode, onSelect }),
   ];
 
   return (

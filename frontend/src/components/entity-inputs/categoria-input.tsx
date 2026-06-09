@@ -1,14 +1,14 @@
 "use client"
 import React from "react"
 import { EntityInput } from "@/components/ui/entity-input"
-import { CategoriasFeature, Categoria, CategoriaResumo, formatCategoriaLabel } from "@/features/catalogo/categorias"
+import { CategoriasFeature, Categoria } from "@/features/catalogo/categorias"
 import { categoriasApi } from "@/api/catalogo"
 
 interface CategoriaInputProps {
   name: string
   label?: string
   error?: string
-  initialItem?: Categoria | CategoriaResumo | null
+  initialItem?: Categoria | null
   onSelectId: (id: number | null) => void
   onSelectItem?: (item: Categoria | null) => void
 }
@@ -22,7 +22,7 @@ export function CategoriaInput({
   onSelectItem,
 }: CategoriaInputProps) {
   return (
-    <EntityInput<Categoria, CategoriaResumo>
+    <EntityInput<Categoria, Categoria>
       name={name}
       label={label}
       error={error}
@@ -30,7 +30,7 @@ export function CategoriaInput({
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
       modalTitle="Selecionar Categoria"
-      getDisplayLabel={formatCategoriaLabel}
+      getDisplayLabel={(item) => item?.categoria ?? ""}
       getSearchTerm={(item) => item.categoria}
       getId={(item) => item.id}
       fetchById={async (id) => {
@@ -40,7 +40,8 @@ export function CategoriaInput({
       }}
       fetchList={async (term) => {
         try {
-          return await categoriasApi.list(term.trim() || undefined, 1, 10)
+          const res = await categoriasApi.list(term.trim() || undefined, 1, 10)
+          return res ? { itens: res.itens } : null
         } catch { return null }
       }}
       renderFeature={(props) => <CategoriasFeature {...props} />}

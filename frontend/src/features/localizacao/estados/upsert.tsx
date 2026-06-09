@@ -12,13 +12,13 @@ import { FormFieldUI } from "@/components/ui/form-field-ui";
 import { PaisInput } from "@/components/entity-inputs/pais-input";
 import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
-import { estadoSchema, EstadoResumo, Estado, EstadoFormValues } from "./types";
+import { estadoSchema, Estado, EstadoFormValues } from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { estadosApi } from "@/api/localizacao";
 
 interface EstadosUpsertProps {
   open: boolean;
-  editingItem: EstadoResumo | null;
+  editingItem: Estado | null;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -207,7 +207,7 @@ function EstadosUpsertForm({
                   error={error}
                   initialItem={editingItem?.pais}
                   onSelectId={(id) =>
-                    field.handleChange(id as unknown as number)
+                    field.handleChange(id ? parseInt(String(id), 10) : null)
                   }
                 />
               );

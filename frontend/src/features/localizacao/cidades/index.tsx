@@ -3,7 +3,7 @@
 import React from "react";
 import { CidadesList } from "./list";
 import { CidadesUpsert } from "./upsert";
-import { CidadeResumo } from "./types";
+import { Cidade } from "./types";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
 import { cidadesApi } from "@/api/localizacao";
@@ -12,7 +12,7 @@ export * from "./types";
 
 interface CidadesFeatureProps {
   selectionMode?: boolean;
-  onSelect?: (cidade: CidadeResumo) => void;
+  onSelect?: (cidade: Cidade) => void;
   initialSearchTerm?: string;
 }
 
@@ -26,7 +26,7 @@ export function CidadesFeature({
     upsertProps,
     deleteDialogProps,
     featureList: list,
-  } = useFeatureOrchestrator<CidadeResumo>({
+  } = useFeatureOrchestrator<Cidade>({
     queryKey: "cidades",
     initialSearchTerm,
     fetchPage: async (searchTerm, page, pageSize) => {
@@ -63,7 +63,7 @@ export function CidadesFeature({
           <p>
             Deseja realmente excluir a cidade{" "}
             <strong>{list.itemToDelete?.cidade}</strong> (
-            {list.itemToDelete?.uf})? Esta ação não poderá ser desfeita.
+            {list.itemToDelete?.estado.uf})? Esta ação não poderá ser desfeita.
           </p>
         }
       />

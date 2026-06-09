@@ -1,14 +1,14 @@
 "use client";
 import React from "react";
 import { EntityInput } from "@/components/ui/entity-input";
-import { TransportadorasFeature, Transportadora, TransportadoraResumo } from "@/features/logistica/transportadoras";
+import { TransportadorasFeature, Transportadora } from "@/features/logistica/transportadoras";
 import { transportadorasApi } from "@/api/logistica";
 
 interface TransportadoraInputProps {
   name: string;
   label?: string;
   error?: string;
-  initialItem?: Transportadora | TransportadoraResumo | null;
+  initialItem?: Transportadora | null;
   onSelectId: (id: number | null) => void;
 }
 
@@ -20,7 +20,7 @@ export function TransportadoraInput({
   onSelectId,
 }: TransportadoraInputProps) {
   return (
-    <EntityInput<Transportadora, TransportadoraResumo>
+    <EntityInput<Transportadora, Transportadora>
       name={name}
       label={label}
       error={error}

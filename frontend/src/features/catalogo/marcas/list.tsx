@@ -1,19 +1,15 @@
 "use client";
 
 import * as React from "react";
-
-import { StatusBadge } from "@/components/ui/status-badge";
 import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
 import { useFeatureHotkeys } from "@/hooks/use-feature-hotkeys";
 import { FeatureHeader } from "@/components/ui/feature-header";
-import { Tag } from "lucide-react"
+import { Package } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
-
 import { DataTable } from "@/components/ui/data-table";
-
 import { FeatureLayout } from "@/components/ui/feature-layout";
-
-import { MarcaResumo } from "./types";
+import { Badge } from "@/components/ui/badge";
+import { Marca } from "./types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 
 export function MarcasList({
@@ -34,12 +30,12 @@ export function MarcasList({
   onRowSelectionChange,
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
-}: FeatureListProps<MarcaResumo>) {
+}: FeatureListProps<Marca>) {
   const listRef = React.useRef<HTMLDivElement>(null);
   useFeatureHotkeys({ onAdd, listRef });
 
-  const columns: ColumnDef<MarcaResumo>[] = [
-    getSelectColumn<MarcaResumo>(),
+  const columns: ColumnDef<Marca>[] = [
+    getSelectColumn<Marca>(),
     {
       accessorKey: "id",
       header: "ID",
@@ -51,49 +47,59 @@ export function MarcasList({
     {
       accessorKey: "marca",
       header: "Marca",
-      cell: ({ row }) => (
-        <span className="font-medium">{row.getValue("marca")}</span>
-      ),
+    },
+    {
+      accessorKey: "descricao",
+      header: "Descrição",
+      cell: ({ row }) => row.getValue("descricao") || "-",
     },
     {
       accessorKey: "ativo",
       header: "Status",
-      cell: ({ row }) => <StatusBadge ativo={row.getValue("ativo") as boolean} />,
+      size: 100,
+      cell: ({ row }) => {
+        const ativo = row.getValue("ativo") as boolean;
+        return (
+          <Badge variant={ativo ? "default" : "secondary"}>
+            {ativo ? "Ativo" : "Inativo"}
+          </Badge>
+        );
+      },
     },
-    getActionsColumn<MarcaResumo>({ onEdit, onDelete, selectionMode, onSelect }),
+    getActionsColumn<Marca>({ onEdit, onDelete, selectionMode, onSelect }),
   ];
 
   return (
     <div ref={listRef} className="flex-1 min-h-0 flex flex-col h-full">
       <FeatureLayout>
-      <FeatureHeader
-        title="Marcas"
-        icon={<Tag />}
-        onAdd={onAdd}
-        addButtonLabel="Nova Marca"
-      />
-
-      <DataTable
-        columns={columns}
-        data={marcas}
-        loading={loading}
-        pageCount={totalPages}
-        pageIndex={page}
-        onPageChange={onPageChange}
-        totalItems={totalItems}
-        globalFilter={searchTerm}
-        onGlobalFilterChange={onSearchChange}
-        searchPlaceholder="Pesquisar por marca..."
-        rowSelection={rowSelection}
-        onRowSelectionChange={onRowSelectionChange}
-        selectAllAcrossPages={selectAllAcrossPages}
-        onSelectAllAcrossPagesChange={onSelectAllAcrossPagesChange}
-        getRowId={(row) => row.id.toString()}
-        onRowSelect={selectionMode ? onSelect : undefined}
-        onEditRow={onEdit}
-        onDeleteRow={onDelete}
+        <FeatureHeader
+          title="Marcas"
+          icon={<Package />}
+          onAdd={onAdd}
+          addButtonLabel="Nova Marca"
         />
-    </FeatureLayout>
+
+        <DataTable
+          columns={columns}
+          data={marcas}
+          loading={loading}
+          pageCount={totalPages}
+          pageIndex={page}
+          onPageChange={onPageChange}
+          totalItems={totalItems}
+          globalFilter={searchTerm}
+          onGlobalFilterChange={onSearchChange}
+          searchPlaceholder="Pesquisar..."
+          rowSelection={rowSelection}
+          onRowSelectionChange={onRowSelectionChange}
+          selectAllAcrossPages={selectAllAcrossPages}
+          onSelectAllAcrossPagesChange={onSelectAllAcrossPagesChange}
+          getRowId={(row) => row.id.toString()}
+          onRowSelect={selectionMode ? onSelect : undefined}
+          onEditRow={onEdit}
+          onDeleteRow={onDelete}
+        />
+      </FeatureLayout>
     </div>
   );
 }

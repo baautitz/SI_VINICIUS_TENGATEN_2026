@@ -1,14 +1,14 @@
 "use client"
 import React from "react"
 import { EntityInput } from "@/components/ui/entity-input"
-import { UnidadesMedidaFeature, UnidadeMedida, UnidadeMedidaResumo, formatUnidadeMedidaLabel } from "@/features/catalogo/unidades-medida"
+import { UnidadesMedidaFeature, UnidadeMedida } from "@/features/catalogo/unidades-medida"
 import { unidadesMedidaApi } from "@/api/catalogo"
 
 interface UnidadeMedidaInputProps {
   name: string
   label?: string
   error?: string
-  initialItem?: UnidadeMedida | UnidadeMedidaResumo | null
+  initialItem?: UnidadeMedida | null
   onSelectId: (id: number | null) => void
   onSelectItem?: (item: UnidadeMedida | null) => void
 }
@@ -22,7 +22,7 @@ export function UnidadeMedidaInput({
   onSelectItem,
 }: UnidadeMedidaInputProps) {
   return (
-    <EntityInput<UnidadeMedida, UnidadeMedidaResumo>
+    <EntityInput<UnidadeMedida, UnidadeMedida>
       name={name}
       label={label}
       error={error}
@@ -30,7 +30,7 @@ export function UnidadeMedidaInput({
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
       modalTitle="Selecionar Unidade de Medida"
-      getDisplayLabel={formatUnidadeMedidaLabel}
+      getDisplayLabel={(item) => item?.descricao ?? ""}
       getSearchTerm={(item) => item.descricao}
       getId={(item) => item.id}
       fetchById={async (id) => {
@@ -40,7 +40,8 @@ export function UnidadeMedidaInput({
       }}
       fetchList={async (term) => {
         try {
-          return await unidadesMedidaApi.list(term.trim() || undefined, 1, 10)
+          const res = await unidadesMedidaApi.list(term.trim() || undefined, 1, 10)
+          return res ? { itens: res.itens } : null
         } catch { return null }
       }}
       renderFeature={(props) => <UnidadesMedidaFeature {...props} />}

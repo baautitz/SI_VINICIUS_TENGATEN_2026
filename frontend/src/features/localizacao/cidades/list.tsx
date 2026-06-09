@@ -11,7 +11,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
 
 import { FeatureLayout } from "@/components/ui/feature-layout";
-import { CidadeDto } from "./types";
+import { Cidade } from "./types";
 
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 
@@ -33,12 +33,12 @@ export function CidadesList({
   onRowSelectionChange,
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
-}: FeatureListProps<CidadeDto>) {
+}: FeatureListProps<Cidade>) {
   const listRef = React.useRef<HTMLDivElement>(null);
   useFeatureHotkeys({ onAdd, listRef });
 
-  const columns: ColumnDef<CidadeDto>[] = [
-    getSelectColumn<CidadeDto>(),
+  const columns: ColumnDef<Cidade>[] = [
+    getSelectColumn<Cidade>(),
     {
       accessorKey: "id",
       header: "ID",
@@ -59,14 +59,14 @@ export function CidadesList({
       header: "DDD",
     },
     {
-      accessorKey: "estadoNome",
+      accessorKey: "estado",
       header: "Estado",
       cell: ({ row }) => {
         const item = row.original;
-        return `${item.estadoNome} (${item.uf})`;
+        return `${item.estado.estado} (${item.estado.uf})`;
       },
     },
-    getActionsColumn<CidadeDto>({ onEdit, onDelete, selectionMode, onSelect }),
+    getActionsColumn<Cidade>({ onEdit, onDelete, selectionMode, onSelect }),
   ];
 
   return (

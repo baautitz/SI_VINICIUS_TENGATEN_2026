@@ -1,44 +1,15 @@
-import { z } from "zod"
-import type { Cidade } from "../cidades/types"
-
-export interface BairroResumo {
-  id: number
-  bairro: string
-  cidadeId: number
-  cidadeNome: string
-  estadoId: number
-  uf: string
-}
+import { z } from "zod";
+import type { Cidade } from "@/features/localizacao/cidades/types";
 
 export interface Bairro {
-  id: number
-  bairro: string
-  cidade: Cidade
+  id: number;
+  bairro: string;
+  cidade: Cidade;
 }
-
-export function formatBairroLabel(bairro?: Bairro | null): string {
-  if (!bairro) return "";
-  const { bairro: nome, cidade } = bairro;
-  if (!cidade) return nome;
-  const cidadeNome = cidade.cidade;
-  const uf = cidade.estado?.uf;
-
-  if (cidadeNome && uf) {
-    return `${nome} (${cidadeNome}/${uf})`;
-  }
-  if (cidadeNome) {
-    return `${nome} (${cidadeNome})`;
-  }
-  return nome;
-}
-
-export type BairroDto = BairroResumo;
 
 export const bairroSchema = z.object({
-  bairro: z.string().min(1, "Bairro é obrigatório."),
-  cidadeId: z.number({ required_error: "Cidade é obrigatória." }).nullable().refine((val) => val !== null, {
-    message: "Selecione uma cidade.",
-  }),
-})
+  bairro: z.string().min(1, "Bairro é obrigatório").max(100),
+  cidadeId: z.number({ required_error: "Cidade é obrigatória" }).nullable().optional(),
+});
 
-export type BairroFormValues = z.infer<typeof bairroSchema>
+export type BairroFormValues = z.infer<typeof bairroSchema>;

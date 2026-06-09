@@ -1,14 +1,14 @@
 "use client"
 import React from "react"
 import { EntityInput } from "@/components/ui/entity-input"
-import { AtributosFeature, SkuAtributoChave, SkuAtributoChaveResumo, formatSkuAtributoChaveLabel } from "@/features/catalogo/atributos"
+import { AtributosFeature, SkuAtributoChave } from "@/features/catalogo/atributos"
 import { atributosApi } from "@/api/catalogo"
 
 interface AtributoChaveInputProps {
   name: string
   label?: string
   error?: string
-  initialItem?: SkuAtributoChave | SkuAtributoChaveResumo | null
+  initialItem?: SkuAtributoChave | null
   onSelectId: (id: number | null) => void
   onSelectItem?: (item: SkuAtributoChave | null) => void
 }
@@ -22,7 +22,7 @@ export function AtributoChaveInput({
   onSelectItem,
 }: AtributoChaveInputProps) {
   return (
-    <EntityInput<SkuAtributoChave, SkuAtributoChaveResumo>
+    <EntityInput<SkuAtributoChave, SkuAtributoChave>
       name={name}
       label={label}
       error={error}
@@ -30,7 +30,7 @@ export function AtributoChaveInput({
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
       modalTitle="Selecionar Atributo"
-      getDisplayLabel={formatSkuAtributoChaveLabel}
+      getDisplayLabel={(item) => item?.chave ?? ""}
       getSearchTerm={(item) => item.chave}
       getId={(item) => item.id}
       fetchById={async (id) => {
@@ -40,7 +40,8 @@ export function AtributoChaveInput({
       }}
       fetchList={async (term) => {
         try {
-          return await atributosApi.list(term.trim() || undefined, 1, 10)
+          const res = await atributosApi.list(term.trim() || undefined, 1, 10)
+          return res ? { itens: res.itens } : null
         } catch { return null }
       }}
       renderFeature={(props) => <AtributosFeature {...props} />}

@@ -19,7 +19,7 @@ interface EntityInputProps<T, TResumo = T> {
 
   fetchById: (id: number) => Promise<T | null>;
   fetchList: (term: string) => Promise<{ itens?: TResumo[] } | null>;
-  getDisplayLabel: (item: T) => string;
+  getDisplayLabel: (item: T | TResumo) => string;
   getSearchTerm: (item: TResumo) => string;
   getId: (item: T | TResumo) => number;
 
@@ -49,16 +49,12 @@ export function EntityInput<T, TResumo = T>({
 }: EntityInputProps<T, TResumo>) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<TResumo | null>(
-    (initialItem as TResumo) ?? null,
+    (initialItem as TResumo | null) ?? null,
   );
 
-  const getLabel = (item: TResumo | T | null) => {
+  const getLabel = (item: T | TResumo | null) => {
     if (!item) return "";
-    try {
-      return getDisplayLabel(item as unknown as T);
-    } catch {
-      return "";
-    }
+    return getDisplayLabel(item);
   };
 
   const initialLabel = getLabel(initialItem);
@@ -70,7 +66,7 @@ export function EntityInput<T, TResumo = T>({
   if (initialItem !== prevInitialItem) {
     setPrevInitialItem(initialItem);
     const newLabel = getLabel(initialItem);
-    setSelectedItem((initialItem as TResumo) ?? null);
+    setSelectedItem((initialItem as TResumo | null) ?? null);
     setSearchText(newLabel ?? "");
     setSelectedLabel(newLabel ?? "");
   }
@@ -95,7 +91,7 @@ export function EntityInput<T, TResumo = T>({
         try {
           const matched = await fetchById(numericId);
           if (matched) {
-            applySelection(matched as unknown as TResumo);
+            applySelection(matched);
             return;
           }
         } catch {}
@@ -124,14 +120,14 @@ export function EntityInput<T, TResumo = T>({
     }
   };
 
-  const applySelection = async (item: TResumo) => {
+  const applySelection = async (item: T | TResumo) => {
     const itemId = getId(item);
     const fullItem = await fetchById(itemId);
     if (fullItem) {
       const newLabel = getDisplayLabel(fullItem);
       onSelectId(itemId);
       onSelectItem?.(fullItem);
-      setSelectedItem(item);
+      setSelectedItem(item as TResumo);
       setSearchText(newLabel);
       setSelectedLabel(newLabel);
     }

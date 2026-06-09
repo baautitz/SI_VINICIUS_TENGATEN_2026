@@ -12,13 +12,13 @@ import { FormFieldUI } from "@/components/ui/form-field-ui";
 import { CidadeInput } from "@/components/entity-inputs/cidade-input";
 import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
-import { bairroSchema, BairroResumo, Bairro, BairroFormValues } from "./types";
+import { bairroSchema, Bairro, BairroFormValues } from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { bairrosApi } from "@/api/localizacao";
 
 interface BairrosUpsertProps {
   open: boolean;
-  editingItem: BairroResumo | null;
+  editingItem: Bairro | null;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -190,7 +190,7 @@ function BairrosUpsertForm({
                   error={error}
                   initialItem={editingItem?.cidade}
                   onSelectId={(id) =>
-                    field.handleChange(id as unknown as number)
+                    field.handleChange(id ? parseInt(String(id), 10) : null)
                   }
                 />
               );

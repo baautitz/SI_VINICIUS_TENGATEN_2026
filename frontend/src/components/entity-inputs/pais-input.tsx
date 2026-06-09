@@ -1,14 +1,14 @@
 "use client"
 import React from "react"
 import { EntityInput } from "@/components/ui/entity-input"
-import { PaisesFeature, Pais, PaisResumo, formatPaisLabel } from "@/features/localizacao/paises"
+import { PaisesFeature, Pais, formatPaisLabel } from "@/features/localizacao/paises"
 import { paisesApi } from "@/api/localizacao"
 
 interface PaisInputProps {
   name: string
   label?: string
   error?: string
-  initialItem?: Pais | PaisResumo | null
+  initialItem?: Pais | null
   onSelectId: (id: number | null) => void
   onSelectItem?: (item: Pais | null) => void
 }
@@ -22,7 +22,7 @@ export function PaisInput({
   onSelectItem,
 }: PaisInputProps) {
   return (
-    <EntityInput<Pais, PaisResumo>
+    <EntityInput<Pais, Pais>
       name={name}
       label={label}
       error={error}

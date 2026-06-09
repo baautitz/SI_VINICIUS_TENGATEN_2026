@@ -3,7 +3,7 @@
 import React from "react";
 import { CategoriasList } from "./list";
 import { CategoriasUpsert } from "./upsert";
-import { CategoriaResumo } from "./types";
+import { Categoria } from "./types";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
 import { categoriasApi } from "@/api/catalogo";
@@ -12,7 +12,7 @@ export * from "./types";
 
 interface CategoriasFeatureProps {
   selectionMode?: boolean;
-  onSelect?: (categoria: CategoriaResumo) => void;
+  onSelect?: (categoria: Categoria) => void;
   initialSearchTerm?: string;
 }
 
@@ -26,10 +26,9 @@ export function CategoriasFeature({
     upsertProps,
     deleteDialogProps,
     featureList: list,
-  } = useFeatureOrchestrator<CategoriaResumo>({
+  } = useFeatureOrchestrator<Categoria>({
     queryKey: "categorias",
     initialSearchTerm,
-    additionalKeysToInvalidate: [["produtos"], ["skus"]],
     fetchPage: async (searchTerm, page, pageSize) => {
       const res = await categoriasApi.list(searchTerm || undefined, page, pageSize);
       if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
@@ -54,7 +53,11 @@ export function CategoriasFeature({
       />
 
       {list.isUpsertOpen && (
-        <CategoriasUpsert key={list.editingItem?.id ?? "new"} {...upsertProps} />
+        <CategoriasUpsert 
+          key={list.editingItem?.id ?? "new"} 
+          {...upsertProps} 
+          editingItem={list.editingItem}
+        />
       )}
 
       <DeleteDialog

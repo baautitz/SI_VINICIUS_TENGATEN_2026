@@ -3,14 +3,14 @@
 import React from "react";
 import { FornecedoresList } from "./list";
 import { FornecedoresUpsert } from "./upsert";
-import { FornecedorResumo } from "./types";
+import { Fornecedor } from "./types";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
 import { fornecedoresApi } from "@/api/parceiros";
 
 interface FornecedoresFeatureProps {
   selectionMode?: boolean;
-  onSelect?: (fornecedor: FornecedorResumo) => void;
+  onSelect?: (fornecedor: Fornecedor) => void;
   initialSearchTerm?: string;
 }
 
@@ -24,7 +24,7 @@ export function FornecedoresFeature({
     upsertProps,
     deleteDialogProps,
     featureList: list,
-  } = useFeatureOrchestrator<FornecedorResumo>({
+  } = useFeatureOrchestrator<Fornecedor>({
     queryKey: "fornecedores",
     initialSearchTerm,
     fetchPage: async (searchTerm, page, pageSize) => {
@@ -51,7 +51,11 @@ export function FornecedoresFeature({
       />
 
       {list.isUpsertOpen && (
-        <FornecedoresUpsert key={list.editingItem?.id ?? "new"} {...upsertProps} />
+        <FornecedoresUpsert 
+          key={list.editingItem?.id ?? "new"} 
+          {...upsertProps} 
+          editingItem={list.editingItem}
+        />
       )}
 
       <DeleteDialog

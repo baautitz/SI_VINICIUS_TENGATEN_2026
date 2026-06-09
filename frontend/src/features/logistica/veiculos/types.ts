@@ -1,23 +1,14 @@
 import { z } from "zod"
-import type { TransportadoraResumo } from "@/features/logistica/transportadoras/types"
+import type { Transportadora } from "@/features/logistica/transportadoras/types"
 import type { Estado } from "@/features/localizacao/estados/types"
-
-export interface VeiculoResumo {
-  id: number
-  placa: string
-  estadoSigla: string
-  marcaModelo?: string
-  transportadoraNome?: string
-  ativo: boolean
-}
 
 export interface Veiculo {
   id: number
   placa: string
   estadoId: number
-  estado?: Estado
+  estado: Estado
   transportadoraId?: number
-  transportadora?: TransportadoraResumo
+  transportadora?: Transportadora
   rntrc?: string
   renavam?: string
   tipoVeiculo?: string

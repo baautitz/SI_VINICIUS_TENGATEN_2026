@@ -5,14 +5,14 @@ import * as React from "react";
 import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
 import { useFeatureHotkeys } from "@/hooks/use-feature-hotkeys";
 import { FeatureHeader } from "@/components/ui/feature-header";
-import { Truck } from "lucide-react"
+import { Truck } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 
 import { DataTable } from "@/components/ui/data-table";
 
 import { FeatureLayout } from "@/components/ui/feature-layout";
 import { Badge } from "@/components/ui/badge";
-import { FornecedorDto } from "./types";
+import { Fornecedor } from "./types";
 import { TipoPessoa } from "@/api/types";
 
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
@@ -35,12 +35,12 @@ export function FornecedoresList({
   onRowSelectionChange,
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
-}: FeatureListProps<FornecedorDto>) {
+}: FeatureListProps<Fornecedor>) {
   const listRef = React.useRef<HTMLDivElement>(null);
   useFeatureHotkeys({ onAdd, listRef });
 
-  const columns: ColumnDef<FornecedorDto>[] = [
-    getSelectColumn<FornecedorDto>(),
+  const columns: ColumnDef<Fornecedor>[] = [
+    getSelectColumn<Fornecedor>(),
     {
       accessorKey: "id",
       header: "ID",
@@ -81,40 +81,40 @@ export function FornecedoresList({
         <span className="text-muted-foreground">{row.getValue("cpfCnpj")}</span>
       ),
     },
-    getActionsColumn<FornecedorDto>({ onEdit, onDelete, selectionMode, onSelect }),
+    getActionsColumn<Fornecedor>({ onEdit, onDelete, selectionMode, onSelect }),
   ];
 
   return (
     <div ref={listRef} className="flex-1 min-h-0 flex flex-col h-full">
       <FeatureLayout>
-      <FeatureHeader
-        title="Fornecedores"
-        icon={<Truck />}
-        onAdd={onAdd}
-        addButtonLabel="Novo Fornecedor"
-      />
-
-      <DataTable
-        columns={columns}
-        data={fornecedores}
-        loading={loading}
-        pageCount={totalPages}
-        pageIndex={page}
-        onPageChange={onPageChange}
-        totalItems={totalItems}
-        globalFilter={searchTerm}
-        onGlobalFilterChange={onSearchChange}
-        searchPlaceholder="Pesquisar por nome ou CNPJ/CPF..."
-        rowSelection={rowSelection}
-        onRowSelectionChange={onRowSelectionChange}
-        selectAllAcrossPages={selectAllAcrossPages}
-        onSelectAllAcrossPagesChange={onSelectAllAcrossPagesChange}
-        getRowId={(row) => row.id.toString()}
-        onRowSelect={selectionMode ? onSelect : undefined}
-        onEditRow={onEdit}
-        onDeleteRow={onDelete}
+        <FeatureHeader
+          title="Fornecedores"
+          icon={<Truck />}
+          onAdd={onAdd}
+          addButtonLabel="Novo Fornecedor"
         />
-    </FeatureLayout>
+
+        <DataTable
+          columns={columns}
+          data={fornecedores}
+          loading={loading}
+          pageCount={totalPages}
+          pageIndex={page}
+          onPageChange={onPageChange}
+          totalItems={totalItems}
+          globalFilter={searchTerm}
+          onGlobalFilterChange={onSearchChange}
+          searchPlaceholder="Pesquisar por nome ou CNPJ/CPF..."
+          rowSelection={rowSelection}
+          onRowSelectionChange={onRowSelectionChange}
+          selectAllAcrossPages={selectAllAcrossPages}
+          onSelectAllAcrossPagesChange={onSelectAllAcrossPagesChange}
+          getRowId={(row) => row.id.toString()}
+          onRowSelect={selectionMode ? onSelect : undefined}
+          onEditRow={onEdit}
+          onDeleteRow={onDelete}
+        />
+      </FeatureLayout>
     </div>
   );
 }

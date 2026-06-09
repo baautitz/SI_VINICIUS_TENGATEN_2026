@@ -8,7 +8,7 @@ import {
   MultiEntityItem,
 } from "@/components/ui/multi-entity-input";
 import { AtributosUpsert } from "@/features/catalogo/atributos/upsert";
-import type { SkuAtributoChaveResumo } from "@/features/catalogo/atributos/types";
+import type { SkuAtributoChave } from "@/features/catalogo/atributos/types";
 
 interface AtributoValorMultiInputProps {
   chaveId: number;
@@ -93,11 +93,11 @@ export function AtributoValorMultiInput({
     }
   };
 
-  const editingResumo: SkuAtributoChaveResumo | null = detail
+  const editingResumo: SkuAtributoChave | null = detail
     ? {
         id: detail.id,
         chave: detail.chave,
-        valores: detail.skuAtributosValores?.map((v) => v.valor) ?? [],
+        skuAtributosValores: detail.skuAtributosValores ?? [],
       }
     : null;
 

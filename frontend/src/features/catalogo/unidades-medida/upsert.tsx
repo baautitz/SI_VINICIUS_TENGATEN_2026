@@ -1,12 +1,10 @@
 "use client";
 
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
-import React from "react";
 import { Button } from "@/components/ui/button";
 import { UpsertDialog } from "@/components/ui/upsert-dialog";
 import { DialogClose } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FormFieldUI } from "@/components/ui/form-field-ui";
@@ -27,14 +25,21 @@ interface UnidadesMedidaUpsertProps {
   onSuccess: () => void;
 }
 
+interface UnidadesMedidaUpsertFormProps {
+  open: boolean;
+  editingItem: UnidadeMedida | null;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
 export function UnidadesMedidaUpsert(props: UnidadesMedidaUpsertProps) {
-  const { open, editingItem, onClose } = props;
+  const { open, editingItem, onClose, onSuccess } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
-    queryKey: ["unidades-medida", "detail", editingItem?.id],
+    queryKey: ["unidadesMedida", "detail", editingItem?.id],
     queryFn: () => unidadesMedidaApi.getById(editingItem!.id),
-    enabled: isEditMode,
+    enabled: isEditMode && open,
   });
 
   if (isEditMode && isLoading) {
@@ -52,8 +57,10 @@ export function UnidadesMedidaUpsert(props: UnidadesMedidaUpsertProps) {
 
   return (
     <UnidadesMedidaUpsertForm
-      {...props}
+      open={open}
       editingItem={isEditMode ? (fullItem ?? null) : null}
+      onClose={onClose}
+      onSuccess={onSuccess}
     />
   );
 }
@@ -63,18 +70,18 @@ function UnidadesMedidaUpsertForm({
   editingItem,
   onClose,
   onSuccess,
-}: UnidadesMedidaUpsertProps) {
+}: UnidadesMedidaUpsertFormProps) {
   const { mutation, globalError, getFieldError, resetErrors } =
-  useUpsertMutation({
-    mutationFn: async (value: UnidadeMedidaFormValues) => {
-      return editingItem
-        ? await unidadesMedidaApi.update(editingItem.id, value)
-        : await unidadesMedidaApi.create(value);
-    },
-    queryKey: [["unidades-medida"], ["produtos"], ["skus"]],
-    onSuccessCallback: onSuccess,
-    onClose: onClose,
-  });
+    useUpsertMutation({
+      mutationFn: async (value: UnidadeMedidaFormValues) => {
+        return editingItem
+          ? await unidadesMedidaApi.update(editingItem.id, value)
+          : await unidadesMedidaApi.create(value);
+      },
+      queryKey: ["unidadesMedida"],
+      onSuccessCallback: onSuccess,
+      onClose: onClose,
+    });
 
   const form = useForm({
     defaultValues: {
@@ -119,7 +126,11 @@ function UnidadesMedidaUpsertForm({
                   "Salvando..."
                 ) : (
                   <span className="flex items-center gap-2">
-                    Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup>
+                    Salvar{" "}
+                    <KbdGroup>
+                      <Kbd>Alt</Kbd>
+                      <Kbd>Enter</Kbd>
+                    </KbdGroup>
                   </span>
                 )}
               </Button>
@@ -130,115 +141,93 @@ function UnidadesMedidaUpsertForm({
     >
       <form
         id="upsert-unidades-medida"
-        className="flex flex-col gap-4"
+        className="flex flex-col gap-6"
         onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
           form.handleSubmit();
         }}
       >
-        <FieldGroup className="gap-4">
-          <div className="flex flex-wrap gap-4 items-start w-full">
-            {editingItem && (
-              <div className="w-fit">
-                <div className="flex flex-col gap-1.5">
-                  <FieldLabel>Código</FieldLabel>
-                  <Input
-                    value={editingItem.id}
-                    disabled
-                    className="h-8 text-xs font-mono"
-                    inputSize="small"
-                  />
-                </div>
+        <div className="flex flex-wrap items-start gap-4">
+          {editingItem && (
+            <div className="w-fit">
+              <div className="flex flex-col gap-1.5">
+                <FieldLabel>Código</FieldLabel>
+                <Input
+                  value={editingItem.id}
+                  disabled
+                  className="h-8 font-mono text-xs"
+                  inputSize="small"
+                />
               </div>
-            )}
-            <div className="flex-1 min-w-32">
-              <form.Field
-                name="sigla"
-                validators={{ onChange: unidadeMedidaSchema.shape.sigla }}
-              >
-                {(field) => (
-                  <FormFieldUI
-                    field={field}
-                    label="Sigla"
-                    inputSize="full"
-                    getFieldError={getFieldError}
-                    maxLength={10}
-                    onChangeOverride={(val) => val.toUpperCase()}
-                  />
-                )}
-              </form.Field>
             </div>
-          </div>
-
-          <form.Field
-            name="descricao"
-            validators={{ onChange: unidadeMedidaSchema.shape.descricao }}
-          >
-            {(field) => (
-              <FormFieldUI
-                field={field}
-                label="Descrição"
-                inputSize="medium"
-                getFieldError={getFieldError}
-                maxLength={100}
-              />
-            )}
-          </form.Field>
-
-          <form.Field
-            name="categoria"
-            validators={{ onChange: unidadeMedidaSchema.shape.categoria }}
-          >
-            {(field) => (
-              <FormFieldUI
-                field={field}
-                label="Categoria"
-                inputSize="medium"
-                getFieldError={getFieldError}
-                maxLength={50}
-              />
-            )}
-          </form.Field>
-
-          <div className="flex flex-col gap-2 pt-2">
-            <form.Field name="permiteDecimais">
+          )}
+          <div className="w-32">
+            <form.Field
+              name="sigla"
+              validators={{ onChange: unidadeMedidaSchema.shape.sigla }}
+            >
               {(field) => (
-                <Field orientation="horizontal">
-                  <Checkbox
-                    id={field.name}
-                    checked={field.state.value}
-                    onCheckedChange={(checked) => field.handleChange(!!checked)}
-                  />
-                  <FieldLabel
-                    htmlFor={field.name}
-                    className="cursor-pointer font-normal"
-                  >
-                    Permite quantidades decimais (ex: 1,5kg)
-                  </FieldLabel>
-                </Field>
-              )}
-            </form.Field>
-
-            <form.Field name="ativo">
-              {(field) => (
-                <Field orientation="horizontal">
-                  <Checkbox
-                    id={field.name}
-                    checked={field.state.value}
-                    onCheckedChange={(checked) => field.handleChange(!!checked)}
-                  />
-                  <FieldLabel
-                    htmlFor={field.name}
-                    className="cursor-pointer font-normal"
-                  >
-                    Ativo
-                  </FieldLabel>
-                </Field>
+                <FormFieldUI
+                  field={field}
+                  label="Sigla"
+                  getFieldError={getFieldError}
+                  inputSize="full"
+                />
               )}
             </form.Field>
           </div>
-        </FieldGroup>
+          <div className="min-w-62.5 flex-1">
+            <form.Field
+              name="descricao"
+              validators={{ onChange: unidadeMedidaSchema.shape.descricao }}
+            >
+              {(field) => (
+                <FormFieldUI
+                  field={field}
+                  label="Descrição"
+                  getFieldError={getFieldError}
+                  inputSize="full"
+                />
+              )}
+            </form.Field>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-start gap-4">
+          <div className="min-w-62.5 flex-1">
+            <form.Field
+              name="categoria"
+              validators={{ onChange: unidadeMedidaSchema.shape.categoria }}
+            >
+              {(field) => (
+                <FormFieldUI
+                  field={field}
+                  label="Categoria (ex: Peso, Volume)"
+                  getFieldError={getFieldError}
+                  inputSize="full"
+                />
+              )}
+            </form.Field>
+          </div>
+        </div>
+
+        <form.Field name="permiteDecimais">
+          {(field) => (
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id={field.name}
+                checked={field.state.value}
+                onChange={(e) => field.handleChange(e.target.checked)}
+                className="h-4 w-4"
+              />
+              <FieldLabel htmlFor={field.name}>
+                Permite casas decimais
+              </FieldLabel>
+            </div>
+          )}
+        </form.Field>
 
         {globalError && (
           <Alert variant="destructive">

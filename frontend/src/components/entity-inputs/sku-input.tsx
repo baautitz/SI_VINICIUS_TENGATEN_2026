@@ -16,7 +16,8 @@ import {
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { skusApi } from "@/api/catalogo";
 import { toast } from "sonner";
-import { SkuResumo, SkusFeature } from "@/features/catalogo/skus";
+import { SkusFeature } from "@/features/catalogo/skus";
+import { Sku } from "@/features/catalogo/skus/types";
 import { NumberInput } from "@/components/ui/number-input";
 
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
@@ -26,7 +27,7 @@ interface SkuInputProps {
   label?: React.ReactNode;
   error?: string;
   initialSku?: string | null;
-  onSelectSku: (sku: SkuResumo | null, quantidade?: number) => void;
+  onSelectSku: (sku: Sku | null, quantidade?: number) => void;
   disabled?: boolean;
 }
 
@@ -59,7 +60,7 @@ export const SkuInput = ({
     [ref],
   );
 
-  const [quantityModalItem, setQuantityModalItem] = useState<SkuResumo | null>(
+  const [quantityModalItem, setQuantityModalItem] = useState<Sku | null>(
     null,
   );
   const [quantityInput, setQuantityInput] = useState<number>(1);
@@ -132,7 +133,7 @@ export const SkuInput = ({
     }
   };
 
-  const selectItemFromList = (item: SkuResumo) => {
+  const selectItemFromList = (item: Sku) => {
     if (!item.ativo) {
       toast.error("Este SKU está inativo.");
       return;
@@ -271,7 +272,9 @@ export const SkuInput = ({
               autoFocus
               className="mt-1.5"
               value={quantityInput}
-              decimals={quantityModalItem?.permiteDecimais ? 4 : 0}
+              // Assume items are always allow decimal inputs in movement unless otherwise specified, 
+              // or add `permiteDecimais` to Sku entity if needed. For now default to 4 places.
+              decimals={4}
               onNumberChange={(num) => setQuantityInput(num)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.altKey) {

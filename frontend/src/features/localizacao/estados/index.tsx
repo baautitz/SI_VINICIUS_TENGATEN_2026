@@ -3,7 +3,7 @@
 import React from "react";
 import { EstadosList } from "./list";
 import { EstadosUpsert } from "./upsert";
-import { EstadoResumo } from "./types";
+import { Estado } from "./types";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
 import { estadosApi } from "@/api/localizacao";
@@ -12,7 +12,7 @@ export * from "./types";
 
 interface EstadosFeatureProps {
   selectionMode?: boolean;
-  onSelect?: (estado: EstadoResumo) => void;
+  onSelect?: (estado: Estado) => void;
   initialSearchTerm?: string;
 }
 
@@ -26,7 +26,7 @@ export function EstadosFeature({
     upsertProps,
     deleteDialogProps,
     featureList: list,
-  } = useFeatureOrchestrator<EstadoResumo>({
+  } = useFeatureOrchestrator<Estado>({
     queryKey: "estados",
     initialSearchTerm,
     fetchPage: async (searchTerm, page, pageSize) => {

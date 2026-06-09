@@ -3,14 +3,14 @@
 import React from "react";
 import { VeiculosList } from "./list";
 import { VeiculosUpsert } from "./upsert";
-import { VeiculoResumo } from "./types";
+import { Veiculo } from "./types";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
 import { veiculosApi } from "@/api/logistica";
 
 interface VeiculosFeatureProps {
   selectionMode?: boolean;
-  onSelect?: (veiculo: VeiculoResumo) => void;
+  onSelect?: (veiculo: Veiculo) => void;
   initialSearchTerm?: string;
 }
 
@@ -24,7 +24,7 @@ export function VeiculosFeature({
     upsertProps,
     deleteDialogProps,
     featureList: list,
-  } = useFeatureOrchestrator<VeiculoResumo>({
+  } = useFeatureOrchestrator<Veiculo>({
     queryKey: "veiculos",
     initialSearchTerm,
     fetchPage: async (searchTerm, page, pageSize) => {

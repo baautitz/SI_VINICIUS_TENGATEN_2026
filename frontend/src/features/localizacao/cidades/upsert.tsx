@@ -11,13 +11,13 @@ import { FormFieldUI } from "@/components/ui/form-field-ui";
 import { EstadoInput } from "@/components/entity-inputs/estado-input";
 import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
-import { cidadeSchema, CidadeResumo, Cidade, CidadeFormValues } from "./types";
+import { cidadeSchema, Cidade, CidadeFormValues } from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { cidadesApi } from "@/api/localizacao";
 
 interface CidadesUpsertProps {
   open: boolean;
-  editingItem: CidadeResumo | null;
+  editingItem: Cidade | null;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -207,7 +207,7 @@ function CidadesUpsertForm({
                   error={error}
                   initialItem={editingItem?.estado}
                   onSelectId={(id) =>
-                    field.handleChange(id as unknown as number)
+                    field.handleChange(id ? parseInt(String(id), 10) : null)
                   }
                 />
               );

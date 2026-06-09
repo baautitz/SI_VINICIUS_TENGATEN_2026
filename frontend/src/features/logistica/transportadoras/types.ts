@@ -3,15 +3,6 @@ import type { Bairro } from "@/features/localizacao/bairros/types"
 import type { Pais } from "@/features/localizacao/paises/types"
 import { TipoPessoa } from "@/api/types"
 
-export interface TransportadoraResumo {
-  id: number
-  tipoPessoa: TipoPessoa
-  nomeRazaosocial: string
-  cpfCnpj: string
-  nacionalidadeId: number
-  ativo: boolean
-}
-
 export interface Transportadora {
   id: number
   tipoPessoa: TipoPessoa

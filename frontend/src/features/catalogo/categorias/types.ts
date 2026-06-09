@@ -7,17 +7,6 @@ export interface Categoria {
   ativo: boolean;
 }
 
-export interface CategoriaResumo {
-  id: number;
-  categoria: string;
-  ativo: boolean;
-}
-
-export function formatCategoriaLabel(cat?: CategoriaResumo | Categoria | null): string {
-  if (!cat) return "";
-  return cat.categoria;
-}
-
 export const categoriaSchema = z.object({
   categoria: z
     .string()

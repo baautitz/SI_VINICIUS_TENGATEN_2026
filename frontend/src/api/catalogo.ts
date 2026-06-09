@@ -1,37 +1,15 @@
 import { http } from "./http";
 import type { PaginatedResult, Resultado } from "./types";
-import type {
-  UnidadeMedida,
-  UnidadeMedidaFormValues,
-  UnidadeMedidaResumo,
-} from "@/features/catalogo/unidades-medida/types";
-import type {
-  Marca,
-  MarcaFormValues,
-  MarcaResumo,
-} from "@/features/catalogo/marcas/types";
-import type {
-  Categoria,
-  CategoriaFormValues,
-  CategoriaResumo,
-} from "@/features/catalogo/categorias/types";
-import type {
-  SkuAtributoChave,
-  SkuAtributoChaveFormValues,
-  SkuAtributoChaveResumo,
-} from "@/features/catalogo/atributos/types";
-import type {
-  Produto,
-  ProdutoFormValues,
-  ProdutoResumo,
-} from "@/features/catalogo/produtos/types";
-import { SkuResumo } from "@/features/catalogo/skus/types";
-export type { SkuResumo };
+import type { UnidadeMedida, UnidadeMedidaFormValues } from "@/features/catalogo/unidades-medida/types";
+import type { Marca, MarcaFormValues } from "@/features/catalogo/marcas/types";
+import type { Categoria, CategoriaFormValues } from "@/features/catalogo/categorias/types";
+import type { SkuAtributoChave, SkuAtributoChaveFormValues } from "@/features/catalogo/atributos/types";
+import type { Produto, ProdutoFormValues } from "@/features/catalogo/produtos/types";
+import { Sku } from "@/features/catalogo/skus/types"; // Assuming Skus is the new entity
 
 export const unidadesMedidaApi = {
-
   list: (search?: string, page = 1, pageSize = 20) =>
-    http.get<PaginatedResult<UnidadeMedidaResumo>>(
+    http.get<PaginatedResult<UnidadeMedida>>(
       `/api/catalogo/unidades-medida?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`,
     ),
   getById: (id: number) =>
@@ -48,7 +26,7 @@ export const unidadesMedidaApi = {
 
 export const marcasApi = {
   list: (search?: string, page = 1, pageSize = 20) =>
-    http.get<PaginatedResult<MarcaResumo>>(
+    http.get<PaginatedResult<Marca>>(
       `/api/catalogo/marcas?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`,
     ),
   getById: (id: number) => http.get<Marca>(`/api/catalogo/marcas/${id}`),
@@ -61,7 +39,7 @@ export const marcasApi = {
 
 export const categoriasApi = {
   list: (search?: string, page = 1, pageSize = 20) =>
-    http.get<PaginatedResult<CategoriaResumo>>(
+    http.get<PaginatedResult<Categoria>>(
       `/api/catalogo/categorias?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`,
     ),
   getById: (id: number) =>
@@ -75,7 +53,7 @@ export const categoriasApi = {
 
 export const atributosApi = {
   list: (search?: string, page = 1, pageSize = 20) =>
-    http.get<PaginatedResult<SkuAtributoChaveResumo>>(
+    http.get<PaginatedResult<SkuAtributoChave>>(
       `/api/catalogo/atributos?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`,
     ),
   getById: (id: number) =>
@@ -92,7 +70,7 @@ export const atributosApi = {
 
 export const produtosApi = {
   list: (search?: string, page = 1, pageSize = 20) =>
-    http.get<PaginatedResult<ProdutoResumo>>(
+    http.get<PaginatedResult<Produto>>(
       `/api/catalogo/produtos?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`,
     ),
   getById: (id: number) => http.get<Produto>(`/api/catalogo/produtos/${id}`),
@@ -105,8 +83,8 @@ export const produtosApi = {
 
 export const skusApi = {
   list: (search?: string, page = 1, pageSize = 20) =>
-    http.get<PaginatedResult<SkuResumo>>(
+    http.get<PaginatedResult<Sku>>(
       `/api/catalogo/skus?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`,
     ),
-  getBySku: (sku: string) => http.get<SkuResumo>(`/api/catalogo/skus/${sku}`),
+  getBySku: (sku: string) => http.get<Sku>(`/api/catalogo/skus/${sku}`),
 };

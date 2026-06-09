@@ -3,17 +3,16 @@
 import React from "react";
 import { ProdutosList } from "./list";
 import { ProdutosUpsert } from "./upsert";
-import { ProdutoResumo } from "./types";
+import { Produto } from "./types";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
 import { produtosApi } from "@/api/catalogo";
-import { MovimentacoesUpsert, ItemLinha } from "../../estoque/movimentacoes/upsert";
 
 export * from "./types";
 
 interface ProdutosFeatureProps {
   selectionMode?: boolean;
-  onSelect?: (attr: ProdutoResumo) => void;
+  onSelect?: (produto: Produto) => void;
   initialSearchTerm?: string;
 }
 
@@ -22,17 +21,14 @@ export function ProdutosFeature({
   onSelect,
   initialSearchTerm = "",
 }: ProdutosFeatureProps) {
-  const [adjustmentItems, setAdjustmentItems] = React.useState<ItemLinha[] | null>(null);
-
   const {
     listProps,
     upsertProps,
     deleteDialogProps,
     featureList: list,
-  } = useFeatureOrchestrator<ProdutoResumo>({
+  } = useFeatureOrchestrator<Produto>({
     queryKey: "produtos",
     initialSearchTerm,
-    additionalKeysToInvalidate: [["skus"]],
     fetchPage: async (searchTerm, page, pageSize) => {
       const res = await produtosApi.list(searchTerm || undefined, page, pageSize);
       if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
@@ -60,24 +56,7 @@ export function ProdutosFeature({
         <ProdutosUpsert 
           key={list.editingItem?.id ?? "new"} 
           {...upsertProps} 
-          onSuccessWithAdjustment={(items) => {
-            setAdjustmentItems(items);
-            upsertProps.onSuccess();
-          }}
-        />
-      )}
-
-      {adjustmentItems && (
-        <MovimentacoesUpsert
-          open={!!adjustmentItems}
-          editingItem={null}
-          initialItems={adjustmentItems}
-          fixedTipo="BALANCO"
-          onClose={() => setAdjustmentItems(null)}
-          onSuccess={() => {
-            setAdjustmentItems(null);
-            listProps.onPageChange(1);
-          }}
+          editingItem={list.editingItem}
         />
       )}
 
@@ -87,7 +66,7 @@ export function ProdutosFeature({
         description={
           <p>
             Deseja realmente excluir o produto{" "}
-            <strong>{list.itemToDelete?.produto}</strong>? Esta ação excluirá todos os seus SKUs associados e não poderá ser desfeita.
+            <strong>{list.itemToDelete?.produto}</strong>? Esta ação não poderá ser desfeita.
           </p>
         }
       />

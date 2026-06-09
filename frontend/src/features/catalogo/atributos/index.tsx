@@ -3,17 +3,16 @@
 import React from "react";
 import { AtributosList } from "./list";
 import { AtributosUpsert } from "./upsert";
-import { SkuAtributoChave, SkuAtributoChaveResumo } from "./types";
+import { SkuAtributoChave } from "./types";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
 import { atributosApi } from "@/api/catalogo";
-import { Resultado } from "@/api/types";
 
 export * from "./types";
 
 interface AtributosFeatureProps {
   selectionMode?: boolean;
-  onSelect?: (attr: SkuAtributoChaveResumo) => void;
+  onSelect?: (atributo: SkuAtributoChave) => void;
   initialSearchTerm?: string;
 }
 
@@ -27,7 +26,7 @@ export function AtributosFeature({
     upsertProps,
     deleteDialogProps,
     featureList: list,
-  } = useFeatureOrchestrator<SkuAtributoChaveResumo>({
+  } = useFeatureOrchestrator<SkuAtributoChave>({
     queryKey: "atributos",
     initialSearchTerm,
     fetchPage: async (searchTerm, page, pageSize) => {
@@ -45,19 +44,6 @@ export function AtributosFeature({
     },
   });
 
-  const onUpsertSuccess = (res?: Resultado<SkuAtributoChave>) => {
-    const createdAttr = res?.data;
-    if (selectionMode && onSelect && createdAttr) {
-      const summary: SkuAtributoChaveResumo = {
-        id: createdAttr.id,
-        chave: createdAttr.chave,
-        valores: createdAttr.skuAtributosValores?.map((v) => v.valor) ?? [],
-      };
-      onSelect(summary);
-      list.setIsUpsertOpen(false);
-    }
-  };
-
   return (
     <>
       <AtributosList
@@ -67,10 +53,10 @@ export function AtributosFeature({
       />
 
       {list.isUpsertOpen && (
-        <AtributosUpsert
-          key={list.editingItem?.id ?? "new"}
-          {...upsertProps}
-          onSuccess={onUpsertSuccess}
+        <AtributosUpsert 
+          key={list.editingItem?.id ?? "new"} 
+          {...upsertProps} 
+          editingItem={list.editingItem as SkuAtributoChave}
         />
       )}
 
