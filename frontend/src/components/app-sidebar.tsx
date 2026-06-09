@@ -173,34 +173,37 @@ export function AppSidebar() {
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const { state, setOpen } = useSidebar();
 
-  useHotkeys([
-    {
-      hotkey: "Alt+S",
-      callback: (e) => {
-        e.preventDefault();
-        if (state === "collapsed") {
-          setOpen(true);
-        }
-        setTimeout(() => {
-          searchInputRef.current?.focus();
-          searchInputRef.current?.select();
-        }, 50);
+  useHotkeys(
+    [
+      {
+        hotkey: "Alt+S",
+        callback: (e) => {
+          e.preventDefault();
+          if (state === "collapsed") {
+            setOpen(true);
+          }
+          setTimeout(() => {
+            searchInputRef.current?.focus();
+            searchInputRef.current?.select();
+          }, 50);
+        },
+        options: {
+          ignoreInputs: false,
+        },
       },
-      options: {
-        ignoreInputs: false,
+      {
+        hotkey: "Alt+H",
+        callback: (e) => {
+          e.preventDefault();
+          router.push(homeItem.url);
+        },
+        options: {
+          ignoreInputs: false,
+        },
       },
-    },
-    {
-      hotkey: "Alt+H",
-      callback: (e) => {
-        e.preventDefault();
-        router.push(homeItem.url);
-      },
-      options: {
-        ignoreInputs: false,
-      },
-    },
-  ], { conflictBehavior: "allow" });
+    ],
+    { conflictBehavior: "allow" },
+  );
 
   const prevPathnameRef = React.useRef(pathname);
 
@@ -256,14 +259,13 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="gap-2 border-b border-sidebar-border shrink-0 px-2 py-2 group-data-[state=collapsed]:items-center group-data-[state=collapsed]:px-0">
+      <SidebarHeader className="border-sidebar-border border-b">
         <SidebarMenu className="gap-2">
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
               isActive={pathname === homeItem.url}
               tooltip={homeItem.title}
-              className="group-data-[state=collapsed]:size-8"
             >
               <Link href={homeItem.url}>
                 <homeItem.icon />
@@ -279,11 +281,11 @@ export function AppSidebar() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={handleSearchInputKeyDown}
-                className="h-8 text-xs rounded-lg border-none "
+                className="h-8 rounded-lg border-none text-xs"
               />
 
               <InputGroupAddon>
-                <Search className="size-3 text-muted-foreground" />
+                <Search className="text-muted-foreground size-3" />
               </InputGroupAddon>
 
               <InputGroupAddon align="inline-end">

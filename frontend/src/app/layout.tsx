@@ -22,14 +22,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" className={cn("font-sans", inter.variable)}>
-      <body className="antialiased min-h-screen bg-background text-foreground">
+      <body className="bg-background text-foreground min-h-screen antialiased">
         <Providers>
           <TooltipProvider>
             <SidebarProvider>
               <div className="flex h-screen w-full overflow-hidden">
                 <AppSidebar />
-                <div className="flex-1 flex flex-col h-screen overflow-hidden">
-                  <main className="flex-1 flex flex-col p-6 bg-slate-50/50 dark:bg-slate-900/10 overflow-hidden">
+                <div className="flex min-h-screen flex-1 flex-col overflow-y-auto">
+                  <main className="flex flex-1 flex-col bg-slate-50/50 p-6 dark:bg-slate-900/10">
                     {children}
                   </main>
                 </div>
