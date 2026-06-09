@@ -33,14 +33,16 @@ interface UseFeatureOrchestratorProps<TDto> {
     page: number,
     pageSize: number,
   ) => Promise<{ itens: TDto[]; totalPages: number; totalItems: number }>;
+  fetchById?: (id: string | number) => Promise<TDto>;
   deleteItem?: (item: TDto) => Promise<void>;
   additionalKeysToInvalidate?: string[][];
 }
 
-export function useFeatureOrchestrator<TDto>({
+export function useFeatureOrchestrator<TDto extends { id?: string | number; sku?: string }>({
   queryKey,
   initialSearchTerm = "",
   fetchPage,
+  fetchById,
   deleteItem,
   additionalKeysToInvalidate = [],
 }: UseFeatureOrchestratorProps<TDto>) {
@@ -61,6 +63,13 @@ export function useFeatureOrchestrator<TDto>({
     queryKey: [queryKey, list.deferredSearch, list.page],
     queryFn: async () =>
       await fetchPage(list.deferredSearch.trim(), list.page, 50),
+  });
+
+  const itemId = list.editingItem?.id ?? list.editingItem?.sku;
+  const { data: freshItem, isLoading: isLoadingDetail } = useQuery({
+    queryKey: [queryKey, "detail", itemId],
+    queryFn: () => fetchById!(itemId!),
+    enabled: !!itemId && !!fetchById && list.isUpsertOpen,
   });
 
   const deleteMutation = useMutation({
@@ -105,7 +114,8 @@ export function useFeatureOrchestrator<TDto>({
     },
     upsertProps: {
       open: list.isUpsertOpen,
-      editingItem: list.editingItem,
+      editingItem: freshItem || list.editingItem,
+      loading: isLoadingDetail,
       onClose: () => list.setIsUpsertOpen(false),
       onSuccess: async () => {
         await invalidateAll();

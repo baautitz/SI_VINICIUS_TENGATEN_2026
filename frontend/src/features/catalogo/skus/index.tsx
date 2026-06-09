@@ -39,6 +39,9 @@ export function SkusFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
+    fetchById: async (id) => {
+      return await skusApi.getBySku(id as string);
+    },
   });
 
   const [editingProduct, setEditingProduct] = React.useState<Produto | null>(null);

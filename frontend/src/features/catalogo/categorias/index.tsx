@@ -39,6 +39,9 @@ export function CategoriasFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
+    fetchById: async (id) => {
+      return await categoriasApi.getById(id as number);
+    },
     deleteItem: async (item) => {
       await categoriasApi.delete(item.id);
     },
@@ -56,7 +59,6 @@ export function CategoriasFeature({
         <CategoriasUpsert 
           key={list.editingItem?.id ?? "new"} 
           {...upsertProps} 
-          editingItem={list.editingItem}
         />
       )}
 

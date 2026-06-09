@@ -37,6 +37,9 @@ export function EmitentesFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
+    fetchById: async (id) => {
+      return await emitentesApi.getById(id as number);
+    },
     deleteItem: async (item) => {
       await emitentesApi.delete(item.id);
     },
@@ -54,7 +57,6 @@ export function EmitentesFeature({
         <EmitentesUpsert 
           key={list.editingItem?.id ?? "new"} 
           {...upsertProps} 
-          editingItem={list.editingItem}
         />
       )}
 

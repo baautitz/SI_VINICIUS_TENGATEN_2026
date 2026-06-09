@@ -39,6 +39,9 @@ export function AtributosFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
+    fetchById: async (id) => {
+      return await atributosApi.getById(id as number);
+    },
     deleteItem: async (item) => {
       await atributosApi.delete(item.id);
     },
@@ -56,7 +59,6 @@ export function AtributosFeature({
         <AtributosUpsert 
           key={list.editingItem?.id ?? "new"} 
           {...upsertProps} 
-          editingItem={list.editingItem as SkuAtributoChave}
         />
       )}
 

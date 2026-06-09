@@ -39,6 +39,9 @@ export function EstadosFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
+    fetchById: async (id) => {
+      return await estadosApi.getById(id as number);
+    },
     deleteItem: async (item) => {
       await estadosApi.delete(item.id);
     },

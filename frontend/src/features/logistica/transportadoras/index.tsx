@@ -39,6 +39,9 @@ export function TransportadorasFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
+    fetchById: async (id) => {
+      return await transportadorasApi.getById(id as number);
+    },
     deleteItem: async (item) => {
       await transportadorasApi.delete(item.id);
     },

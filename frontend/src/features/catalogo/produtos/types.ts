@@ -2,8 +2,8 @@ import { z } from "zod";
 import type { Categoria } from "@/features/catalogo/categorias/types";
 import type { Marca } from "@/features/catalogo/marcas/types";
 import type { UnidadeMedida } from "@/features/catalogo/unidades-medida/types";
-import type { Sku } from "@/features/catalogo/skus/types";
-import { skuSchema } from "@/features/catalogo/skus/types";
+import { Sku } from "@/features/catalogo/skus/types";
+import { skuFormSchema } from "./types-sku";
 
 export interface Produto {
   id: number;
@@ -24,7 +24,7 @@ export const produtoSchema = z.object({
   categoriaId: z.number().min(1, "Categoria é obrigatória."),
   marcaId: z.number().min(1, "Marca é obrigatória."),
   unidadeMedidaId: z.number().min(1, "Unidade de medida é obrigatória."),
-  skus: z.array(skuSchema).min(1, "Pelo menos um SKU é obrigatório."),
+  skus: z.array(skuFormSchema).min(1, "Pelo menos um SKU é obrigatório."),
 });
 
 export type ProdutoFormValues = z.infer<typeof produtoSchema>;

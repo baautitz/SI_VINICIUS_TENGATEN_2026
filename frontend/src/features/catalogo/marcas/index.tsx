@@ -39,6 +39,9 @@ export function MarcasFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
+    fetchById: async (id) => {
+      return await marcasApi.getById(id as number);
+    },
     deleteItem: async (item) => {
       await marcasApi.delete(item.id);
     },
@@ -56,7 +59,6 @@ export function MarcasFeature({
         <MarcasUpsert 
           key={list.editingItem?.id ?? "new"} 
           {...upsertProps} 
-          editingItem={list.editingItem}
         />
       )}
 

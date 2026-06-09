@@ -39,6 +39,10 @@ export function ProdutosFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
+    fetchById: async (id) => {
+      const res = await produtosApi.getById(id);
+      return res;
+    },
     deleteItem: async (item) => {
       await produtosApi.delete(item.id);
     },
@@ -56,7 +60,6 @@ export function ProdutosFeature({
         <ProdutosUpsert 
           key={list.editingItem?.id ?? "new"} 
           {...upsertProps} 
-          editingItem={list.editingItem}
         />
       )}
 

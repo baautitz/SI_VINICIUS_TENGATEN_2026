@@ -39,6 +39,9 @@ export function UnidadesMedidaFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
+    fetchById: async (id) => {
+      return await unidadesMedidaApi.getById(id as number);
+    },
     deleteItem: async (item) => {
       await unidadesMedidaApi.delete(item.id);
     },
@@ -56,7 +59,6 @@ export function UnidadesMedidaFeature({
         <UnidadesMedidaUpsert 
           key={list.editingItem?.id ?? "new"} 
           {...upsertProps} 
-          editingItem={list.editingItem}
         />
       )}
 

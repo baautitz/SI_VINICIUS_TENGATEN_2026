@@ -356,7 +356,7 @@ function ProdutosUpsertForm({
         gtinEan: "",
         ativo: true,
         atributoValorIds: combo.map((c) => c.id),
-      };
+      } as SkuFormValues;
     });
   };
 
@@ -593,7 +593,7 @@ function ProdutosUpsertForm({
                 setHasVariants(val);
                 if (val) {
                   const combs = generateCartesianCombinations(options);
-                  form.setFieldValue("skus", combs.length > 0 ? combs : []);
+                  form.setFieldValue("skus", combs.length > 0 ? combs.map(c => ({ ...c, sku: c.sku ?? "" })) : []);
                 } else {
                   form.setFieldValue("skus", [
                     {

@@ -53,6 +53,9 @@ export function MovimentacoesFeature() {
         totalItems: res.totalDeItens ?? 0,
       };
     },
+    fetchById: async (id) => {
+      return await estoqueApi.getById(id as number);
+    },
     deleteItem: async (item) => {
       await estoqueApi.delete(item.id);
     },
@@ -120,10 +123,9 @@ export function MovimentacoesFeature() {
       />
 
       {list.isUpsertOpen && (
-        <MovimentacoesUpsert
+        <MovimentacoesUpsertForm
           key={list.editingItem?.id ?? "new"}
           {...upsertProps}
-          editingItem={list.editingItem}
         />
       )}
 

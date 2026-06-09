@@ -37,6 +37,9 @@ export function ClientesFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
+    fetchById: async (id) => {
+      return await clientesApi.getById(id as number);
+    },
     deleteItem: async (item) => {
       await clientesApi.delete(item.id);
     },
@@ -54,7 +57,6 @@ export function ClientesFeature({
         <ClientesUpsert 
           key={list.editingItem?.id ?? "new"} 
           {...upsertProps} 
-          editingItem={list.editingItem}
         />
       )}
 

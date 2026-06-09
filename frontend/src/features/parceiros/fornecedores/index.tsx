@@ -37,6 +37,9 @@ export function FornecedoresFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
+    fetchById: async (id) => {
+      return await fornecedoresApi.getById(id as number);
+    },
     deleteItem: async (item) => {
       await fornecedoresApi.delete(item.id);
     },
@@ -54,7 +57,6 @@ export function FornecedoresFeature({
         <FornecedoresUpsert 
           key={list.editingItem?.id ?? "new"} 
           {...upsertProps} 
-          editingItem={list.editingItem}
         />
       )}
 

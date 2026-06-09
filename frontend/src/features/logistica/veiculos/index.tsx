@@ -37,6 +37,9 @@ export function VeiculosFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
+    fetchById: async (id) => {
+      return await veiculosApi.getById(id as number);
+    },
     deleteItem: async (item) => {
       await veiculosApi.delete(item.id);
     },

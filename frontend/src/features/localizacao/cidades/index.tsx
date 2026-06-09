@@ -39,6 +39,9 @@ export function CidadesFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
+    fetchById: async (id) => {
+      return await cidadesApi.getById(id as number);
+    },
     deleteItem: async (item) => {
       await cidadesApi.delete(item.id);
     },
