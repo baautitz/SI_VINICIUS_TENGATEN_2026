@@ -1,10 +1,9 @@
+using System.Linq;
 using Backend.Core.Common.Results;
-using Backend.Core.Features.Localizacao.DTOs;
 using Backend.Core.Features.Localizacao.Entities;
 using Backend.Core.Features.Localizacao.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;
 using Dapper;
-using Npgsql;
 
 namespace Backend.Infrastructure.PostgreSQL.Features.Localizacao;
 
@@ -12,121 +11,101 @@ public class BairrosRepository : IBairrosRepository
 {
     private readonly DbSession _session;
 
-    public BairrosRepository(DbSession session)
-    {
-        _session = session;
-    }
+    public BairrosRepository(DbSession session) => _session = session;
 
-    public async Task<ResultadoPaginado<BairroResumoDto>> ObterBairros(string? search, int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<Bairros>> ObterBairros(int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
-        
-        string sql;
-        object parametros;
+        const string sqlCount = "SELECT COUNT(*) FROM bairros;";
+        const string sqlData = @"
+            SELECT b.id, b.bairro, ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            FROM bairros b
+            INNER JOIN cidades ci ON ci.id = b.cidade_id
+            INNER JOIN estados st ON st.id = ci.estado_id
+            INNER JOIN paises p ON p.id = st.pais_id
+            ORDER BY b.bairro
+            LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
-        if (string.IsNullOrWhiteSpace(search))
-        {
-            sql = @"
-                SELECT COUNT(*) FROM bairros;
-                SELECT b.id, b.bairro AS Bairro, c.id AS CidadeId, c.cidade AS CidadeNome, e.id AS EstadoId, e.uf AS Uf
-                FROM bairros b
-                JOIN cidades c ON c.id = b.cidade_id
-                JOIN estados e ON e.id = c.estado_id
-                ORDER BY b.bairro LIMIT @TamanhoDaPagina OFFSET @Offset;";
-            parametros = new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset };
-        }
-        else
-        {
-            sql = @"
-                SELECT COUNT(*) FROM bairros WHERE unaccent(bairro::text) ILIKE unaccent(@Termo::text);
-                SELECT b.id, b.bairro AS Bairro, c.id AS CidadeId, c.cidade AS CidadeNome, e.id AS EstadoId, e.uf AS Uf
-                FROM bairros b
-                JOIN cidades c ON c.id = b.cidade_id
-                JOIN estados e ON e.id = c.estado_id
-                WHERE unaccent(b.bairro::text) ILIKE unaccent(@Termo::text)
-                ORDER BY b.bairro LIMIT @TamanhoDaPagina OFFSET @Offset;";
-            parametros = new { Termo = "%" + search + "%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset };
-        }
-
-        using var multi = await _session.Connection.QueryMultipleAsync(sql, parametros, transaction: _session.Transaction);
-        var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<BairroResumoDto>();
-        return new ResultadoPaginado<BairroResumoDto>(itens, total, pagina, tamanhoDaPagina);
+        var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
+        var itens = await _session.Connection.QueryAsync<Bairros, Cidades, Estados, Paises, Bairros>(
+            sqlData,
+            (bairro, cidade, estado, pais) => { estado.AtualizarResultado(estado.Estado, estado.Uf, pais); cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado); bairro.AtualizarResultado(bairro.Bairro, cidade); return bairro; },
+            new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
+            transaction: _session.Transaction,
+            splitOn: "CidadeId,EstadoId,PaisId"
+        );
+        return new ResultadoPaginado<Bairros>(itens, total, pagina, tamanhoDaPagina);
     }
 
     public async Task<Bairros?> ObterBairroPorId(int id)
     {
         const string sql = @"
-            SELECT b.id, b.bairro,
-                   c.id AS cidade_id, c.id, c.cidade, c.ddd,
-                   e.id AS estado_id, e.id, e.estado, e.uf,
-                   p.id AS pais_id, p.id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            SELECT b.id, b.bairro, ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM bairros b
-            JOIN cidades c ON c.id = b.cidade_id
-            JOIN estados e ON e.id = c.estado_id
-            JOIN paises p ON p.id = e.pais_id
+            INNER JOIN cidades ci ON ci.id = b.cidade_id
+            INNER JOIN estados st ON st.id = ci.estado_id
+            INNER JOIN paises p ON p.id = st.pais_id
             WHERE b.id = @Id;";
+
         var result = await _session.Connection.QueryAsync<Bairros, Cidades, Estados, Paises, Bairros>(
             sql,
-            (bairro, cidade, estado, pais) => {
-                estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
-                cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
-                bairro.AtualizarResultado(bairro.Bairro, cidade);
-                return bairro;
-            },
+            (bairro, cidade, estado, pais) => { estado.AtualizarResultado(estado.Estado, estado.Uf, pais); cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado); bairro.AtualizarResultado(bairro.Bairro, cidade); return bairro; },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "cidade_id,estado_id,pais_id"
+            splitOn: "CidadeId,EstadoId,PaisId"
         );
         return result.SingleOrDefault();
     }
 
     public async Task<Bairros> CriarBairro(Bairros bairro)
     {
-        try
-        {
-            const string sql = "INSERT INTO bairros (bairro, cidade_id) VALUES (@Bairro, @CidadeId) RETURNING id;";
-            var idGerado = await _session.Connection.ExecuteScalarAsync<int>(sql, new { bairro.Bairro, CidadeId = bairro.Cidade.Id }, transaction: _session.Transaction);
-            return new Bairros(idGerado, bairro.Bairro, bairro.Cidade);
-        }
-        catch (PostgresException ex)
-        {
-            throw DbExceptionTranslator.Translate(ex);
-        }
+        const string sql = "INSERT INTO bairros (bairro, cidade_id) VALUES (@Bairro, @CidadeId) RETURNING id;";
+        var id = await _session.Connection.ExecuteScalarAsync<int>(sql, new { bairro.Bairro, CidadeId = bairro.Cidade.Id }, transaction: _session.Transaction);
+        return new Bairros(id, bairro.Bairro, bairro.Cidade);
     }
 
     public async Task<Bairros> AtualizarBairro(int id, Bairros bairro)
     {
-        try
-        {
-            const string sql = "UPDATE bairros SET bairro = @Bairro, cidade_id = @CidadeId WHERE id = @Id;";
-            await _session.Connection.ExecuteAsync(sql, new { Id = id, bairro.Bairro, CidadeId = bairro.Cidade.Id }, transaction: _session.Transaction);
-            return new Bairros(id, bairro.Bairro, bairro.Cidade);
-        }
-        catch (PostgresException ex)
-        {
-            throw DbExceptionTranslator.Translate(ex);
-        }
-    }
-
-    public async Task<bool> ExisteBairro(int cidadeId, string bairro, int? ignorarId = null)
-    {
-        var sql = "SELECT COUNT(1) FROM bairros WHERE cidade_id = @CidadeId AND bairro = @Bairro";
-        if (ignorarId.HasValue) sql += " AND id != @IgnorarId";
-        return await _session.Connection.ExecuteScalarAsync<int>(sql, new { CidadeId = cidadeId, Bairro = bairro, IgnorarId = ignorarId }, transaction: _session.Transaction) > 0;
+        const string sql = "UPDATE bairros SET bairro = @Bairro, cidade_id = @CidadeId WHERE id = @Id;";
+        await _session.Connection.ExecuteAsync(sql, new { Id = id, bairro.Bairro, CidadeId = bairro.Cidade.Id }, transaction: _session.Transaction);
+        return new Bairros(id, bairro.Bairro, bairro.Cidade);
     }
 
     public async Task<bool> DeletarBairro(int id)
     {
-        try
-        {
-            const string sql = "DELETE FROM bairros WHERE id = @Id;";
-            var rows = await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
-            return rows > 0;
-        }
-        catch (PostgresException ex)
-        {
-            throw DbExceptionTranslator.Translate(ex);
-        }
+        const string sql = "DELETE FROM bairros WHERE id = @Id;";
+        return await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction) > 0;
+    }
+
+    public async Task<ResultadoPaginado<Bairros>> PesquisarBairros(string termo, int pagina = 1, int tamanhoDaPagina = 20)
+    {
+        var offset = (pagina - 1) * tamanhoDaPagina;
+        const string sqlCount = "SELECT COUNT(*) FROM bairros WHERE bairro ILIKE @Termo;";
+        const string sqlData = @"
+            SELECT b.id, b.bairro, ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            FROM bairros b
+            INNER JOIN cidades ci ON ci.id = b.cidade_id
+            INNER JOIN estados st ON st.id = ci.estado_id
+            INNER JOIN paises p ON p.id = st.pais_id
+            WHERE b.bairro ILIKE @Termo
+            ORDER BY b.bairro
+            LIMIT @TamanhoDaPagina OFFSET @Offset;";
+
+        var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
+        var itens = await _session.Connection.QueryAsync<Bairros, Cidades, Estados, Paises, Bairros>(
+            sqlData,
+            (bairro, cidade, estado, pais) => { estado.AtualizarResultado(estado.Estado, estado.Uf, pais); cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado); bairro.AtualizarResultado(bairro.Bairro, cidade); return bairro; },
+            new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
+            transaction: _session.Transaction,
+            splitOn: "CidadeId,EstadoId,PaisId"
+        );
+        return new ResultadoPaginado<Bairros>(itens, total, pagina, tamanhoDaPagina);
+    }
+
+    public async Task<bool> ExisteBairro(string bairro, int cidadeId, int? ignorarId = null)
+    {
+        var sql = "SELECT COUNT(1) FROM bairros WHERE bairro = @Bairro AND cidade_id = @CidadeId";
+        if (ignorarId.HasValue) sql += " AND id != @IgnorarId";
+        return await _session.Connection.ExecuteScalarAsync<int>(sql, new { Bairro = bairro, CidadeId = cidadeId, IgnorarId = ignorarId }, transaction: _session.Transaction) > 0;
     }
 }

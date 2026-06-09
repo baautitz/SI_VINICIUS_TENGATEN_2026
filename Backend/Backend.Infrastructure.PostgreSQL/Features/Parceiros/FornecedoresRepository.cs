@@ -1,6 +1,6 @@
+using System.Linq;
 using Backend.Core.Common.Results;
 using Backend.Core.Features.Localizacao.Entities;
-using Backend.Core.Features.Parceiros.DTOs;
 using Backend.Core.Features.Parceiros.Entities;
 using Backend.Core.Features.Parceiros.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;
@@ -36,7 +36,8 @@ public class FornecedoresRepository : IFornecedoresRepository
 
         var itens = await _session.Connection.QueryAsync<Fornecedores, Paises, Fornecedores>(
             sqlData,
-            (fornecedor, pais) => {
+            (fornecedor, pais) =>
+            {
                 fornecedor.Atualizar(fornecedor.TipoPessoa, fornecedor.NomeRazaosocial, fornecedor.CpfCnpj, pais!, fornecedor.RgIe, fornecedor.ApelidoNomefantasia, fornecedor.Endereco, null, fornecedor.Telefone, fornecedor.Email, fornecedor.Observacao);
                 return fornecedor;
             },
@@ -67,14 +68,14 @@ public class FornecedoresRepository : IFornecedoresRepository
 
         var result = await _session.Connection.QueryAsync<Fornecedores, Bairros, Cidades, Estados, Paises, Fornecedores>(
             sql,
-            (fornecedor, bairro, cidade, estado, pais) =>
+            (fornecedor, bairro, city, state, country) =>
             {
-                if (pais is not null && estado is not null) estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
-                if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
-                if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
-                
-                fornecedor.Atualizar(fornecedor.TipoPessoa, fornecedor.NomeRazaosocial, fornecedor.CpfCnpj, pais!, fornecedor.RgIe, fornecedor.ApelidoNomefantasia, fornecedor.Endereco, bairro, fornecedor.Telefone, fornecedor.Email, fornecedor.Observacao);
-                
+                if (country is not null && state is not null) state.AtualizarResultado(state.Estado, state.Uf, country);
+                if (state is not null && city is not null) city.AtualizarResultado(city.Cidade, city.Ddd, state);
+                if (city is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, city);
+
+                fornecedor.Atualizar(fornecedor.TipoPessoa, fornecedor.NomeRazaosocial, fornecedor.CpfCnpj, country!, fornecedor.RgIe, fornecedor.ApelidoNomefantasia, fornecedor.Endereco, bairro, fornecedor.Telefone, fornecedor.Email, fornecedor.Observacao);
+
                 return fornecedor;
             },
             new { Id = id },
@@ -173,54 +174,52 @@ public class FornecedoresRepository : IFornecedoresRepository
         return affectedRows > 0;
     }
 
-    public async Task<ResultadoPaginado<FornecedoresResumo>> ObterFornecedoresResumo(int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<Fornecedores>> PesquisarFornecedores(string termo, int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
-        const string sql = @"
-            SELECT COUNT(*) FROM fornecedores;
-
-            SELECT id, tipo_pessoa AS TipoPessoa, nome_razaosocial AS NomeRazaoSocial, cpf_cnpj AS CpfCnpj, apelido_nomefantasia AS ApelidoNomeFantasia, nacionalidade_id AS NacionalidadeId
-            FROM fornecedores
-            ORDER BY nome_razaosocial
-            LIMIT @TamanhoDaPagina OFFSET @Offset;";
-
-        using var multi = await _session.Connection.QueryMultipleAsync(
-            sql,
-            new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
-            transaction: _session.Transaction);
-
-        var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<FornecedoresResumo>();
-
-        return new ResultadoPaginado<FornecedoresResumo>(itens, total, pagina, tamanhoDaPagina);
-    }
-
-    public async Task<ResultadoPaginado<FornecedoresResumo>> PesquisarFornecedores(string termo, int pagina = 1, int tamanhoDaPagina = 20)
-    {
-        var offset = (pagina - 1) * tamanhoDaPagina;
-
-        const string sql = @"
+        const string sqlCount = @"
             SELECT COUNT(*) FROM fornecedores
             WHERE nome_razaosocial ILIKE @Termo OR cpf_cnpj ILIKE @Termo
-               OR apelido_nomefantasia ILIKE @Termo OR email ILIKE @Termo;
+               OR apelido_nomefantasia ILIKE @Termo OR email ILIKE @Termo;";
 
-            SELECT id, tipo_pessoa AS TipoPessoa, nome_razaosocial AS NomeRazaoSocial, cpf_cnpj AS CpfCnpj, apelido_nomefantasia AS ApelidoNomeFantasia, nacionalidade_id AS NacionalidadeId
-            FROM fornecedores
-            WHERE nome_razaosocial ILIKE @Termo OR cpf_cnpj ILIKE @Termo
-               OR apelido_nomefantasia ILIKE @Termo OR email ILIKE @Termo
-            ORDER BY nome_razaosocial
+        const string sqlData = @"
+            SELECT f.id AS Id, f.tipo_pessoa AS TipoPessoa, f.nome_razaosocial AS NomeRazaosocial, f.cpf_cnpj AS CpfCnpj, f.rg_ie AS RgIe, f.apelido_nomefantasia AS ApelidoNomefantasia,
+                   f.endereco AS Endereco, f.telefone AS Telefone, f.email AS Email, f.ativo AS Ativo, f.criado_em AS CriadoEm,
+                   f.observacao AS Observacao,
+                   b.id AS BairroId, b.id AS Id, b.bairro,
+                   ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
+                   e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
+                   p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            FROM fornecedores f
+            INNER JOIN paises p ON p.id = f.nacionalidade_id
+            LEFT JOIN bairros b ON b.id = f.bairro_id
+            LEFT JOIN cidades ci ON ci.id = b.cidade_id
+            LEFT JOIN estados e ON e.id = ci.estado_id
+            WHERE f.nome_razaosocial ILIKE @Termo OR f.cpf_cnpj ILIKE @Termo
+               OR f.apelido_nomefantasia ILIKE @Termo OR f.email ILIKE @Termo
+            ORDER BY f.nome_razaosocial
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
-        using var multi = await _session.Connection.QueryMultipleAsync(
-            sql,
+        var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
+
+        var itens = await _session.Connection.QueryAsync<Fornecedores, Bairros, Cidades, Estados, Paises, Fornecedores>(
+            sqlData,
+            (fornecedor, bairro, city, state, country) =>
+            {
+                if (country is not null && state is not null) state.AtualizarResultado(state.Estado, state.Uf, country);
+                if (state is not null && city is not null) city.AtualizarResultado(city.Cidade, city.Ddd, state);
+                if (city is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, city);
+
+                fornecedor.Atualizar(fornecedor.TipoPessoa, fornecedor.NomeRazaosocial, fornecedor.CpfCnpj, country!, fornecedor.RgIe, fornecedor.ApelidoNomefantasia, fornecedor.Endereco, bairro, fornecedor.Telefone, fornecedor.Email, fornecedor.Observacao);
+                return fornecedor;
+            },
             new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
-            transaction: _session.Transaction);
+            transaction: _session.Transaction,
+            splitOn: "BairroId,CidadeId,EstadoId,PaisId"
+        );
 
-        var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<FornecedoresResumo>();
-
-        return new ResultadoPaginado<FornecedoresResumo>(itens, total, pagina, tamanhoDaPagina);
+        return new ResultadoPaginado<Fornecedores>(itens.ToList(), total, pagina, tamanhoDaPagina);
     }
 
     public async Task<bool> ExisteFornecedorCpfCnpj(string cpfCnpj, int nacionalidadeId, int? ignorarId = null)

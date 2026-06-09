@@ -3,9 +3,10 @@ using Backend.Core.Features.NFe.DTOs;
 
 using Backend.Core.Features.NFe.Entities;
 
-namespace Backend.Core.Features.NFe.Repositories; 
+namespace Backend.Core.Features.NFe.Repositories;
 
-public interface INfesRepository {
+public interface INfesRepository
+{
     public Task<ResultadoPaginado<Nfes>> ObterNfes(int pagina = 1, int tamanhoDaPagina = 20);
     public Task<Nfes?> ObterNfePorId(int id);
     public Task<Nfes> CriarNfe(Nfes nfe);

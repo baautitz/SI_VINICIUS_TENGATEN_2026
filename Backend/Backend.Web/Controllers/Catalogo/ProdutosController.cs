@@ -1,5 +1,5 @@
 using Backend.Core.Common.Results;
-using Backend.Core.Features.Catalogo.DTOs;
+using Backend.Core.Features.Catalogo.Commands;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Catalogo.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +21,7 @@ public class ProdutosController : ControllerBase
     }
 
     [HttpGet]
-    public Task<ResultadoPaginado<ProdutosResumo>> GetProdutos([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public Task<ResultadoPaginado<Produtos>> GetProdutos([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         => _produtosService.ObterProdutos(search, page, pageSize);
 
     [HttpGet("{id:int}")]
@@ -36,9 +36,9 @@ public class ProdutosController : ControllerBase
 
     [HttpPost]
     [ProducesResponseType(typeof(Resultado<Produtos>), StatusCodes.Status201Created)]
-    public async Task<ActionResult<Resultado<Produtos>>> CreateProduto([FromBody] CreateProdutoDto dto)
+    public async Task<ActionResult<Resultado<Produtos>>> CreateProduto([FromBody] CriarProdutoCommand command)
     {
-        var result = await _produtosService.CriarProduto(dto);
+        var result = await _produtosService.CriarProduto(command);
         if (!result.Success)
             return BadRequest(result);
 
@@ -46,9 +46,9 @@ public class ProdutosController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<Resultado<Produtos>>> UpdateProduto(int id, [FromBody] UpdateProdutoDto dto)
+    public async Task<ActionResult<Resultado<Produtos>>> UpdateProduto(int id, [FromBody] AtualizarProdutoCommand command)
     {
-        var result = await _produtosService.AtualizarProduto(id, dto);
+        var result = await _produtosService.AtualizarProduto(id, command);
         if (!result.Success)
         {
             if (result.Errors is not null && result.Errors.Any(error => error.Code == "PRODUTO_NAO_ENCONTRADO"))

@@ -1,10 +1,10 @@
 using Backend.Core.Common.Extensions;
 using Backend.Core.Common.Results;
 using Backend.Core.Common;
-using Backend.Core.Features.Catalogo.DTOs;
+using Backend.Core.Features.Catalogo.Commands;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Catalogo.Repositories;
-using Backend.Core.Features.Catalogo.Validators;
+using Backend.Core.Features.Catalogo.Validators.Commands;
 using FluentValidation;
 
 namespace Backend.Core.Features.Catalogo.Services;
@@ -18,11 +18,11 @@ public sealed class CategoriasService : BaseService
         _categoriasRepository = categoriasRepository;
     }
 
-    public Task<ResultadoPaginado<CategoriasResumo>> ObterCategorias(string? search, int pagina = 1, int tamanhoPagina = 20)
+    public Task<ResultadoPaginado<Categorias>> ObterCategorias(string? search, int pagina = 1, int tamanhoPagina = 20)
     {
         if (string.IsNullOrWhiteSpace(search))
         {
-            return _categoriasRepository.ObterCategoriasResumo(pagina, tamanhoPagina);
+            return _categoriasRepository.ObterCategorias(pagina, tamanhoPagina);
         }
         return _categoriasRepository.PesquisarCategorias(search, pagina, tamanhoPagina);
     }
@@ -30,16 +30,16 @@ public sealed class CategoriasService : BaseService
     public Task<Categorias?> ObterCategoriaPorId(int id)
         => _categoriasRepository.ObterCategoriaPorId(id);
 
-    public async Task<Resultado<Categorias>> CriarCategoria(CreateCategoriaDto dto)
+    public async Task<Resultado<Categorias>> CriarCategoria(CriarCategoriaCommand command)
     {
-        var validation = new CreateCategoriaDtoValidator().Validate(dto);
+        var validation = new CriarCategoriaCommandValidator().Validate(command);
         if (!validation.IsValid)
             return Resultado<Categorias>.Falha(validation.ToResultadoErros());
 
-        if (await _categoriasRepository.ExisteCategoria(dto.Categoria))
+        if (await _categoriasRepository.ExisteCategoria(command.Categoria))
             return Resultado<Categorias>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe uma categoria com este nome.", "Categoria"));
 
-        var entidade = new Categorias(dto.Categoria, dto.Descricao);
+        var entidade = new Categorias(command.Categoria, command.Descricao);
 
         return await ExecuteResultAsync(async () =>
         {
@@ -48,9 +48,9 @@ public sealed class CategoriasService : BaseService
         });
     }
 
-    public async Task<Resultado<Categorias>> AtualizarCategoria(int id, UpdateCategoriaDto dto)
+    public async Task<Resultado<Categorias>> AtualizarCategoria(int id, AtualizarCategoriaCommand command)
     {
-        var validation = new UpdateCategoriaDtoValidator().Validate(dto);
+        var validation = new AtualizarCategoriaCommandValidator().Validate(command);
         if (!validation.IsValid)
             return Resultado<Categorias>.Falha(validation.ToResultadoErros());
 
@@ -58,11 +58,11 @@ public sealed class CategoriasService : BaseService
         if (existente is null)
             return Resultado<Categorias>.Falha(new ResultadoErro("CATEGORIA_NAO_ENCONTRADA", "Categoria não encontrada."));
 
-        if (await _categoriasRepository.ExisteCategoria(dto.Categoria, id))
+        if (await _categoriasRepository.ExisteCategoria(command.Categoria, id))
             return Resultado<Categorias>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe outra categoria com este nome.", "Categoria"));
 
-        existente.Atualizar(dto.Categoria, dto.Descricao);
-        if (dto.Ativo) existente.Ativar(); else existente.Desativar();
+        existente.Atualizar(command.Categoria, command.Descricao);
+        if (command.Ativo) existente.Ativar(); else existente.Desativar();
 
         return await ExecuteResultAsync(async () =>
         {

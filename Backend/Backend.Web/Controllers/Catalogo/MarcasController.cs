@@ -1,5 +1,5 @@
 using Backend.Core.Common.Results;
-using Backend.Core.Features.Catalogo.DTOs;
+using Backend.Core.Features.Catalogo.Commands;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Catalogo.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +21,7 @@ public class MarcasController : ControllerBase
     }
 
     [HttpGet]
-    public Task<ResultadoPaginado<MarcasResumo>> GetMarcas([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public Task<ResultadoPaginado<Marcas>> GetMarcas([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         => _marcasService.ObterMarcas(search, page, pageSize);
 
     [HttpGet("{id:int}")]
@@ -36,9 +36,9 @@ public class MarcasController : ControllerBase
 
     [HttpPost]
     [ProducesResponseType(typeof(Resultado<Marcas>), StatusCodes.Status201Created)]
-    public async Task<ActionResult<Resultado<Marcas>>> CreateMarca([FromBody] CreateMarcaDto dto)
+    public async Task<ActionResult<Resultado<Marcas>>> CreateMarca([FromBody] CriarMarcaCommand command)
     {
-        var result = await _marcasService.CriarMarca(dto);
+        var result = await _marcasService.CriarMarca(command);
         if (!result.Success)
             return BadRequest(result);
 
@@ -46,9 +46,9 @@ public class MarcasController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<Resultado<Marcas>>> UpdateMarca(int id, [FromBody] UpdateMarcaDto dto)
+    public async Task<ActionResult<Resultado<Marcas>>> UpdateMarca(int id, [FromBody] AtualizarMarcaCommand command)
     {
-        var result = await _marcasService.AtualizarMarca(id, dto);
+        var result = await _marcasService.AtualizarMarca(id, command);
         if (!result.Success)
         {
             if (result.Errors is not null && result.Errors.Any(error => error.Code == "MARCA_NAO_ENCONTRADA"))

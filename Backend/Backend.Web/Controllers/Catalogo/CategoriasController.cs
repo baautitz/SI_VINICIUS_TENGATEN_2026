@@ -1,5 +1,5 @@
 using Backend.Core.Common.Results;
-using Backend.Core.Features.Catalogo.DTOs;
+using Backend.Core.Features.Catalogo.Commands;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Catalogo.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +21,7 @@ public class CategoriasController : ControllerBase
     }
 
     [HttpGet]
-    public Task<ResultadoPaginado<CategoriasResumo>> GetCategorias([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public Task<ResultadoPaginado<Categorias>> GetCategorias([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         => _categoriasService.ObterCategorias(search, page, pageSize);
 
     [HttpGet("{id:int}")]
@@ -36,9 +36,9 @@ public class CategoriasController : ControllerBase
 
     [HttpPost]
     [ProducesResponseType(typeof(Resultado<Categorias>), StatusCodes.Status201Created)]
-    public async Task<ActionResult<Resultado<Categorias>>> CreateCategoria([FromBody] CreateCategoriaDto dto)
+    public async Task<ActionResult<Resultado<Categorias>>> CreateCategoria([FromBody] CriarCategoriaCommand command)
     {
-        var result = await _categoriasService.CriarCategoria(dto);
+        var result = await _categoriasService.CriarCategoria(command);
         if (!result.Success)
             return BadRequest(result);
 
@@ -46,9 +46,9 @@ public class CategoriasController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<Resultado<Categorias>>> UpdateCategoria(int id, [FromBody] UpdateCategoriaDto dto)
+    public async Task<ActionResult<Resultado<Categorias>>> UpdateCategoria(int id, [FromBody] AtualizarCategoriaCommand command)
     {
-        var result = await _categoriasService.AtualizarCategoria(id, dto);
+        var result = await _categoriasService.AtualizarCategoria(id, command);
         if (!result.Success)
         {
             if (result.Errors is not null && result.Errors.Any(error => error.Code == "CATEGORIA_NAO_ENCONTRADA"))

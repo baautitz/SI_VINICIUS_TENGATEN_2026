@@ -38,6 +38,8 @@ public class Produtos
         Id = id;
     }
 
+    protected Produtos() { }
+
     public void Atualizar(string produto, string? descricao, Categorias categoria, Marcas marca, UnidadesMedida unidadeMedida)
     {
         produto = TextNormalization.Normalize(produto);

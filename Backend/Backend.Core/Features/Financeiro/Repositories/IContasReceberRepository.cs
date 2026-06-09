@@ -3,9 +3,10 @@ using Backend.Core.Features.Financeiro.DTOs;
 
 using Backend.Core.Features.Financeiro.Entities;
 
-namespace Backend.Core.Features.Financeiro.Repositories; 
+namespace Backend.Core.Features.Financeiro.Repositories;
 
-public interface IContasReceberRepository {
+public interface IContasReceberRepository
+{
     public Task<ResultadoPaginado<ContasReceber>> ObterContasReceber(int pagina = 1, int tamanhoDaPagina = 20);
     public Task<ContasReceber?> ObterContaReceberPorId(int id);
     public Task<ContasReceber> CriarContaReceber(ContasReceber conta);

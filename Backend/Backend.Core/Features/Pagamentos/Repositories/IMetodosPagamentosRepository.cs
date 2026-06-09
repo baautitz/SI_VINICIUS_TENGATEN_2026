@@ -3,9 +3,10 @@ using Backend.Core.Features.Pagamentos.DTOs;
 
 using Backend.Core.Features.Pagamentos.Entities;
 
-namespace Backend.Core.Features.Pagamentos.Repositories; 
+namespace Backend.Core.Features.Pagamentos.Repositories;
 
-public interface IMetodosPagamentosRepository {
+public interface IMetodosPagamentosRepository
+{
     public Task<ResultadoPaginado<MetodosPagamentos>> ObterMetodosPagamentos(int pagina = 1, int tamanhoDaPagina = 20);
     public Task<MetodosPagamentos?> ObterMetodoPagamentoPorId(int id);
     public Task<MetodosPagamentos> CriarMetodoPagamento(MetodosPagamentos metodo);

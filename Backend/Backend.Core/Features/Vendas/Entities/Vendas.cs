@@ -15,7 +15,7 @@ public class Venda
 
     public Emitentes Emitente { get; private set; } = null!;
     public Clientes Cliente { get; private set; } = null!;
-        public IReadOnlyCollection<VendaItens> Itens => _itens.AsReadOnly();
+    public IReadOnlyCollection<VendaItens> Itens => _itens.AsReadOnly();
 
     protected Venda() { }
 

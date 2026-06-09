@@ -16,7 +16,7 @@ public class Estados
         Pais = pais;
     }
 
-    
+
     protected Estados() { }
 
     public Estados(int id, string estado, string uf, Paises pais)

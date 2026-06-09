@@ -1,13 +1,12 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Backend.Core.Common.Results;
-using Backend.Core.Features.Catalogo.DTOs;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Catalogo.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;
 using Dapper;
 using Npgsql;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Backend.Infrastructure.PostgreSQL.Features.Catalogo;
 
@@ -44,7 +43,7 @@ public class SkuAtributosChavesRepository : ISkuAtributosChavesRepository
         {
             var ids = chaves.Select(x => x.Id).ToArray();
             const string valuesSql = "SELECT id, chave_id AS ChaveId, valor FROM sku_atributos_valores WHERE chave_id = ANY(@Ids);";
-            
+
             var valores = (await _session.Connection.QueryAsync<ValoresDto>(
                 valuesSql,
                 new { Ids = ids },
@@ -179,56 +178,13 @@ public class SkuAtributosChavesRepository : ISkuAtributosChavesRepository
         }
     }
 
-    public async Task<ResultadoPaginado<SkuAtributosChavesResumo>> ObterAtributosResumo(int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<SkuAtributosChaves>> PesquisarAtributos(string termo, int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
         const string sql = @"
-            SELECT COUNT(*) FROM sku_atributos_chaves;
-
-            SELECT id, chave FROM sku_atributos_chaves
-            ORDER BY chave
-            LIMIT @TamanhoDaPagina OFFSET @Offset;";
-
-        using var multi = await _session.Connection.QueryMultipleAsync(
-            sql,
-            new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
-            transaction: _session.Transaction
-        );
-
-        var total = await multi.ReadSingleAsync<int>();
-        var chaves = (await multi.ReadAsync<ResumoChaveDto>()).ToList();
-        var resumos = new List<SkuAtributosChavesResumo>();
-
-        if (chaves.Any())
-        {
-            var ids = chaves.Select(x => x.Id).ToArray();
-            const string valuesSql = "SELECT id, chave_id AS ChaveId, valor FROM sku_atributos_valores WHERE chave_id = ANY(@Ids) ORDER BY valor;";
-            
-            var valores = (await _session.Connection.QueryAsync<ValoresDto>(
-                valuesSql,
-                new { Ids = ids },
-                transaction: _session.Transaction
-            )).ToList();
-
-            var valoresPorChave = valores.GroupBy(x => x.ChaveId).ToDictionary(g => g.Key, g => g.Select(v => v.Valor).ToList());
-
-            foreach (var c in chaves)
-            {
-                var vals = valoresPorChave.TryGetValue(c.Id, out var vList) ? vList : new List<string>();
-                resumos.Add(new SkuAtributosChavesResumo(c.Id, c.Chave, vals));
-            }
-        }
-
-        return new ResultadoPaginado<SkuAtributosChavesResumo>(resumos, total, pagina, tamanhoDaPagina);
-    }
-
-    public async Task<ResultadoPaginado<SkuAtributosChavesResumo>> PesquisarAtributos(string termo, int pagina = 1, int tamanhoDaPagina = 20)
-    {
-        var offset = (pagina - 1) * tamanhoDaPagina;
-
-        const string sql = @"
-            SELECT COUNT(*) FROM sku_atributos_chaves
+            SELECT COUNT(*)
+            FROM sku_atributos_chaves
             WHERE unaccent(chave::text) ILIKE unaccent(@Termo::text);
 
             SELECT id, chave FROM sku_atributos_chaves
@@ -243,30 +199,34 @@ public class SkuAtributosChavesRepository : ISkuAtributosChavesRepository
         );
 
         var total = await multi.ReadSingleAsync<int>();
-        var chaves = (await multi.ReadAsync<ResumoChaveDto>()).ToList();
-        var resumos = new List<SkuAtributosChavesResumo>();
+        var chaves = (await multi.ReadAsync<SkuAtributosChaves>()).ToList();
 
         if (chaves.Any())
         {
             var ids = chaves.Select(x => x.Id).ToArray();
             const string valuesSql = "SELECT id, chave_id AS ChaveId, valor FROM sku_atributos_valores WHERE chave_id = ANY(@Ids) ORDER BY valor;";
-            
+
             var valores = (await _session.Connection.QueryAsync<ValoresDto>(
                 valuesSql,
                 new { Ids = ids },
                 transaction: _session.Transaction
             )).ToList();
 
-            var valoresPorChave = valores.GroupBy(x => x.ChaveId).ToDictionary(g => g.Key, g => g.Select(v => v.Valor).ToList());
+            var valoresPorChave = valores.GroupBy(x => x.ChaveId).ToDictionary(g => g.Key, g => g.ToList());
 
-            foreach (var c in chaves)
+            foreach (var chave in chaves)
             {
-                var vals = valoresPorChave.TryGetValue(c.Id, out var vList) ? vList : new List<string>();
-                resumos.Add(new SkuAtributosChavesResumo(c.Id, c.Chave, vals));
+                if (valoresPorChave.TryGetValue(chave.Id, out var subValores))
+                {
+                    foreach (var val in subValores)
+                    {
+                        chave.AdicionarValor(new SkuAtributosValores(val.Id, val.ChaveId, val.Valor));
+                    }
+                }
             }
         }
 
-        return new ResultadoPaginado<SkuAtributosChavesResumo>(resumos, total, pagina, tamanhoDaPagina);
+        return new ResultadoPaginado<SkuAtributosChaves>(chaves, total, pagina, tamanhoDaPagina);
     }
 
     public async Task<bool> ExisteChave(string chave, int? ignorarId = null)
@@ -292,5 +252,4 @@ public class SkuAtributosChavesRepository : ISkuAtributosChavesRepository
     }
 
     private sealed record ValoresDto(int Id, int ChaveId, string Valor);
-    private sealed record ResumoChaveDto(int Id, string Chave);
 }

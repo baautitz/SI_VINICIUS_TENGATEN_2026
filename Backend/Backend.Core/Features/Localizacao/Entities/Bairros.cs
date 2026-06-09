@@ -14,7 +14,7 @@ public class Bairros
         Cidade = cidade;
     }
 
-    
+
     protected Bairros() { }
 
     public Bairros(int id, string bairro, Cidades cidade)

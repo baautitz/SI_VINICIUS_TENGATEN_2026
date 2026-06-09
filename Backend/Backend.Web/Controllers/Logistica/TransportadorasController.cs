@@ -1,5 +1,5 @@
 using Backend.Core.Common.Results;
-using Backend.Core.Features.Logistica.DTOs;
+using Backend.Core.Features.Logistica.Commands;
 using Backend.Core.Features.Logistica.Entities;
 using Backend.Core.Features.Logistica.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -18,12 +18,12 @@ public class TransportadorasController : ControllerBase
     }
 
     [HttpGet]
-    public Task<ResultadoPaginado<TransportadorasResumo>> GetTransportadoras([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public Task<ResultadoPaginado<Transportadoras>> GetTransportadoras([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         if (!string.IsNullOrWhiteSpace(search))
             return _transportadorasService.PesquisarTransportadoras(search, page, pageSize);
 
-        return _transportadorasService.ObterTransportadorasResumo(page, pageSize);
+        return _transportadorasService.ObterTransportadoras(page, pageSize);
     }
 
     [HttpGet("{id:int}")]
@@ -38,9 +38,9 @@ public class TransportadorasController : ControllerBase
 
     [HttpPost]
     [ProducesResponseType(typeof(Resultado<Transportadoras>), StatusCodes.Status201Created)]
-    public async Task<ActionResult<Resultado<Transportadoras>>> CreateTransportadora([FromBody] CreateTransportadoraDto dto)
+    public async Task<ActionResult<Resultado<Transportadoras>>> CreateTransportadora([FromBody] CriarTransportadoraCommand command)
     {
-        var result = await _transportadorasService.CriarTransportadora(dto);
+        var result = await _transportadorasService.CriarTransportadora(command);
         if (!result.Success)
             return BadRequest(result);
 
@@ -48,9 +48,9 @@ public class TransportadorasController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<Resultado<Transportadoras>>> UpdateTransportadora(int id, [FromBody] UpdateTransportadoraDto dto)
+    public async Task<ActionResult<Resultado<Transportadoras>>> UpdateTransportadora(int id, [FromBody] AtualizarTransportadoraCommand command)
     {
-        var result = await _transportadorasService.AtualizarTransportadora(id, dto);
+        var result = await _transportadorasService.AtualizarTransportadora(id, command);
         if (!result.Success)
         {
             if (result.Errors is not null && result.Errors.Any(error => error.Code == "TRANSPORTADORA_NAO_ENCONTRADO"))

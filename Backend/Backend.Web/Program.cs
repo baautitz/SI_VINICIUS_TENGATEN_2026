@@ -18,7 +18,11 @@ public class Program
             });
         });
 
-        builder.Services.AddControllers();
+        builder.Services.AddControllers()
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+            });
 
         builder.Services.Configure<Microsoft.AspNetCore.Mvc.ApiBehaviorOptions>(options =>
         {
@@ -28,10 +32,10 @@ public class Program
                     .Where(e => e.Value != null && e.Value.Errors.Count > 0)
                     .SelectMany(kvp => kvp.Value!.Errors.Select(e =>
                     {
-                        var errorMessage = !string.IsNullOrWhiteSpace(e.ErrorMessage) 
-                            ? e.ErrorMessage 
+                        var errorMessage = !string.IsNullOrWhiteSpace(e.ErrorMessage)
+                            ? e.ErrorMessage
                             : (e.Exception?.Message ?? "Erro de validação de modelo.");
-                            
+
                         return new Backend.Core.Common.Results.ResultadoErro(
                             "VALIDATION_ERROR",
                             errorMessage,
@@ -62,7 +66,8 @@ public class Program
         {
             app.UseOpenApi();
 
-            app.UseSwaggerUi(config => {
+            app.UseSwaggerUi(config =>
+            {
                 config.Path = string.Empty;
             });
         }

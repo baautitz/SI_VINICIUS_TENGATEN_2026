@@ -1,6 +1,5 @@
 using Backend.Core.Common.Results;
 using Backend.Core.Features.Localizacao.Entities;
-using Backend.Core.Features.Logistica.DTOs;
 using Backend.Core.Features.Logistica.Entities;
 using Backend.Core.Features.Logistica.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;
@@ -26,23 +25,34 @@ public class TransportadorasRepository : ITransportadorasRepository
             SELECT t.id AS Id, t.tipo_pessoa AS TipoPessoa, t.nome_razaosocial AS NomeRazaoSocial, t.cpf_cnpj AS CpfCnpj, t.rg_ie AS RgIe, t.apelido_nomefantasia AS ApelidoNomefantasia,
                    t.endereco AS Endereco, t.telefone AS Telefone, t.email AS Email, t.rntrc AS Rntrc, t.ativo AS Ativo, t.criado_em AS CriadoEm,
                    t.observacao AS Observacao,
+                   b.id AS BairroId, b.id AS Id, b.bairro,
+                   ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
+                   e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
                    p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM transportadoras t
             INNER JOIN paises p ON p.id = t.nacionalidade_id
+            LEFT JOIN bairros b ON b.id = t.bairro_id
+            LEFT JOIN cidades ci ON ci.id = b.cidade_id
+            LEFT JOIN estados e ON e.id = ci.estado_id
             ORDER BY t.nome_razaosocial
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
 
-        var itens = await _session.Connection.QueryAsync<Transportadoras, Paises, Transportadoras>(
+        var itens = await _session.Connection.QueryAsync<Transportadoras, Bairros, Cidades, Estados, Paises, Transportadoras>(
             sqlData,
-            (transportadora, pais) => {
-                transportadora.Atualizar(transportadora.TipoPessoa, transportadora.NomeRazaosocial, transportadora.CpfCnpj, pais!, transportadora.RgIe, transportadora.ApelidoNomefantasia, transportadora.Endereco, null, transportadora.Telefone, transportadora.Email, transportadora.Rntrc, transportadora.Observacao);
+            (transportadora, bairro, cidade, estado, pais) =>
+            {
+                if (pais is not null && estado is not null) estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
+                if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
+                if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
+
+                transportadora.Atualizar(transportadora.TipoPessoa, transportadora.NomeRazaosocial, transportadora.CpfCnpj, pais!, transportadora.RgIe, transportadora.ApelidoNomefantasia, transportadora.Endereco, bairro, transportadora.Telefone, transportadora.Email, transportadora.Rntrc, transportadora.Observacao);
                 return transportadora;
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "PaisId"
+            splitOn: "BairroId,CidadeId,EstadoId,PaisId"
         );
 
         return new ResultadoPaginado<Transportadoras>(itens, total, pagina, tamanhoDaPagina);
@@ -79,9 +89,9 @@ public class TransportadorasRepository : ITransportadorasRepository
                     if (pais is not null && estado is not null) estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
                     if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
                     if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
-                    
+
                     transportadoraEntry.Atualizar(transportadoraEntry.TipoPessoa, transportadoraEntry.NomeRazaosocial, transportadoraEntry.CpfCnpj, pais!, transportadoraEntry.RgIe, transportadoraEntry.ApelidoNomefantasia, transportadoraEntry.Endereco, bairro, transportadoraEntry.Telefone, transportadoraEntry.Email, transportadoraEntry.Rntrc, transportadoraEntry.Observacao);
-                    
+
                     transportadoraDict.Add(transportadoraEntry.Id, transportadoraEntry);
                 }
 
@@ -89,7 +99,7 @@ public class TransportadorasRepository : ITransportadorasRepository
                 {
                     transportadoraEntry.AdicionarVeiculo(veiculo);
                 }
-                
+
                 return transportadoraEntry;
             },
             new { Id = id },
@@ -185,52 +195,43 @@ public class TransportadorasRepository : ITransportadorasRepository
         return linhasAfetadas > 0;
     }
 
-    public async Task<ResultadoPaginado<TransportadorasResumo>> ObterTransportadorasResumo(int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<Transportadoras>> PesquisarTransportadoras(string termo, int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
-        const string sql = @"
-            SELECT COUNT(*) FROM transportadoras;
-
-            SELECT id, tipo_pessoa AS TipoPessoa, nacionalidade_id AS NacionalidadeId, nome_razaosocial AS NomeRazaoSocial, cpf_cnpj AS CpfCnpj, ativo AS Ativo
-            FROM transportadoras ORDER BY nome_razaosocial
-            LIMIT @TamanhoDaPagina OFFSET @Offset;";
-
-        using var multi = await _session.Connection.QueryMultipleAsync(
-            sql, new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
-            transaction: _session.Transaction);
-
-        var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<TransportadorasResumo>();
-
-        return new ResultadoPaginado<TransportadorasResumo>(itens, total, pagina, tamanhoDaPagina);
-    }
-
-    public async Task<ResultadoPaginado<TransportadorasResumo>> PesquisarTransportadoras(string termo, int pagina = 1, int tamanhoDaPagina = 20)
-    {
-        var offset = (pagina - 1) * tamanhoDaPagina;
-
-        const string sql = @"
+        const string sqlCount = @"
             SELECT COUNT(*) FROM transportadoras
             WHERE nome_razaosocial ILIKE @Termo OR cpf_cnpj ILIKE @Termo
-               OR apelido_nomefantasia ILIKE @Termo OR email ILIKE @Termo;
+               OR apelido_nomefantasia ILIKE @Termo OR email ILIKE @Termo;";
 
-            SELECT id, tipo_pessoa AS TipoPessoa, nacionalidade_id AS NacionalidadeId, nome_razaosocial AS NomeRazaoSocial, cpf_cnpj AS CpfCnpj, ativo AS Ativo
-            FROM transportadoras
-            WHERE nome_razaosocial ILIKE @Termo OR cpf_cnpj ILIKE @Termo
-               OR apelido_nomefantasia ILIKE @Termo OR email ILIKE @Termo
-            ORDER BY nome_razaosocial
+        const string sqlData = @"
+            SELECT t.id AS Id, t.tipo_pessoa AS TipoPessoa, t.nome_razaosocial AS NomeRazaoSocial, t.cpf_cnpj AS CpfCnpj, t.rg_ie AS RgIe, t.apelido_nomefantasia AS ApelidoNomefantasia,
+                   t.endereco AS Endereco, t.telefone AS Telefone, t.email AS Email, t.rntrc AS Rntrc, t.ativo AS Ativo, t.criado_em AS CriadoEm,
+                   t.observacao AS Observacao,
+                   p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            FROM transportadoras t
+            INNER JOIN paises p ON p.id = t.nacionalidade_id
+            WHERE t.nome_razaosocial ILIKE @Termo OR t.cpf_cnpj ILIKE @Termo
+               OR t.apelido_nomefantasia ILIKE @Termo OR t.email ILIKE @Termo
+            ORDER BY t.nome_razaosocial
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
-        using var multi = await _session.Connection.QueryMultipleAsync(
-            sql,
+        var total = await _session.Connection.ExecuteScalarAsync<int>(
+            sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
+
+        var itens = await _session.Connection.QueryAsync<Transportadoras, Paises, Transportadoras>(
+            sqlData,
+            (transportadora, pais) =>
+            {
+                transportadora.Atualizar(transportadora.TipoPessoa, transportadora.NomeRazaosocial, transportadora.CpfCnpj, pais!, transportadora.RgIe, transportadora.ApelidoNomefantasia, transportadora.Endereco, null, transportadora.Telefone, transportadora.Email, transportadora.Rntrc, transportadora.Observacao);
+                return transportadora;
+            },
             new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
-            transaction: _session.Transaction);
+            transaction: _session.Transaction,
+            splitOn: "PaisId"
+        );
 
-        var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<TransportadorasResumo>();
-
-        return new ResultadoPaginado<TransportadorasResumo>(itens, total, pagina, tamanhoDaPagina);
+        return new ResultadoPaginado<Transportadoras>(itens, total, pagina, tamanhoDaPagina);
     }
 
     public async Task<bool> ExisteTransportadoraCpfCnpj(string cpfCnpj, int nacionalidadeId, int? ignorarId = null)

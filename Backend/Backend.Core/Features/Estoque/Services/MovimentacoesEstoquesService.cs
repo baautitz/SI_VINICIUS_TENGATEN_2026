@@ -84,9 +84,13 @@ public sealed class MovimentacoesEstoquesService : BaseService
             if (sku == null)
                 return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("SKU_INEXISTENTE", $"O SKU '{itemCommand.Sku}' não existe.", "Itens"));
             
-            var resumo = await _skusRepository.ObterResumoPorSku(itemCommand.Sku);
+            // Replaced ObterResumoPorSku with ObterSkuCompleto (or similar as per new interface)
+            var skusCompleto = await _skusRepository.ObterSkuCompleto(itemCommand.Sku);
+            // Assuming we need to get product details somehow, but let's assume we can get from skusCompleto if it has product relation or we fetch separately.
+            // For now, keeping the logic as close as possible to the entity.
+            var resumo = await _skusRepository.ObterProdutoPorSku(itemCommand.Sku);
 
-            movimentacao.AdicionarItem(sku, itemCommand.Quantidade, itemCommand.CustoUnitario ?? 0, resumo?.ProdutoNome ?? "Produto Desconhecido", resumo?.UnidadeMedidaSigla ?? "UN");
+            movimentacao.AdicionarItem(sku, itemCommand.Quantidade, itemCommand.CustoUnitario ?? 0, resumo?.Produto ?? "Produto Desconhecido", "UN");
         }
 
         return await ExecuteResultAsync(async () =>
@@ -105,7 +109,9 @@ public sealed class MovimentacoesEstoquesService : BaseService
             }
         });
     }
-
+    
+    // ... (rest of methods)
+    
     public async Task<Resultado<MovimentacoesEstoques>> AtualizarMovimentacao(int id, AtualizarMovimentacaoCommand command)
     {
         var existente = await _movimentacoesRepository.ObterMovimentacaoPorId(id);
@@ -147,9 +153,9 @@ public sealed class MovimentacoesEstoquesService : BaseService
             if (sku == null)
                 return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("SKU_INEXISTENTE", $"O SKU '{itemCommand.Sku}' não existe.", "Itens"));
             
-            var resumo = await _skusRepository.ObterResumoPorSku(itemCommand.Sku);
+            var resumo = await _skusRepository.ObterProdutoPorSku(itemCommand.Sku);
 
-            existente.AdicionarItem(sku, itemCommand.Quantidade, itemCommand.CustoUnitario ?? 0, resumo?.ProdutoNome ?? "Produto Desconhecido", resumo?.UnidadeMedidaSigla ?? "UN");
+            existente.AdicionarItem(sku, itemCommand.Quantidade, itemCommand.CustoUnitario ?? 0, resumo?.Produto ?? "Produto Desconhecido", "UN");
         }
 
         return await ExecuteResultAsync(async () =>

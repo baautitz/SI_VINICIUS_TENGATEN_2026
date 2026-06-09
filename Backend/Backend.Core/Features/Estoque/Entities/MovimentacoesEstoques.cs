@@ -25,11 +25,11 @@ public class MovimentacoesEstoques
     protected MovimentacoesEstoques() { }
 
     public MovimentacoesEstoques(
-        TipoMovimentacaoEstoque tipoMovimentacao, 
-        Usuarios? usuario = null, 
-        Nfes? nfe = null, 
-        Venda? venda = null, 
-        string? observacao = null, 
+        TipoMovimentacaoEstoque tipoMovimentacao,
+        Usuarios? usuario = null,
+        Nfes? nfe = null,
+        Venda? venda = null,
+        string? observacao = null,
         StatusMovimentacaoEstoque status = StatusMovimentacaoEstoque.RASCUNHO)
     {
         TipoMovimentacao = tipoMovimentacao;
@@ -42,13 +42,13 @@ public class MovimentacoesEstoques
     }
 
     public MovimentacoesEstoques(
-        int id, 
-        DateTime dataMovimentacao, 
-        TipoMovimentacaoEstoque tipoMovimentacao, 
-        Usuarios? usuario = null, 
-        Nfes? nfe = null, 
-        Venda? venda = null, 
-        string? observacao = null, 
+        int id,
+        DateTime dataMovimentacao,
+        TipoMovimentacaoEstoque tipoMovimentacao,
+        Usuarios? usuario = null,
+        Nfes? nfe = null,
+        Venda? venda = null,
+        string? observacao = null,
         StatusMovimentacaoEstoque status = StatusMovimentacaoEstoque.RASCUNHO)
         : this(tipoMovimentacao, usuario, nfe, venda, observacao, status)
     {
@@ -70,7 +70,7 @@ public class MovimentacoesEstoques
     {
         if (sku == null)
             throw new DomainException("SKU é obrigatório para item de movimentação de estoque.");
-        
+
         if (string.IsNullOrWhiteSpace(produtoNome))
             throw new DomainException("Nome do produto é obrigatório.");
 

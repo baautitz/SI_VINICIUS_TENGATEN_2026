@@ -1,5 +1,5 @@
 using Backend.Core.Common.Results;
-using Backend.Core.Features.Parceiros.DTOs;
+using Backend.Core.Features.Parceiros.Commands;
 using Backend.Core.Features.Parceiros.Entities;
 using Backend.Core.Features.Parceiros.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -18,12 +18,12 @@ public class ClientesController : ControllerBase
     }
 
     [HttpGet]
-    public Task<ResultadoPaginado<ClientesResumo>> GetClientes([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public Task<ResultadoPaginado<Clientes>> GetClientes([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         if (!string.IsNullOrWhiteSpace(search))
             return _clientesService.PesquisarClientes(search, page, pageSize);
 
-        return _clientesService.ObterClientesResumo(page, pageSize);
+        return _clientesService.ObterClientes(page, pageSize);
     }
 
     [HttpGet("{id:int}")]
@@ -38,9 +38,9 @@ public class ClientesController : ControllerBase
 
     [HttpPost]
     [ProducesResponseType(typeof(Resultado<Clientes>), StatusCodes.Status201Created)]
-    public async Task<ActionResult<Resultado<Clientes>>> CreateCliente([FromBody] CreateClienteDto dto)
+    public async Task<ActionResult<Resultado<Clientes>>> CreateCliente([FromBody] CriarClienteCommand command)
     {
-        var result = await _clientesService.CriarCliente(dto);
+        var result = await _clientesService.CriarCliente(command);
         if (!result.Success)
             return BadRequest(result);
 
@@ -48,9 +48,9 @@ public class ClientesController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<Resultado<Clientes>>> UpdateCliente(int id, [FromBody] UpdateClienteDto dto)
+    public async Task<ActionResult<Resultado<Clientes>>> UpdateCliente(int id, [FromBody] AtualizarClienteCommand command)
     {
-        var result = await _clientesService.AtualizarCliente(id, dto);
+        var result = await _clientesService.AtualizarCliente(id, command);
         if (!result.Success)
         {
             if (result.Errors is not null && result.Errors.Any(error => error.Code == "CLIENTE_NAO_ENCONTRADO"))

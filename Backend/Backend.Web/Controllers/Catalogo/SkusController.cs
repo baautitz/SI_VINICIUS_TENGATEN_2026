@@ -1,8 +1,10 @@
 using Backend.Core.Common.Results;
-using Backend.Core.Features.Catalogo.DTOs;
+using Backend.Core.Features.Catalogo.Commands;
 using Backend.Core.Features.Catalogo.Entities;
-using Backend.Core.Features.Catalogo.Repositories;
+using Backend.Core.Features.Catalogo.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Backend.Web.Controllers.Catalogo;
@@ -11,26 +13,24 @@ namespace Backend.Web.Controllers.Catalogo;
 [Route("api/catalogo/skus")]
 public class SkusController : ControllerBase
 {
-    private readonly ISkusRepository _skusRepository;
+    private readonly SkusService _skusService;
 
-    public SkusController(ISkusRepository skusRepository)
+    public SkusController(SkusService skusService)
     {
-        _skusRepository = skusRepository;
+        _skusService = skusService;
     }
 
     [HttpGet]
-    public Task<ResultadoPaginado<SkusResumo>> GetSkus([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-    {
-        return _skusRepository.PesquisarSkus(search ?? string.Empty, page, pageSize);
-    }
+    public Task<ResultadoPaginado<Skus>> GetSkus([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        => _skusService.ObterSkus(search, page, pageSize);
 
     [HttpGet("{sku}")]
-    public async Task<ActionResult<SkusResumo>> GetSkuBySku(string sku)
+    public async Task<ActionResult<Skus>> GetSku(string sku)
     {
-        var result = await _skusRepository.ObterResumoPorSku(sku);
-        if (result == null)
+        var skuResult = await _skusService.ObterSkuCompleto(sku);
+        if (skuResult is null)
             return NotFound();
 
-        return Ok(result);
+        return Ok(skuResult);
     }
 }

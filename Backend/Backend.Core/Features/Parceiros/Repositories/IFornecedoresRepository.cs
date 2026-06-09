@@ -1,7 +1,4 @@
-using Backend.Core.Common.ValueObjects;
 using Backend.Core.Common.Results;
-using Backend.Core.Features.Parceiros.DTOs;
-
 using Backend.Core.Features.Parceiros.Entities;
 
 namespace Backend.Core.Features.Parceiros.Repositories;
@@ -13,7 +10,6 @@ public interface IFornecedoresRepository
     public Task<Fornecedores> CriarFornecedor(Fornecedores fornecedor);
     public Task<Fornecedores> AtualizarFornecedor(int id, Fornecedores fornecedor);
     public Task<bool> DeletarFornecedor(int id);
-    public Task<ResultadoPaginado<FornecedoresResumo>> ObterFornecedoresResumo(int pagina = 1, int tamanhoDaPagina = 20);
-    public Task<ResultadoPaginado<FornecedoresResumo>> PesquisarFornecedores(string termo, int pagina = 1, int tamanhoDaPagina = 20);
+    public Task<ResultadoPaginado<Fornecedores>> PesquisarFornecedores(string termo, int pagina = 1, int tamanhoDaPagina = 20);
     public Task<bool> ExisteFornecedorCpfCnpj(string cpfCnpj, int nacionalidadeId, int? ignorarId = null);
 }

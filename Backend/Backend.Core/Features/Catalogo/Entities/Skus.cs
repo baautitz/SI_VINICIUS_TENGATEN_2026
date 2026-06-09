@@ -15,12 +15,13 @@ public class Skus
     public decimal CustoMedio { get; private set; }
     public decimal CustoUltimaCompra { get; private set; }
     public bool Ativo { get; private set; }
+    public Produtos Produto { get; private set; }
 
     public IReadOnlyCollection<SkuAtributosValores> SkuAtributosValores => _atributos.AsReadOnly();
 
     protected Skus() { }
 
-    public Skus(string sku, decimal preco, decimal estoque = 0, string? gtinEan = null, decimal custoMedio = 0, decimal custoUltimaCompra = 0)
+    public Skus(string sku, decimal preco, decimal estoque = 0, string? gtinEan = null, decimal custoMedio = 0, decimal custoUltimaCompra = 0, Produtos? produto = null)
     {
         sku = TextNormalization.Normalize(sku);
         var gtinEanVo = string.IsNullOrWhiteSpace(gtinEan) ? null : new DocumentoGenerico(gtinEan);
@@ -47,14 +48,20 @@ public class Skus
         CustoMedio = custoMedio;
         CustoUltimaCompra = custoUltimaCompra;
         Ativo = true;
+        
+        if (produto != null)
+        {
+            Produto = produto;
+        }
     }
 
-    public Skus(string sku, decimal preco, decimal estoque, bool ativo, string? gtinEan = null, decimal custoMedio = 0, decimal custoUltimaCompra = 0)
-        : this(sku, preco, estoque, gtinEan, custoMedio, custoUltimaCompra)
+    public Skus(string sku, decimal preco, decimal estoque, bool ativo, string? gtinEan = null, decimal custoMedio = 0, decimal custoUltimaCompra = 0, Produtos? produto = null)
+        : this(sku, preco, estoque, gtinEan, custoMedio, custoUltimaCompra, produto)
     {
         if (!ativo)
             Desativar();
     }
+
 
     public void AtualizarPreco(decimal preco)
     {
@@ -71,8 +78,8 @@ public class Skus
 
         if (custoUnitarioPago < 0)
             throw new DomainException("O custo unitário não pode ser negativo.");
-            
-         // NovoCustoMedio = ((Estoque Atual * Custo Medio Atual) + (Qtd Entrada * Custo Pago)) / (Estoque Atual + Qtd Entrada)
+
+        // NovoCustoMedio = ((Estoque Atual * Custo Medio Atual) + (Qtd Entrada * Custo Pago)) / (Estoque Atual + Qtd Entrada)
         decimal valorEstoqueAtual = Estoque * CustoMedio;
         decimal valorEntrada = quantidadeEntrada * custoUnitarioPago;
         decimal novoEstoqueTotal = Estoque + quantidadeEntrada;

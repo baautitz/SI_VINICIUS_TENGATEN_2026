@@ -3,9 +3,10 @@ using Backend.Core.Features.Financeiro.DTOs;
 
 using Backend.Core.Features.Financeiro.Entities;
 
-namespace Backend.Core.Features.Financeiro.Repositories; 
+namespace Backend.Core.Features.Financeiro.Repositories;
 
-public interface IContasPagarRepository {
+public interface IContasPagarRepository
+{
     public Task<ResultadoPaginado<ContasPagar>> ObterContasPagar(int pagina = 1, int tamanhoDaPagina = 20);
     public Task<ContasPagar?> ObterContaPagarPorId(int id);
     public Task<ContasPagar> CriarContaPagar(ContasPagar conta);

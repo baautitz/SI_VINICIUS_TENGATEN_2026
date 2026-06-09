@@ -1,5 +1,5 @@
 using Backend.Core.Common.Results;
-using Backend.Core.Features.Parceiros.DTOs;
+using Backend.Core.Features.Parceiros.Commands;
 using Backend.Core.Features.Parceiros.Entities;
 using Backend.Core.Features.Parceiros.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -18,12 +18,12 @@ public class FornecedoresController : ControllerBase
     }
 
     [HttpGet]
-    public Task<ResultadoPaginado<FornecedoresResumo>> GetFornecedores([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public Task<ResultadoPaginado<Fornecedores>> GetFornecedores([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         if (!string.IsNullOrWhiteSpace(search))
             return _fornecedoresService.PesquisarFornecedores(search, page, pageSize);
 
-        return _fornecedoresService.ObterFornecedoresResumo(page, pageSize);
+        return _fornecedoresService.ObterFornecedores(page, pageSize);
     }
 
     [HttpGet("{id:int}")]
@@ -38,9 +38,9 @@ public class FornecedoresController : ControllerBase
 
     [HttpPost]
     [ProducesResponseType(typeof(Resultado<Fornecedores>), StatusCodes.Status201Created)]
-    public async Task<ActionResult<Resultado<Fornecedores>>> CreateFornecedor([FromBody] CreateFornecedorDto dto)
+    public async Task<ActionResult<Resultado<Fornecedores>>> CreateFornecedor([FromBody] CriarFornecedorCommand command)
     {
-        var result = await _fornecedoresService.CriarFornecedor(dto);
+        var result = await _fornecedoresService.CriarFornecedor(command);
         if (!result.Success)
             return BadRequest(result);
 
@@ -48,9 +48,9 @@ public class FornecedoresController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<Resultado<Fornecedores>>> UpdateFornecedor(int id, [FromBody] UpdateFornecedorDto dto)
+    public async Task<ActionResult<Resultado<Fornecedores>>> UpdateFornecedor(int id, [FromBody] AtualizarFornecedorCommand command)
     {
-        var result = await _fornecedoresService.AtualizarFornecedor(id, dto);
+        var result = await _fornecedoresService.AtualizarFornecedor(id, command);
         if (!result.Success)
         {
             if (result.Errors is not null && result.Errors.Any(error => error.Code == "FORNECEDOR_NAO_ENCONTRADO"))

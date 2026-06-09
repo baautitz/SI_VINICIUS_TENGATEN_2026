@@ -2,12 +2,13 @@ using Backend.Core.Common.Extensions;
 using Backend.Core.Common.Results;
 using Backend.Core.Common;
 using Backend.Core.Features.Localizacao.Repositories;
-using Backend.Core.Features.Logistica.DTOs;
+using Backend.Core.Features.Logistica.Commands;
 using Backend.Core.Features.Logistica.Entities;
 using Backend.Core.Features.Logistica.Repositories;
-using Backend.Core.Features.Logistica.Validators;
+using Backend.Core.Features.Logistica.Validators.Commands;
 
 namespace Backend.Core.Features.Logistica.Services;
+
 // todo: validar placa de transportadora brasileira e bairro só pode ser da nacionalidade da transportadora
 public sealed class VeiculosService : BaseService
 {
@@ -28,50 +29,52 @@ public sealed class VeiculosService : BaseService
     public Task<Veiculos?> ObterVeiculoPorId(int id)
         => _veiculosRepository.ObterVeiculoPorId(id);
 
-    public async Task<Resultado<Veiculos>> CriarVeiculo(CreateVeiculoDto dto)
+    public async Task<Resultado<Veiculos>> CriarVeiculo(CriarVeiculoCommand command)
     {
-        var validator = new CreateVeiculoDtoValidator();
-        var validation = await validator.ValidateAsync(dto);
+        var validator = new CriarVeiculoCommandValidator();
+        var validation = await validator.ValidateAsync(command);
         if (!validation.IsValid)
             return Resultado<Veiculos>.Falha(validation.ToResultadoErros());
 
         Transportadoras? transportadora = null;
-        if (dto.TransportadoraId.HasValue)
+        if (command.TransportadoraId.HasValue && command.TransportadoraId.Value > 0)
         {
-            transportadora = await _transportadorasRepository.ObterTransportadoraPorId(dto.TransportadoraId.Value);
+            transportadora = await _transportadorasRepository.ObterTransportadoraPorId(command.TransportadoraId.Value);
             if (transportadora is null)
                 return Resultado<Veiculos>.Falha(new ResultadoErro("TRANSPORTADORA_NAO_ENCONTRADA", "A transportadora informada não foi encontrada.", "TransportadoraId"));
         }
 
-        var estado = await _estadosRepository.ObterEstadoPorId(dto.EstadoId);
+        var estado = await _estadosRepository.ObterEstadoPorId(command.EstadoId);
         if (estado is null)
             return Resultado<Veiculos>.Falha(new ResultadoErro("ESTADO_NAO_ENCONTRADO", "O estado informado não foi encontrado.", "EstadoId"));
 
         return await ExecuteResultAsync(async () =>
         {
             var veiculo = new Veiculos(
-                dto.Placa,
-                dto.EstadoId,
-                dto.TransportadoraId,
-                dto.Rntrc,
-                dto.Renavam,
-                dto.TipoVeiculo,
-                dto.MarcaModelo,
-                dto.Observacao
+                command.Placa,
+                command.EstadoId,
+                command.TransportadoraId,
+                command.Rntrc,
+                command.Renavam,
+                command.TipoVeiculo,
+                command.MarcaModelo,
+                command.Observacao
             );
 
             veiculo.VincularEstado(estado);
             if (transportadora != null) veiculo.VincularTransportadora(transportadora);
+
+            if (!command.Ativo) veiculo.Desativar();
 
             var criado = await _veiculosRepository.CriarVeiculo(veiculo);
             return Resultado<Veiculos>.Sucesso(criado);
         });
     }
 
-    public async Task<Resultado<Veiculos>> AtualizarVeiculo(int id, UpdateVeiculoDto dto)
+    public async Task<Resultado<Veiculos>> AtualizarVeiculo(int id, AtualizarVeiculoCommand command)
     {
-        var validator = new UpdateVeiculoDtoValidator();
-        var validation = await validator.ValidateAsync(dto);
+        var validator = new AtualizarVeiculoCommandValidator();
+        var validation = await validator.ValidateAsync(command);
         if (!validation.IsValid)
             return Resultado<Veiculos>.Falha(validation.ToResultadoErros());
 
@@ -80,34 +83,34 @@ public sealed class VeiculosService : BaseService
             return Resultado<Veiculos>.Falha(new ResultadoErro("VEICULO_NAO_ENCONTRADO", "Veículo não encontrado."));
 
         Transportadoras? transportadora = null;
-        if (dto.TransportadoraId.HasValue)
+        if (command.TransportadoraId.HasValue && command.TransportadoraId.Value > 0)
         {
-            transportadora = await _transportadorasRepository.ObterTransportadoraPorId(dto.TransportadoraId.Value);
+            transportadora = await _transportadorasRepository.ObterTransportadoraPorId(command.TransportadoraId.Value);
             if (transportadora is null)
                 return Resultado<Veiculos>.Falha(new ResultadoErro("TRANSPORTADORA_NAO_ENCONTRADA", "A transportadora informada não foi encontrada.", "TransportadoraId"));
         }
 
-        var estado = await _estadosRepository.ObterEstadoPorId(dto.EstadoId);
+        var estado = await _estadosRepository.ObterEstadoPorId(command.EstadoId);
         if (estado is null)
             return Resultado<Veiculos>.Falha(new ResultadoErro("ESTADO_NAO_ENCONTRADO", "O estado informado não foi encontrado.", "EstadoId"));
 
         return await ExecuteResultAsync(async () =>
         {
             existente.Atualizar(
-                dto.Placa,
-                dto.EstadoId,
-                dto.TransportadoraId,
-                dto.Rntrc,
-                dto.Renavam,
-                dto.TipoVeiculo,
-                dto.MarcaModelo,
-                dto.Observacao
+                command.Placa,
+                command.EstadoId,
+                command.TransportadoraId,
+                command.Rntrc,
+                command.Renavam,
+                command.TipoVeiculo,
+                command.MarcaModelo,
+                command.Observacao
             );
 
             existente.VincularEstado(estado);
             if (transportadora != null) existente.VincularTransportadora(transportadora);
 
-            if (dto.Ativo) existente.Ativar();
+            if (command.Ativo) existente.Ativar();
             else existente.Desativar();
 
             var atualizado = await _veiculosRepository.AtualizarVeiculo(id, existente);
@@ -118,9 +121,6 @@ public sealed class VeiculosService : BaseService
     public Task<bool> DeletarVeiculo(int id)
         => _veiculosRepository.DeletarVeiculo(id);
 
-    public Task<ResultadoPaginado<VeiculosResumo>> ObterVeiculosResumo(int pagina = 1, int tamanhoDaPagina = 20)
-        => _veiculosRepository.ObterVeiculosResumo(pagina, tamanhoDaPagina);
-
-    public Task<ResultadoPaginado<VeiculosResumo>> PesquisarVeiculos(string termo, int pagina = 1, int tamanhoDaPagina = 20)
+    public Task<ResultadoPaginado<Veiculos>> PesquisarVeiculos(string termo, int pagina = 1, int tamanhoDaPagina = 20)
         => _veiculosRepository.PesquisarVeiculos(termo, pagina, tamanhoDaPagina);
 }

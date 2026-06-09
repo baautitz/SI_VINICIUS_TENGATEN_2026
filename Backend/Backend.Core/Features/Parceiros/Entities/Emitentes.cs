@@ -25,8 +25,8 @@ public class Emitentes
     public DateTime CriadoEm { get; private set; }
     public string? Observacao { get; private set; }
 
-    
-    protected Emitentes() 
+
+    protected Emitentes()
     {
         NomeRazaoSocial = null!;
         CpfCnpj = null!;

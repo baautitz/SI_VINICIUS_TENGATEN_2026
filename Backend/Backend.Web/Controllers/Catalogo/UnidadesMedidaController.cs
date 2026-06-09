@@ -1,8 +1,11 @@
 using Backend.Core.Common.Results;
-using Backend.Core.Features.Catalogo.DTOs;
+using Backend.Core.Features.Catalogo.Commands;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Catalogo.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Backend.Web.Controllers.Catalogo;
 
@@ -18,24 +21,24 @@ public class UnidadesMedidaController : ControllerBase
     }
 
     [HttpGet]
-    public Task<ResultadoPaginado<UnidadesMedidaResumo>> GetUnidadesMedida([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public Task<ResultadoPaginado<UnidadesMedida>> GetUnidadesMedida([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         => _unidadesMedidaService.ObterUnidadesMedida(search, page, pageSize);
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<UnidadesMedida>> GetUnidadeMedida(int id)
     {
-        var unidade = await _unidadesMedidaService.ObterUnidadeMedidaPorId(id);
-        if (unidade is null)
+        var um = await _unidadesMedidaService.ObterUnidadeMedidaPorId(id);
+        if (um is null)
             return NotFound();
 
-        return Ok(unidade);
+        return Ok(um);
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(Resultado<UnidadesMedida>), StatusCodes.Status201Created)]
-    public async Task<ActionResult<Resultado<UnidadesMedida>>> CreateUnidadeMedida([FromBody] CreateUnidadeMedidaDto dto)
+    public async Task<ActionResult<Resultado<UnidadesMedida>>> CreateUnidadeMedida([FromBody] CriarUnidadeMedidaCommand command)
     {
-        var result = await _unidadesMedidaService.CriarUnidadeMedida(dto);
+        var result = await _unidadesMedidaService.CriarUnidadeMedida(command);
         if (!result.Success)
             return BadRequest(result);
 
@@ -43,9 +46,9 @@ public class UnidadesMedidaController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<Resultado<UnidadesMedida>>> UpdateUnidadeMedida(int id, [FromBody] UpdateUnidadeMedidaDto dto)
+    public async Task<ActionResult<Resultado<UnidadesMedida>>> UpdateUnidadeMedida(int id, [FromBody] AtualizarUnidadeMedidaCommand command)
     {
-        var result = await _unidadesMedidaService.AtualizarUnidadeMedida(id, dto);
+        var result = await _unidadesMedidaService.AtualizarUnidadeMedida(id, command);
         if (!result.Success)
         {
             if (result.Errors is not null && result.Errors.Any(error => error.Code == "UNIDADE_MEDIDA_NAO_ENCONTRADA"))

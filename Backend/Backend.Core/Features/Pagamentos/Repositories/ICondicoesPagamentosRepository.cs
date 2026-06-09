@@ -3,9 +3,10 @@ using Backend.Core.Features.Pagamentos.DTOs;
 
 using Backend.Core.Features.Pagamentos.Entities;
 
-namespace Backend.Core.Features.Pagamentos.Repositories; 
+namespace Backend.Core.Features.Pagamentos.Repositories;
 
-public interface ICondicoesPagamentosRepository {
+public interface ICondicoesPagamentosRepository
+{
     public Task<ResultadoPaginado<CondicoesPagamentos>> ObterCondicoesPagamentos(int pagina = 1, int tamanhoDaPagina = 20);
     public Task<CondicoesPagamentos?> ObterCondicaoPagamentoPorId(int id);
     public Task<CondicoesPagamentos> CriarCondicaoPagamento(CondicoesPagamentos condicao);

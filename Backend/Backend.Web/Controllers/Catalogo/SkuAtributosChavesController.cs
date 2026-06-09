@@ -1,5 +1,5 @@
 using Backend.Core.Common.Results;
-using Backend.Core.Features.Catalogo.DTOs;
+using Backend.Core.Features.Catalogo.Commands;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Catalogo.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +21,7 @@ public class SkuAtributosChavesController : ControllerBase
     }
 
     [HttpGet]
-    public Task<ResultadoPaginado<SkuAtributosChavesResumo>> GetAtributos([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public Task<ResultadoPaginado<SkuAtributosChaves>> GetAtributos([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         => _atributosService.ObterAtributos(search, page, pageSize);
 
     [HttpGet("{id:int}")]
@@ -36,9 +36,9 @@ public class SkuAtributosChavesController : ControllerBase
 
     [HttpPost]
     [ProducesResponseType(typeof(Resultado<SkuAtributosChaves>), StatusCodes.Status201Created)]
-    public async Task<ActionResult<Resultado<SkuAtributosChaves>>> CreateAtributo([FromBody] CreateSkuAtributosChavesDto dto)
+    public async Task<ActionResult<Resultado<SkuAtributosChaves>>> CreateAtributo([FromBody] CriarSkuAtributosChavesCommand command)
     {
-        var result = await _atributosService.CriarAtributo(dto);
+        var result = await _atributosService.CriarAtributo(command);
         if (!result.Success)
             return BadRequest(result);
 
@@ -46,9 +46,9 @@ public class SkuAtributosChavesController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<Resultado<SkuAtributosChaves>>> UpdateAtributo(int id, [FromBody] UpdateSkuAtributosChavesDto dto)
+    public async Task<ActionResult<Resultado<SkuAtributosChaves>>> UpdateAtributo(int id, [FromBody] AtualizarSkuAtributosChavesCommand command)
     {
-        var result = await _atributosService.AtualizarAtributo(id, dto);
+        var result = await _atributosService.AtualizarAtributo(id, command);
         if (!result.Success)
         {
             if (result.Errors is not null && result.Errors.Any(error => error.Code == "ATRIBUTO_NAO_ENCONTRADO"))

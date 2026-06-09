@@ -1,10 +1,9 @@
+using System.Linq;
 using Backend.Core.Common.Results;
-using Backend.Core.Features.Localizacao.DTOs;
 using Backend.Core.Features.Localizacao.Entities;
 using Backend.Core.Features.Localizacao.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;
 using Dapper;
-using Npgsql;
 
 namespace Backend.Infrastructure.PostgreSQL.Features.Localizacao;
 
@@ -12,124 +11,95 @@ public class EstadosRepository : IEstadosRepository
 {
     private readonly DbSession _session;
 
-    public EstadosRepository(DbSession session)
-    {
-        _session = session;
-    }
+    public EstadosRepository(DbSession session) => _session = session;
 
-    public async Task<ResultadoPaginado<EstadoResumoDto>> ObterEstados(string? search, int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<Estados>> ObterEstados(int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
+        const string sqlCount = "SELECT COUNT(*) FROM estados;";
+        const string sqlData = @"
+            SELECT e.id, e.estado, e.uf, p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            FROM estados e
+            INNER JOIN paises p ON p.id = e.pais_id
+            ORDER BY e.estado
+            LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
-        string sql;
-        object parametros;
-
-        if (string.IsNullOrWhiteSpace(search))
-        {
-            sql = @"
-                SELECT COUNT(*) FROM estados;
-                SELECT e.id, e.estado AS Estado, e.uf AS Uf, p.id AS PaisId, p.pais AS PaisNome
-                FROM estados e
-                JOIN paises p ON p.id = e.pais_id
-                ORDER BY e.estado LIMIT @TamanhoDaPagina OFFSET @Offset;";
-            parametros = new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset };
-        }
-        else
-        {
-            sql = @"
-                SELECT COUNT(*) FROM estados WHERE unaccent(estado::text) ILIKE unaccent(@Termo::text) OR unaccent(uf::text) ILIKE unaccent(@Termo::text);
-                SELECT e.id, e.estado AS Estado, e.uf AS Uf, p.id AS PaisId, p.pais AS PaisNome
-                FROM estados e
-                JOIN paises p ON p.id = e.pais_id
-                WHERE unaccent(e.estado::text) ILIKE unaccent(@Termo::text) OR unaccent(e.uf::text) ILIKE unaccent(@Termo::text)
-                ORDER BY e.estado LIMIT @TamanhoDaPagina OFFSET @Offset;";
-            parametros = new { Termo = "%" + search + "%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset };
-        }
-
-        using var multi = await _session.Connection.QueryMultipleAsync(sql, parametros, transaction: _session.Transaction);
-        var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<EstadoResumoDto>();
-        return new ResultadoPaginado<EstadoResumoDto>(itens, total, pagina, tamanhoDaPagina);
+        var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
+        var itens = await _session.Connection.QueryAsync<Estados, Paises, Estados>(
+            sqlData,
+            (estado, pais) => { estado.AtualizarResultado(estado.Estado, estado.Uf, pais); return estado; },
+            new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
+            transaction: _session.Transaction,
+            splitOn: "PaisId"
+        );
+        return new ResultadoPaginado<Estados>(itens, total, pagina, tamanhoDaPagina);
     }
 
     public async Task<Estados?> ObterEstadoPorId(int id)
     {
         const string sql = @"
-            SELECT e.id, e.estado, e.uf,
-                   p.id AS pais_id, p.id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            SELECT e.id, e.estado, e.uf, p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM estados e
-            JOIN paises p ON p.id = e.pais_id
+            INNER JOIN paises p ON p.id = e.pais_id
             WHERE e.id = @Id;";
+
         var result = await _session.Connection.QueryAsync<Estados, Paises, Estados>(
             sql,
-            (estado, pais) => {
-                estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
-                return estado;
-            },
+            (estado, pais) => { estado.AtualizarResultado(estado.Estado, estado.Uf, pais); return estado; },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "pais_id"
+            splitOn: "PaisId"
         );
         return result.SingleOrDefault();
     }
 
-    public async Task<EstadoResumoDto?> ObterEstadoDetalhePorId(int id)
-    {
-        const string sql = @"
-            SELECT e.id, e.estado AS Estado, e.uf AS Uf, p.id AS PaisId, p.pais AS PaisNome
-            FROM estados e
-            JOIN paises p ON p.id = e.pais_id
-            WHERE e.id = @Id;";
-        return await _session.Connection.QuerySingleOrDefaultAsync<EstadoResumoDto>(
-            sql, new { Id = id }, transaction: _session.Transaction);
-    }
-
     public async Task<Estados> CriarEstado(Estados estado)
     {
-        try
-        {
-            const string sql = "INSERT INTO estados (estado, uf, pais_id) VALUES (@Estado, @Uf, @PaisId) RETURNING id;";
-            var idGerado = await _session.Connection.ExecuteScalarAsync<int>(sql, new { estado.Estado, estado.Uf, PaisId = estado.Pais.Id }, transaction: _session.Transaction);
-            return new Estados(idGerado, estado.Estado, estado.Uf, estado.Pais);
-        }
-        catch (PostgresException ex)
-        {
-            throw DbExceptionTranslator.Translate(ex);
-        }
+        const string sql = "INSERT INTO estados (estado, uf, pais_id) VALUES (@Estado, @Uf, @PaisId) RETURNING id;";
+        var id = await _session.Connection.ExecuteScalarAsync<int>(sql, new { estado.Estado, estado.Uf, PaisId = estado.Pais.Id }, transaction: _session.Transaction);
+        return new Estados(id, estado.Estado, estado.Uf, estado.Pais);
     }
 
     public async Task<Estados> AtualizarEstado(int id, Estados estado)
     {
-        try
-        {
-            const string sql = "UPDATE estados SET estado = @Estado, uf = @Uf, pais_id = @PaisId WHERE id = @Id;";
-            await _session.Connection.ExecuteAsync(sql, new { Id = id, estado.Estado, estado.Uf, PaisId = estado.Pais.Id }, transaction: _session.Transaction);
-            return new Estados(id, estado.Estado, estado.Uf, estado.Pais);
-        }
-        catch (PostgresException ex)
-        {
-            throw DbExceptionTranslator.Translate(ex);
-        }
-    }
-
-    public async Task<bool> ExisteEstado(int paisId, string uf, int? ignorarId = null)
-    {
-        var sql = "SELECT COUNT(1) FROM estados WHERE pais_id = @PaisId AND uf = @Uf";
-        if (ignorarId.HasValue) sql += " AND id != @IgnorarId";
-        return await _session.Connection.ExecuteScalarAsync<int>(sql, new { PaisId = paisId, Uf = uf, IgnorarId = ignorarId }, transaction: _session.Transaction) > 0;
+        const string sql = "UPDATE estados SET estado = @Estado, uf = @Uf, pais_id = @PaisId WHERE id = @Id;";
+        await _session.Connection.ExecuteAsync(sql, new { Id = id, estado.Estado, estado.Uf, PaisId = estado.Pais.Id }, transaction: _session.Transaction);
+        return new Estados(id, estado.Estado, estado.Uf, estado.Pais);
     }
 
     public async Task<bool> DeletarEstado(int id)
     {
-        try
-        {
-            const string sql = "DELETE FROM estados WHERE id = @Id;";
-            var rows = await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
-            return rows > 0;
-        }
-        catch (PostgresException ex)
-        {
-            throw DbExceptionTranslator.Translate(ex);
-        }
+        const string sql = "DELETE FROM estados WHERE id = @Id;";
+        return await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction) > 0;
+    }
+
+    public async Task<ResultadoPaginado<Estados>> PesquisarEstados(string termo, int pagina = 1, int tamanhoDaPagina = 20)
+    {
+        var offset = (pagina - 1) * tamanhoDaPagina;
+        const string sqlCount = "SELECT COUNT(*) FROM estados WHERE estado ILIKE @Termo OR uf ILIKE @Termo;";
+        const string sqlData = @"
+            SELECT e.id, e.estado, e.uf, p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            FROM estados e
+            INNER JOIN paises p ON p.id = e.pais_id
+            WHERE e.estado ILIKE @Termo OR e.uf ILIKE @Termo
+            ORDER BY e.estado
+            LIMIT @TamanhoDaPagina OFFSET @Offset;";
+
+        var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
+        var itens = await _session.Connection.QueryAsync<Estados, Paises, Estados>(
+            sqlData,
+            (estado, pais) => { estado.AtualizarResultado(estado.Estado, estado.Uf, pais); return estado; },
+            new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
+            transaction: _session.Transaction,
+            splitOn: "PaisId"
+        );
+        return new ResultadoPaginado<Estados>(itens, total, pagina, tamanhoDaPagina);
+    }
+
+    public async Task<bool> ExisteEstado(string uf, int paisId, int? ignorarId = null)
+    {
+        var sql = "SELECT COUNT(1) FROM estados WHERE uf = @Uf AND pais_id = @PaisId";
+        if (ignorarId.HasValue) sql += " AND id != @IgnorarId";
+        return await _session.Connection.ExecuteScalarAsync<int>(sql, new { Uf = uf, PaisId = paisId, IgnorarId = ignorarId }, transaction: _session.Transaction) > 0;
     }
 }

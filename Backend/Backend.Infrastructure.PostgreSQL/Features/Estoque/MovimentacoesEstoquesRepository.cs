@@ -210,7 +210,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
                 transaction: _session.Transaction);
 
             var updated = new MovimentacoesEstoques(id, movimentacao.DataMovimentacao, movimentacao.TipoMovimentacao, movimentacao.Usuario, movimentacao.Nfe, movimentacao.Venda, movimentacao.Observacao, movimentacao.Status);
-            
+
             await ReplacerItens(id, movimentacao.MovimentacoesEstoquesItens);
             foreach (var item in movimentacao.MovimentacoesEstoquesItens)
             {
@@ -266,9 +266,9 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(countSql, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
-        
+
         var movimentacoesDto = (await _session.Connection.QueryAsync<MovimentacaoDto>(
-            movimentacoesSql, 
+            movimentacoesSql,
             new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction)).ToList();
 

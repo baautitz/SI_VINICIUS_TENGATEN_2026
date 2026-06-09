@@ -1,5 +1,5 @@
+using System.Linq;
 using Backend.Core.Common.Results;
-using Backend.Core.Features.Catalogo.DTOs;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Catalogo.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;
@@ -54,19 +54,19 @@ public class UnidadesMedidaRepository : IUnidadesMedidaRepository
                 new { unidadeMedida.Sigla, unidadeMedida.Descricao, unidadeMedida.Categoria, unidadeMedida.PermiteDecimais, unidadeMedida.Ativo },
                 transaction: _session.Transaction
             );
-            unidadeMedida.Id = idGerado;
-            return unidadeMedida;
-        }
-        catch (PostgresException ex)
-        {
+            var novaUnidade = new UnidadesMedida(unidadeMedida.Sigla, unidadeMedida.Descricao, unidadeMedida.Categoria, unidadeMedida.PermiteDecimais, unidadeMedida.Ativo) { Id = idGerado };
+            return novaUnidade;
+            }
+            catch (PostgresException ex)
+            {
             throw DbExceptionTranslator.Translate(ex);
-        }
-    }
+            }
+            }
 
-    public async Task<UnidadesMedida> AtualizarUnidadeMedida(int id, UnidadesMedida unidadeMedida)
-    {
-        try
-        {
+            public async Task<UnidadesMedida> AtualizarUnidadeMedida(int id, UnidadesMedida unidadeMedida)
+            {
+            try
+            {
             const string sql = @"
                 UPDATE unidades_medida
                 SET sigla = @Sigla,
@@ -103,25 +103,7 @@ public class UnidadesMedidaRepository : IUnidadesMedidaRepository
         }
     }
 
-    public async Task<ResultadoPaginado<UnidadesMedidaResumo>> ObterUnidadesMedidaResumo(int pagina = 1, int tamanhoDaPagina = 20)
-    {
-        var offset = (pagina - 1) * tamanhoDaPagina;
-
-        const string sql = @"
-            SELECT COUNT(*) FROM unidades_medida;
-            SELECT id, sigla, descricao, categoria, permite_decimais AS PermiteDecimais, ativo
-            FROM unidades_medida
-            ORDER BY descricao
-            LIMIT @TamanhoDaPagina OFFSET @Offset;";
-
-        using var multi = await _session.Connection.QueryMultipleAsync(sql, new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset }, transaction: _session.Transaction);
-        var total = await multi.ReadSingleAsync<int>();
-        var items = await multi.ReadAsync<UnidadesMedidaResumo>();
-
-        return new ResultadoPaginado<UnidadesMedidaResumo>(items, total, pagina, tamanhoDaPagina);
-    }
-
-    public async Task<ResultadoPaginado<UnidadesMedidaResumo>> PesquisarUnidadesMedida(string termo, int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<UnidadesMedida>> PesquisarUnidadesMedida(string termo, int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
@@ -145,9 +127,9 @@ public class UnidadesMedidaRepository : IUnidadesMedidaRepository
             transaction: _session.Transaction
         );
         var total = await multi.ReadSingleAsync<int>();
-        var items = await multi.ReadAsync<UnidadesMedidaResumo>();
+        var items = (await multi.ReadAsync<UnidadesMedida>()).ToList();
 
-        return new ResultadoPaginado<UnidadesMedidaResumo>(items, total, pagina, tamanhoDaPagina);
+        return new ResultadoPaginado<UnidadesMedida>(items, total, pagina, tamanhoDaPagina);
     }
 
     public async Task<bool> ExisteSigla(string sigla, int? ignorarId = null)

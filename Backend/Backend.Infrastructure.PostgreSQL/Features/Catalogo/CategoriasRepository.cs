@@ -1,5 +1,5 @@
+using System.Linq;
 using Backend.Core.Common.Results;
-using Backend.Core.Features.Catalogo.DTOs;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Catalogo.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;
@@ -120,31 +120,7 @@ public class CategoriasRepository : ICategoriasRepository
         }
     }
 
-    public async Task<ResultadoPaginado<CategoriasResumo>> ObterCategoriasResumo(int pagina = 1, int tamanhoDaPagina = 20)
-    {
-        var offset = (pagina - 1) * tamanhoDaPagina;
-
-        const string sql = @"
-            SELECT COUNT(*) FROM categorias;
-
-            SELECT id, categoria, ativo
-            FROM categorias
-            ORDER BY categoria
-            LIMIT @TamanhoDaPagina OFFSET @Offset;";
-
-        using var multi = await _session.Connection.QueryMultipleAsync(
-            sql,
-            new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
-            transaction: _session.Transaction
-        );
-
-        var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<CategoriasResumo>();
-
-        return new ResultadoPaginado<CategoriasResumo>(itens, total, pagina, tamanhoDaPagina);
-    }
-
-    public async Task<ResultadoPaginado<CategoriasResumo>> PesquisarCategorias(string termo, int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<Categorias>> PesquisarCategorias(string termo, int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
@@ -154,7 +130,7 @@ public class CategoriasRepository : ICategoriasRepository
             WHERE unaccent(categoria::text) ILIKE unaccent(@Termo::text) 
                OR unaccent(descricao::text) ILIKE unaccent(@Termo::text);
 
-            SELECT id, categoria, ativo
+            SELECT id, categoria, descricao, ativo
             FROM categorias
             WHERE unaccent(categoria::text) ILIKE unaccent(@Termo::text) 
                OR unaccent(descricao::text) ILIKE unaccent(@Termo::text)
@@ -168,9 +144,9 @@ public class CategoriasRepository : ICategoriasRepository
         );
 
         var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<CategoriasResumo>();
+        var itens = await multi.ReadAsync<Categorias>();
 
-        return new ResultadoPaginado<CategoriasResumo>(itens, total, pagina, tamanhoDaPagina);
+        return new ResultadoPaginado<Categorias>(itens, total, pagina, tamanhoDaPagina);
     }
 
     public async Task<bool> ExisteCategoria(string categoria, int? ignorarId = null)

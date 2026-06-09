@@ -22,7 +22,7 @@ public class MovimentacoesEstoquesItens
     {
         if (sku == null)
             throw new DomainException("SKU é obrigatório para item de movimentação.");
-        
+
         if (string.IsNullOrWhiteSpace(produtoNome))
             throw new DomainException("Nome do produto é obrigatório.");
 

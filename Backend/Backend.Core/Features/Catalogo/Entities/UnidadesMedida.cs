@@ -12,7 +12,7 @@ public class UnidadesMedida
     public bool PermiteDecimais { get; private set; }
     public bool Ativo { get; private set; }
 
-    
+
     protected UnidadesMedida() { }
 
     public UnidadesMedida(string sigla, string descricao, string categoria, bool permiteDecimais = false, bool ativo = true)

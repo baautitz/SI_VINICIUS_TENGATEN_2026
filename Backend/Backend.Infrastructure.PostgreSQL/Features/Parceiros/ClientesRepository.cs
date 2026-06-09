@@ -1,6 +1,6 @@
+using System.Linq;
 using Backend.Core.Common.Results;
 using Backend.Core.Features.Localizacao.Entities;
-using Backend.Core.Features.Parceiros.DTOs;
 using Backend.Core.Features.Parceiros.Entities;
 using Backend.Core.Features.Parceiros.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;
@@ -26,26 +26,37 @@ public class ClientesRepository : IClientesRepository
             SELECT c.id AS Id, c.tipo_pessoa AS TipoPessoa, c.nome_razaosocial AS NomeRazaoSocial, c.cpf_cnpj AS CpfCnpj, c.rg_ie AS RgIe, c.apelido_nomefantasia AS ApelidoNomeFantasia,
                    c.endereco AS Endereco, c.telefone AS Telefone, c.email AS Email, c.limite_credito AS LimiteCredito, c.ativo AS Ativo, c.criado_em AS CriadoEm,
                    c.observacao AS Observacao,
+                   b.id AS BairroId, b.id AS Id, b.bairro,
+                   ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
+                   e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
                    p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM clientes c
             INNER JOIN paises p ON p.id = c.nacionalidade_id
+            LEFT JOIN bairros b ON b.id = c.bairro_id
+            LEFT JOIN cidades ci ON ci.id = b.cidade_id
+            LEFT JOIN estados e ON e.id = ci.estado_id
             ORDER BY c.nome_razaosocial
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
-        
-        var itens = await _session.Connection.QueryAsync<Clientes, Paises, Clientes>(
+
+        var itens = await _session.Connection.QueryAsync<Clientes, Bairros, Cidades, Estados, Paises, Clientes>(
             sqlData,
-            (cliente, pais) => {
-                cliente.AtualizarDados(cliente.TipoPessoa, cliente.NomeRazaoSocial, cliente.CpfCnpj, pais, cliente.RgIe, cliente.ApelidoNomeFantasia, cliente.Endereco, null, cliente.Telefone, cliente.Email, cliente.LimiteCredito, cliente.Observacao);
-                return cliente; 
+            (cliente, bairro, cidade, estado, pais) =>
+            {
+                if (pais is not null && estado is not null) estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
+                if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
+                if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
+
+                cliente.AtualizarDados(cliente.TipoPessoa, cliente.NomeRazaoSocial, cliente.CpfCnpj, pais!, cliente.RgIe, cliente.ApelidoNomeFantasia, cliente.Endereco, bairro, cliente.Telefone, cliente.Email, cliente.LimiteCredito, cliente.Observacao);
+                return cliente;
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "PaisId"
+            splitOn: "BairroId,CidadeId,EstadoId,PaisId"
         );
 
-        return new ResultadoPaginado<Clientes>(itens, total, pagina, tamanhoDaPagina);
+        return new ResultadoPaginado<Clientes>(itens.ToList(), total, pagina, tamanhoDaPagina);
     }
 
     public async Task<Clientes?> ObterClientePorId(int id)
@@ -72,9 +83,9 @@ public class ClientesRepository : IClientesRepository
                 if (pais is not null && estado is not null) estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
                 if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
                 if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
-                
+
                 cliente.AtualizarDados(cliente.TipoPessoa, cliente.NomeRazaoSocial, cliente.CpfCnpj, pais!, cliente.RgIe, cliente.ApelidoNomeFantasia, cliente.Endereco, bairro, cliente.Telefone, cliente.Email, cliente.LimiteCredito, cliente.Observacao);
-                
+
                 return cliente;
             },
             new { Id = id },
@@ -173,52 +184,42 @@ public class ClientesRepository : IClientesRepository
         return linhasAfetadas > 0;
     }
 
-    public async Task<ResultadoPaginado<ClientesResumo>> ObterClientesResumo(int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<Clientes>> PesquisarClientes(string termo, int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
-        const string sql = @"
-            SELECT COUNT(*) FROM clientes;
-
-            SELECT id, tipo_pessoa AS TipoPessoa, nome_razaosocial AS NomeRazaoSocial, cpf_cnpj AS CpfCnpj, apelido_nomefantasia AS ApelidoNomeFantasia, nacionalidade_id AS NacionalidadeId
-            FROM clientes ORDER BY nome_razaosocial
-            LIMIT @TamanhoDaPagina OFFSET @Offset;";
-
-        using var multi = await _session.Connection.QueryMultipleAsync(
-            sql, new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
-            transaction: _session.Transaction);
-
-        var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<ClientesResumo>();
-
-        return new ResultadoPaginado<ClientesResumo>(itens, total, pagina, tamanhoDaPagina);
-    }
-
-    public async Task<ResultadoPaginado<ClientesResumo>> PesquisarClientes(string termo, int pagina = 1, int tamanhoDaPagina = 20)
-    {
-        var offset = (pagina - 1) * tamanhoDaPagina;
-
-        const string sql = @"
+        const string sqlCount = @"
             SELECT COUNT(*) FROM clientes
             WHERE nome_razaosocial ILIKE @Termo OR cpf_cnpj ILIKE @Termo
-               OR apelido_nomefantasia ILIKE @Termo OR email ILIKE @Termo;
+               OR apelido_nomefantasia ILIKE @Termo OR email ILIKE @Termo;";
 
-            SELECT id, tipo_pessoa AS TipoPessoa, nome_razaosocial AS NomeRazaoSocial, cpf_cnpj AS CpfCnpj, apelido_nomefantasia AS ApelidoNomeFantasia, nacionalidade_id AS NacionalidadeId
-            FROM clientes
-            WHERE nome_razaosocial ILIKE @Termo OR cpf_cnpj ILIKE @Termo
-               OR apelido_nomefantasia ILIKE @Termo OR email ILIKE @Termo
-            ORDER BY nome_razaosocial
+        const string sqlData = @"
+            SELECT c.id AS Id, c.tipo_pessoa AS TipoPessoa, c.nome_razaosocial AS NomeRazaoSocial, c.cpf_cnpj AS CpfCnpj, c.rg_ie AS RgIe, c.apelido_nomefantasia AS ApelidoNomeFantasia,
+                   c.endereco AS Endereco, c.telefone AS Telefone, c.email AS Email, c.limite_credito AS LimiteCredito, c.ativo AS Ativo, c.criado_em AS CriadoEm,
+                   c.observacao AS Observacao,
+                   p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            FROM clientes c
+            INNER JOIN paises p ON p.id = c.nacionalidade_id
+            WHERE c.nome_razaosocial ILIKE @Termo OR c.cpf_cnpj ILIKE @Termo
+               OR c.apelido_nomefantasia ILIKE @Termo OR c.email ILIKE @Termo
+            ORDER BY c.nome_razaosocial
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
-        using var multi = await _session.Connection.QueryMultipleAsync(
-            sql,
+        var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
+
+        var itens = await _session.Connection.QueryAsync<Clientes, Paises, Clientes>(
+            sqlData,
+            (cliente, pais) =>
+            {
+                cliente.AtualizarDados(cliente.TipoPessoa, cliente.NomeRazaoSocial, cliente.CpfCnpj, pais, cliente.RgIe, cliente.ApelidoNomeFantasia, cliente.Endereco, null, cliente.Telefone, cliente.Email, cliente.LimiteCredito, cliente.Observacao);
+                return cliente;
+            },
             new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
-            transaction: _session.Transaction);
+            transaction: _session.Transaction,
+            splitOn: "PaisId"
+        );
 
-        var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<ClientesResumo>();
-
-        return new ResultadoPaginado<ClientesResumo>(itens, total, pagina, tamanhoDaPagina);
+        return new ResultadoPaginado<Clientes>(itens, total, pagina, tamanhoDaPagina);
     }
 
     public async Task<bool> ExisteClienteCpfCnpj(string cpfCnpj, int nacionalidadeId, int? ignorarId = null)

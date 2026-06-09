@@ -1,5 +1,5 @@
 using Backend.Core.Common.Results;
-using Backend.Core.Features.Logistica.DTOs;
+using Backend.Core.Features.Logistica.Commands;
 using Backend.Core.Features.Logistica.Entities;
 using Backend.Core.Features.Logistica.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -18,12 +18,12 @@ public class VeiculosController : ControllerBase
     }
 
     [HttpGet]
-    public Task<ResultadoPaginado<VeiculosResumo>> GetVeiculos([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public Task<ResultadoPaginado<Veiculos>> GetVeiculos([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         if (!string.IsNullOrWhiteSpace(search))
             return _veiculosService.PesquisarVeiculos(search, page, pageSize);
 
-        return _veiculosService.ObterVeiculosResumo(page, pageSize);
+        return _veiculosService.ObterVeiculos(page, pageSize);
     }
 
     [HttpGet("{id:int}")]
@@ -38,9 +38,9 @@ public class VeiculosController : ControllerBase
 
     [HttpPost]
     [ProducesResponseType(typeof(Resultado<Veiculos>), StatusCodes.Status201Created)]
-    public async Task<ActionResult<Resultado<Veiculos>>> CreateVeiculo([FromBody] CreateVeiculoDto dto)
+    public async Task<ActionResult<Resultado<Veiculos>>> CreateVeiculo([FromBody] CriarVeiculoCommand command)
     {
-        var result = await _veiculosService.CriarVeiculo(dto);
+        var result = await _veiculosService.CriarVeiculo(command);
         if (!result.Success)
             return BadRequest(result);
 
@@ -48,9 +48,9 @@ public class VeiculosController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<Resultado<Veiculos>>> UpdateVeiculo(int id, [FromBody] UpdateVeiculoDto dto)
+    public async Task<ActionResult<Resultado<Veiculos>>> UpdateVeiculo(int id, [FromBody] AtualizarVeiculoCommand command)
     {
-        var result = await _veiculosService.AtualizarVeiculo(id, dto);
+        var result = await _veiculosService.AtualizarVeiculo(id, command);
         if (!result.Success)
         {
             if (result.Errors is not null && result.Errors.Any(error => error.Code == "VEICULO_NAO_ENCONTRADO"))

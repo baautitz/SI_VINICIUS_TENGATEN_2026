@@ -4,10 +4,10 @@ using Backend.Core.Common.Results;
 using Backend.Core.Common;
 using Backend.Core.Common.ValueObjects;
 using Backend.Core.Features.Localizacao.Repositories;
-using Backend.Core.Features.Parceiros.DTOs;
+using Backend.Core.Features.Parceiros.Commands;
 using Backend.Core.Features.Parceiros.Entities;
 using Backend.Core.Features.Parceiros.Repositories;
-using Backend.Core.Features.Parceiros.Validators;
+using Backend.Core.Features.Parceiros.Validators.Commands;
 
 namespace Backend.Core.Features.Parceiros.Services;
 
@@ -30,64 +30,64 @@ public sealed class EmitentesService : BaseService
     public Task<Emitentes?> ObterEmitentePorId(int id)
         => _emitentesRepository.ObterEmitentePorId(id);
 
-    public async Task<Resultado<Emitentes>> CriarEmitente(CreateEmitenteDto dto)
+    public async Task<Resultado<Emitentes>> CriarEmitente(CriarEmitenteCommand command)
     {
-        var validator = new CreateEmitenteDtoValidator();
-        var validation = await validator.ValidateAsync(dto);
+        var validator = new CriarEmitenteCommandValidator();
+        var validation = await validator.ValidateAsync(command);
         if (!validation.IsValid)
             return Resultado<Emitentes>.Falha(validation.ToResultadoErros());
 
-        var nacionalidade = await _paisesRepository.ObterPaisPorId(dto.NacionalidadeId);
+        var nacionalidade = await _paisesRepository.ObterPaisPorId(command.NacionalidadeId);
         if (nacionalidade is null)
             return Resultado<Emitentes>.Falha(new ResultadoErro("NACIONALIDADE_NAO_ENCONTRADA", "Nacionalidade não encontrada.", "NacionalidadeId"));
 
-        if (nacionalidade.SiglaIso != "BRA" && !string.IsNullOrWhiteSpace(dto.RgIe))
-            return Resultado<Emitentes>.Falha(new ResultadoErro("RG_IE_NAO_PERMITIDO", "RG/IE não é permitido para estrangeiros.", nameof(dto.RgIe)));
+        if (nacionalidade.SiglaIso != "BRA" && !string.IsNullOrWhiteSpace(command.RgIe))
+            return Resultado<Emitentes>.Falha(new ResultadoErro("RG_IE_NAO_PERMITIDO", "RG/IE não é permitido para estrangeiros.", nameof(command.RgIe)));
 
         if (nacionalidade.SiglaIso == "BRA")
         {
-            if (dto.TipoPessoa == TipoPessoa.FISICA)
+            if (command.TipoPessoa == TipoPessoa.FISICA)
             {
-                if (!new Cpf(dto.CpfCnpj).EhValido())
+                if (!new Cpf(command.CpfCnpj).EhValido())
                     return Resultado<Emitentes>.Falha(new ResultadoErro("CPF_INVALIDO", "CPF inválido para o Brasil.", "CpfCnpj"));
             }
             else
             {
-                if (!new Cnpj(dto.CpfCnpj).EhValido())
+                if (!new Cnpj(command.CpfCnpj).EhValido())
                     return Resultado<Emitentes>.Falha(new ResultadoErro("CNPJ_INVALIDO", "CNPJ inválido para o Brasil.", "CpfCnpj"));
             }
         }
 
         Localizacao.Entities.Bairros? bairro = null;
-        if (dto.BairroId.HasValue)
+        if (command.BairroId.HasValue)
         {
-            bairro = await _bairrosRepository.ObterBairroPorId(dto.BairroId.Value);
+            bairro = await _bairrosRepository.ObterBairroPorId(command.BairroId.Value);
             if (bairro is null)
                 return Resultado<Emitentes>.Falha(new ResultadoErro("BAIRRO_NAO_ENCONTRADO", "O bairro informado não foi encontrado.", "BairroId"));
         }
 
-        var documentoLimpo = new DocumentoGenerico(dto.CpfCnpj).Valor;
+        var documentoLimpo = new DocumentoGenerico(command.CpfCnpj).Valor;
 
-        if (await _emitentesRepository.ExisteEmitenteCpfCnpj(documentoLimpo, dto.NacionalidadeId))
+        if (await _emitentesRepository.ExisteEmitenteCpfCnpj(documentoLimpo, command.NacionalidadeId))
             return Resultado<Emitentes>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe um emitente com este documento nesta nacionalidade.", "CpfCnpj"));
 
         return await ExecuteResultAsync(async () =>
         {
             var emitente = new Emitentes(
-                dto.TipoPessoa,
-                dto.NomeRazaoSocial,
+                command.TipoPessoa,
+                command.NomeRazaoSocial,
                 documentoLimpo,
                 nacionalidade,
-                dto.ApelidoNomeFantasia,
-                dto.Endereco,
+                command.ApelidoNomeFantasia,
+                command.Endereco,
                 bairro,
-                dto.Telefone,
-                dto.Email,
-                dto.RgIe,
-                dto.InscricaoMunicipal,
-                dto.RegimeTributario,
-                dto.Observacao,
-                dto.Ativo
+                command.Telefone,
+                command.Email,
+                command.RgIe,
+                command.InscricaoMunicipal,
+                command.RegimeTributario,
+                command.Observacao,
+                command.Ativo
             );
 
             var criado = await _emitentesRepository.CriarEmitente(emitente);
@@ -95,10 +95,10 @@ public sealed class EmitentesService : BaseService
         });
     }
 
-    public async Task<Resultado<Emitentes>> AtualizarEmitente(int id, UpdateEmitenteDto dto)
+    public async Task<Resultado<Emitentes>> AtualizarEmitente(int id, AtualizarEmitenteCommand command)
     {
-        var validator = new UpdateEmitenteDtoValidator();
-        var validation = await validator.ValidateAsync(dto);
+        var validator = new AtualizarEmitenteCommandValidator();
+        var validation = await validator.ValidateAsync(command);
         if (!validation.IsValid)
             return Resultado<Emitentes>.Falha(validation.ToResultadoErros());
 
@@ -106,57 +106,60 @@ public sealed class EmitentesService : BaseService
         if (existente is null)
             return Resultado<Emitentes>.Falha(new ResultadoErro("EMITENTE_NAO_ENCONTRADO", "Emitente não encontrado."));
 
-        var nacionalidade = await _paisesRepository.ObterPaisPorId(dto.NacionalidadeId);
+        var nacionalidade = await _paisesRepository.ObterPaisPorId(command.NacionalidadeId);
         if (nacionalidade is null)
             return Resultado<Emitentes>.Falha(new ResultadoErro("NACIONALIDADE_NAO_ENCONTRADA", "Nacionalidade não encontrada.", "NacionalidadeId"));
 
-        if (nacionalidade.SiglaIso != "BRA" && !string.IsNullOrWhiteSpace(dto.RgIe))
-            return Resultado<Emitentes>.Falha(new ResultadoErro("RG_IE_NAO_PERMITIDO", "RG/IE não é permitido para estrangeiros.", nameof(dto.RgIe)));
+        if (nacionalidade.SiglaIso != "BRA" && !string.IsNullOrWhiteSpace(command.RgIe))
+            return Resultado<Emitentes>.Falha(new ResultadoErro("RG_IE_NAO_PERMITIDO", "RG/IE não é permitido para estrangeiros.", nameof(command.RgIe)));
 
         if (nacionalidade.SiglaIso == "BRA")
         {
-            if (dto.TipoPessoa == TipoPessoa.FISICA)
+            if (command.TipoPessoa == TipoPessoa.FISICA)
             {
-                if (!new Cpf(dto.CpfCnpj).EhValido())
+                if (!new Cpf(command.CpfCnpj).EhValido())
                     return Resultado<Emitentes>.Falha(new ResultadoErro("CPF_INVALIDO", "CPF inválido para o Brasil.", "CpfCnpj"));
             }
             else
             {
-                if (!new Cnpj(dto.CpfCnpj).EhValido())
+                if (!new Cnpj(command.CpfCnpj).EhValido())
                     return Resultado<Emitentes>.Falha(new ResultadoErro("CNPJ_INVALIDO", "CNPJ inválido para o Brasil.", "CpfCnpj"));
             }
         }
 
         Localizacao.Entities.Bairros? bairro = null;
-        if (dto.BairroId.HasValue)
+        if (command.BairroId.HasValue)
         {
-            bairro = await _bairrosRepository.ObterBairroPorId(dto.BairroId.Value);
+            bairro = await _bairrosRepository.ObterBairroPorId(command.BairroId.Value);
             if (bairro is null)
                 return Resultado<Emitentes>.Falha(new ResultadoErro("BAIRRO_NAO_ENCONTRADO", "O bairro informado não foi encontrado.", "BairroId"));
         }
 
-        var documentoLimpo = new DocumentoGenerico(dto.CpfCnpj).Valor;
+        var documentoLimpo = new DocumentoGenerico(command.CpfCnpj).Valor;
 
-        if (await _emitentesRepository.ExisteEmitenteCpfCnpj(documentoLimpo, dto.NacionalidadeId, id))
+        if (await _emitentesRepository.ExisteEmitenteCpfCnpj(documentoLimpo, command.NacionalidadeId, id))
             return Resultado<Emitentes>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe outro emitente com este documento nesta nacionalidade.", "CpfCnpj"));
 
         return await ExecuteResultAsync(async () =>
         {
             existente.AtualizarDados(
-                dto.TipoPessoa,
-                dto.NomeRazaoSocial,
+                command.TipoPessoa,
+                command.NomeRazaoSocial,
                 documentoLimpo,
                 nacionalidade,
-                dto.ApelidoNomeFantasia,
-                dto.Endereco,
+                command.ApelidoNomeFantasia,
+                command.Endereco,
                 bairro,
-                dto.Telefone,
-                dto.Email,
-                dto.RgIe,
-                dto.InscricaoMunicipal,
-                dto.RegimeTributario,
-                dto.Observacao
+                command.Telefone,
+                command.Email,
+                command.RgIe,
+                command.InscricaoMunicipal,
+                command.RegimeTributario,
+                command.Observacao
             );
+
+            if (command.Ativo) existente.Ativar();
+            else existente.Desativar();
 
             var atualizado = await _emitentesRepository.AtualizarEmitente(id, existente);
             return Resultado<Emitentes>.Sucesso(atualizado);
@@ -166,9 +169,6 @@ public sealed class EmitentesService : BaseService
     public Task<bool> DeletarEmitente(int id)
         => _emitentesRepository.DeletarEmitente(id);
 
-    public Task<ResultadoPaginado<EmitentesResumo>> ObterEmitentesResumo(int pagina = 1, int tamanhoDaPagina = 20)
-        => _emitentesRepository.ObterEmitentesResumo(pagina, tamanhoDaPagina);
-
-    public Task<ResultadoPaginado<EmitentesResumo>> PesquisarEmitentes(string termo, int pagina = 1, int tamanhoDaPagina = 20)
+    public Task<ResultadoPaginado<Emitentes>> PesquisarEmitentes(string termo, int pagina = 1, int tamanhoDaPagina = 20)
         => _emitentesRepository.PesquisarEmitentes(termo, pagina, tamanhoDaPagina);
 }

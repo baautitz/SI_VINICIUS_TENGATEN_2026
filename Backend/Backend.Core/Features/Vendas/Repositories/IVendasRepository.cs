@@ -3,9 +3,10 @@ using Backend.Core.Features.Vendas.DTOs;
 
 using Backend.Core.Features.Vendas.Entities;
 
-namespace Backend.Core.Features.Vendas.Repositories; 
+namespace Backend.Core.Features.Vendas.Repositories;
 
-public interface IVendasRepository {
+public interface IVendasRepository
+{
     public Task<ResultadoPaginado<Venda>> ObterVendas(int pagina = 1, int tamanhoDaPagina = 20);
     public Task<Venda?> ObterVendaPorId(int id);
     public Task<Venda> CriarVenda(Venda venda);

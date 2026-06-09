@@ -1,5 +1,5 @@
+using System.Linq;
 using Backend.Core.Common.Results;
-using Backend.Core.Features.Catalogo.DTOs;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Catalogo.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;
@@ -120,31 +120,7 @@ public class MarcasRepository : IMarcasRepository
         }
     }
 
-    public async Task<ResultadoPaginado<MarcasResumo>> ObterMarcasResumo(int pagina = 1, int tamanhoDaPagina = 20)
-    {
-        var offset = (pagina - 1) * tamanhoDaPagina;
-
-        const string sql = @"
-            SELECT COUNT(*) FROM marcas;
-
-            SELECT id, marca, ativo
-            FROM marcas
-            ORDER BY marca
-            LIMIT @TamanhoDaPagina OFFSET @Offset;";
-
-        using var multi = await _session.Connection.QueryMultipleAsync(
-            sql,
-            new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
-            transaction: _session.Transaction
-        );
-
-        var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<MarcasResumo>();
-
-        return new ResultadoPaginado<MarcasResumo>(itens, total, pagina, tamanhoDaPagina);
-    }
-
-    public async Task<ResultadoPaginado<MarcasResumo>> PesquisarMarcas(string termo, int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<Marcas>> PesquisarMarcas(string termo, int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
@@ -154,7 +130,7 @@ public class MarcasRepository : IMarcasRepository
             WHERE unaccent(marca::text) ILIKE unaccent(@Termo::text) 
                OR unaccent(descricao::text) ILIKE unaccent(@Termo::text);
 
-            SELECT id, marca, ativo
+            SELECT id, marca, descricao, ativo
             FROM marcas
             WHERE unaccent(marca::text) ILIKE unaccent(@Termo::text) 
                OR unaccent(descricao::text) ILIKE unaccent(@Termo::text)
@@ -168,9 +144,9 @@ public class MarcasRepository : IMarcasRepository
         );
 
         var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<MarcasResumo>();
+        var itens = await multi.ReadAsync<Marcas>();
 
-        return new ResultadoPaginado<MarcasResumo>(itens, total, pagina, tamanhoDaPagina);
+        return new ResultadoPaginado<Marcas>(itens, total, pagina, tamanhoDaPagina);
     }
 
     public async Task<bool> ExisteMarca(string marca, int? ignorarId = null)

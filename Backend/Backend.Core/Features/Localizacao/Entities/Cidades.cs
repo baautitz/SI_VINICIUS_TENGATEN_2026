@@ -18,7 +18,7 @@ public class Cidades
         Estado = estado;
     }
 
-    
+
     protected Cidades() { }
 
     public Cidades(int id, string cidade, short ddd, Estados estado)

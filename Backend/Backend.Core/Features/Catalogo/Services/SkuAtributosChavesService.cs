@@ -1,10 +1,10 @@
 using Backend.Core.Common.Extensions;
 using Backend.Core.Common.Results;
 using Backend.Core.Common;
-using Backend.Core.Features.Catalogo.DTOs;
+using Backend.Core.Features.Catalogo.Commands;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Catalogo.Repositories;
-using Backend.Core.Features.Catalogo.Validators;
+using Backend.Core.Features.Catalogo.Validators.Commands;
 using FluentValidation;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,11 +21,11 @@ public sealed class SkuAtributosChavesService : BaseService
         _atributosRepository = atributosRepository;
     }
 
-    public Task<ResultadoPaginado<SkuAtributosChavesResumo>> ObterAtributos(string? search, int pagina = 1, int tamanhoPagina = 20)
+    public Task<ResultadoPaginado<SkuAtributosChaves>> ObterAtributos(string? search, int pagina = 1, int tamanhoPagina = 20)
     {
         if (string.IsNullOrWhiteSpace(search))
         {
-            return _atributosRepository.ObterAtributosResumo(pagina, tamanhoPagina);
+            return _atributosRepository.ObterAtributos(pagina, tamanhoPagina);
         }
         return _atributosRepository.PesquisarAtributos(search, pagina, tamanhoPagina);
     }
@@ -33,24 +33,24 @@ public sealed class SkuAtributosChavesService : BaseService
     public Task<SkuAtributosChaves?> ObterAtributoPorId(int id)
         => _atributosRepository.ObterAtributoPorId(id);
 
-    public async Task<Resultado<SkuAtributosChaves>> CriarAtributo(CreateSkuAtributosChavesDto dto)
+    public async Task<Resultado<SkuAtributosChaves>> CriarAtributo(CriarSkuAtributosChavesCommand command)
     {
-        var validation = new CreateSkuAtributosChavesDtoValidator().Validate(dto);
+        var validation = new CriarSkuAtributosChavesCommandValidator().Validate(command);
         if (!validation.IsValid)
             return Resultado<SkuAtributosChaves>.Falha(validation.ToResultadoErros());
 
-        if (await _atributosRepository.ExisteChave(dto.Chave))
+        if (await _atributosRepository.ExisteChave(command.Chave))
             return Resultado<SkuAtributosChaves>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe um atributo com este nome.", "Chave"));
 
-        var entidade = new SkuAtributosChaves(dto.Chave);
+        var entidade = new SkuAtributosChaves(command.Chave);
 
-        if (dto.Valores != null)
+        if (command.Valores != null)
         {
-            foreach (var valor in dto.Valores.Distinct())
+            foreach (var valor in command.Valores.Distinct())
             {
                 if (!string.IsNullOrWhiteSpace(valor))
                 {
-                    entidade.AdicionarValor(new SkuAtributosValores(0, valor));
+                    entidade.AdicionarValor(new SkuAtributosValores(0, 0, valor));
                 }
             }
         }
@@ -62,9 +62,9 @@ public sealed class SkuAtributosChavesService : BaseService
         });
     }
 
-    public async Task<Resultado<SkuAtributosChaves>> AtualizarAtributo(int id, UpdateSkuAtributosChavesDto dto)
+    public async Task<Resultado<SkuAtributosChaves>> AtualizarAtributo(int id, AtualizarSkuAtributosChavesCommand command)
     {
-        var validation = new UpdateSkuAtributosChavesDtoValidator().Validate(dto);
+        var validation = new AtualizarSkuAtributosChavesCommandValidator().Validate(command);
         if (!validation.IsValid)
             return Resultado<SkuAtributosChaves>.Falha(validation.ToResultadoErros());
 
@@ -72,19 +72,19 @@ public sealed class SkuAtributosChavesService : BaseService
         if (existente is null)
             return Resultado<SkuAtributosChaves>.Falha(new ResultadoErro("ATRIBUTO_NAO_ENCONTRADO", "Atributo não encontrado."));
 
-        if (await _atributosRepository.ExisteChave(dto.Chave, id))
+        if (await _atributosRepository.ExisteChave(command.Chave, id))
             return Resultado<SkuAtributosChaves>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe outro atributo com este nome.", "Chave"));
 
-        existente.Atualizar(dto.Chave);
+        existente.Atualizar(command.Chave);
         existente.LimparValores();
 
-        if (dto.Valores != null)
+        if (command.Valores != null)
         {
-            foreach (var valor in dto.Valores.Distinct())
+            foreach (var valor in command.Valores.Distinct())
             {
                 if (!string.IsNullOrWhiteSpace(valor))
                 {
-                    existente.AdicionarValor(new SkuAtributosValores(id, valor));
+                    existente.AdicionarValor(new SkuAtributosValores(id, 0, valor));
                 }
             }
         }

@@ -4,10 +4,10 @@ using Backend.Core.Common.Results;
 using Backend.Core.Common;
 using Backend.Core.Common.ValueObjects;
 using Backend.Core.Features.Localizacao.Repositories;
-using Backend.Core.Features.Parceiros.DTOs;
+using Backend.Core.Features.Parceiros.Commands;
 using Backend.Core.Features.Parceiros.Entities;
 using Backend.Core.Features.Parceiros.Repositories;
-using Backend.Core.Features.Parceiros.Validators;
+using Backend.Core.Features.Parceiros.Validators.Commands;
 
 namespace Backend.Core.Features.Parceiros.Services;
 
@@ -30,63 +30,63 @@ public sealed class ClientesService : BaseService
     public Task<Clientes?> ObterClientePorId(int id)
         => _clientesRepository.ObterClientePorId(id);
 
-    public async Task<Resultado<Clientes>> CriarCliente(CreateClienteDto dto)
+    public async Task<Resultado<Clientes>> CriarCliente(CriarClienteCommand command)
     {
-        var validator = new CreateClienteDtoValidator();
-        var validation = await validator.ValidateAsync(dto);
+        var validator = new CriarClienteCommandValidator();
+        var validation = await validator.ValidateAsync(command);
         if (!validation.IsValid)
             return Resultado<Clientes>.Falha(validation.ToResultadoErros());
 
-        var nacionalidade = await _paisesRepository.ObterPaisPorId(dto.NacionalidadeId);
+        var nacionalidade = await _paisesRepository.ObterPaisPorId(command.NacionalidadeId);
         if (nacionalidade is null)
             return Resultado<Clientes>.Falha(new ResultadoErro("NACIONALIDADE_NAO_ENCONTRADA", "Nacionalidade não encontrada.", "NacionalidadeId"));
 
-        if (nacionalidade.SiglaIso != "BRA" && !string.IsNullOrWhiteSpace(dto.RgIe))
-            return Resultado<Clientes>.Falha(new ResultadoErro("RG_IE_NAO_PERMITIDO", "RG/IE não é permitido para estrangeiros.", nameof(dto.RgIe)));
+        if (nacionalidade.SiglaIso != "BRA" && !string.IsNullOrWhiteSpace(command.RgIe))
+            return Resultado<Clientes>.Falha(new ResultadoErro("RG_IE_NAO_PERMITIDO", "RG/IE não é permitido para estrangeiros.", nameof(command.RgIe)));
 
         if (nacionalidade.SiglaIso == "BRA")
         {
-            if (dto.TipoPessoa == TipoPessoa.FISICA)
+            if (command.TipoPessoa == TipoPessoa.FISICA)
             {
-                if (!new Cpf(dto.CpfCnpj).EhValido())
+                if (!new Cpf(command.CpfCnpj).EhValido())
                     return Resultado<Clientes>.Falha(new ResultadoErro("CPF_INVALIDO", "CPF inválido para o Brasil.", "CpfCnpj"));
             }
             else
             {
-                if (!new Cnpj(dto.CpfCnpj).EhValido())
+                if (!new Cnpj(command.CpfCnpj).EhValido())
                     return Resultado<Clientes>.Falha(new ResultadoErro("CNPJ_INVALIDO", "CNPJ inválido para o Brasil.", "CpfCnpj"));
             }
         }
 
         Localizacao.Entities.Bairros? bairro = null;
-        if (dto.BairroId.HasValue)
+        if (command.BairroId.HasValue)
         {
-            bairro = await _bairrosRepository.ObterBairroPorId(dto.BairroId.Value);
+            bairro = await _bairrosRepository.ObterBairroPorId(command.BairroId.Value);
             if (bairro is null)
                 return Resultado<Clientes>.Falha(new ResultadoErro("BAIRRO_NAO_ENCONTRADO", "O bairro informado não foi encontrado.", "BairroId"));
         }
 
-        var documentoLimpo = new DocumentoGenerico(dto.CpfCnpj).Valor;
+        var documentoLimpo = new DocumentoGenerico(command.CpfCnpj).Valor;
 
-        if (await _clientesRepository.ExisteClienteCpfCnpj(documentoLimpo, dto.NacionalidadeId))
+        if (await _clientesRepository.ExisteClienteCpfCnpj(documentoLimpo, command.NacionalidadeId))
             return Resultado<Clientes>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe um cliente com este documento nesta nacionalidade.", "CpfCnpj"));
 
         return await ExecuteResultAsync(async () =>
         {
             var cliente = new Clientes(
-                dto.TipoPessoa,
-                dto.NomeRazaoSocial,
+                command.TipoPessoa,
+                command.NomeRazaoSocial,
                 documentoLimpo,
                 nacionalidade,
-                dto.RgIe,
-                dto.ApelidoNomeFantasia,
-                dto.Endereco,
+                command.RgIe,
+                command.ApelidoNomeFantasia,
+                command.Endereco,
                 bairro,
-                dto.Telefone,
-                dto.Email,
-                dto.LimiteCredito,
-                dto.Observacao,
-                dto.Ativo
+                command.Telefone,
+                command.Email,
+                command.LimiteCredito,
+                command.Observacao,
+                command.Ativo
             );
 
             var criado = await _clientesRepository.CriarCliente(cliente);
@@ -94,10 +94,10 @@ public sealed class ClientesService : BaseService
         });
     }
 
-    public async Task<Resultado<Clientes>> AtualizarCliente(int id, UpdateClienteDto dto)
+    public async Task<Resultado<Clientes>> AtualizarCliente(int id, AtualizarClienteCommand command)
     {
-        var validator = new UpdateClienteDtoValidator();
-        var validation = await validator.ValidateAsync(dto);
+        var validator = new AtualizarClienteCommandValidator();
+        var validation = await validator.ValidateAsync(command);
         if (!validation.IsValid)
             return Resultado<Clientes>.Falha(validation.ToResultadoErros());
 
@@ -105,59 +105,59 @@ public sealed class ClientesService : BaseService
         if (existente is null)
             return Resultado<Clientes>.Falha(new ResultadoErro("CLIENTE_NAO_ENCONTRADO", "Cliente não encontrado."));
 
-        var nacionalidade = await _paisesRepository.ObterPaisPorId(dto.NacionalidadeId);
+        var nacionalidade = await _paisesRepository.ObterPaisPorId(command.NacionalidadeId);
         if (nacionalidade is null)
             return Resultado<Clientes>.Falha(new ResultadoErro("NACIONALIDADE_NAO_ENCONTRADA", "Nacionalidade não encontrada.", "NacionalidadeId"));
 
-        if (nacionalidade.SiglaIso != "BRA" && !string.IsNullOrWhiteSpace(dto.RgIe))
-            return Resultado<Clientes>.Falha(new ResultadoErro("RG_IE_NAO_PERMITIDO", "RG/IE não é permitido para estrangeiros.", nameof(dto.RgIe)));
+        if (nacionalidade.SiglaIso != "BRA" && !string.IsNullOrWhiteSpace(command.RgIe))
+            return Resultado<Clientes>.Falha(new ResultadoErro("RG_IE_NAO_PERMITIDO", "RG/IE não é permitido para estrangeiros.", nameof(command.RgIe)));
 
         if (nacionalidade.SiglaIso == "BRA")
         {
-            if (dto.TipoPessoa == TipoPessoa.FISICA)
+            if (command.TipoPessoa == TipoPessoa.FISICA)
             {
-                if (!new Cpf(dto.CpfCnpj).EhValido())
+                if (!new Cpf(command.CpfCnpj).EhValido())
                     return Resultado<Clientes>.Falha(new ResultadoErro("CPF_INVALIDO", "CPF inválido para o Brasil.", "CpfCnpj"));
             }
             else
             {
-                if (!new Cnpj(dto.CpfCnpj).EhValido())
+                if (!new Cnpj(command.CpfCnpj).EhValido())
                     return Resultado<Clientes>.Falha(new ResultadoErro("CNPJ_INVALIDO", "CNPJ inválido para o Brasil.", "CpfCnpj"));
             }
         }
 
         Localizacao.Entities.Bairros? bairro = null;
-        if (dto.BairroId.HasValue)
+        if (command.BairroId.HasValue)
         {
-            bairro = await _bairrosRepository.ObterBairroPorId(dto.BairroId.Value);
+            bairro = await _bairrosRepository.ObterBairroPorId(command.BairroId.Value);
             if (bairro is null)
                 return Resultado<Clientes>.Falha(new ResultadoErro("BAIRRO_NAO_ENCONTRADO", "O bairro informado não foi encontrado.", "BairroId"));
         }
 
-        var documentoLimpo = new DocumentoGenerico(dto.CpfCnpj).Valor;
+        var documentoLimpo = new DocumentoGenerico(command.CpfCnpj).Valor;
 
-        if (await _clientesRepository.ExisteClienteCpfCnpj(documentoLimpo, dto.NacionalidadeId, id))
+        if (await _clientesRepository.ExisteClienteCpfCnpj(documentoLimpo, command.NacionalidadeId, id))
             return Resultado<Clientes>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe outro cliente com este documento nesta nacionalidade.", "CpfCnpj"));
 
         return await ExecuteResultAsync(async () =>
         {
             existente.AtualizarDados(
-                dto.TipoPessoa,
-                dto.NomeRazaoSocial,
+                command.TipoPessoa,
+                command.NomeRazaoSocial,
                 documentoLimpo,
                 nacionalidade,
-                dto.RgIe,
-                dto.ApelidoNomeFantasia,
-                dto.Endereco,
+                command.RgIe,
+                command.ApelidoNomeFantasia,
+                command.Endereco,
                 bairro,
-                dto.Telefone,
-                dto.Email,
-                dto.LimiteCredito,
-                dto.Observacao
+                command.Telefone,
+                command.Email,
+                command.LimiteCredito,
+                command.Observacao
             );
 
 
-            if (dto.Ativo) existente.Ativar();
+            if (command.Ativo) existente.Ativar();
             else existente.Desativar();
 
             var atualizado = await _clientesRepository.AtualizarCliente(id, existente);
@@ -168,9 +168,6 @@ public sealed class ClientesService : BaseService
     public Task<bool> DeletarCliente(int id)
         => _clientesRepository.DeletarCliente(id);
 
-    public Task<ResultadoPaginado<ClientesResumo>> ObterClientesResumo(int pagina = 1, int tamanhoDaPagina = 20)
-        => _clientesRepository.ObterClientesResumo(pagina, tamanhoDaPagina);
-
-    public Task<ResultadoPaginado<ClientesResumo>> PesquisarClientes(string termo, int pagina = 1, int tamanhoDaPagina = 20)
+    public Task<ResultadoPaginado<Clientes>> PesquisarClientes(string termo, int pagina = 1, int tamanhoDaPagina = 20)
         => _clientesRepository.PesquisarClientes(termo, pagina, tamanhoDaPagina);
 }

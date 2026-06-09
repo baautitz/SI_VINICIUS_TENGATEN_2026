@@ -1,5 +1,5 @@
 using Backend.Core.Common.Results;
-using Backend.Core.Features.Parceiros.DTOs;
+using Backend.Core.Features.Parceiros.Commands;
 using Backend.Core.Features.Parceiros.Entities;
 using Backend.Core.Features.Parceiros.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -18,12 +18,12 @@ public class EmitentesController : ControllerBase
     }
 
     [HttpGet]
-    public Task<ResultadoPaginado<EmitentesResumo>> GetEmitentes([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public Task<ResultadoPaginado<Emitentes>> GetEmitentes([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         if (!string.IsNullOrWhiteSpace(search))
             return _emitentesService.PesquisarEmitentes(search, page, pageSize);
 
-        return _emitentesService.ObterEmitentesResumo(page, pageSize);
+        return _emitentesService.ObterEmitentes(page, pageSize);
     }
 
     [HttpGet("{id:int}")]
@@ -38,9 +38,9 @@ public class EmitentesController : ControllerBase
 
     [HttpPost]
     [ProducesResponseType(typeof(Resultado<Emitentes>), StatusCodes.Status201Created)]
-    public async Task<ActionResult<Resultado<Emitentes>>> CreateEmitente([FromBody] CreateEmitenteDto dto)
+    public async Task<ActionResult<Resultado<Emitentes>>> CreateEmitente([FromBody] CriarEmitenteCommand command)
     {
-        var result = await _emitentesService.CriarEmitente(dto);
+        var result = await _emitentesService.CriarEmitente(command);
         if (!result.Success)
             return BadRequest(result);
 
@@ -48,9 +48,9 @@ public class EmitentesController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<Resultado<Emitentes>>> UpdateEmitente(int id, [FromBody] UpdateEmitenteDto dto)
+    public async Task<ActionResult<Resultado<Emitentes>>> UpdateEmitente(int id, [FromBody] AtualizarEmitenteCommand command)
     {
-        var result = await _emitentesService.AtualizarEmitente(id, dto);
+        var result = await _emitentesService.AtualizarEmitente(id, command);
         if (!result.Success)
         {
             if (result.Errors is not null && result.Errors.Any(error => error.Code == "EMITENTE_NAO_ENCONTRADO"))

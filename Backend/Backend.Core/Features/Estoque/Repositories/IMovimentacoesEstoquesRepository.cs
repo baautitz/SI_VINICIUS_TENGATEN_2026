@@ -1,9 +1,10 @@
 using Backend.Core.Common.Results;
 using Backend.Core.Features.Estoque.Entities;
 
-namespace Backend.Core.Features.Estoque.Repositories; 
+namespace Backend.Core.Features.Estoque.Repositories;
 
-public interface IMovimentacoesEstoquesRepository {
+public interface IMovimentacoesEstoquesRepository
+{
     public Task<ResultadoPaginado<MovimentacoesEstoques>> ObterMovimentacoes(int pagina = 1, int tamanhoDaPagina = 20);
     public Task<MovimentacoesEstoques?> ObterMovimentacaoPorId(int id);
     public Task<MovimentacoesEstoques> CriarMovimentacao(MovimentacoesEstoques movimentacao);

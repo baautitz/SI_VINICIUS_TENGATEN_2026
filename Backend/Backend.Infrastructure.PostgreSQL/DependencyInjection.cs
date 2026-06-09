@@ -62,6 +62,7 @@ public static class DependencyInjection
         services.AddScoped<CategoriasService>();
         services.AddScoped<SkuAtributosChavesService>();
         services.AddScoped<ProdutosService>();
+        services.AddScoped<SkusService>();
 
         services.AddScoped<IMovimentacoesEstoquesRepository, MovimentacoesEstoquesRepository>();
         services.AddScoped<MovimentacoesEstoquesService>();

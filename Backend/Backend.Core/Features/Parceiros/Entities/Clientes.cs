@@ -24,8 +24,8 @@ public class Clientes
     public DateTime CriadoEm { get; private set; }
     public string? Observacao { get; private set; }
 
-    
-    protected Clientes() 
+
+    protected Clientes()
     {
         NomeRazaoSocial = null!;
         CpfCnpj = null!;
