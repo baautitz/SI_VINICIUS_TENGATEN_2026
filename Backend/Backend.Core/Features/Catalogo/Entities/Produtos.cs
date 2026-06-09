@@ -7,12 +7,12 @@ public class Produtos
     private readonly List<Skus> _skus = new();
 
     public int Id { get; private set; }
-    public string Produto { get; private set; }
+    public string Produto { get; private set; } = null!;
     public string? Descricao { get; private set; }
     public bool Ativo { get; private set; }
-    public Categorias Categoria { get; private set; }
-    public Marcas Marca { get; private set; }
-    public UnidadesMedida UnidadeMedida { get; private set; }
+    public Categorias Categoria { get; private set; } = null!;
+    public Marcas Marca { get; private set; } = null!;
+    public UnidadesMedida UnidadeMedida { get; private set; } = null!;
     public IReadOnlyCollection<Skus> Skus => _skus.AsReadOnly();
 
     public Produtos(string produto, string? descricao, Categorias categoria, Marcas marca, UnidadesMedida unidadeMedida)

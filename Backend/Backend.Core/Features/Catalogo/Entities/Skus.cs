@@ -15,7 +15,7 @@ public class Skus
     public decimal CustoMedio { get; private set; }
     public decimal CustoUltimaCompra { get; private set; }
     public bool Ativo { get; private set; }
-    public Produtos Produto { get; private set; }
+    public Produtos Produto { get; private set; } = null!;
 
     public IReadOnlyCollection<SkuAtributosValores> SkuAtributosValores => _atributos.AsReadOnly();
 
