@@ -4,7 +4,7 @@ import React from "react";
 import { SkusList } from "./list";
 import { Sku } from "./types";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
-import { skusApi } from "@/api/catalogo";
+import { skusApi, produtosApi } from "@/api/catalogo";
 import { ProdutosUpsert } from "@/features/catalogo/produtos/upsert";
 import { Produto } from "@/features/catalogo/produtos/types";
 
@@ -46,10 +46,13 @@ export function SkusFeature({
 
   const [editingProduct, setEditingProduct] = React.useState<Produto | null>(null);
 
-  const handleEdit = (_sku: Sku) => {
-    // This is problematic because we need to fetch the full product based on SKU
-    // For now, setting it to null and letting the user know this needs a product lookup
-    setEditingProduct(null); 
+  const handleEdit = async (sku: Sku) => {
+    try {
+      const produto = await produtosApi.getBySku(sku.sku);
+      setEditingProduct(produto);
+    } catch (e) {
+      console.error("Erro ao buscar produto pelo SKU", e);
+    }
   };
 
   return (

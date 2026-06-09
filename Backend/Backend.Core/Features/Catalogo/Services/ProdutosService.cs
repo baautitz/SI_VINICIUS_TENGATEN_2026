@@ -40,6 +40,9 @@ public sealed class ProdutosService : BaseService
     public Task<Produtos?> ObterProdutoPorId(int id)
         => _produtosRepository.ObterProdutoPorId(id);
 
+    public Task<Produtos?> ObterProdutoPorSku(string sku)
+        => _produtosRepository.ObterProdutoPorSku(sku);
+
     public async Task<Resultado<Produtos>> CriarProduto(CriarProdutoCommand command)
     {
         var validation = new CriarProdutoCommandValidator().Validate(command);

@@ -34,6 +34,16 @@ public class ProdutosController : ControllerBase
         return Ok(produto);
     }
 
+    [HttpGet("sku/{sku}")]
+    public async Task<ActionResult<Produtos>> GetProdutoBySku(string sku)
+    {
+        var produto = await _produtosService.ObterProdutoPorSku(sku);
+        if (produto is null)
+            return NotFound();
+
+        return Ok(produto);
+    }
+
     [HttpPost]
     [ProducesResponseType(typeof(Resultado<Produtos>), StatusCodes.Status201Created)]
     public async Task<ActionResult<Resultado<Produtos>>> CreateProduto([FromBody] CriarProdutoCommand command)
