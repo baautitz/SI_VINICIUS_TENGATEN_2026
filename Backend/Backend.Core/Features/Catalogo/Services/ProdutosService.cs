@@ -16,14 +16,16 @@ public sealed class ProdutosService : BaseService
     private readonly IMarcasRepository _marcasRepository;
     private readonly IUnidadesMedidaRepository _unidadesMedidaRepository;
     private readonly ISkuAtributosChavesRepository _atributosRepository;
+    private readonly ISkusRepository _skusRepository;
 
-    public ProdutosService(IProdutosRepository produtosRepository, ICategoriasRepository categoriasRepository, IMarcasRepository marcasRepository, IUnidadesMedidaRepository unidadesMedidaRepository, ISkuAtributosChavesRepository atributosRepository)
+    public ProdutosService(IProdutosRepository produtosRepository, ICategoriasRepository categoriasRepository, IMarcasRepository marcasRepository, IUnidadesMedidaRepository unidadesMedidaRepository, ISkuAtributosChavesRepository atributosRepository, ISkusRepository skusRepository)
     {
         _produtosRepository = produtosRepository;
         _categoriasRepository = categoriasRepository;
         _marcasRepository = marcasRepository;
         _unidadesMedidaRepository = unidadesMedidaRepository;
         _atributosRepository = atributosRepository;
+        _skusRepository = skusRepository;
     }
 
     public Task<ResultadoPaginado<Produtos>> ObterProdutos(string? search, int pagina = 1, int tamanhoPagina = 20)
@@ -59,20 +61,28 @@ public sealed class ProdutosService : BaseService
         var produto = new Produtos(command.Produto, command.Descricao, categoria, marca, unidadeMedida);
         if (!command.Ativo) produto.Desativar();
 
-        foreach (var skuCommand in command.Skus)
-        {
-            var sku = new Skus(skuCommand.Sku, skuCommand.Preco, 0, skuCommand.Ativo, skuCommand.GtinEan);
-            if (skuCommand.AtributoValorIds != null && skuCommand.AtributoValorIds.Any())
-            {
-                var valoresAtributo = await _atributosRepository.ObterValoresPorIds(skuCommand.AtributoValorIds);
-                foreach (var valor in valoresAtributo) sku.AdicionarAtributo(valor);
-            }
-            produto.AdicionarSku(sku);
-        }
-
         return await ExecuteResultAsync(async () =>
         {
             var criado = await _produtosRepository.CriarProduto(produto);
+            
+            var skuIndex = 1;
+            foreach (var skuCommand in command.Skus)
+            {
+                var skuCode = string.IsNullOrWhiteSpace(skuCommand.Sku) 
+                    ? $"{criado.Id}{skuIndex++}" 
+                    : skuCommand.Sku!;
+
+                var sku = new Skus(skuCode, skuCommand.Preco, 0, skuCommand.Ativo, skuCommand.GtinEan);
+                if (skuCommand.AtributoValorIds != null && skuCommand.AtributoValorIds.Any())
+                {
+                    var valoresAtributo = await _atributosRepository.ObterValoresPorIds(skuCommand.AtributoValorIds);
+                    foreach (var valor in valoresAtributo) sku.AdicionarAtributo(valor);
+                }
+                
+                await _skusRepository.CriarSku(criado.Id, sku);
+                criado.AdicionarSku(sku);
+            }
+
             return Resultado<Produtos>.Sucesso(criado);
         });
     }
@@ -102,10 +112,50 @@ public sealed class ProdutosService : BaseService
         existente.Atualizar(command.Produto, command.Descricao, categoria, marca, unidadeMedida);
         if (command.Ativo) existente.Ativar(); else existente.Desativar();
 
-        // Lógica de atualização de SKUs omitida para manter foco
         return await ExecuteResultAsync(async () =>
         {
             var atualizado = await _produtosRepository.AtualizarProduto(id, existente);
+            
+            // Get current SKUs to decide what to delete, update or create
+            var skusAtuais = await _skusRepository.ObterSkusPorProduto(id);
+            var skusParaManter = command.Skus.Where(s => !string.IsNullOrWhiteSpace(s.Sku)).Select(s => s.Sku).ToList();
+            
+            // Delete removed SKUs
+            foreach (var skuAtual in skusAtuais.Itens)
+            {
+                if (!skusParaManter.Contains(skuAtual.Sku))
+                {
+                    await _skusRepository.DeletarSku(skuAtual.Sku);
+                }
+            }
+
+            var skuIndex = skusAtuais.Itens.Count() + 1;
+            foreach (var skuCommand in command.Skus)
+            {
+                var isNew = string.IsNullOrWhiteSpace(skuCommand.Sku);
+                var skuCode = isNew ? $"{id}{skuIndex++}" : skuCommand.Sku!;
+
+                var sku = new Skus(skuCode, skuCommand.Preco, 0, skuCommand.Ativo, skuCommand.GtinEan);
+                if (skuCommand.AtributoValorIds != null && skuCommand.AtributoValorIds.Any())
+                {
+                    var valoresAtributo = await _atributosRepository.ObterValoresPorIds(skuCommand.AtributoValorIds);
+                    foreach (var valor in valoresAtributo) sku.AdicionarAtributo(valor);
+                }
+
+                if (isNew || !skusAtuais.Itens.Any(s => s.Sku == skuCode))
+                {
+                    await _skusRepository.CriarSku(id, sku);
+                }
+                else
+                {
+                    var skuExistente = skusAtuais.Itens.First(s => s.Sku == skuCode);
+                    // Maintain current stock and average cost during basic update
+                    var skuParaUpdate = new Skus(skuCode, skuCommand.Preco, skuExistente.Estoque, skuCommand.Ativo, skuCommand.GtinEan, skuExistente.CustoMedio, skuExistente.CustoUltimaCompra);
+                    skuParaUpdate.DefinirAtributos(sku.SkuAtributosValores);
+                    await _skusRepository.AtualizarSku(skuCode, skuParaUpdate);
+                }
+            }
+
             return Resultado<Produtos>.Sucesso(atualizado);
         });
     }

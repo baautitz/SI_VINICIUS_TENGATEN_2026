@@ -27,3 +27,10 @@ export const skuSchema = z.object({
 });
 
 export type SkuFormValues = z.infer<typeof skuSchema>;
+
+export const getFullSkuName = (sku: Sku | undefined | null): string => {
+  if (!sku) return "";
+  const produtoNome = sku.produto?.produto ?? "";
+  const variacao = sku.atributos?.map((a) => a.valor).join(" / ");
+  return variacao ? `${produtoNome} - ${variacao}` : produtoNome;
+};

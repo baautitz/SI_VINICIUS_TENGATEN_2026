@@ -9,7 +9,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
 import { FeatureLayout } from "@/components/ui/feature-layout";
 import { Badge } from "@/components/ui/badge";
-import { Sku } from "./types";
+import { Sku, getFullSkuName } from "./types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 
 export function SkusList({
@@ -37,10 +37,28 @@ export function SkusList({
   const columns: ColumnDef<Sku>[] = [
     getSelectColumn<Sku>(),
     {
+      id: "produto",
+      header: "Produto",
+      cell: ({ row }) => {
+        const sku = row.original;
+        const fullName = getFullSkuName(sku);
+        const [produtoNome, variacao] = fullName.split(" - ");
+        
+        return (
+          <div className="flex flex-col">
+            <span className="font-medium">{produtoNome}</span>
+            {variacao && (
+              <span className="text-xs text-muted-foreground">{variacao}</span>
+            )}
+          </div>
+        );
+      },
+    },
+    {
       accessorKey: "sku",
       header: "SKU",
       cell: ({ row }) => (
-        <span className="font-semibold">{row.getValue("sku")}</span>
+        <span className="font-mono text-xs font-semibold">{row.getValue("sku")}</span>
       ),
     },
     {

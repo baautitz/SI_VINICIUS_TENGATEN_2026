@@ -329,8 +329,9 @@ function ProdutosUpsertForm({
     };
 
     const combinations = combine(0, []);
+    const productId = editingItem?.id || "";
 
-    return combinations.map((combo) => {
+    return combinations.map((combo, index) => {
       const currentSkus = form.getFieldValue("skus") || [];
       const valueIds = combo.map((c) => c.id).sort();
 
@@ -346,8 +347,11 @@ function ProdutosUpsertForm({
         };
       }
 
+      // Pre-generate SKU based on product ID and sequential index
+      const generatedSku = productId ? `${productId}${index + 1}` : "";
+
       return {
-        sku: "",
+        sku: generatedSku,
         preco: 0,
         gtinEan: "",
         ativo: true,
@@ -360,6 +364,21 @@ function ProdutosUpsertForm({
     setOptions(newOptions);
     const newCombinations = generateCartesianCombinations(newOptions);
     form.setFieldValue("skus", newCombinations);
+  };
+
+  const getVariationLabel = (valueIds: number[] | undefined) => {
+    if (!valueIds || valueIds.length === 0) return "";
+
+    const labels: string[] = [];
+
+    for (const option of options) {
+      const foundVal = option.valores.find((v) => valueIds.includes(v.id));
+      if (foundVal) {
+        labels.push(foundVal.valor);
+      }
+    }
+
+    return labels.join(" / ");
   };
 
   return (
@@ -840,7 +859,7 @@ function ProdutosUpsertForm({
                                 </form.Field>
                               </TableCell>
                               <TableCell className="text-foreground p-3 font-medium">
-                                {sku.atributoValorIds?.join(" / ") ||
+                                {getVariationLabel(sku.atributoValorIds) ||
                                   `Variante #${index + 1}`}
                               </TableCell>
                               <TableCell className="p-3">

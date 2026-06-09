@@ -17,6 +17,12 @@ public class Skus
     public bool Ativo { get; private set; }
     public Produtos Produto { get; private set; } = null!;
 
+    public string NomeExibicao => Produto != null
+        ? (_atributos.Any()
+            ? $"{Produto.Produto} - {string.Join(" / ", _atributos.Select(a => a.Valor))}"
+            : Produto.Produto)
+        : Sku;
+
     public IReadOnlyCollection<SkuAtributosValores> SkuAtributosValores => _atributos.AsReadOnly();
 
     protected Skus() { }

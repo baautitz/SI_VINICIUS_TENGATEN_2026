@@ -13,7 +13,7 @@ public class AtualizarProdutoCommandValidator : AbstractValidator<AtualizarProdu
         RuleFor(x => x.UnidadeMedidaId).GreaterThan(0);
         RuleForEach(x => x.Skus).ChildRules(sku =>
         {
-            sku.RuleFor(s => s.Sku).NotEmpty().MaximumLength(50);
+            sku.RuleFor(s => s.Sku).MaximumLength(50);
             sku.RuleFor(s => s.Preco).GreaterThanOrEqualTo(0);
         });
     }
