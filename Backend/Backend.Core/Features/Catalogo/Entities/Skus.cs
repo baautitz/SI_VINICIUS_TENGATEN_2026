@@ -23,7 +23,7 @@ public class Skus
             : Produto.Produto)
         : Sku;
 
-    public IReadOnlyCollection<SkuAtributosValores> SkuAtributosValores => _atributos.AsReadOnly();
+    public IReadOnlyCollection<SkuAtributosValores> Atributos => _atributos.AsReadOnly();
 
     protected Skus() { }
 

@@ -29,6 +29,7 @@ interface FornecedoresUpsertProps {
   editingItem: Fornecedor | null;
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
 }
 
 interface FornecedoresUpsertFormProps {
@@ -36,10 +37,11 @@ interface FornecedoresUpsertFormProps {
   editingItem: Fornecedor | null;
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
 }
 
 export function FornecedoresUpsert(props: FornecedoresUpsertProps) {
-  const { open, editingItem, onClose, onSuccess } = props;
+  const { open, editingItem, onClose, onSuccess, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -63,10 +65,9 @@ export function FornecedoresUpsert(props: FornecedoresUpsertProps) {
 
   return (
     <FornecedoresUpsertForm
-      open={open}
+      {...props}
+      readOnly={readOnly}
       editingItem={isEditMode ? (fullItem ?? null) : null}
-      onClose={onClose}
-      onSuccess={onSuccess}
     />
   );
 }
@@ -76,6 +77,7 @@ function FornecedoresUpsertForm({
   editingItem,
   onClose,
   onSuccess,
+  readOnly = false,
 }: FornecedoresUpsertFormProps) {
   const [selectedPais, setSelectedPais] = useState<Pais | null>(
     editingItem?.nacionalidade ?? null,

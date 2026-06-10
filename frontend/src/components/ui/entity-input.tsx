@@ -34,7 +34,7 @@ interface EntityInputProps<T, TResumo = T> {
 export function EntityInput<T, TResumo = T>({
   name,
   label,
-  placeholder = "Digite, ou Alt+Espaço para buscar...",
+  placeholder = "Digite, ou Enter para buscar...",
   error,
   initialItem = null,
   onSelectId,
@@ -172,7 +172,7 @@ export function EntityInput<T, TResumo = T>({
             variant="ghost"
             type="button"
             tabIndex={-1}
-            className="absolute right-1 top-1 h-6 w-6 text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground absolute top-1 right-1 h-6 w-6"
             onClick={() => setIsOpen(true)}
           >
             <Search className="size-4" />
@@ -196,7 +196,9 @@ export function EntityInput<T, TResumo = T>({
         {renderFeature({
           selectionMode: true,
           onSelect: applySelection,
-          initialSearchTerm: selectedItem ? getSearchTerm(selectedItem) : searchText,
+          initialSearchTerm: selectedItem
+            ? getSearchTerm(selectedItem)
+            : searchText,
         })}
       </ListDialog>
     </>

@@ -29,6 +29,7 @@ interface TransportadorasUpsertProps {
   editingItem: Transportadora | null;
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
 }
 
 interface TransportadorasUpsertFormProps {
@@ -36,10 +37,11 @@ interface TransportadorasUpsertFormProps {
   editingItem: Transportadora | null;
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
 }
 
 export function TransportadorasUpsert(props: TransportadorasUpsertProps) {
-  const { open, editingItem, onClose, onSuccess } = props;
+  const { open, editingItem, onClose, onSuccess, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -63,10 +65,9 @@ export function TransportadorasUpsert(props: TransportadorasUpsertProps) {
 
   return (
     <TransportadorasUpsertForm
-      open={open}
+      {...props}
+      readOnly={readOnly}
       editingItem={isEditMode ? (fullItem ?? null) : null}
-      onClose={onClose}
-      onSuccess={onSuccess}
     />
   );
 }
@@ -76,6 +77,7 @@ function TransportadorasUpsertForm({
   editingItem,
   onClose,
   onSuccess,
+  readOnly = false,
 }: TransportadorasUpsertFormProps) {
   const [selectedPais, setSelectedPais] = useState<Pais | null>(
     editingItem?.nacionalidade ?? null,

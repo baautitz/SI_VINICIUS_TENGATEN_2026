@@ -33,6 +33,7 @@ interface AtributosUpsertProps {
   editingItem: SkuAtributoChave | null;
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
 }
 
 interface AtributosUpsertFormProps {
@@ -40,10 +41,11 @@ interface AtributosUpsertFormProps {
   editingItem: SkuAtributoChave | null;
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
 }
 
 export function AtributosUpsert(props: AtributosUpsertProps) {
-  const { open, editingItem, onClose } = props;
+  const { open, editingItem, onClose, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -67,10 +69,9 @@ export function AtributosUpsert(props: AtributosUpsertProps) {
 
   return (
     <AtributosUpsertForm
-      open={open}
+      {...props}
+      readOnly={readOnly}
       editingItem={isEditMode ? (fullItem ?? null) : null}
-      onClose={onClose}
-      onSuccess={props.onSuccess}
     />
   );
 }
@@ -80,6 +81,7 @@ function AtributosUpsertForm({
   editingItem,
   onClose,
   onSuccess,
+  readOnly = false,
 }: AtributosUpsertFormProps) {
   const { mutation, globalError, getFieldError, resetErrors } =
     useUpsertMutation({

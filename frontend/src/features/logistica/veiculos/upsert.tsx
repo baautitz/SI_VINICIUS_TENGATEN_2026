@@ -26,6 +26,7 @@ interface VeiculosUpsertProps {
   editingItem: Veiculo | null;
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
 }
 
 interface VeiculosUpsertFormProps {
@@ -33,10 +34,11 @@ interface VeiculosUpsertFormProps {
   editingItem: Veiculo | null;
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
 }
 
 export function VeiculosUpsert(props: VeiculosUpsertProps) {
-  const { open, editingItem, onClose, onSuccess } = props;
+  const { open, editingItem, onClose, onSuccess, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -60,10 +62,9 @@ export function VeiculosUpsert(props: VeiculosUpsertProps) {
 
   return (
     <VeiculosUpsertForm
-      open={open}
+      {...props}
+      readOnly={readOnly}
       editingItem={isEditMode ? (fullItem ?? null) : null}
-      onClose={onClose}
-      onSuccess={onSuccess}
     />
   );
 }
@@ -73,6 +74,7 @@ function VeiculosUpsertForm({
   editingItem,
   onClose,
   onSuccess,
+  readOnly = false,
 }: VeiculosUpsertFormProps) {
   const { mutation, globalError, getFieldError, resetErrors } =
     useUpsertMutation({

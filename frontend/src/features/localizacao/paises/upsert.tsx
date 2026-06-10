@@ -20,10 +20,11 @@ interface PaisesUpsertProps {
   editingItem: Pais | null;
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
 }
 
 export function PaisesUpsert(props: PaisesUpsertProps) {
-  const { open, editingItem, onClose } = props;
+  const { open, editingItem, onClose, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -48,6 +49,7 @@ export function PaisesUpsert(props: PaisesUpsertProps) {
   return (
     <PaisesUpsertForm
       {...props}
+      readOnly={readOnly}
       editingItem={isEditMode ? (fullItem ?? null) : null}
     />
   );
@@ -58,6 +60,7 @@ function PaisesUpsertForm({
   editingItem,
   onClose,
   onSuccess,
+  readOnly = false,
 }: PaisesUpsertProps) {
   const { mutation, globalError, getFieldError, resetErrors } =
     useUpsertMutation({

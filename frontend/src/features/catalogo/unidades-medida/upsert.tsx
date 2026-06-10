@@ -23,6 +23,7 @@ interface UnidadesMedidaUpsertProps {
   editingItem: UnidadeMedida | null;
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
 }
 
 interface UnidadesMedidaUpsertFormProps {
@@ -30,10 +31,11 @@ interface UnidadesMedidaUpsertFormProps {
   editingItem: UnidadeMedida | null;
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
 }
 
 export function UnidadesMedidaUpsert(props: UnidadesMedidaUpsertProps) {
-  const { open, editingItem, onClose, onSuccess } = props;
+  const { open, editingItem, onClose, onSuccess, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -57,10 +59,9 @@ export function UnidadesMedidaUpsert(props: UnidadesMedidaUpsertProps) {
 
   return (
     <UnidadesMedidaUpsertForm
-      open={open}
+      {...props}
+      readOnly={readOnly}
       editingItem={isEditMode ? (fullItem ?? null) : null}
-      onClose={onClose}
-      onSuccess={onSuccess}
     />
   );
 }
@@ -70,6 +71,7 @@ function UnidadesMedidaUpsertForm({
   editingItem,
   onClose,
   onSuccess,
+  readOnly = false,
 }: UnidadesMedidaUpsertFormProps) {
   const { mutation, globalError, getFieldError, resetErrors } =
     useUpsertMutation({

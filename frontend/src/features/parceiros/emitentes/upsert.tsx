@@ -29,6 +29,7 @@ interface EmitentesUpsertProps {
   editingItem: Emitente | null;
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
 }
 
 interface EmitentesUpsertFormProps {
@@ -36,10 +37,11 @@ interface EmitentesUpsertFormProps {
   editingItem: Emitente | null;
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
 }
 
 export function EmitentesUpsert(props: EmitentesUpsertProps) {
-  const { open, editingItem, onClose, onSuccess } = props;
+  const { open, editingItem, onClose, onSuccess, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -63,10 +65,9 @@ export function EmitentesUpsert(props: EmitentesUpsertProps) {
 
   return (
     <EmitentesUpsertForm
-      open={open}
+      {...props}
+      readOnly={readOnly}
       editingItem={isEditMode ? (fullItem ?? null) : null}
-      onClose={onClose}
-      onSuccess={onSuccess}
     />
   );
 }
@@ -76,6 +77,7 @@ function EmitentesUpsertForm({
   editingItem,
   onClose,
   onSuccess,
+  readOnly = false,
 }: EmitentesUpsertFormProps) {
   const [selectedPais, setSelectedPais] = useState<Pais | null>(
     editingItem?.nacionalidade ?? null,

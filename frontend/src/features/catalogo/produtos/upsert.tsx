@@ -26,6 +26,7 @@ import { FormFieldUI } from "@/components/ui/form-field-ui";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
+import { toast } from "sonner";
 import { UnidadeMedida } from "@/features/catalogo/unidades-medida/types";
 import { Produto, ProdutoFormValues, produtoSchema } from "./types";
 import { SkuFormValues, skuFormSchema } from "./types-sku";
@@ -56,6 +57,7 @@ interface ProdutosUpsertProps {
   editingItem: Produto | null;
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
   onSuccessWithAdjustment?: (items: ItemLinha[]) => void;
 }
 
@@ -64,6 +66,7 @@ interface ProdutosUpsertFormProps {
   editingItem: Produto | null;
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
   onSuccessWithAdjustment?: (items: ItemLinha[]) => void;
 }
 
@@ -74,7 +77,7 @@ interface VariantOption {
 }
 
 export function ProdutosUpsert(props: ProdutosUpsertProps) {
-  const { open, editingItem, onClose } = props;
+  const { open, editingItem, onClose, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -90,7 +93,7 @@ export function ProdutosUpsert(props: ProdutosUpsertProps) {
         onOpenChange={(o) => {
           if (!o) onClose();
         }}
-        title="Editar Produto"
+        title={readOnly ? "Visualizar Produto" : "Editar Produto"}
         loading={true}
       />
     );
@@ -101,6 +104,7 @@ export function ProdutosUpsert(props: ProdutosUpsertProps) {
       open={open}
       editingItem={isEditMode ? (fullItem ?? null) : null}
       onClose={onClose}
+      readOnly={readOnly}
       onSuccess={props.onSuccess}
       onSuccessWithAdjustment={props.onSuccessWithAdjustment}
     />
@@ -112,6 +116,7 @@ function ProdutosUpsertForm({
   editingItem,
   onClose,
   onSuccess,
+  readOnly = false,
   onSuccessWithAdjustment,
 }: ProdutosUpsertFormProps) {
   const [selectedUM, setSelectedUM] = useState<UnidadeMedida | null>(
@@ -119,6 +124,8 @@ function ProdutosUpsertForm({
   );
   const [confirmUomTransitionOpen, setConfirmUomTransitionOpen] =
     useState(false);
+  const [copyPriceDialogOpen, setCopyPriceDialogOpen] = useState(false);
+  const [focusedSkuIndex, setFocusedSkuIndex] = useState<number | null>(null);
   const [pendingFormValue, setPendingFormValue] =
     useState<ProdutoFormValues | null>(null);
 
@@ -227,9 +234,38 @@ function ProdutosUpsertForm({
           ignoreInputs: false,
         },
       },
+      {
+        hotkey: "Alt+C",
+        callback: (e: KeyboardEvent) => {
+          e.preventDefault();
+          const skus = form.getFieldValue("skus");
+          if (skus && skus.length > 1) {
+            setCopyPriceDialogOpen(true);
+          }
+        },
+        options: {
+          enabled: open && hasVariants && !readOnly,
+          ignoreInputs: false,
+        },
+      },
     ],
     { conflictBehavior: "allow" },
   );
+
+  const handleCopyPrice = () => {
+    const skus = [...form.getFieldValue("skus")];
+    const indexToCopy = focusedSkuIndex ?? 0;
+
+    if (skus.length > 1) {
+      const sourcePrice = skus[indexToCopy].preco;
+      const updatedSkus = skus.map((s) => ({ ...s, preco: sourcePrice }));
+      form.setFieldValue("skus", updatedSkus);
+      toast.success(
+        `Preço (R$ ${sourcePrice.toFixed(2)}) replicado para todas as variações.`,
+      );
+    }
+    setCopyPriceDialogOpen(false);
+  };
 
   const getDisplayKeyName = (option: VariantOption) => {
     const found = atributosList?.itens?.find(
@@ -246,6 +282,7 @@ function ProdutosUpsertForm({
         gtinEan: s.gtinEan ?? "",
         ativo: s.ativo,
         atributoValorIds: s.atributos?.map((v) => v.id) ?? [],
+        estoque: s.estoque,
       }));
     }
     return [
@@ -255,6 +292,7 @@ function ProdutosUpsertForm({
         gtinEan: "",
         ativo: true,
         atributoValorIds: [],
+        estoque: 0,
       },
     ];
   };
@@ -593,7 +631,12 @@ function ProdutosUpsertForm({
                 setHasVariants(val);
                 if (val) {
                   const combs = generateCartesianCombinations(options);
-                  form.setFieldValue("skus", combs.length > 0 ? combs.map(c => ({ ...c, sku: c.sku ?? "" })) : []);
+                  form.setFieldValue(
+                    "skus",
+                    combs.length > 0
+                      ? combs.map((c) => ({ ...c, sku: c.sku ?? "" }))
+                      : [],
+                  );
                 } else {
                   form.setFieldValue("skus", [
                     {
@@ -616,7 +659,7 @@ function ProdutosUpsertForm({
           </div>
 
           {!hasVariants ? (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
               <form.Field
                 name="skus[0].sku"
                 validators={{ onChange: skuFormSchema.shape.sku }}
@@ -663,6 +706,20 @@ function ProdutosUpsertForm({
                     maxLength={14}
                     placeholder="EAN / GTIN"
                   />
+                )}
+              </form.Field>
+
+              <form.Field name="skus[0].estoque">
+                {(field) => (
+                  <div className="flex flex-col gap-1.5">
+                    <FieldLabel>Estoque Atual</FieldLabel>
+                    <Input
+                      value={field.state.value}
+                      disabled
+                      className="bg-muted/50 h-8 font-mono text-xs"
+                      inputSize="full"
+                    />
+                  </div>
                 )}
               </form.Field>
             </div>
@@ -791,25 +848,43 @@ function ProdutosUpsertForm({
                       <span className="text-sm font-medium">
                         Variações de SKU
                       </span>
+                      {!readOnly && form.getFieldValue("skus").length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-muted-foreground text-md h-7 gap-1.5 px-2"
+                          onClick={() => setCopyPriceDialogOpen(true)}
+                        >
+                          Replicar Preço Focado
+                          <KbdGroup>
+                            <Kbd>Alt</Kbd>
+                            <Kbd>C</Kbd>
+                          </KbdGroup>
+                        </Button>
+                      )}
                     </div>
 
-                    <div className="overflow-x-auto rounded-lg border">
+                    <div className="bg-card overflow-hidden rounded-lg border">
                       <Table>
-                        <TableHeader className="bg-muted/40 text-muted-foreground border-b text-xs font-semibold uppercase">
+                        <TableHeader className="bg-muted border-b">
                           <TableRow className="border-b hover:bg-transparent">
-                            <TableHead className="text-muted-foreground h-10 p-3 font-semibold">
+                            <TableHead className="text-foreground h-10 px-4 py-2 text-left text-sm font-semibold">
                               Código SKU
                             </TableHead>
-                            <TableHead className="text-muted-foreground h-10 p-3 font-semibold">
+                            <TableHead className="text-foreground h-10 px-4 py-2 text-left text-sm font-semibold">
                               Variação
                             </TableHead>
-                            <TableHead className="text-muted-foreground h-10 p-3 font-semibold">
+                            <TableHead className="text-foreground h-10 px-4 py-2 text-left text-sm font-semibold">
                               Preço (R$)
                             </TableHead>
-                            <TableHead className="text-muted-foreground h-10 p-3 font-semibold">
+                            <TableHead className="text-foreground h-10 px-4 py-2 text-left text-sm font-semibold">
                               Barras (EAN)
                             </TableHead>
-                            <TableHead className="text-muted-foreground h-10 p-3 text-center font-semibold">
+                            <TableHead className="text-foreground h-10 px-4 py-2 text-right text-sm font-semibold">
+                              Estoque
+                            </TableHead>
+                            <TableHead className="text-foreground h-10 px-4 py-2 text-center text-sm font-semibold">
                               Ativo
                             </TableHead>
                           </TableRow>
@@ -818,9 +893,9 @@ function ProdutosUpsertForm({
                           {form.getFieldValue("skus").map((sku, index) => (
                             <TableRow
                               key={index}
-                              className="hover:bg-muted/10 border-b last:border-0"
+                              className="group hover:bg-muted/10 border-b last:border-0"
                             >
-                              <TableCell className="p-3">
+                              <TableCell className="px-4 py-2.5 align-middle">
                                 <form.Field
                                   name={`skus[${index}].sku`}
                                   validators={{
@@ -840,16 +915,19 @@ function ProdutosUpsertForm({
                                           onChange={(e) =>
                                             field.handleChange(e.target.value)
                                           }
+                                          onFocus={() =>
+                                            setFocusedSkuIndex(index)
+                                          }
                                           maxLength={50}
                                           placeholder="Ex: 104082"
                                           className={cn(
-                                            "h-8 font-mono text-xs",
+                                            "text-foreground/90 h-8 font-mono text-sm font-bold",
                                             error &&
                                               "border-destructive focus-visible:ring-destructive",
                                           )}
                                         />
                                         {error && (
-                                          <span className="text-destructive text-[10px] font-medium">
+                                          <span className="text-[10px] font-medium text-red-500">
                                             {error}
                                           </span>
                                         )}
@@ -858,11 +936,11 @@ function ProdutosUpsertForm({
                                   }}
                                 </form.Field>
                               </TableCell>
-                              <TableCell className="text-foreground p-3 font-medium">
+                              <TableCell className="text-foreground/90 px-4 py-2.5 align-middle text-sm font-medium">
                                 {getVariationLabel(sku.atributoValorIds) ||
                                   `Variante #${index + 1}`}
                               </TableCell>
-                              <TableCell className="p-3">
+                              <TableCell className="px-4 py-2.5 align-middle">
                                 <form.Field
                                   name={`skus[${index}].preco`}
                                   validators={{
@@ -880,18 +958,21 @@ function ProdutosUpsertForm({
                                           inputSize="full"
                                           decimals={2}
                                           value={field.state.value}
+                                          onFocus={() =>
+                                            setFocusedSkuIndex(index)
+                                          }
                                           onNumberChange={(num) => {
                                             field.handleChange(num);
                                           }}
                                           placeholder="0,00"
                                           className={cn(
-                                            "h-8 text-xs",
+                                            "h-8 text-sm font-medium",
                                             error &&
                                               "border-destructive focus-visible:ring-destructive",
                                           )}
                                         />
                                         {error && (
-                                          <span className="text-destructive text-[10px] font-medium">
+                                          <span className="text-[10px] font-medium text-red-500">
                                             {error}
                                           </span>
                                         )}
@@ -900,7 +981,7 @@ function ProdutosUpsertForm({
                                   }}
                                 </form.Field>
                               </TableCell>
-                              <TableCell className="p-3">
+                              <TableCell className="px-4 py-2.5 align-middle">
                                 <form.Field
                                   name={`skus[${index}].gtinEan`}
                                   validators={{
@@ -920,16 +1001,19 @@ function ProdutosUpsertForm({
                                           onChange={(e) =>
                                             field.handleChange(e.target.value)
                                           }
+                                          onFocus={() =>
+                                            setFocusedSkuIndex(index)
+                                          }
                                           maxLength={14}
                                           placeholder="EAN"
                                           className={cn(
-                                            "h-8 text-xs",
+                                            "h-8 text-sm",
                                             error &&
                                               "border-destructive focus-visible:ring-destructive",
                                           )}
                                         />
                                         {error && (
-                                          <span className="text-destructive text-[10px] font-medium">
+                                          <span className="text-[10px] font-medium text-red-500">
                                             {error}
                                           </span>
                                         )}
@@ -938,11 +1022,21 @@ function ProdutosUpsertForm({
                                   }}
                                 </form.Field>
                               </TableCell>
-                              <TableCell className="p-3 text-center align-middle">
+                              <TableCell className="px-4 py-2.5 text-right align-middle">
+                                <form.Field name={`skus[${index}].estoque`}>
+                                  {(field) => (
+                                    <span className="text-foreground/90 font-mono text-sm font-bold">
+                                      {field.state.value ?? 0}
+                                    </span>
+                                  )}
+                                </form.Field>
+                              </TableCell>
+                              <TableCell className="px-4 py-2.5 text-center align-middle">
                                 <form.Field name={`skus[${index}].ativo`}>
                                   {(field) => (
                                     <Checkbox
                                       checked={field.state.value}
+                                      onFocus={() => setFocusedSkuIndex(index)}
                                       onCheckedChange={(checked) =>
                                         field.handleChange(!!checked)
                                       }
@@ -1021,6 +1115,58 @@ function ProdutosUpsertForm({
               onClick={confirmUomTransition}
             >
               Entendi e Confirmar
+              <KbdGroup className="ml-2">
+                <Kbd>Alt</Kbd>
+                <Kbd>Enter</Kbd>
+              </KbdGroup>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={copyPriceDialogOpen} onOpenChange={setCopyPriceDialogOpen}>
+        <DialogContent
+          className="max-w-md"
+          onKeyDown={(e) => {
+            if (e.altKey && e.key === "Enter") {
+              e.preventDefault();
+              handleCopyPrice();
+            }
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>Replicar Preço?</DialogTitle>
+            <DialogDescription>
+              Deseja realmente copiar o preço da variação{" "}
+              <strong>
+                {getVariationLabel(
+                  form.getFieldValue("skus")[focusedSkuIndex ?? 0]
+                    ?.atributoValorIds,
+                ) || "selecionada"}
+              </strong>{" "}
+              (
+              <strong>
+                {form
+                  .getFieldValue("skus")
+                  [focusedSkuIndex ?? 0]?.preco.toLocaleString("pt-BR", {
+                    style: "currency",
+                    currency: "BRL",
+                  })}
+              </strong>
+              ) para todas as outras variações deste produto?
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="mt-4 flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setCopyPriceDialogOpen(false)}
+            >
+              Cancelar <Kbd>Esc</Kbd>
+            </Button>
+            <Button type="button" variant="default" onClick={handleCopyPrice}>
+              Replicar Preço
               <KbdGroup className="ml-2">
                 <Kbd>Alt</Kbd>
                 <Kbd>Enter</Kbd>

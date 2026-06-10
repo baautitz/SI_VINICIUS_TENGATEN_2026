@@ -14,6 +14,7 @@ public class Produtos
     public Marcas Marca { get; private set; } = null!;
     public UnidadesMedida UnidadeMedida { get; private set; } = null!;
     public IReadOnlyCollection<Skus> Skus => _skus.AsReadOnly();
+    public decimal EstoqueTotal => _skus.Sum(x => x.Estoque);
 
     public Produtos(string produto, string? descricao, Categorias categoria, Marcas marca, UnidadesMedida unidadeMedida)
     {

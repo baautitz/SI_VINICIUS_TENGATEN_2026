@@ -35,17 +35,26 @@ export function useFeatureList<T>({
   };
   const [isUpsertOpen, setIsUpsertOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<T | null>(null);
+  const [readOnly, setReadOnly] = useState(false);
 
   const [deleteDialogOpen, setDeleteDialogVisible] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<T | null>(null);
 
   const handleCreate = () => {
     setEditingItem(null);
+    setReadOnly(false);
     setIsUpsertOpen(true);
   };
 
   const handleEdit = (item: T) => {
     setEditingItem(item);
+    setReadOnly(false);
+    setIsUpsertOpen(true);
+  };
+
+  const handleView = (item: T) => {
+    setEditingItem(item);
+    setReadOnly(true);
     setIsUpsertOpen(true);
   };
 
@@ -71,11 +80,13 @@ export function useFeatureList<T>({
     isUpsertOpen,
     setIsUpsertOpen,
     editingItem,
+    readOnly,
     deleteDialogOpen,
     setDeleteDialogVisible,
     itemToDelete,
     handleCreate,
     handleEdit,
+    handleView,
     handleDeleteClick,
     handleSearchChange,
   };

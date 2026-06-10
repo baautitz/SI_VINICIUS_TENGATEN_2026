@@ -21,10 +21,11 @@ interface CategoriasUpsertProps {
   editingItem: Categoria | null;
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
 }
 
 export function CategoriasUpsert(props: CategoriasUpsertProps) {
-  const { open, editingItem, onClose } = props;
+  const { open, editingItem, onClose, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -49,6 +50,7 @@ export function CategoriasUpsert(props: CategoriasUpsertProps) {
   return (
     <CategoriasUpsertForm
       {...props}
+      readOnly={readOnly}
       editingItem={isEditMode ? (fullItem ?? null) : null}
     />
   );
@@ -59,6 +61,7 @@ function CategoriasUpsertForm({
   editingItem,
   onClose,
   onSuccess,
+  readOnly = false,
 }: CategoriasUpsertProps) {
   const { mutation, globalError, getFieldError, resetErrors } =
   useUpsertMutation({

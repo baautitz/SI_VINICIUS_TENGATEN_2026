@@ -21,6 +21,7 @@ interface BairrosUpsertProps {
   editingItem: Bairro | null;
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
 }
 
 interface BairrosUpsertFormProps {
@@ -28,10 +29,11 @@ interface BairrosUpsertFormProps {
   editingItem: Bairro | null;
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
 }
 
 export function BairrosUpsert(props: BairrosUpsertProps) {
-  const { open, editingItem, onClose, onSuccess } = props;
+  const { open, editingItem, onClose, onSuccess, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -55,10 +57,9 @@ export function BairrosUpsert(props: BairrosUpsertProps) {
 
   return (
     <BairrosUpsertForm
-      open={open}
+      {...props}
+      readOnly={readOnly}
       editingItem={isEditMode ? (fullItem ?? null) : null}
-      onClose={onClose}
-      onSuccess={onSuccess}
     />
   );
 }
@@ -68,6 +69,7 @@ function BairrosUpsertForm({
   editingItem,
   onClose,
   onSuccess,
+  readOnly = false,
 }: BairrosUpsertFormProps) {
   const { mutation, globalError, getFieldError, resetErrors } =
     useUpsertMutation({

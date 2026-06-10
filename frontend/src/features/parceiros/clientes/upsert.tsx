@@ -29,6 +29,7 @@ interface ClientesUpsertProps {
   editingItem: Cliente | null;
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
 }
 
 interface ClientesUpsertFormProps {
@@ -36,10 +37,11 @@ interface ClientesUpsertFormProps {
   editingItem: Cliente | null;
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
 }
 
 export function ClientesUpsert(props: ClientesUpsertProps) {
-  const { open, editingItem, onClose, onSuccess } = props;
+  const { open, editingItem, onClose, onSuccess, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -63,10 +65,9 @@ export function ClientesUpsert(props: ClientesUpsertProps) {
 
   return (
     <ClientesUpsertForm
-      open={open}
+      {...props}
+      readOnly={readOnly}
       editingItem={isEditMode ? (fullItem ?? null) : null}
-      onClose={onClose}
-      onSuccess={onSuccess}
     />
   );
 }
@@ -76,6 +77,7 @@ function ClientesUpsertForm({
   editingItem,
   onClose,
   onSuccess,
+  readOnly = false,
 }: ClientesUpsertFormProps) {
   const [selectedPais, setSelectedPais] = useState<Pais | null>(
     editingItem?.nacionalidade ?? null,

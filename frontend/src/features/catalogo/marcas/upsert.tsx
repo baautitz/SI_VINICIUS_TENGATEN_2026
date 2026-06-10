@@ -21,10 +21,11 @@ interface MarcasUpsertProps {
   editingItem: Marca | null;
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
 }
 
 export function MarcasUpsert(props: MarcasUpsertProps) {
-  const { open, editingItem, onClose } = props;
+  const { open, editingItem, onClose, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -49,6 +50,7 @@ export function MarcasUpsert(props: MarcasUpsertProps) {
   return (
     <MarcasUpsertForm
       {...props}
+      readOnly={readOnly}
       editingItem={isEditMode ? (fullItem ?? null) : null}
     />
   );
@@ -59,6 +61,7 @@ function MarcasUpsertForm({
   editingItem,
   onClose,
   onSuccess,
+  readOnly = false,
 }: MarcasUpsertProps) {
   const { mutation, globalError, getFieldError, resetErrors } =
   useUpsertMutation({

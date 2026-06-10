@@ -20,6 +20,7 @@ interface CidadesUpsertProps {
   editingItem: Cidade | null;
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
 }
 
 interface CidadesUpsertFormProps {
@@ -27,10 +28,11 @@ interface CidadesUpsertFormProps {
   editingItem: Cidade | null;
   onClose: () => void;
   onSuccess: () => void;
+  readOnly?: boolean;
 }
 
 export function CidadesUpsert(props: CidadesUpsertProps) {
-  const { open, editingItem, onClose, onSuccess } = props;
+  const { open, editingItem, onClose, onSuccess, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -54,10 +56,9 @@ export function CidadesUpsert(props: CidadesUpsertProps) {
 
   return (
     <CidadesUpsertForm
-      open={open}
+      {...props}
+      readOnly={readOnly}
       editingItem={isEditMode ? (fullItem ?? null) : null}
-      onClose={onClose}
-      onSuccess={onSuccess}
     />
   );
 }
@@ -67,6 +68,7 @@ function CidadesUpsertForm({
   editingItem,
   onClose,
   onSuccess,
+  readOnly = false,
 }: CidadesUpsertFormProps) {
   const { mutation, globalError, getFieldError, resetErrors } =
     useUpsertMutation({

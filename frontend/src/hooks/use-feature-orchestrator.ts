@@ -15,6 +15,7 @@ export interface FeatureListProps<TDto> {
   onSearchChange: (val: string) => void;
   onAdd: () => void;
   onEdit: (item: TDto) => void;
+  onView: (item: TDto) => void;
   onDelete: (item: TDto) => void;
   onSelect?: (item: TDto) => void;
   onPageChange: (page: number) => void;
@@ -105,6 +106,7 @@ export function useFeatureOrchestrator<TDto extends { id?: string | number; sku?
       onSearchChange: list.handleSearchChange,
       onAdd: list.handleCreate,
       onEdit: list.handleEdit,
+      onView: list.handleView,
       onDelete: list.handleDeleteClick,
       onPageChange: list.setPage,
       rowSelection: list.rowSelection,
@@ -115,6 +117,7 @@ export function useFeatureOrchestrator<TDto extends { id?: string | number; sku?
     upsertProps: {
       open: list.isUpsertOpen,
       editingItem: freshItem || list.editingItem,
+      readOnly: list.readOnly,
       loading: isLoadingDetail,
       onClose: () => list.setIsUpsertOpen(false),
       onSuccess: async () => {
