@@ -210,6 +210,7 @@ const commands = {
     const backend = spawn(
       dotnetCmd,
       [
+        'watch',
         'run',
         '--project',
         'Backend.Web',
