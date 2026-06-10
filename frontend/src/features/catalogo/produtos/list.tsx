@@ -59,7 +59,14 @@ export function ProdutosList({
     {
       accessorKey: "estoqueTotal",
       header: "Estoque",
-      cell: ({ row }) => row.getValue("estoqueTotal") || 0,
+      cell: ({ row }) => {
+        const value = row.getValue("estoqueTotal");
+        return (
+          <span className="font-mono text-xs">
+            {value !== undefined && value !== null ? Number(value) : 0}
+          </span>
+        );
+      },
     },
     {
       accessorKey: "ativo",

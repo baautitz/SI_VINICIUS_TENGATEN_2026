@@ -154,7 +154,7 @@ public sealed class ProdutosService : BaseService
                     var skuExistente = skusAtuais.Itens.First(s => s.Sku == skuCode);
                     // Maintain current stock and average cost during basic update
                     var skuParaUpdate = new Skus(skuCode, skuCommand.Preco, skuExistente.Estoque, skuCommand.Ativo, skuCommand.GtinEan, skuExistente.CustoMedio, skuExistente.CustoUltimaCompra);
-                    skuParaUpdate.DefinirAtributos(sku.SkuAtributosValores);
+                    skuParaUpdate.DefinirAtributos(sku.Atributos);
                     await _skusRepository.AtualizarSku(skuCode, skuParaUpdate);
                 }
             }

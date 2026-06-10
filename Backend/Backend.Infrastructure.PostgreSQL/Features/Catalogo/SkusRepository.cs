@@ -27,10 +27,10 @@ public class SkusRepository : ISkusRepository
         const string sqlData = @"
             SELECT 
                 s.sku, s.gtin_ean AS GtinEan, s.preco AS Preco, s.estoque AS Estoque, s.ativo AS Ativo, s.custo_medio AS CustoMedio, s.custo_ultima_compra AS CustoUltimaCompra,
-                p.id, p.produto, p.descricao, p.ativo,
-                c.id, c.categoria, c.descricao, c.ativo,
-                m.id, m.marca, m.descricao, m.ativo,
-                u.id, u.sigla, u.descricao, u.categoria, u.permite_decimais AS PermiteDecimais, u.ativo
+                p.id AS ProdutoId, p.produto AS ProdutoNome, p.descricao AS ProdutoDescricao, p.ativo AS ProdutoAtivo,
+                c.id AS CategoriaId, c.categoria AS CategoriaNome, c.descricao AS CategoriaDescricao, c.ativo AS CategoriaAtivo,
+                m.id AS MarcaId, m.marca AS MarcaNome, m.descricao AS MarcaDescricao, m.ativo AS MarcaAtivo,
+                u.id AS UnidadeMedidaId, u.sigla AS UnidadeMedidaSigla, u.descricao AS UnidadeMedidaDescricao, u.categoria AS UnidadeMedidaCategoria, u.permite_decimais AS PermiteDecimais, u.ativo AS UnidadeMedidaAtivo
             FROM skus s
             JOIN produtos p ON p.id = s.produto_id
             JOIN categorias c ON c.id = p.categoria_id
@@ -40,15 +40,51 @@ public class SkusRepository : ISkusRepository
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
-        var skus = (await _session.Connection.QueryAsync<SkuDto, Produtos, Categorias, Marcas, UnidadesMedida, Skus>(
+        var dtos = (await _session.Connection.QueryAsync<SkuFullDto>(
             sqlData,
-            (skuDto, produto, categoria, marca, unidadeMedida) => BuildSkuWithProduto(skuDto, categoria, marca, unidadeMedida, produto),
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
-            splitOn: "id,id,id,id",
             transaction: _session.Transaction)).ToList();
 
-        return new ResultadoPaginado<Skus>(skus, total, pagina, tamanhoDaPagina);
+        var skus = dtos.Select(BuildSkuFromFullDto).ToList();
 
+        if (skus.Count > 0)
+        {
+            await HydrateAttributes(skus);
+        }
+
+        return new ResultadoPaginado<Skus>(skus, total, pagina, tamanhoDaPagina);
+    }
+
+    private async Task HydrateAttributes(IEnumerable<Skus> skus)
+    {
+        var skuCodes = skus.Select(s => s.Sku).ToArray();
+        const string atributosSql = @"
+            SELECT savr.sku AS Sku, sav.chave_id AS ChaveId, sav.valor AS Valor,
+                   sav.id AS Id, sak.chave AS Chave
+            FROM skus_atributos_valores_relacionamento savr
+            JOIN sku_atributos_valores sav ON sav.id = savr.valor_id
+            JOIN sku_atributos_chaves sak ON sak.id = sav.chave_id
+            WHERE savr.sku = ANY(@Skus);";
+
+        var atributos = (await _session.Connection.QueryAsync<AtributoDto>(
+            atributosSql,
+            new { Skus = skuCodes },
+            transaction: _session.Transaction)).ToList();
+
+        var atributosPorSku = atributos
+            .GroupBy(a => a.Sku)
+            .ToDictionary(g => g.Key, g => g.AsEnumerable());
+
+        foreach (var sku in skus)
+        {
+            if (atributosPorSku.TryGetValue(sku.Sku, out var sub))
+            {
+                foreach (var atributoDto in sub)
+                {
+                    sku.AdicionarAtributo(BuildAtributo(atributoDto));
+                }
+            }
+        }
     }
 
     public async Task<ResultadoPaginado<Skus>> ObterSkusPorProduto(int produtoId)
@@ -58,10 +94,10 @@ public class SkusRepository : ISkusRepository
         const string skusSql = @"
             SELECT 
                 s.sku, s.gtin_ean AS GtinEan, s.preco AS Preco, s.estoque AS Estoque, s.ativo AS Ativo, s.custo_medio AS CustoMedio, s.custo_ultima_compra AS CustoUltimaCompra,
-                p.id, p.produto, p.descricao, p.ativo,
-                c.id, c.categoria, c.descricao, c.ativo,
-                m.id, m.marca, m.descricao, m.ativo,
-                u.id, u.sigla, u.descricao, u.categoria, u.permite_decimais AS PermiteDecimais, u.ativo
+                p.id AS ProdutoId, p.produto AS ProdutoNome, p.descricao AS ProdutoDescricao, p.ativo AS ProdutoAtivo,
+                c.id AS CategoriaId, c.categoria AS CategoriaNome, c.descricao AS CategoriaDescricao, c.ativo AS CategoriaAtivo,
+                m.id AS MarcaId, m.marca AS MarcaNome, m.descricao AS MarcaDescricao, m.ativo AS MarcaAtivo,
+                u.id AS UnidadeMedidaId, u.sigla AS UnidadeMedidaSigla, u.descricao AS UnidadeMedidaDescricao, u.categoria AS UnidadeMedidaCategoria, u.permite_decimais AS PermiteDecimais, u.ativo AS UnidadeMedidaAtivo
             FROM skus s
             JOIN produtos p ON p.id = s.produto_id
             JOIN categorias c ON c.id = p.categoria_id
@@ -81,12 +117,12 @@ public class SkusRepository : ISkusRepository
         var total = await _session.Connection.ExecuteScalarAsync<int>(
             countSql, new { ProdutoId = produtoId }, transaction: _session.Transaction);
 
-        var skus = (await _session.Connection.QueryAsync<SkuDto, Produtos, Categorias, Marcas, UnidadesMedida, Skus>(
+        var dtos = (await _session.Connection.QueryAsync<SkuFullDto>(
             skusSql, 
-            (skuDto, produto, categoria, marca, unidadeMedida) => BuildSkuWithProduto(skuDto, categoria, marca, unidadeMedida, produto),
             new { ProdutoId = produtoId }, 
-            splitOn: "id,id,id,id",
             transaction: _session.Transaction)).ToList();
+
+        var skus = dtos.Select(BuildSkuFromFullDto).ToList();
 
         if (skus.Count > 0)
         {
@@ -120,10 +156,10 @@ public class SkusRepository : ISkusRepository
         const string skuSql = @"
             SELECT 
                 s.sku, s.gtin_ean AS GtinEan, s.preco AS Preco, s.estoque AS Estoque, s.ativo AS Ativo, s.custo_medio AS CustoMedio, s.custo_ultima_compra AS CustoUltimaCompra,
-                p.id, p.produto, p.descricao, p.ativo,
-                c.id, c.categoria, c.descricao, c.ativo,
-                m.id, m.marca, m.descricao, m.ativo,
-                u.id, u.sigla, u.descricao, u.categoria, u.permite_decimais AS PermiteDecimais, u.ativo
+                p.id AS ProdutoId, p.produto AS ProdutoNome, p.descricao AS ProdutoDescricao, p.ativo AS ProdutoAtivo,
+                c.id AS CategoriaId, c.categoria AS CategoriaNome, c.descricao AS CategoriaDescricao, c.ativo AS CategoriaAtivo,
+                m.id AS MarcaId, m.marca AS MarcaNome, m.descricao AS MarcaDescricao, m.ativo AS MarcaAtivo,
+                u.id AS UnidadeMedidaId, u.sigla AS UnidadeMedidaSigla, u.descricao AS UnidadeMedidaDescricao, u.categoria AS UnidadeMedidaCategoria, u.permite_decimais AS PermiteDecimais, u.ativo AS UnidadeMedidaAtivo
             FROM skus s
             JOIN produtos p ON p.id = s.produto_id
             JOIN categorias c ON c.id = p.categoria_id
@@ -139,16 +175,14 @@ public class SkusRepository : ISkusRepository
             JOIN sku_atributos_chaves sak ON sak.id = sav.chave_id
             WHERE savr.sku = @Sku;";
 
-        var skus = await _session.Connection.QueryAsync<SkuDto, Produtos, Categorias, Marcas, UnidadesMedida, Skus>(
+        var dto = await _session.Connection.QueryFirstOrDefaultAsync<SkuFullDto>(
             skuSql, 
-            (skuDto, produto, categoria, marca, unidadeMedida) => BuildSkuWithProduto(skuDto, categoria, marca, unidadeMedida, produto),
             new { Sku = sku }, 
-            splitOn: "id,id,id,id",
             transaction: _session.Transaction);
             
-        var skuEntity = skus.FirstOrDefault();
+        if (dto is null) return null;
 
-        if (skuEntity is null) return null;
+        var skuEntity = BuildSkuFromFullDto(dto);
 
         var atributos = await _session.Connection.QueryAsync<AtributoDto>(
             atributosSql,
@@ -185,7 +219,7 @@ public class SkusRepository : ISkusRepository
             },
             transaction: _session.Transaction);
 
-        await InserirAtributos(skuData.Sku, skuData.SkuAtributosValores);
+        await InserirAtributos(skuData.Sku, skuData.Atributos);
 
         return skuData;
     }
@@ -202,7 +236,7 @@ public class SkusRepository : ISkusRepository
             new { Sku = sku, skuData.GtinEan, skuData.Preco, skuData.Estoque, skuData.Ativo, skuData.CustoMedio, skuData.CustoUltimaCompra },
             transaction: _session.Transaction);
 
-        await ReplacerAtributos(sku, skuData.SkuAtributosValores);
+        await ReplacerAtributos(sku, skuData.Atributos);
 
         return skuData;
     }
@@ -240,10 +274,10 @@ public class SkusRepository : ISkusRepository
         const string sqlData = @"
             SELECT 
                 s.sku, s.gtin_ean AS GtinEan, s.preco AS Preco, s.estoque AS Estoque, s.ativo AS Ativo, s.custo_medio AS CustoMedio, s.custo_ultima_compra AS CustoUltimaCompra,
-                p.id, p.produto, p.descricao, p.ativo,
-                c.id, c.categoria, c.descricao, c.ativo,
-                m.id, m.marca, m.descricao, m.ativo,
-                u.id, u.sigla, u.descricao, u.categoria, u.permite_decimais AS PermiteDecimais, u.ativo
+                p.id AS ProdutoId, p.produto AS ProdutoNome, p.descricao AS ProdutoDescricao, p.ativo AS ProdutoAtivo,
+                c.id AS CategoriaId, c.categoria AS CategoriaNome, c.descricao AS CategoriaDescricao, c.ativo AS CategoriaAtivo,
+                m.id AS MarcaId, m.marca AS MarcaNome, m.descricao AS MarcaDescricao, m.ativo AS MarcaAtivo,
+                u.id AS UnidadeMedidaId, u.sigla AS UnidadeMedidaSigla, u.descricao AS UnidadeMedidaDescricao, u.categoria AS UnidadeMedidaCategoria, u.permite_decimais AS PermiteDecimais, u.ativo AS UnidadeMedidaAtivo
             FROM skus s
             JOIN produtos p ON p.id = s.produto_id
             JOIN categorias c ON c.id = p.categoria_id
@@ -255,12 +289,17 @@ public class SkusRepository : ISkusRepository
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
         
-        var skus = (await _session.Connection.QueryAsync<SkuDto, Produtos, Categorias, Marcas, UnidadesMedida, Skus>(
+        var dtos = (await _session.Connection.QueryAsync<SkuFullDto>(
             sqlData,
-            (skuDto, produto, categoria, marca, unidadeMedida) => BuildSkuWithProduto(skuDto, categoria, marca, unidadeMedida, produto),
             new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
-            splitOn: "id,id,id,id",
             transaction: _session.Transaction)).ToList();
+
+        var skus = dtos.Select(BuildSkuFromFullDto).ToList();
+
+        if (skus.Count > 0)
+        {
+            await HydrateAttributes(skus);
+        }
 
         return new ResultadoPaginado<Skus>(skus, total, pagina, tamanhoDaPagina);
     }
@@ -304,20 +343,67 @@ public class SkusRepository : ISkusRepository
         await InserirAtributos(skuCodigo, atributos);
     }
 
-    private static Skus BuildSku(SkuDto dto)
+    private static Skus BuildSkuFromFullDto(SkuFullDto dto)
     {
-        return new Skus(dto.Sku, dto.Preco, dto.Estoque, dto.Ativo, dto.GtinEan, dto.CustoMedio, dto.CustoUltimaCompra);
-    }
+        var categoria = new Categorias(dto.CategoriaId, dto.CategoriaNome, dto.CategoriaDescricao);
+        if (!dto.CategoriaAtivo) categoria.Desativar();
 
-    private static Skus BuildSkuWithProduto(SkuDto dto, Categorias categoria, Marcas marca, UnidadesMedida unidadeMedida, Produtos produto)
-    {
-        var prod = new Produtos(produto.Id, produto.Produto, produto.Descricao, categoria, marca, unidadeMedida);
-        return new Skus(dto.Sku, dto.Preco, dto.Estoque, dto.Ativo, dto.GtinEan, dto.CustoMedio, dto.CustoUltimaCompra, prod);
+        var marca = new Marcas(dto.MarcaId, dto.MarcaNome, dto.MarcaDescricao);
+        if (!dto.MarcaAtivo) marca.Desativar();
+
+        var unidadeMedida = new UnidadesMedida(
+            dto.UnidadeMedidaSigla,
+            dto.UnidadeMedidaDescricao,
+            dto.UnidadeMedidaCategoria,
+            dto.PermiteDecimais,
+            dto.UnidadeMedidaAtivo)
+        {
+            Id = dto.UnidadeMedidaId
+        };
+
+        var produto = new Produtos(dto.ProdutoId, dto.ProdutoNome, dto.ProdutoDescricao, categoria, marca, unidadeMedida);
+        if (!dto.ProdutoAtivo) produto.Desativar();
+
+        var sku = new Skus(dto.Sku, dto.Preco, dto.Estoque, dto.Ativo, dto.GtinEan, dto.CustoMedio, dto.CustoUltimaCompra, produto);
+        return sku;
     }
 
     private static SkuAtributosValores BuildAtributo(AtributoDto dto)
     {
         return new SkuAtributosValores(dto.Id, dto.ChaveId, dto.Valor);
+    }
+
+    private sealed class SkuFullDto
+    {
+        public string Sku { get; set; } = null!;
+        public string? GtinEan { get; set; }
+        public decimal Preco { get; set; }
+        public decimal Estoque { get; set; }
+        public bool Ativo { get; set; }
+        public decimal CustoMedio { get; set; }
+        public decimal CustoUltimaCompra { get; set; }
+
+        public int ProdutoId { get; set; }
+        public string ProdutoNome { get; set; } = null!;
+        public string? ProdutoDescricao { get; set; }
+        public bool ProdutoAtivo { get; set; }
+
+        public int CategoriaId { get; set; }
+        public string CategoriaNome { get; set; } = null!;
+        public string? CategoriaDescricao { get; set; }
+        public bool CategoriaAtivo { get; set; }
+
+        public int MarcaId { get; set; }
+        public string MarcaNome { get; set; } = null!;
+        public string? MarcaDescricao { get; set; }
+        public bool MarcaAtivo { get; set; }
+
+        public int UnidadeMedidaId { get; set; }
+        public string UnidadeMedidaSigla { get; set; } = null!;
+        public string UnidadeMedidaDescricao { get; set; } = null!;
+        public string UnidadeMedidaCategoria { get; set; } = null!;
+        public bool UnidadeMedidaAtivo { get; set; }
+        public bool PermiteDecimais { get; set; }
     }
 
     private sealed record SkuDto(string Sku, string? GtinEan, decimal Preco, decimal Estoque, bool Ativo, decimal CustoMedio, decimal CustoUltimaCompra);

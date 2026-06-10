@@ -37,6 +37,13 @@ export function SkusList({
   const columns: ColumnDef<Sku>[] = [
     getSelectColumn<Sku>(),
     {
+      accessorKey: "sku",
+      header: "SKU",
+      cell: ({ row }) => (
+        <span className="font-mono text-xs font-semibold">{row.getValue("sku")}</span>
+      ),
+    },
+    {
       id: "produto",
       header: "Produto",
       cell: ({ row }) => {
@@ -53,13 +60,6 @@ export function SkusList({
           </div>
         );
       },
-    },
-    {
-      accessorKey: "sku",
-      header: "SKU",
-      cell: ({ row }) => (
-        <span className="font-mono text-xs font-semibold">{row.getValue("sku")}</span>
-      ),
     },
     {
       accessorKey: "preco",

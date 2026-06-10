@@ -27,7 +27,7 @@ public class ProdutosRepository : IProdutosRepository
             SELECT p.id AS Id, p.produto AS Produto, p.descricao AS Descricao, p.ativo AS Ativo,
                    c.id AS CategoriaId, c.categoria AS CategoriaNome, c.descricao AS CategoriaDescricao, c.ativo AS CategoriaAtivo,
                    m.id AS MarcaId, m.marca AS MarcaNome, m.descricao AS MarcaDescricao, m.ativo AS MarcaAtivo,
-                   u.id AS UnidadeMedidaId, u.sigla AS UnidadeMedidaSigla, u.descricao AS UnidadeMedidaDescricao, u.categoria AS UnidadeMedidaCategoria, u.ativo AS UnidadeMedidaAtivo
+                   u.id AS UnidadeMedidaId, u.sigla AS UnidadeMedidaSigla, u.descricao AS UnidadeMedidaDescricao, u.categoria AS UnidadeMedidaCategoria, u.permite_decimais AS PermiteDecimais, u.ativo AS UnidadeMedidaAtivo
             FROM produtos p
             JOIN categorias c ON c.id = p.categoria_id
             JOIN marcas m ON m.id = p.marca_id
@@ -88,7 +88,7 @@ public class ProdutosRepository : IProdutosRepository
             SELECT p.id AS Id, p.produto AS Produto, p.descricao AS Descricao, p.ativo AS Ativo,
                    c.id AS CategoriaId, c.categoria AS CategoriaNome, c.descricao AS CategoriaDescricao, c.ativo AS CategoriaAtivo,
                    m.id AS MarcaId, m.marca AS MarcaNome, m.descricao AS MarcaDescricao, m.ativo AS MarcaAtivo,
-                   u.id AS UnidadeMedidaId, u.sigla AS UnidadeMedidaSigla, u.descricao AS UnidadeMedidaDescricao, u.categoria AS UnidadeMedidaCategoria, u.ativo AS UnidadeMedidaAtivo
+                   u.id AS UnidadeMedidaId, u.sigla AS UnidadeMedidaSigla, u.descricao AS UnidadeMedidaDescricao, u.categoria AS UnidadeMedidaCategoria, u.permite_decimais AS PermiteDecimais, u.ativo AS UnidadeMedidaAtivo
             FROM produtos p
             JOIN categorias c ON c.id = p.categoria_id
             JOIN marcas m ON m.id = p.marca_id
@@ -145,7 +145,7 @@ public class ProdutosRepository : IProdutosRepository
             SELECT p.id AS Id, p.produto AS Produto, p.descricao AS Descricao, p.ativo AS Ativo,
                    c.id AS CategoriaId, c.categoria AS CategoriaNome, c.descricao AS CategoriaDescricao, c.ativo AS CategoriaAtivo,
                    m.id AS MarcaId, m.marca AS MarcaNome, m.descricao AS MarcaDescricao, m.ativo AS MarcaAtivo,
-                   u.id AS UnidadeMedidaId, u.sigla AS UnidadeMedidaSigla, u.descricao AS UnidadeMedidaDescricao, u.categoria AS UnidadeMedidaCategoria, u.ativo AS UnidadeMedidaAtivo
+                   u.id AS UnidadeMedidaId, u.sigla AS UnidadeMedidaSigla, u.descricao AS UnidadeMedidaDescricao, u.categoria AS UnidadeMedidaCategoria, u.permite_decimais AS PermiteDecimais, u.ativo AS UnidadeMedidaAtivo
             FROM produtos p
             JOIN categorias c ON c.id = p.categoria_id
             JOIN marcas m ON m.id = p.marca_id
@@ -272,7 +272,7 @@ public class ProdutosRepository : IProdutosRepository
             SELECT p.id AS Id, p.produto AS Produto, p.descricao AS Descricao, p.ativo AS Ativo,
                    c.id AS CategoriaId, c.categoria AS CategoriaNome, c.descricao AS CategoriaDescricao, c.ativo AS CategoriaAtivo,
                    m.id AS MarcaId, m.marca AS MarcaNome, m.descricao AS MarcaDescricao, m.ativo AS MarcaAtivo,
-                   u.id AS UnidadeMedidaId, u.sigla AS UnidadeMedidaSigla, u.descricao AS UnidadeMedidaDescricao, u.categoria AS UnidadeMedidaCategoria, u.ativo AS UnidadeMedidaAtivo
+                   u.id AS UnidadeMedidaId, u.sigla AS UnidadeMedidaSigla, u.descricao AS UnidadeMedidaDescricao, u.categoria AS UnidadeMedidaCategoria, u.permite_decimais AS PermiteDecimais, u.ativo AS UnidadeMedidaAtivo
             FROM produtos p
             JOIN categorias c ON c.id = p.categoria_id
             JOIN marcas m ON m.id = p.marca_id
@@ -291,7 +291,40 @@ public class ProdutosRepository : IProdutosRepository
 
         var produtos = produtosDto.Select(p => BuildProdutoFromDto(p)).ToList();
 
-        // ... Load Skus similarly to ObterProdutos ...
+        // Carregar SKUs
+        if (produtos.Any())
+        {
+            var ids = produtos.Select(p => p.Id).ToArray();
+            const string skusSql = @"
+                SELECT sku, gtin_ean, preco, estoque, ativo, produto_id AS ProdutoId
+                FROM skus
+                WHERE produto_id = ANY(@Ids);";
+
+            var allSkus = (await _session.Connection.QueryAsync<SkuDto>(
+                skusSql, new { Ids = ids }, transaction: _session.Transaction)).ToList();
+
+            var skuCodes = allSkus.Select(s => s.Sku).ToArray();
+            const string atributosSql = @"
+                SELECT savr.sku, sav.id AS Id, sav.chave_id AS ChaveId, sav.valor AS Valor
+                FROM skus_atributos_valores_relacionamento savr
+                JOIN sku_atributos_valores sav ON sav.id = savr.valor_id
+                WHERE savr.sku = ANY(@Skus);";
+
+            var atributos = (await _session.Connection.QueryAsync<SkuAtributoDto>(
+                atributosSql, new { Skus = skuCodes }, transaction: _session.Transaction)).ToList();
+
+            var atributosPorSku = atributos.GroupBy(a => a.Sku).ToDictionary(g => g.Key, g => g.AsEnumerable());
+
+            foreach (var produto in produtos)
+            {
+                var skus = allSkus.Where(s => s.ProdutoId == produto.Id);
+                foreach (var skuDto in skus)
+                {
+                    produto.AdicionarSku(BuildSkuFromDto(skuDto, atributosPorSku.GetValueOrDefault(skuDto.Sku, Enumerable.Empty<SkuAtributoDto>())));
+                }
+            }
+        }
+
         return new ResultadoPaginado<Produtos>(produtos, total, pagina, tamanhoDaPagina);
     }
 
@@ -322,6 +355,7 @@ public class ProdutosRepository : IProdutosRepository
             dto.UnidadeMedidaSigla,
             dto.UnidadeMedidaDescricao,
             dto.UnidadeMedidaCategoria,
+            dto.PermiteDecimais,
             dto.UnidadeMedidaAtivo)
         {
             Id = dto.UnidadeMedidaId
@@ -369,6 +403,7 @@ public class ProdutosRepository : IProdutosRepository
         public string UnidadeMedidaDescricao { get; set; } = null!;
         public string UnidadeMedidaCategoria { get; set; } = null!;
         public bool UnidadeMedidaAtivo { get; set; }
+        public bool PermiteDecimais { get; set; }
     }
 
     private sealed class SkuDto
