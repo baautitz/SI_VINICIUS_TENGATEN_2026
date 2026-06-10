@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { MovimentacoesList } from "./list";
-import { MovimentacoesUpsert } from "./upsert";
+import { MovimentacoesUpsertForm } from "./upsert-form";
 import { MovimentacaoEstoque } from "./types";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
@@ -100,7 +100,7 @@ export function MovimentacoesFeature() {
   };
 
   const handleViewAction = (item: MovimentacaoEstoque) => {
-    listProps.onEdit(item);
+    listProps.onView(item);
   };
 
   const handleAddWrapper = () => {
@@ -108,7 +108,11 @@ export function MovimentacoesFeature() {
   };
 
   const handleEditWrapper = (item: MovimentacaoEstoque) => {
-    listProps.onEdit(item);
+    if (item.status === "RASCUNHO") {
+      listProps.onEdit(item);
+    } else {
+      listProps.onView(item);
+    }
   };
 
   return (

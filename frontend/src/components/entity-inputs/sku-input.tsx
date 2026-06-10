@@ -272,9 +272,7 @@ export const SkuInput = ({
               autoFocus
               className="mt-1.5"
               value={quantityInput}
-              // Assume items are always allow decimal inputs in movement unless otherwise specified, 
-              // or add `permiteDecimais` to Sku entity if needed. For now default to 4 places.
-              decimals={4}
+              decimals={quantityModalItem?.produto?.unidadeMedida?.permiteDecimais ? 4 : 0}
               onNumberChange={(num) => setQuantityInput(num)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.altKey) {

@@ -215,7 +215,13 @@ export function MovimentacoesList({
           onGlobalFilterChange={onSearchChange}
           searchPlaceholder="Pesquisar movimentações..."
           getRowId={(row) => row.id.toString()}
-          onEditRow={onEdit}
+          onEditRow={(item) => {
+            if (item.status === "RASCUNHO") {
+              onEdit(item);
+            } else {
+              onView(item);
+            }
+          }}
           onDeleteRow={(item) => {
             if (item.status === "CONFIRMADA") {
               onCancel(item);

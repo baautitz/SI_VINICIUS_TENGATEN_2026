@@ -56,17 +56,41 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
                    s.sku AS SkuCodigo, s.gtin_ean AS SkuGtinEan, s.preco AS SkuPreco, s.estoque AS SkuEstoque, s.ativo AS SkuAtivo,
                    s.custo_medio AS SkuCustoMedio, s.custo_ultima_compra AS SkuCustoUltimaCompra,
                    mei.quantidade_anterior AS QuantidadeAnterior, mei.custo_medio_anterior AS CustoMedioAnterior,
-                   p.produto AS ProdutoNome, um.sigla AS UnidadeMedidaSigla
+                   p.id, p.produto, p.descricao, p.ativo,
+                   c.id, c.categoria, c.descricao, c.ativo,
+                   m.id, m.marca, m.descricao, m.ativo,
+                   u.id, u.sigla, u.descricao, u.categoria, u.permite_decimais AS PermiteDecimais, u.ativo
             FROM movimentacoes_estoque_itens mei
             JOIN skus s ON s.sku = mei.sku
             JOIN produtos p ON p.id = s.produto_id
-            JOIN unidades_medida um ON um.id = p.unidade_medida_id
+            JOIN categorias c ON c.id = p.categoria_id
+            JOIN marcas m ON m.id = p.marca_id
+            JOIN unidades_medida u ON u.id = p.unidade_medida_id
             WHERE mei.movimentacao_estoque_id = ANY(@Ids);";
 
-        var itensDto = (await _session.Connection.QueryAsync<MovimentacaoItemDto>(
+        var itensDto = (await _session.Connection.QueryAsync<MovimentacaoItemDto, Produtos, Categorias, Marcas, UnidadesMedida, MovimentacaoItemDto>(
             itensSql,
+            (itemDto, produto, categoria, marca, unidadeMedida) =>
+            {
+                itemDto.Produto = new Produtos(produto.Id, produto.Produto, produto.Descricao, categoria, marca, unidadeMedida);
+                return itemDto;
+            },
             new { Ids = ids },
+            splitOn: "id,id,id,id",
             transaction: _session.Transaction)).ToList();
+
+        const string atributosSql = @"
+            SELECT savr.sku AS Sku, sav.chave_id AS ChaveId, sav.valor AS Valor,
+                   sav.id AS Id, sak.chave AS Chave
+            FROM skus_atributos_valores_relacionamento savr
+            JOIN sku_atributos_valores sav ON sav.id = savr.valor_id
+            JOIN sku_atributos_chaves sak ON sak.id = sav.chave_id
+            WHERE savr.sku IN (SELECT sku FROM movimentacoes_estoque_itens WHERE movimentacao_estoque_id = ANY(@Ids));";
+
+        var atributosDto = (await _session.Connection.QueryAsync<AtributoDto>(
+            atributosSql, new { Ids = ids }, transaction: _session.Transaction)).ToList();
+        
+        var atributosPorSku = atributosDto.GroupBy(a => a.Sku).ToDictionary(g => g.Key, g => g.AsEnumerable());
 
         var itensPorMovimentacao = itensDto
             .GroupBy(i => i.MovimentacaoId)
@@ -82,7 +106,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
             {
                 foreach (var itemDto in itens)
                 {
-                    movimentacao.AdicionarItemExistente(BuildItem(itemDto, dto.Id));
+                    movimentacao.AdicionarItemExistente(BuildItem(itemDto, dto.Id, atributosPorSku.GetValueOrDefault(itemDto.SkuCodigo, Enumerable.Empty<AtributoDto>())));
                 }
             }
 
@@ -108,13 +132,25 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
                    s.sku AS SkuCodigo, s.gtin_ean AS SkuGtinEan, s.preco AS SkuPreco, s.estoque AS SkuEstoque, s.ativo AS SkuAtivo,
                    s.custo_medio AS SkuCustoMedio, s.custo_ultima_compra AS SkuCustoUltimaCompra,
                    mei.quantidade_anterior AS QuantidadeAnterior, mei.custo_medio_anterior AS CustoMedioAnterior,
-                   p.produto AS ProdutoNome, um.sigla AS UnidadeMedidaSigla
+                   p.id, p.produto, p.descricao, p.ativo,
+                   c.id, c.categoria, c.descricao, c.ativo,
+                   m.id, m.marca, m.descricao, m.ativo,
+                   u.id, u.sigla, u.descricao, u.categoria, u.permite_decimais AS PermiteDecimais, u.ativo
             FROM movimentacoes_estoque_itens mei
             JOIN skus s ON s.sku = mei.sku
             JOIN produtos p ON p.id = s.produto_id
-            JOIN unidades_medida um ON um.id = p.unidade_medida_id
+            JOIN categorias c ON c.id = p.categoria_id
+            JOIN marcas m ON m.id = p.marca_id
+            JOIN unidades_medida u ON u.id = p.unidade_medida_id
             WHERE mei.movimentacao_estoque_id = @Id
-            ORDER BY mei.id ASC;";
+            ORDER BY mei.id ASC;
+
+            SELECT savr.sku AS Sku, sav.chave_id AS ChaveId, sav.valor AS Valor,
+                   sav.id AS Id, sak.chave AS Chave
+            FROM skus_atributos_valores_relacionamento savr
+            JOIN sku_atributos_valores sav ON sav.id = savr.valor_id
+            JOIN sku_atributos_chaves sak ON sak.id = sav.chave_id
+            WHERE savr.sku IN (SELECT sku FROM movimentacoes_estoque_itens WHERE movimentacao_estoque_id = @Id);";
 
         var dto = await _session.Connection.QuerySingleOrDefaultAsync<MovimentacaoDto>(
             movimentacaoSql,
@@ -127,14 +163,33 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
         var venda = dto.VendaId.HasValue ? new Venda(dto.VendaId.Value) : null;
         var movimentacao = new MovimentacoesEstoques(dto.Id, dto.DataMovimentacao, dto.TipoMovimentacao, usuario, null, venda, dto.Observacao, dto.Status);
 
-        var itensDto = await _session.Connection.QueryAsync<MovimentacaoItemDto>(
+        var itensDto = (await _session.Connection.QueryAsync<MovimentacaoItemDto, Produtos, Categorias, Marcas, UnidadesMedida, MovimentacaoItemDto>(
             itensSql,
+            (itemDto, produto, categoria, marca, unidadeMedida) =>
+            {
+                itemDto.Produto = new Produtos(produto.Id, produto.Produto, produto.Descricao, categoria, marca, unidadeMedida);
+                return itemDto;
+            },
             new { Id = id },
-            transaction: _session.Transaction);
+            splitOn: "id,id,id,id",
+            transaction: _session.Transaction)).ToList();
+
+        const string atributosSql = @"
+            SELECT savr.sku AS Sku, sav.chave_id AS ChaveId, sav.valor AS Valor,
+                   sav.id AS Id, sak.chave AS Chave
+            FROM skus_atributos_valores_relacionamento savr
+            JOIN sku_atributos_valores sav ON sav.id = savr.valor_id
+            JOIN sku_atributos_chaves sak ON sak.id = sav.chave_id
+            WHERE savr.sku IN (SELECT sku FROM movimentacoes_estoque_itens WHERE movimentacao_estoque_id = @Id);";
+
+        var atributosDto = (await _session.Connection.QueryAsync<AtributoDto>(
+            atributosSql, new { Id = id }, transaction: _session.Transaction)).ToList();
+
+        var atributosPorSku = atributosDto.GroupBy(a => a.Sku).ToDictionary(g => g.Key, g => g.AsEnumerable());
 
         foreach (var itemDto in itensDto)
         {
-            movimentacao.AdicionarItemExistente(BuildItem(itemDto, dto.Id));
+            movimentacao.AdicionarItemExistente(BuildItem(itemDto, id, atributosPorSku.GetValueOrDefault(itemDto.SkuCodigo, Enumerable.Empty<AtributoDto>())));
         }
 
         return movimentacao;
@@ -284,17 +339,41 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
                    s.sku AS SkuCodigo, s.gtin_ean AS SkuGtinEan, s.preco AS SkuPreco, s.estoque AS SkuEstoque, s.ativo AS SkuAtivo,
                    s.custo_medio AS SkuCustoMedio, s.custo_ultima_compra AS SkuCustoUltimaCompra,
                    mei.quantidade_anterior AS QuantidadeAnterior, mei.custo_medio_anterior AS CustoMedioAnterior,
-                   p.produto AS ProdutoNome, um.sigla AS UnidadeMedidaSigla
+                   p.id, p.produto, p.descricao, p.ativo,
+                   c.id, c.categoria, c.descricao, c.ativo,
+                   m.id, m.marca, m.descricao, m.ativo,
+                   u.id, u.sigla, u.descricao, u.categoria, u.permite_decimais AS PermiteDecimais, u.ativo
             FROM movimentacoes_estoque_itens mei
             JOIN skus s ON s.sku = mei.sku
             JOIN produtos p ON p.id = s.produto_id
-            JOIN unidades_medida um ON um.id = p.unidade_medida_id
+            JOIN categorias c ON c.id = p.categoria_id
+            JOIN marcas m ON m.id = p.marca_id
+            JOIN unidades_medida u ON u.id = p.unidade_medida_id
             WHERE mei.movimentacao_estoque_id = ANY(@Ids);";
 
-        var itensDto = (await _session.Connection.QueryAsync<MovimentacaoItemDto>(
+        var itensDto = (await _session.Connection.QueryAsync<MovimentacaoItemDto, Produtos, Categorias, Marcas, UnidadesMedida, MovimentacaoItemDto>(
             itensSql,
+            (itemDto, produto, categoria, marca, unidadeMedida) =>
+            {
+                itemDto.Produto = new Produtos(produto.Id, produto.Produto, produto.Descricao, categoria, marca, unidadeMedida);
+                return itemDto;
+            },
             new { Ids = ids },
+            splitOn: "id,id,id,id",
             transaction: _session.Transaction)).ToList();
+
+        const string atributosSql = @"
+            SELECT savr.sku AS Sku, sav.chave_id AS ChaveId, sav.valor AS Valor,
+                   sav.id AS Id, sak.chave AS Chave
+            FROM skus_atributos_valores_relacionamento savr
+            JOIN sku_atributos_valores sav ON sav.id = savr.valor_id
+            JOIN sku_atributos_chaves sak ON sak.id = sav.chave_id
+            WHERE savr.sku IN (SELECT sku FROM movimentacoes_estoque_itens WHERE movimentacao_estoque_id = ANY(@Ids));";
+
+        var atributosDto = (await _session.Connection.QueryAsync<AtributoDto>(
+            atributosSql, new { Ids = ids }, transaction: _session.Transaction)).ToList();
+        
+        var atributosPorSku = atributosDto.GroupBy(a => a.Sku).ToDictionary(g => g.Key, g => g.AsEnumerable());
 
         var itensPorMovimentacao = itensDto
             .GroupBy(i => i.MovimentacaoId)
@@ -310,7 +389,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
             {
                 foreach (var itemDto in itens)
                 {
-                    movimentacao.AdicionarItemExistente(BuildItem(itemDto, dto.Id));
+                    movimentacao.AdicionarItemExistente(BuildItem(itemDto, dto.Id, atributosPorSku.GetValueOrDefault(itemDto.SkuCodigo, Enumerable.Empty<AtributoDto>())));
                 }
             }
 
@@ -350,13 +429,19 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
         await InserirItens(movimentacaoId, itens);
     }
 
-    private static MovimentacoesEstoquesItens BuildItem(MovimentacaoItemDto dto, int movimentacaoId)
+    private static MovimentacoesEstoquesItens BuildItem(MovimentacaoItemDto dto, int movimentacaoId, IEnumerable<AtributoDto> atributosDto)
     {
-        var sku = new Skus(dto.SkuCodigo, dto.SkuPreco, dto.SkuEstoque, dto.SkuAtivo, dto.SkuGtinEan, dto.SkuCustoMedio, dto.SkuCustoUltimaCompra);
+        var sku = new Skus(dto.SkuCodigo, dto.SkuPreco, dto.SkuEstoque, dto.SkuAtivo, dto.SkuGtinEan, dto.SkuCustoMedio, dto.SkuCustoUltimaCompra, dto.Produto);
+        
+        foreach (var attr in atributosDto)
+        {
+            sku.AdicionarAtributo(new SkuAtributosValores(attr.Id, attr.ChaveId, attr.Valor));
+        }
+
         if (!dto.SkuAtivo)
             sku.Desativar();
 
-        return new MovimentacoesEstoquesItens(dto.Id, movimentacaoId, sku, dto.Quantidade, dto.CustoUnitario, dto.QuantidadeAnterior, dto.CustoMedioAnterior, dto.ProdutoNome, dto.UnidadeMedidaSigla);
+        return new MovimentacoesEstoquesItens(dto.Id, movimentacaoId, sku, dto.Quantidade, dto.CustoUnitario, dto.QuantidadeAnterior, dto.CustoMedioAnterior, sku.NomeExibicao, dto.UnidadeMedidaSigla);
     }
 
     private static Usuarios BuildUsuario(UsuarioDto dto)
@@ -368,9 +453,27 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
         int? UsuarioId, string? UsuarioNome, string? UsuarioCpfCnpj, string? UsuarioEmail, string? UsuarioTelefone,
         string? UsuarioUsuario, string? UsuarioSenha, bool? UsuarioAtivo, int? VendaId);
 
-    private sealed record MovimentacaoItemDto(int Id, decimal Quantidade, decimal CustoUnitario, int MovimentacaoId,
-        string SkuCodigo, string SkuGtinEan, decimal SkuPreco, decimal SkuEstoque, bool SkuAtivo, decimal SkuCustoMedio, decimal SkuCustoUltimaCompra, decimal? QuantidadeAnterior, decimal? CustoMedioAnterior, string ProdutoNome, string UnidadeMedidaSigla);
+    private sealed class MovimentacaoItemDto
+    {
+        public int Id { get; set; }
+        public decimal Quantidade { get; set; }
+        public decimal CustoUnitario { get; set; }
+        public int MovimentacaoId { get; set; }
+        public string SkuCodigo { get; set; } = null!;
+        public string? SkuGtinEan { get; set; }
+        public decimal SkuPreco { get; set; }
+        public decimal SkuEstoque { get; set; }
+        public bool SkuAtivo { get; set; }
+        public decimal SkuCustoMedio { get; set; }
+        public decimal SkuCustoUltimaCompra { get; set; }
+        public decimal? QuantidadeAnterior { get; set; }
+        public decimal? CustoMedioAnterior { get; set; }
+        public string ProdutoNome { get; set; } = null!;
+        public string UnidadeMedidaSigla { get; set; } = null!;
+        public Produtos? Produto { get; set; }
+    }
 
     private sealed record UsuarioDto(int Id, string Nome, string CpfCnpj, string Email, string Telefone,
         string Usuario, string Senha, bool Ativo);
+    private sealed record AtributoDto(string Sku, int ChaveId, string Valor, int Id, string Chave);
 }

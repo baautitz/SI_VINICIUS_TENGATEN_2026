@@ -77,18 +77,21 @@ export function MovimentacoesUpsertForm({
   const [itens, setItens] = useState<ItemLinha[]>(() => {
     if (initialItems) return initialItems;
     return (
-      editingItem?.movimentacoesEstoquesItens.map((i) => ({
-        sku: i.sku.sku,
-        produtoNome: getFullSkuName(i.sku),
-        quantidade: Number(i.quantidade),
-        custoUnitario: Number(i.custoUnitario),
-        estoqueAtual: i.quantidadeAnterior ?? i.sku.estoque,
-        precoSugerido: Number(i.sku.preco),
-        custoMedio: i.custoMedioAnterior ?? i.sku.custoMedio,
-        custoUltimaCompra: Number(i.sku.custoUltimaCompra),
-        unidadeMedidaSigla: i.unidadeMedidaSigla,
-        permiteDecimais: i.sku.produto?.unidadeMedida?.permiteDecimais ?? false,
-      })) ?? []
+      editingItem?.movimentacoesEstoquesItens.map((i) => {
+        const fullSkuName = getFullSkuName(i.sku);
+        return {
+          sku: i.sku.sku,
+          produtoNome: fullSkuName || i.produtoNome,
+          quantidade: Number(i.quantidade),
+          custoUnitario: Number(i.custoUnitario),
+          estoqueAtual: i.quantidadeAnterior ?? i.sku.estoque,
+          precoSugerido: Number(i.sku.preco),
+          custoMedio: i.custoMedioAnterior ?? i.sku.custoMedio,
+          custoUltimaCompra: Number(i.sku.custoUltimaCompra),
+          unidadeMedidaSigla: i.unidadeMedidaSigla,
+          permiteDecimais: i.sku.produto?.unidadeMedida?.permiteDecimais ?? false,
+        };
+      }) ?? []
     );
   });
 
@@ -353,8 +356,7 @@ export function MovimentacoesUpsertForm({
           custoMedio: Number(skuRes.custoMedio) || 0,
           custoUltimaCompra: Number(skuRes.custoUltimaCompra) || 0,
           unidadeMedidaSigla: skuRes.produto?.unidadeMedida?.sigla ?? "",
-          permiteDecimais:
-            skuRes.produto?.unidadeMedida?.permiteDecimais ?? false,
+          permiteDecimais: !!skuRes.produto?.unidadeMedida?.permiteDecimais,
         },
       ]);
       toast.success(
@@ -895,9 +897,6 @@ export function MovimentacoesUpsertForm({
                                 currency: "BRL",
                               })}
                             </TableCell>
-                            {!readOnly && (
-                              <TableCell className="px-4 py-3"></TableCell>
-                            )}
                           </TableRow>
                         </TableFooter>
                       )}
