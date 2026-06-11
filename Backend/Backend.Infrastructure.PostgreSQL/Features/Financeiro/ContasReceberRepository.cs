@@ -35,7 +35,7 @@ public class ContasReceberRepository : IContasReceberRepository
                    c.rg_ie AS ClienteRgIe, c.apelido_nomefantasia AS ClienteApelidoNomeFantasia, c.endereco AS ClienteEndereco,
                    c.telefone AS ClienteTelefone, c.email AS ClienteEmail, c.limite_credito AS ClienteLimiteCredito,
                    c.ativo AS ClienteAtivo, c.criado_em AS ClienteCriadoEm, c.observacao AS ClienteObservacao,
-                   p.id AS PaisId, p.ddi AS PaisDdi, p.sigla_iso AS PaisSiglaIso, p.moeda AS PaisMoeda, p.simbolo_moeda AS PaisSimboloMoeda, p.pais AS PaisNome
+                   p.id AS PaisId, p.ddi AS PaisDdi, p.codigo_iso_pais AS PaisCodigoIsoPais, p.codigo_iso_moeda AS PaisCodigoIsoMoeda, p.simbolo_moeda AS PaisSimboloMoeda, p.pais AS PaisNome
             FROM contas_receber cr
             JOIN clientes c ON c.id = cr.cliente_id
             JOIN paises p ON p.id = c.nacionalidade_id
@@ -96,7 +96,7 @@ public class ContasReceberRepository : IContasReceberRepository
                    c.rg_ie AS ClienteRgIe, c.apelido_nomefantasia AS ClienteApelidoNomeFantasia, c.endereco AS ClienteEndereco,
                    c.telefone AS ClienteTelefone, c.email AS ClienteEmail, c.limite_credito AS ClienteLimiteCredito,
                    c.ativo AS ClienteAtivo, c.criado_em AS ClienteCriadoEm, c.observacao AS ClienteObservacao,
-                   p.id AS PaisId, p.ddi AS PaisDdi, p.sigla_iso AS PaisSiglaIso, p.moeda AS PaisMoeda, p.simbolo_moeda AS PaisSimboloMoeda, p.pais AS PaisNome
+                   p.id AS PaisId, p.ddi AS PaisDdi, p.codigo_iso_pais AS PaisCodigoIsoPais, p.codigo_iso_moeda AS PaisCodigoIsoMoeda, p.simbolo_moeda AS PaisSimboloMoeda, p.pais AS PaisNome
             FROM contas_receber cr
             JOIN clientes c ON c.id = cr.cliente_id
             JOIN paises p ON p.id = c.nacionalidade_id
@@ -303,11 +303,11 @@ public class ContasReceberRepository : IContasReceberRepository
     private static ContasReceber BuildContaReceber(ContaReceberDto dto)
     {
         var ddi = new Ddi(dto.PaisDdi);
-        var pais = new Paises(dto.PaisId, ddi, dto.PaisSiglaIso, dto.PaisMoeda, dto.PaisSimboloMoeda, dto.PaisNome);
+        var pais = new Paises(dto.PaisId, ddi, dto.PaisCodigoIsoPais, dto.PaisCodigoIsoMoeda, dto.PaisSimboloMoeda, dto.PaisNome);
         var tipoPessoa = Enum.Parse<TipoPessoa>(dto.ClienteTipoPessoa);
 
         Documento cpfCnpj;
-        if (pais.SiglaIso == "BRA")
+        if (pais.CodigoIsoPais == "BRA")
         {
             if (tipoPessoa == TipoPessoa.FISICA)
                 cpfCnpj = new Cpf(dto.ClienteCpfCnpj);
@@ -381,8 +381,8 @@ public class ContasReceberRepository : IContasReceberRepository
         string? ClienteObservacao,
         int PaisId,
         string PaisDdi,
-        string PaisSiglaIso,
-        string PaisMoeda,
+        string PaisCodigoIsoPais,
+        string PaisCodigoIsoMoeda,
         string PaisSimboloMoeda,
         string PaisNome);
 

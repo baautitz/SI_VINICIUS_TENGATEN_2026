@@ -34,7 +34,7 @@ public class ContasPagarRepository : IContasPagarRepository
                    f.id AS FornecedorId, f.tipo_pessoa AS FornecedorTipoPessoa, f.nome_razaosocial AS FornecedorNomeRazaosocial, f.cpf_cnpj AS FornecedorCpfCnpj,
                    f.rg_ie AS FornecedorRgIe, f.apelido_nomefantasia AS FornecedorApelidoNomeFantasia, f.endereco AS FornecedorEndereco,
                    f.telefone AS FornecedorTelefone, f.email AS FornecedorEmail, f.ativo AS FornecedorAtivo, f.criado_em AS FornecedorCriadoEm, f.observacao AS FornecedorObservacao,
-                   p.id AS PaisId, p.ddi AS PaisDdi, p.sigla_iso AS PaisSiglaIso, p.moeda AS PaisMoeda, p.simbolo_moeda AS PaisSimboloMoeda, p.pais AS PaisNome
+                   p.id AS PaisId, p.ddi AS PaisDdi, p.codigo_iso_pais AS PaisCodigoIsoPais, p.codigo_iso_moeda AS PaisCodigoIsoMoeda, p.simbolo_moeda AS PaisSimboloMoeda, p.pais AS PaisNome
             FROM contas_pagar cp
             JOIN fornecedores f ON f.id = cp.fornecedor_id
             JOIN paises p ON p.id = f.nacionalidade_id
@@ -94,7 +94,7 @@ public class ContasPagarRepository : IContasPagarRepository
                    f.id AS FornecedorId, f.tipo_pessoa AS FornecedorTipoPessoa, f.nome_razaosocial AS FornecedorNomeRazaosocial, f.cpf_cnpj AS FornecedorCpfCnpj,
                    f.rg_ie AS FornecedorRgIe, f.apelido_nomefantasia AS FornecedorApelidoNomeFantasia, f.endereco AS FornecedorEndereco,
                    f.telefone AS FornecedorTelefone, f.email AS FornecedorEmail, f.ativo AS FornecedorAtivo, f.criado_em AS FornecedorCriadoEm, f.observacao AS FornecedorObservacao,
-                   p.id AS PaisId, p.ddi AS PaisDdi, p.sigla_iso AS PaisSiglaIso, p.moeda AS PaisMoeda, p.simbolo_moeda AS PaisSimboloMoeda, p.pais AS PaisNome
+                   p.id AS PaisId, p.ddi AS PaisDdi, p.codigo_iso_pais AS PaisCodigoIsoPais, p.codigo_iso_moeda AS PaisCodigoIsoMoeda, p.simbolo_moeda AS PaisSimboloMoeda, p.pais AS PaisNome
             FROM contas_pagar cp
             JOIN fornecedores f ON f.id = cp.fornecedor_id
             JOIN paises p ON p.id = f.nacionalidade_id
@@ -301,11 +301,11 @@ public class ContasPagarRepository : IContasPagarRepository
     private static ContasPagar BuildContaPagar(ContaPagarDto dto)
     {
         var ddi = new Ddi(dto.PaisDdi);
-        var pais = new Paises(dto.PaisId, ddi, dto.PaisSiglaIso, dto.PaisMoeda, dto.PaisSimboloMoeda, dto.PaisNome);
+        var pais = new Paises(dto.PaisId, ddi, dto.PaisCodigoIsoPais, dto.PaisCodigoIsoMoeda, dto.PaisSimboloMoeda, dto.PaisNome);
         var tipoPessoa = Enum.Parse<TipoPessoa>(dto.FornecedorTipoPessoa);
 
         Documento cpfCnpj;
-        if (pais.SiglaIso == "BRA")
+        if (pais.CodigoIsoPais == "BRA")
         {
             if (tipoPessoa == TipoPessoa.FISICA)
                 cpfCnpj = new Cpf(dto.FornecedorCpfCnpj);
@@ -377,8 +377,8 @@ public class ContasPagarRepository : IContasPagarRepository
         string? FornecedorObservacao,
         int PaisId,
         string PaisDdi,
-        string PaisSiglaIso,
-        string PaisMoeda,
+        string PaisCodigoIsoPais,
+        string PaisCodigoIsoMoeda,
         string PaisSimboloMoeda,
         string PaisNome);
 

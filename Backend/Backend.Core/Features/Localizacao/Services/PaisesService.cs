@@ -34,12 +34,12 @@ public sealed class PaisesService : BaseService
         if (!validation.IsValid)
             return Resultado<Paises>.Falha(validation.ToResultadoErros());
 
-        var entidadeResult = Paises.Criar(command.Ddi, command.SiglaIso, command.Moeda, command.SimboloMoeda, command.Pais);
+        var entidadeResult = Paises.Criar(command.Ddi, command.CodigoIsoPais, command.CodigoIsoMoeda, command.SimboloMoeda, command.Pais);
         if (!entidadeResult.Success)
             return entidadeResult;
 
-        if (await _paisesRepository.ExistePais(command.SiglaIso, command.Pais))
-            return Resultado<Paises>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe um país com este nome ou sigla.", "Pais"));
+        if (await _paisesRepository.ExistePais(command.CodigoIsoPais, command.Pais))
+            return Resultado<Paises>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe um país com este nome ou código ISO.", "Pais"));
 
         return await ExecuteResultAsync(async () =>
         {
@@ -58,12 +58,12 @@ public sealed class PaisesService : BaseService
         if (existente is null)
             return Resultado<Paises>.Falha(new ResultadoErro("PAIS_NAO_ENCONTRADO", "País não encontrado."));
 
-        var updateResult = existente.AtualizarResultado(command.Ddi, command.SiglaIso, command.Moeda, command.SimboloMoeda, command.Pais);
+        var updateResult = existente.AtualizarResultado(command.Ddi, command.CodigoIsoPais, command.CodigoIsoMoeda, command.SimboloMoeda, command.Pais);
         if (!updateResult.Success)
             return updateResult;
 
-        if (await _paisesRepository.ExistePais(command.SiglaIso, command.Pais, id))
-            return Resultado<Paises>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe outro país com este nome ou sigla.", "Pais"));
+        if (await _paisesRepository.ExistePais(command.CodigoIsoPais, command.Pais, id))
+            return Resultado<Paises>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe outro país com este nome ou código ISO.", "Pais"));
 
         return await ExecuteResultAsync(async () =>
         {

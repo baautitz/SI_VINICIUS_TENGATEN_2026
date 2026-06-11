@@ -18,7 +18,7 @@ public class CidadesRepository : ICidadesRepository
         var offset = (pagina - 1) * tamanhoDaPagina;
         const string sqlCount = "SELECT COUNT(*) FROM cidades;";
         const string sqlData = @"
-            SELECT ci.id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            SELECT ci.id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM cidades ci
             INNER JOIN estados st ON st.id = ci.estado_id
             INNER JOIN paises p ON p.id = st.pais_id
@@ -39,7 +39,7 @@ public class CidadesRepository : ICidadesRepository
     public async Task<Cidades?> ObterCidadePorId(int id)
     {
         const string sql = @"
-            SELECT ci.id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            SELECT ci.id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM cidades ci
             INNER JOIN estados st ON st.id = ci.estado_id
             INNER JOIN paises p ON p.id = st.pais_id
@@ -80,7 +80,7 @@ public class CidadesRepository : ICidadesRepository
         var offset = (pagina - 1) * tamanhoDaPagina;
         const string sqlCount = "SELECT COUNT(*) FROM cidades WHERE cidade ILIKE @Termo OR ddd ILIKE @Termo;";
         const string sqlData = @"
-            SELECT ci.id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            SELECT ci.id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM cidades ci
             INNER JOIN estados st ON st.id = ci.estado_id
             INNER JOIN paises p ON p.id = st.pais_id

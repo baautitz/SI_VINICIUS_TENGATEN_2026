@@ -10,7 +10,7 @@ import { paisesApi } from "@/api/localizacao";
 
 export * from "./types";
 
-export const formatPaisLabel = (item: Pais) => `${item.pais} (${item.siglaIso})`;
+export const formatPaisLabel = (item: Pais) => `${item.pais} (${item.codigoIsoPais})`;
 
 interface PaisesFeatureProps {
   selectionMode?: boolean;
@@ -68,7 +68,7 @@ export function PaisesFeature({
           <p>
             Deseja realmente excluir o país{" "}
             <strong>{list.itemToDelete?.pais}</strong> (
-            {list.itemToDelete?.siglaIso})? Esta ação não poderá ser desfeita.
+            {list.itemToDelete?.codigoIsoPais})? Esta ação não poderá ser desfeita.
           </p>
         }
       />

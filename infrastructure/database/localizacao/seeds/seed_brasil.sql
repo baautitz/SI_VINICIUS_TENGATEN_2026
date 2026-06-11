@@ -1,9 +1,9 @@
 SET search_path TO projeto_sistemas;
 
-INSERT INTO paises (ddi, sigla_iso, moeda, simbolo_moeda, pais)
+INSERT INTO paises (ddi, codigo_iso_pais, codigo_iso_moeda, simbolo_moeda, pais)
 VALUES
   ('55', 'BRA', 'BRL', 'R$', 'BRASIL')
-ON CONFLICT (sigla_iso) DO NOTHING;
+ON CONFLICT (codigo_iso_pais) DO NOTHING;
 
 INSERT INTO estados (pais_id, estado, uf)
 SELECT id, 'ACRE', 'AC' FROM paises WHERE pais = 'BRASIL'

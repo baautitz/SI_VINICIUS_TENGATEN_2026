@@ -38,9 +38,9 @@ public abstract class Documento : IEquatable<Documento>
 
     public static implicit operator string(Documento documento) => documento.Valor;
 
-    public static Documento Criar(string valor, string siglaIsoPais, TipoPessoa tipoPessoa)
+    public static Documento Criar(string valor, string codigoIsoPais, TipoPessoa tipoPessoa)
     {
-        if (siglaIsoPais == "BRA")
+        if (codigoIsoPais == "BRA")
         {
             if (tipoPessoa == TipoPessoa.FISICA)
                 return new Cpf(valor);

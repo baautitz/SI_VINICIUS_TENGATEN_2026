@@ -25,5 +25,5 @@ export interface ResultadoErro {
 export interface PaisResumo {
   id: number;
   pais: string;
-  siglaIso: string;
+  codigoIsoPais: string;
 }

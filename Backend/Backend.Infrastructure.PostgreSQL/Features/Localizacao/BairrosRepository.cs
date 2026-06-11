@@ -18,7 +18,7 @@ public class BairrosRepository : IBairrosRepository
         var offset = (pagina - 1) * tamanhoDaPagina;
         const string sqlCount = "SELECT COUNT(*) FROM bairros;";
         const string sqlData = @"
-            SELECT b.id, b.bairro, ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            SELECT b.id, b.bairro, ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM bairros b
             INNER JOIN cidades ci ON ci.id = b.cidade_id
             INNER JOIN estados st ON st.id = ci.estado_id
@@ -40,7 +40,7 @@ public class BairrosRepository : IBairrosRepository
     public async Task<Bairros?> ObterBairroPorId(int id)
     {
         const string sql = @"
-            SELECT b.id, b.bairro, ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            SELECT b.id, b.bairro, ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM bairros b
             INNER JOIN cidades ci ON ci.id = b.cidade_id
             INNER JOIN estados st ON st.id = ci.estado_id
@@ -82,7 +82,7 @@ public class BairrosRepository : IBairrosRepository
         var offset = (pagina - 1) * tamanhoDaPagina;
         const string sqlCount = "SELECT COUNT(*) FROM bairros WHERE bairro ILIKE @Termo;";
         const string sqlData = @"
-            SELECT b.id, b.bairro, ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            SELECT b.id, b.bairro, ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM bairros b
             INNER JOIN cidades ci ON ci.id = b.cidade_id
             INNER JOIN estados st ON st.id = ci.estado_id

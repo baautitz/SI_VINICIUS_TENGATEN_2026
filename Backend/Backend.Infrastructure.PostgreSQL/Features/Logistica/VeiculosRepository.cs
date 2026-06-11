@@ -27,7 +27,7 @@ public class VeiculosRepository : IVeiculosRepository
                    v.observacao AS Observacao,
                    t.id AS TransportadoraId, t.id AS Id, t.nome_razaosocial AS NomeRazaosocial,
                    e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
-                   p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+                   p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM veiculos v
             LEFT JOIN transportadoras t ON t.id = v.transportadora_id
             LEFT JOIN estados e ON e.id = v.estado_id
@@ -71,7 +71,7 @@ public class VeiculosRepository : IVeiculosRepository
                    v.observacao AS Observacao,
                    t.id AS TransportadoraId, t.nome_razaosocial AS NomeRazaosocial,
                    e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
-                   p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+                   p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM veiculos v
             LEFT JOIN transportadoras t ON t.id = v.transportadora_id
             LEFT JOIN estados e ON e.id = v.estado_id
@@ -194,7 +194,7 @@ public class VeiculosRepository : IVeiculosRepository
                    v.observacao AS Observacao,
                    t.id AS TransportadoraId, t.nome_razaosocial AS NomeRazaosocial,
                    e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
-                   p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+                   p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM veiculos v
             LEFT JOIN transportadoras t ON t.id = v.transportadora_id
             LEFT JOIN estados e ON e.id = v.estado_id

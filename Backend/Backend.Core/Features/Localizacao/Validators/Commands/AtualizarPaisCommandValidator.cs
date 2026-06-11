@@ -8,9 +8,9 @@ public class AtualizarPaisCommandValidator : AbstractValidator<AtualizarPaisComm
     public AtualizarPaisCommandValidator()
     {
         RuleFor(x => x.Pais).NotEmpty().MaximumLength(100);
-        RuleFor(x => x.SiglaIso).NotEmpty().Length(3);
+        RuleFor(x => x.CodigoIsoPais).NotEmpty().Length(3);
         RuleFor(x => x.Ddi).NotEmpty().MaximumLength(5);
-        RuleFor(x => x.Moeda).NotEmpty().MaximumLength(50);
+        RuleFor(x => x.CodigoIsoMoeda).NotEmpty().MaximumLength(50);
         RuleFor(x => x.SimboloMoeda).NotEmpty().MaximumLength(5);
     }
 }

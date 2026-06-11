@@ -21,7 +21,7 @@ public class PaisesRepository : IPaisesRepository
         var offset = (pagina - 1) * tamanhoDaPagina;
         const string sqlCount = "SELECT COUNT(*) FROM paises;";
         const string sqlData = @"
-            SELECT id, pais, sigla_iso AS SiglaIso, ddi, moeda, simbolo_moeda AS SimboloMoeda
+            SELECT id, pais, codigo_iso_pais AS CodigoIsoPais, ddi, codigo_iso_moeda AS CodigoIsoMoeda, simbolo_moeda AS SimboloMoeda
             FROM paises
             ORDER BY pais
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
@@ -37,32 +37,32 @@ public class PaisesRepository : IPaisesRepository
 
     public async Task<Paises?> ObterPaisPorId(int id)
     {
-        const string sql = "SELECT id, pais, sigla_iso AS SiglaIso, ddi, moeda, simbolo_moeda AS SimboloMoeda FROM paises WHERE id = @Id;";
+        const string sql = "SELECT id, pais, codigo_iso_pais AS CodigoIsoPais, ddi, codigo_iso_moeda AS CodigoIsoMoeda, simbolo_moeda AS SimboloMoeda FROM paises WHERE id = @Id;";
         return await _session.Connection.QuerySingleOrDefaultAsync<Paises>(sql, new { Id = id }, transaction: _session.Transaction);
     }
 
     public async Task<Paises> CriarPais(Paises pais)
     {
-        const string sql = "INSERT INTO paises (ddi, sigla_iso, moeda, simbolo_moeda, pais) VALUES (@Ddi, @SiglaIso, @Moeda, @SimboloMoeda, @Pais) RETURNING id;";
-        var idGerado = await _session.Connection.ExecuteScalarAsync<int>(sql, new { pais.Ddi, pais.SiglaIso, pais.Moeda, pais.SimboloMoeda, pais.Pais }, transaction: _session.Transaction);
-        return new Paises(idGerado, pais.Ddi, pais.SiglaIso, pais.Moeda, pais.SimboloMoeda, pais.Pais);
+        const string sql = "INSERT INTO paises (ddi, codigo_iso_pais, codigo_iso_moeda, simbolo_moeda, pais) VALUES (@Ddi, @CodigoIsoPais, @CodigoIsoMoeda, @SimboloMoeda, @Pais) RETURNING id;";
+        var idGerado = await _session.Connection.ExecuteScalarAsync<int>(sql, new { pais.Ddi, pais.CodigoIsoPais, pais.CodigoIsoMoeda, pais.SimboloMoeda, pais.Pais }, transaction: _session.Transaction);
+        return new Paises(idGerado, pais.Ddi, pais.CodigoIsoPais, pais.CodigoIsoMoeda, pais.SimboloMoeda, pais.Pais);
     }
 
     public async Task<Paises> AtualizarPais(int id, Paises pais)
     {
-        const string sql = "UPDATE paises SET ddi = @Ddi, sigla_iso = @SiglaIso, moeda = @Moeda, simbolo_moeda = @SimboloMoeda, pais = @Pais WHERE id = @Id;";
-        await _session.Connection.ExecuteAsync(sql, new { Id = id, pais.Ddi, pais.SiglaIso, pais.Moeda, pais.SimboloMoeda, pais.Pais }, transaction: _session.Transaction);
-        return new Paises(id, pais.Ddi, pais.SiglaIso, pais.Moeda, pais.SimboloMoeda, pais.Pais);
+        const string sql = "UPDATE paises SET ddi = @Ddi, codigo_iso_pais = @CodigoIsoPais, codigo_iso_moeda = @CodigoIsoMoeda, simbolo_moeda = @SimboloMoeda, pais = @Pais WHERE id = @Id;";
+        await _session.Connection.ExecuteAsync(sql, new { Id = id, pais.Ddi, pais.CodigoIsoPais, pais.CodigoIsoMoeda, pais.SimboloMoeda, pais.Pais }, transaction: _session.Transaction);
+        return new Paises(id, pais.Ddi, pais.CodigoIsoPais, pais.CodigoIsoMoeda, pais.SimboloMoeda, pais.Pais);
     }
 
     public async Task<ResultadoPaginado<Paises>> PesquisarPaises(string termo, int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
-        const string sqlCount = "SELECT COUNT(*) FROM paises WHERE pais ILIKE @Termo OR sigla_iso ILIKE @Termo;";
+        const string sqlCount = "SELECT COUNT(*) FROM paises WHERE pais ILIKE @Termo OR codigo_iso_pais ILIKE @Termo;";
         const string sqlData = @"
-            SELECT id, pais, sigla_iso AS SiglaIso, ddi, moeda, simbolo_moeda AS SimboloMoeda
+            SELECT id, pais, codigo_iso_pais AS CodigoIsoPais, ddi, codigo_iso_moeda AS CodigoIsoMoeda, simbolo_moeda AS SimboloMoeda
             FROM paises
-            WHERE pais ILIKE @Termo OR sigla_iso ILIKE @Termo
+            WHERE pais ILIKE @Termo OR codigo_iso_pais ILIKE @Termo
             ORDER BY pais
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
@@ -75,11 +75,11 @@ public class PaisesRepository : IPaisesRepository
         return new ResultadoPaginado<Paises>(itens, total, pagina, tamanhoDaPagina);
     }
 
-    public async Task<bool> ExistePais(string siglaIso, string pais, int? ignorarId = null)
+    public async Task<bool> ExistePais(string codigoIsoPais, string pais, int? ignorarId = null)
     {
-        var sql = "SELECT COUNT(1) FROM paises WHERE (sigla_iso = @SiglaIso OR pais = @Pais)";
+        var sql = "SELECT COUNT(1) FROM paises WHERE (codigo_iso_pais = @CodigoIsoPais OR pais = @Pais)";
         if (ignorarId.HasValue) sql += " AND id != @IgnorarId";
-        return await _session.Connection.ExecuteScalarAsync<int>(sql, new { SiglaIso = siglaIso, Pais = pais, IgnorarId = ignorarId }, transaction: _session.Transaction) > 0;
+        return await _session.Connection.ExecuteScalarAsync<int>(sql, new { CodigoIsoPais = codigoIsoPais, Pais = pais, IgnorarId = ignorarId }, transaction: _session.Transaction) > 0;
     }
 
     public async Task<bool> DeletarPais(int id)

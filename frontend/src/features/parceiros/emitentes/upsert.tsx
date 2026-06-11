@@ -130,7 +130,7 @@ function EmitentesUpsertForm({
   });
 
   const isBrasil =
-    selectedPais?.siglaIso === "BRA" ||
+    selectedPais?.codigoIsoPais === "BRA" ||
     (!selectedPais && nacionalidadeId === 1);
 
   return (

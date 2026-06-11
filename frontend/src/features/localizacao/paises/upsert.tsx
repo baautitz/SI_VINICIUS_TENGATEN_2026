@@ -60,15 +60,14 @@ function PaisesUpsertForm({
   editingItem,
   onClose,
   onSuccess,
-  readOnly = false,
 }: PaisesUpsertProps) {
   const { mutation, globalError, getFieldError, resetErrors } =
     useUpsertMutation({
       mutationFn: async (value: {
         pais: string;
-        siglaIso: string;
+        codigoIsoPais: string;
         ddi: string;
-        moeda: string;
+        codigoIsoMoeda: string;
         simboloMoeda: string;
       }) => {
         return editingItem
@@ -83,9 +82,9 @@ function PaisesUpsertForm({
   const form = useForm({
     defaultValues: {
       pais: editingItem?.pais ?? "",
-      siglaIso: editingItem?.siglaIso ?? "",
+      codigoIsoPais: editingItem?.codigoIsoPais ?? "",
       ddi: editingItem?.ddi ?? "",
-      moeda: editingItem?.moeda ?? "",
+      codigoIsoMoeda: editingItem?.codigoIsoMoeda ?? "",
       simboloMoeda: editingItem?.simboloMoeda ?? "",
     },
     onSubmit: async ({ value }) => {
@@ -121,7 +120,11 @@ function PaisesUpsertForm({
                   "Salvando..."
                 ) : (
                   <span className="flex items-center gap-2">
-                    Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup>
+                    Salvar{" "}
+                    <KbdGroup>
+                      <Kbd>Alt</Kbd>
+                      <Kbd>Enter</Kbd>
+                    </KbdGroup>
                   </span>
                 )}
               </Button>
@@ -140,7 +143,7 @@ function PaisesUpsertForm({
         }}
       >
         <FieldGroup className="gap-4">
-          <div className="flex flex-wrap gap-4 items-start w-full">
+          <div className="flex w-full flex-wrap items-start gap-4">
             {editingItem && (
               <div className="w-fit">
                 <div className="flex flex-col gap-1.5">
@@ -148,13 +151,13 @@ function PaisesUpsertForm({
                   <Input
                     value={editingItem.id}
                     disabled
-                    className="h-8 text-xs font-mono"
+                    className="h-8 font-mono text-xs"
                     inputSize="small"
                   />
                 </div>
               </div>
             )}
-            <div className="flex-1 min-w-48">
+            <div className="min-w-48 flex-1">
               <form.Field
                 name="pais"
                 validators={{ onChange: paisSchema.shape.pais }}
@@ -172,13 +175,13 @@ function PaisesUpsertForm({
           </div>
 
           <form.Field
-            name="siglaIso"
-            validators={{ onChange: paisSchema.shape.siglaIso }}
+            name="codigoIsoPais"
+            validators={{ onChange: paisSchema.shape.codigoIsoPais }}
           >
             {(field) => (
               <FormFieldUI
                 field={field}
-                label="Sigla ISO"
+                label="Código ISO do país"
                 inputSize="small"
                 getFieldError={getFieldError}
                 maxLength={3}
@@ -202,13 +205,13 @@ function PaisesUpsertForm({
           </form.Field>
 
           <form.Field
-            name="moeda"
-            validators={{ onChange: paisSchema.shape.moeda }}
+            name="codigoIsoMoeda"
+            validators={{ onChange: paisSchema.shape.codigoIsoMoeda }}
           >
             {(field) => (
               <FormFieldUI
                 field={field}
-                label="Moeda"
+                label="Código ISO da moeda"
                 inputSize="medium"
                 getFieldError={getFieldError}
               />

@@ -18,7 +18,7 @@ public class EstadosRepository : IEstadosRepository
         var offset = (pagina - 1) * tamanhoDaPagina;
         const string sqlCount = "SELECT COUNT(*) FROM estados;";
         const string sqlData = @"
-            SELECT e.id, e.estado, e.uf, p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            SELECT e.id, e.estado, e.uf, p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM estados e
             INNER JOIN paises p ON p.id = e.pais_id
             ORDER BY e.estado
@@ -38,7 +38,7 @@ public class EstadosRepository : IEstadosRepository
     public async Task<Estados?> ObterEstadoPorId(int id)
     {
         const string sql = @"
-            SELECT e.id, e.estado, e.uf, p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            SELECT e.id, e.estado, e.uf, p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM estados e
             INNER JOIN paises p ON p.id = e.pais_id
             WHERE e.id = @Id;";
@@ -78,7 +78,7 @@ public class EstadosRepository : IEstadosRepository
         var offset = (pagina - 1) * tamanhoDaPagina;
         const string sqlCount = "SELECT COUNT(*) FROM estados WHERE estado ILIKE @Termo OR uf ILIKE @Termo;";
         const string sqlData = @"
-            SELECT e.id, e.estado, e.uf, p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+            SELECT e.id, e.estado, e.uf, p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM estados e
             INNER JOIN paises p ON p.id = e.pais_id
             WHERE e.estado ILIKE @Termo OR e.uf ILIKE @Termo

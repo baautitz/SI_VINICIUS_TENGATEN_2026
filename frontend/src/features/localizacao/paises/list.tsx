@@ -55,16 +55,16 @@ export function PaisesList({
       ),
     },
     {
-      accessorKey: "siglaIso",
-      header: "Sigla ISO",
+      accessorKey: "codigoIsoPais",
+      header: "Código ISO do país",
     },
     {
       accessorKey: "ddi",
       header: "DDI",
     },
     {
-      accessorKey: "moeda",
-      header: "Moeda",
+      accessorKey: "codigoIsoMoeda",
+      header: "Código ISO da moeda",
     },
     {
       accessorKey: "simboloMoeda",

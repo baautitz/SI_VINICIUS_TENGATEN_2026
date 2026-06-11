@@ -56,7 +56,7 @@ public sealed class FornecedoresService : BaseService
 
         return await ExecuteResultAsync(async () =>
         {
-            Documento documento = Documento.Criar(command.CpfCnpj, nacionalidade.SiglaIso, command.TipoPessoa);
+            Documento documento = Documento.Criar(command.CpfCnpj, nacionalidade.CodigoIsoPais, command.TipoPessoa);
             Documento? rgIe = Documento.CriarGenerico(command.RgIe);
 
             var fornecedor = new Fornecedores(
@@ -110,7 +110,7 @@ public sealed class FornecedoresService : BaseService
 
         return await ExecuteResultAsync(async () =>
         {
-            Documento documento = Documento.Criar(command.CpfCnpj, nacionalidade.SiglaIso, command.TipoPessoa);
+            Documento documento = Documento.Criar(command.CpfCnpj, nacionalidade.CodigoIsoPais, command.TipoPessoa);
             Documento? rgIe = Documento.CriarGenerico(command.RgIe);
 
             existente.Atualizar(

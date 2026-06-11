@@ -28,8 +28,8 @@ public class TransportadorasRepository : ITransportadorasRepository
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
                    e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
-                   pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.sigla_iso, pe.ddi, pe.moeda, pe.simbolo_moeda,
-                   p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+                   pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.codigo_iso_pais, pe.ddi, pe.codigo_iso_moeda, pe.simbolo_moeda,
+                   p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM transportadoras t
             INNER JOIN paises p ON p.id = t.nacionalidade_id
             LEFT JOIN bairros b ON b.id = t.bairro_id
@@ -69,11 +69,11 @@ public class TransportadorasRepository : ITransportadorasRepository
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
                    e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
-                   pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.sigla_iso, pe.ddi, pe.moeda, pe.simbolo_moeda,
-                   p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda,
+                   pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.codigo_iso_pais, pe.ddi, pe.codigo_iso_moeda, pe.simbolo_moeda,
+                   p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda,
                    v.id AS VeiculoId, v.id AS Id, v.placa, v.rntrc, v.renavam, v.tipo_veiculo, v.marca_modelo, v.ativo, v.observacao,
                    ev.id AS VeiculoEstadoId, ev.id AS Id, ev.estado, ev.uf,
-                   pv.id AS VeiculoPaisId, pv.id AS Id, pv.pais, pv.sigla_iso, pv.ddi, pv.moeda, pv.simbolo_moeda
+                   pv.id AS VeiculoPaisId, pv.id AS Id, pv.pais, pv.codigo_iso_pais, pv.ddi, pv.codigo_iso_moeda, pv.simbolo_moeda
             FROM transportadoras t
             INNER JOIN paises p ON p.id = t.nacionalidade_id
             LEFT JOIN bairros b ON b.id = t.bairro_id
@@ -233,8 +233,8 @@ public class TransportadorasRepository : ITransportadorasRepository
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
                    e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
-                   pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.sigla_iso, pe.ddi, pe.moeda, pe.simbolo_moeda,
-                   p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+                   pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.codigo_iso_pais, pe.ddi, pe.codigo_iso_moeda, pe.simbolo_moeda,
+                   p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM transportadoras t
             INNER JOIN paises p ON p.id = t.nacionalidade_id
             LEFT JOIN bairros b ON b.id = t.bairro_id

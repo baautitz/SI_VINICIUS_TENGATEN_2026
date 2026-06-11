@@ -41,10 +41,10 @@ public sealed class ClientesService : BaseService
         if (nacionalidade is null)
             return Resultado<Clientes>.Falha(new ResultadoErro("NACIONALIDADE_NAO_ENCONTRADA", "Nacionalidade não encontrada.", "NacionalidadeId"));
 
-        if (nacionalidade.SiglaIso != "BRA" && !string.IsNullOrWhiteSpace(command.RgIe))
+        if (nacionalidade.CodigoIsoPais != "BRA" && !string.IsNullOrWhiteSpace(command.RgIe))
             return Resultado<Clientes>.Falha(new ResultadoErro("RG_IE_NAO_PERMITIDO", "RG/IE não é permitido para estrangeiros.", nameof(command.RgIe)));
 
-        if (nacionalidade.SiglaIso == "BRA")
+        if (nacionalidade.CodigoIsoPais == "BRA")
         {
             if (command.TipoPessoa == TipoPessoa.FISICA)
             {
@@ -73,7 +73,7 @@ public sealed class ClientesService : BaseService
 
         return await ExecuteResultAsync(async () =>
         {
-            Documento documento = Documento.Criar(command.CpfCnpj, nacionalidade.SiglaIso, command.TipoPessoa);
+            Documento documento = Documento.Criar(command.CpfCnpj, nacionalidade.CodigoIsoPais, command.TipoPessoa);
             Documento? rgIe = Documento.CriarGenerico(command.RgIe);
 
             var cliente = new Clientes(
@@ -112,10 +112,10 @@ public sealed class ClientesService : BaseService
         if (nacionalidade is null)
             return Resultado<Clientes>.Falha(new ResultadoErro("NACIONALIDADE_NAO_ENCONTRADA", "Nacionalidade não encontrada.", "NacionalidadeId"));
 
-        if (nacionalidade.SiglaIso != "BRA" && !string.IsNullOrWhiteSpace(command.RgIe))
+        if (nacionalidade.CodigoIsoPais != "BRA" && !string.IsNullOrWhiteSpace(command.RgIe))
             return Resultado<Clientes>.Falha(new ResultadoErro("RG_IE_NAO_PERMITIDO", "RG/IE não é permitido para estrangeiros.", nameof(command.RgIe)));
 
-        if (nacionalidade.SiglaIso == "BRA")
+        if (nacionalidade.CodigoIsoPais == "BRA")
         {
             if (command.TipoPessoa == TipoPessoa.FISICA)
             {
@@ -144,7 +144,7 @@ public sealed class ClientesService : BaseService
 
         return await ExecuteResultAsync(async () =>
         {
-            Documento documento = Documento.Criar(command.CpfCnpj, nacionalidade.SiglaIso, command.TipoPessoa);
+            Documento documento = Documento.Criar(command.CpfCnpj, nacionalidade.CodigoIsoPais, command.TipoPessoa);
             Documento? rgIe = Documento.CriarGenerico(command.RgIe);
 
             existente.AtualizarDados(

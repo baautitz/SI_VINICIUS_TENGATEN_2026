@@ -29,8 +29,8 @@ public class ClientesRepository : IClientesRepository
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
                    e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
-                   pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.sigla_iso, pe.ddi, pe.moeda, pe.simbolo_moeda,
-                   p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+                   pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.codigo_iso_pais, pe.ddi, pe.codigo_iso_moeda, pe.simbolo_moeda,
+                   p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM clientes c
             INNER JOIN paises p ON p.id = c.nacionalidade_id
             LEFT JOIN bairros b ON b.id = c.bairro_id
@@ -70,8 +70,8 @@ public class ClientesRepository : IClientesRepository
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
                    e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
-                   pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.sigla_iso, pe.ddi, pe.moeda, pe.simbolo_moeda,
-                   p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+                   pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.codigo_iso_pais, pe.ddi, pe.codigo_iso_moeda, pe.simbolo_moeda,
+                   p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM clientes c
             INNER JOIN paises p ON p.id = c.nacionalidade_id
             LEFT JOIN bairros b ON b.id = c.bairro_id
@@ -204,8 +204,8 @@ public class ClientesRepository : IClientesRepository
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
                    e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
-                   pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.sigla_iso, pe.ddi, pe.moeda, pe.simbolo_moeda,
-                   p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
+                   pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.codigo_iso_pais, pe.ddi, pe.codigo_iso_moeda, pe.simbolo_moeda,
+                   p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM clientes c
             INNER JOIN paises p ON p.id = c.nacionalidade_id
             LEFT JOIN bairros b ON b.id = c.bairro_id

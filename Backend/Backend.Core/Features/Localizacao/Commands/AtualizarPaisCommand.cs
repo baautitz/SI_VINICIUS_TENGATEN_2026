@@ -1,3 +1,3 @@
 namespace Backend.Core.Features.Localizacao.Commands;
 
-public record AtualizarPaisCommand(string Pais, string SiglaIso, string Ddi, string Moeda, string SimboloMoeda);
+public record AtualizarPaisCommand(string Pais, string CodigoIsoPais, string Ddi, string CodigoIsoMoeda, string SimboloMoeda);
