@@ -84,7 +84,7 @@ public class Transportadoras
         if (veiculo == null)
             throw new DomainException("Veículo é obrigatório.");
 
-        if (_veiculos.Any(v => v.Placa == veiculo.Placa && v.EstadoId == veiculo.EstadoId))
+        if (_veiculos.Any(v => v.Placa == veiculo.Placa && v.Estado.Id == veiculo.Estado.Id))
             throw new DomainException("Já existe um veículo com esta placa e estado.");
 
         _veiculos.Add(veiculo);

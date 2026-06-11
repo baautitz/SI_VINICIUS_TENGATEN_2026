@@ -52,17 +52,14 @@ public sealed class VeiculosService : BaseService
         {
             var veiculo = new Veiculos(
                 command.Placa,
-                command.EstadoId,
-                command.TransportadoraId,
+                estado,
+                transportadora,
                 command.Rntrc,
                 command.Renavam,
                 command.TipoVeiculo,
                 command.MarcaModelo,
                 command.Observacao
             );
-
-            veiculo.VincularEstado(estado);
-            if (transportadora != null) veiculo.VincularTransportadora(transportadora);
 
             if (!command.Ativo) veiculo.Desativar();
 
@@ -98,17 +95,14 @@ public sealed class VeiculosService : BaseService
         {
             existente.Atualizar(
                 command.Placa,
-                command.EstadoId,
-                command.TransportadoraId,
+                estado,
+                transportadora,
                 command.Rntrc,
                 command.Renavam,
                 command.TipoVeiculo,
                 command.MarcaModelo,
                 command.Observacao
             );
-
-            existente.VincularEstado(estado);
-            if (transportadora != null) existente.VincularTransportadora(transportadora);
 
             if (command.Ativo) existente.Ativar();
             else existente.Desativar();

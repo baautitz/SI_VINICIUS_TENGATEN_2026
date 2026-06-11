@@ -28,22 +28,24 @@ public class TransportadorasRepository : ITransportadorasRepository
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
                    e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
+                   pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.sigla_iso, pe.ddi, pe.moeda, pe.simbolo_moeda,
                    p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM transportadoras t
             INNER JOIN paises p ON p.id = t.nacionalidade_id
             LEFT JOIN bairros b ON b.id = t.bairro_id
             LEFT JOIN cidades ci ON ci.id = b.cidade_id
             LEFT JOIN estados e ON e.id = ci.estado_id
+            LEFT JOIN paises pe ON pe.id = e.pais_id
             ORDER BY t.nome_razaosocial
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
 
-        var itens = await _session.Connection.QueryAsync<Transportadoras, Bairros, Cidades, Estados, Paises, Transportadoras>(
+        var itens = await _session.Connection.QueryAsync<Transportadoras, Bairros, Cidades, Estados, Paises, Paises, Transportadoras>(
             sqlData,
-            (transportadora, bairro, cidade, estado, pais) =>
+            (transportadora, bairro, cidade, estado, paisEstado, pais) =>
             {
-                if (pais is not null && estado is not null) estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
+                if (paisEstado is not null && estado is not null) estado.AtualizarResultado(estado.Estado, estado.Uf, paisEstado);
                 if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
                 if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
 
@@ -52,7 +54,7 @@ public class TransportadorasRepository : ITransportadorasRepository
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "BairroId,CidadeId,EstadoId,PaisId"
+            splitOn: "BairroId,CidadeId,EstadoId,PaisEstadoId,PaisId"
         );
 
         return new ResultadoPaginado<Transportadoras>(itens, total, pagina, tamanhoDaPagina);
@@ -67,26 +69,44 @@ public class TransportadorasRepository : ITransportadorasRepository
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
                    e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
+                   pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.sigla_iso, pe.ddi, pe.moeda, pe.simbolo_moeda,
                    p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda,
-                   v.id AS VeiculoId, v.id AS Id, v.placa, v.rntrc, v.renavam, v.tipo_veiculo, v.marca_modelo, v.ativo, v.observacao, v.estado_id AS EstadoId
+                   v.id AS VeiculoId, v.id AS Id, v.placa, v.rntrc, v.renavam, v.tipo_veiculo, v.marca_modelo, v.ativo, v.observacao,
+                   ev.id AS VeiculoEstadoId, ev.id AS Id, ev.estado, ev.uf,
+                   pv.id AS VeiculoPaisId, pv.id AS Id, pv.pais, pv.sigla_iso, pv.ddi, pv.moeda, pv.simbolo_moeda
             FROM transportadoras t
             INNER JOIN paises p ON p.id = t.nacionalidade_id
             LEFT JOIN bairros b ON b.id = t.bairro_id
             LEFT JOIN cidades ci ON ci.id = b.cidade_id
             LEFT JOIN estados e ON e.id = ci.estado_id
+            LEFT JOIN paises pe ON pe.id = e.pais_id
             LEFT JOIN veiculos v ON v.transportadora_id = t.id
+            LEFT JOIN estados ev ON ev.id = v.estado_id
+            LEFT JOIN paises pv ON pv.id = ev.pais_id
             WHERE t.id = @Id;";
 
         var transportadoraDict = new Dictionary<int, Transportadoras>();
+        var types = new[] { typeof(Transportadoras), typeof(Bairros), typeof(Cidades), typeof(Estados), typeof(Paises), typeof(Paises), typeof(Veiculos), typeof(Estados), typeof(Paises) };
 
-        await _session.Connection.QueryAsync<Transportadoras, Bairros, Cidades, Estados, Paises, Veiculos, Transportadoras>(
+        await _session.Connection.QueryAsync<Transportadoras>(
             sql,
-            (transportadora, bairro, cidade, estado, pais, veiculo) =>
+            types,
+            (objs) =>
             {
+                var transportadora = (Transportadoras)objs[0];
+                var bairro = (Bairros)objs[1];
+                var cidade = (Cidades)objs[2];
+                var estado = (Estados)objs[3];
+                var paisEstado = (Paises)objs[4];
+                var pais = (Paises)objs[5];
+                var veiculo = (Veiculos)objs[6];
+                var veiculoEstado = (Estados)objs[7];
+                var veiculoPais = (Paises)objs[8];
+
                 if (!transportadoraDict.TryGetValue(transportadora.Id, out var transportadoraEntry))
                 {
                     transportadoraEntry = transportadora;
-                    if (pais is not null && estado is not null) estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
+                    if (paisEstado is not null && estado is not null) estado.AtualizarResultado(estado.Estado, estado.Uf, paisEstado);
                     if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
                     if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
 
@@ -97,6 +117,8 @@ public class TransportadorasRepository : ITransportadorasRepository
 
                 if (veiculo is not null)
                 {
+                    if (veiculoPais is not null && veiculoEstado is not null) veiculoEstado.AtualizarResultado(veiculoEstado.Estado, veiculoEstado.Uf, veiculoPais);
+                    if (veiculoEstado is not null) veiculo.VincularEstado(veiculoEstado);
                     transportadoraEntry.AdicionarVeiculo(veiculo);
                 }
 
@@ -104,7 +126,7 @@ public class TransportadorasRepository : ITransportadorasRepository
             },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "BairroId,CidadeId,EstadoId,PaisId,VeiculoId"
+            splitOn: "BairroId,CidadeId,EstadoId,PaisEstadoId,PaisId,VeiculoId,VeiculoEstadoId,VeiculoPaisId"
         );
 
         return transportadoraDict.Values.SingleOrDefault();
@@ -208,9 +230,17 @@ public class TransportadorasRepository : ITransportadorasRepository
             SELECT t.id AS Id, t.tipo_pessoa AS TipoPessoa, t.nome_razaosocial AS NomeRazaoSocial, t.cpf_cnpj AS CpfCnpj, t.rg_ie AS RgIe, t.apelido_nomefantasia AS ApelidoNomefantasia,
                    t.endereco AS Endereco, t.telefone AS Telefone, t.email AS Email, t.rntrc AS Rntrc, t.ativo AS Ativo, t.criado_em AS CriadoEm,
                    t.observacao AS Observacao,
+                   b.id AS BairroId, b.id AS Id, b.bairro,
+                   ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
+                   e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
+                   pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.sigla_iso, pe.ddi, pe.moeda, pe.simbolo_moeda,
                    p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM transportadoras t
             INNER JOIN paises p ON p.id = t.nacionalidade_id
+            LEFT JOIN bairros b ON b.id = t.bairro_id
+            LEFT JOIN cidades ci ON ci.id = b.cidade_id
+            LEFT JOIN estados e ON e.id = ci.estado_id
+            LEFT JOIN paises pe ON pe.id = e.pais_id
             WHERE t.nome_razaosocial ILIKE @Termo OR t.cpf_cnpj ILIKE @Termo
                OR t.apelido_nomefantasia ILIKE @Termo OR t.email ILIKE @Termo
             ORDER BY t.nome_razaosocial
@@ -219,16 +249,20 @@ public class TransportadorasRepository : ITransportadorasRepository
         var total = await _session.Connection.ExecuteScalarAsync<int>(
             sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
 
-        var itens = await _session.Connection.QueryAsync<Transportadoras, Paises, Transportadoras>(
+        var itens = await _session.Connection.QueryAsync<Transportadoras, Bairros, Cidades, Estados, Paises, Paises, Transportadoras>(
             sqlData,
-            (transportadora, pais) =>
+            (transportadora, bairro, cidade, estado, paisEstado, pais) =>
             {
-                transportadora.Atualizar(transportadora.TipoPessoa, transportadora.NomeRazaosocial, transportadora.CpfCnpj, pais!, transportadora.RgIe, transportadora.ApelidoNomefantasia, transportadora.Endereco, null, transportadora.Telefone, transportadora.Email, transportadora.Rntrc, transportadora.Observacao);
+                if (paisEstado is not null && estado is not null) estado.AtualizarResultado(estado.Estado, estado.Uf, paisEstado);
+                if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
+                if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
+
+                transportadora.Atualizar(transportadora.TipoPessoa, transportadora.NomeRazaosocial, transportadora.CpfCnpj, pais!, transportadora.RgIe, transportadora.ApelidoNomefantasia, transportadora.Endereco, bairro, transportadora.Telefone, transportadora.Email, transportadora.Rntrc, transportadora.Observacao);
                 return transportadora;
             },
             new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "PaisId"
+            splitOn: "BairroId,CidadeId,EstadoId,PaisEstadoId,PaisId"
         );
 
         return new ResultadoPaginado<Transportadoras>(itens, total, pagina, tamanhoDaPagina);

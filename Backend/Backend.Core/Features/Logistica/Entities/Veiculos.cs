@@ -7,10 +7,8 @@ namespace Backend.Core.Features.Logistica.Entities;
 public class Veiculos
 {
     public int Id { get; set; }
-    public int? TransportadoraId { get; private set; }
     public Transportadoras? Transportadora { get; private set; }
-    public int EstadoId { get; private set; }
-    public Estados? Estado { get; private set; }
+    public Estados Estado { get; private set; } = null!;
     public string Placa { get; private set; }
     public string? Rntrc { get; private set; }
     public string? Renavam { get; private set; }
@@ -25,7 +23,7 @@ public class Veiculos
         Placa = null!;
     }
 
-    public Veiculos(string placa, int estadoId, int? transportadoraId = null, string? rntrc = null, string? renavam = null, string? tipoVeiculo = null, string? marcaModelo = null, string? observacao = null)
+    public Veiculos(string placa, Estados estado, Transportadoras? transportadora = null, string? rntrc = null, string? renavam = null, string? tipoVeiculo = null, string? marcaModelo = null, string? observacao = null)
     {
         placa = TextNormalization.Normalize(placa);
         rntrc = TextNormalization.NormalizeOrNull(rntrc);
@@ -37,12 +35,10 @@ public class Veiculos
         if (string.IsNullOrWhiteSpace(placa))
             throw new DomainException("Placa é obrigatória.");
 
-        if (estadoId <= 0)
-            throw new DomainException("Estado é obrigatório.");
+        Estado = estado ?? throw new DomainException("Estado é obrigatório.");
 
         Placa = placa;
-        EstadoId = estadoId;
-        TransportadoraId = transportadoraId;
+        Transportadora = transportadora;
         Rntrc = rntrc;
         Renavam = renavam;
         TipoVeiculo = tipoVeiculo;
@@ -52,7 +48,7 @@ public class Veiculos
         CriadoEm = DateTime.UtcNow;
     }
 
-    public void Atualizar(string placa, int estadoId, int? transportadoraId = null, string? rntrc = null, string? renavam = null, string? tipoVeiculo = null, string? marcaModelo = null, string? observacao = null)
+    public void Atualizar(string placa, Estados estado, Transportadoras? transportadora = null, string? rntrc = null, string? renavam = null, string? tipoVeiculo = null, string? marcaModelo = null, string? observacao = null)
     {
         placa = TextNormalization.Normalize(placa);
         rntrc = TextNormalization.NormalizeOrNull(rntrc);
@@ -64,12 +60,10 @@ public class Veiculos
         if (string.IsNullOrWhiteSpace(placa))
             throw new DomainException("Placa é obrigatória.");
 
-        if (estadoId <= 0)
-            throw new DomainException("Estado é obrigatório.");
+        Estado = estado ?? throw new DomainException("Estado é obrigatório.");
 
         Placa = placa;
-        EstadoId = estadoId;
-        TransportadoraId = transportadoraId;
+        Transportadora = transportadora;
         Rntrc = rntrc;
         Renavam = renavam;
         TipoVeiculo = tipoVeiculo;
@@ -80,13 +74,11 @@ public class Veiculos
     public void VincularTransportadora(Transportadoras transportadora)
     {
         Transportadora = transportadora;
-        TransportadoraId = transportadora.Id;
     }
 
     public void VincularEstado(Estados estado)
     {
         Estado = estado;
-        EstadoId = estado.Id;
     }
 
     public void Ativar() => Ativo = true;

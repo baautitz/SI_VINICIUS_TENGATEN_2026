@@ -13,11 +13,7 @@ import { TransportadoraInput } from "@/components/entity-inputs/transportadora-i
 import { EstadoInput } from "@/components/entity-inputs/estado-input";
 import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
-import {
-  veiculoSchema,
-  Veiculo,
-  VeiculoFormValues,
-} from "./types";
+import { veiculoSchema, Veiculo, VeiculoFormValues } from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { veiculosApi } from "@/api/logistica";
 
@@ -38,7 +34,7 @@ interface VeiculosUpsertFormProps {
 }
 
 export function VeiculosUpsert(props: VeiculosUpsertProps) {
-  const { open, editingItem, onClose, onSuccess, readOnly = false } = props;
+  const { open, editingItem, onClose, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -74,7 +70,6 @@ function VeiculosUpsertForm({
   editingItem,
   onClose,
   onSuccess,
-  readOnly = false,
 }: VeiculosUpsertFormProps) {
   const { mutation, globalError, getFieldError, resetErrors } =
     useUpsertMutation({
@@ -91,8 +86,8 @@ function VeiculosUpsertForm({
   const form = useForm({
     defaultValues: {
       placa: editingItem?.placa ?? "",
-      estadoId: editingItem?.estadoId ?? 0,
-      transportadoraId: editingItem?.transportadoraId ?? null,
+      estadoId: editingItem?.estado?.id ?? 0,
+      transportadoraId: editingItem?.transportadora?.id ?? null,
       rntrc: editingItem?.rntrc ?? "",
       renavam: editingItem?.renavam ?? "",
       tipoVeiculo: editingItem?.tipoVeiculo ?? "",
@@ -137,7 +132,11 @@ function VeiculosUpsertForm({
                   "Salvando..."
                 ) : (
                   <span className="flex items-center gap-2">
-                    Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup>
+                    Salvar{" "}
+                    <KbdGroup>
+                      <Kbd>Alt</Kbd>
+                      <Kbd>Enter</Kbd>
+                    </KbdGroup>
                   </span>
                 )}
               </Button>
@@ -164,7 +163,7 @@ function VeiculosUpsertForm({
                   <Input
                     value={editingItem.id}
                     disabled
-                    className="h-8 text-xs font-mono"
+                    className="h-8 font-mono text-xs"
                     inputSize="small"
                   />
                 </div>
@@ -206,7 +205,7 @@ function VeiculosUpsertForm({
                 }}
               </form.Field>
             </div>
-            <div className="flex-1 min-w-62.5">
+            <div className="min-w-62.5 flex-1">
               <form.Field
                 name="marcaModelo"
                 validators={{

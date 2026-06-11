@@ -22,22 +22,24 @@ public class VeiculosRepository : IVeiculosRepository
 
         const string sqlCount = "SELECT COUNT(*) FROM veiculos;";
         const string sqlData = @"
-            SELECT v.id AS Id, v.placa AS Placa, v.estado_id AS EstadoId, v.transportadora_id AS TransportadoraIdVal, v.rntrc AS Rntrc, v.renavam AS Renavam,
+            SELECT v.id AS Id, v.placa AS Placa, v.rntrc AS Rntrc, v.renavam AS Renavam,
                    v.tipo_veiculo AS TipoVeiculo, v.marca_modelo AS MarcaModelo, v.ativo AS Ativo, v.criado_em AS CriadoEm,
                    v.observacao AS Observacao,
                    t.id AS TransportadoraId, t.id AS Id, t.nome_razaosocial AS NomeRazaosocial,
-                   e.id AS EstadoId, e.id AS Id, e.estado, e.uf
+                   e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
+                   p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM veiculos v
             LEFT JOIN transportadoras t ON t.id = v.transportadora_id
             LEFT JOIN estados e ON e.id = v.estado_id
+            LEFT JOIN paises p ON p.id = e.pais_id
             ORDER BY v.placa
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
 
-        var itens = await _session.Connection.QueryAsync<Veiculos, Transportadoras, Estados, Veiculos>(
+        var itens = await _session.Connection.QueryAsync<Veiculos, Transportadoras, Estados, Paises, Veiculos>(
             sqlData,
-            (veiculo, transportadora, estado) =>
+            (veiculo, transportadora, estado, pais) =>
             {
                 if (transportadora is not null)
                 {
@@ -45,13 +47,17 @@ public class VeiculosRepository : IVeiculosRepository
                 }
                 if (estado is not null)
                 {
+                    if (pais is not null)
+                    {
+                        estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
+                    }
                     veiculo.VincularEstado(estado);
                 }
                 return veiculo;
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "TransportadoraId,EstadoId"
+            splitOn: "TransportadoraId,EstadoId,PaisId"
         );
 
         return new ResultadoPaginado<Veiculos>(itens.ToList(), total, pagina, tamanhoDaPagina);
@@ -60,19 +66,21 @@ public class VeiculosRepository : IVeiculosRepository
     public async Task<Veiculos?> ObterVeiculoPorId(int id)
     {
         const string sql = @"
-            SELECT v.id AS Id, v.placa AS Placa, v.estado_id AS EstadoId, v.transportadora_id AS TransportadoraIdVal, v.rntrc AS Rntrc, v.renavam AS Renavam,
+            SELECT v.id AS Id, v.placa AS Placa, v.rntrc AS Rntrc, v.renavam AS Renavam,
                    v.tipo_veiculo AS TipoVeiculo, v.marca_modelo AS MarcaModelo, v.ativo AS Ativo, v.criado_em AS CriadoEm,
                    v.observacao AS Observacao,
                    t.id AS TransportadoraId, t.nome_razaosocial AS NomeRazaosocial,
-                   e.id AS EstadoId, e.id AS Id, e.estado, e.uf
+                   e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
+                   p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM veiculos v
             LEFT JOIN transportadoras t ON t.id = v.transportadora_id
             LEFT JOIN estados e ON e.id = v.estado_id
+            LEFT JOIN paises p ON p.id = e.pais_id
             WHERE v.id = @Id;";
 
-        var result = await _session.Connection.QueryAsync<Veiculos, Transportadoras, Estados, Veiculos>(
+        var result = await _session.Connection.QueryAsync<Veiculos, Transportadoras, Estados, Paises, Veiculos>(
             sql,
-            (veiculo, transportadora, estado) =>
+            (veiculo, transportadora, estado, pais) =>
             {
                 if (transportadora is not null)
                 {
@@ -80,13 +88,17 @@ public class VeiculosRepository : IVeiculosRepository
                 }
                 if (estado is not null)
                 {
+                    if (pais is not null)
+                    {
+                        estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
+                    }
                     veiculo.VincularEstado(estado);
                 }
                 return veiculo;
             },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "TransportadoraId,EstadoId"
+            splitOn: "TransportadoraId,EstadoId,PaisId"
         );
 
         return result.SingleOrDefault();
@@ -106,8 +118,8 @@ public class VeiculosRepository : IVeiculosRepository
             new
             {
                 veiculo.Placa,
-                veiculo.EstadoId,
-                veiculo.TransportadoraId,
+                EstadoId = veiculo.Estado.Id,
+                TransportadoraId = veiculo.Transportadora?.Id,
                 veiculo.Rntrc,
                 veiculo.Renavam,
                 veiculo.TipoVeiculo,
@@ -139,8 +151,8 @@ public class VeiculosRepository : IVeiculosRepository
             {
                 Id = id,
                 veiculo.Placa,
-                veiculo.EstadoId,
-                veiculo.TransportadoraId,
+                EstadoId = veiculo.Estado.Id,
+                TransportadoraId = veiculo.Transportadora?.Id,
                 veiculo.Rntrc,
                 veiculo.Renavam,
                 veiculo.TipoVeiculo,
@@ -177,14 +189,16 @@ public class VeiculosRepository : IVeiculosRepository
             WHERE v.placa ILIKE @Termo OR v.marca_modelo ILIKE @Termo OR t.nome_razaosocial ILIKE @Termo OR e.uf ILIKE @Termo;";
 
         const string sqlData = @"
-            SELECT v.id AS Id, v.placa AS Placa, v.estado_id AS EstadoId, v.transportadora_id AS TransportadoraIdVal, v.rntrc AS Rntrc, v.renavam AS Renavam,
+            SELECT v.id AS Id, v.placa AS Placa, v.rntrc AS Rntrc, v.renavam AS Renavam,
                    v.tipo_veiculo AS TipoVeiculo, v.marca_modelo AS MarcaModelo, v.ativo AS Ativo, v.criado_em AS CriadoEm,
                    v.observacao AS Observacao,
                    t.id AS TransportadoraId, t.nome_razaosocial AS NomeRazaosocial,
-                   e.id AS EstadoId, e.id AS Id, e.estado, e.uf
+                   e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
+                   p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM veiculos v
             LEFT JOIN transportadoras t ON t.id = v.transportadora_id
             LEFT JOIN estados e ON e.id = v.estado_id
+            LEFT JOIN paises p ON p.id = e.pais_id
             WHERE v.placa ILIKE @Termo OR v.marca_modelo ILIKE @Termo OR t.nome_razaosocial ILIKE @Termo OR e.uf ILIKE @Termo
             ORDER BY v.placa
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
@@ -192,9 +206,9 @@ public class VeiculosRepository : IVeiculosRepository
         var total = await _session.Connection.ExecuteScalarAsync<int>(
             sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
 
-        var result = await _session.Connection.QueryAsync<Veiculos, Transportadoras, Estados, Veiculos>(
+        var result = await _session.Connection.QueryAsync<Veiculos, Transportadoras, Estados, Paises, Veiculos>(
             sqlData,
-            (veiculo, transportadora, estado) =>
+            (veiculo, transportadora, estado, pais) =>
             {
                 if (transportadora is not null)
                 {
@@ -202,13 +216,17 @@ public class VeiculosRepository : IVeiculosRepository
                 }
                 if (estado is not null)
                 {
+                    if (pais is not null)
+                    {
+                        estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
+                    }
                     veiculo.VincularEstado(estado);
                 }
                 return veiculo;
             },
             new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "TransportadoraId,EstadoId"
+            splitOn: "TransportadoraId,EstadoId,PaisId"
         );
 
         return new ResultadoPaginado<Veiculos>(result.ToList(), total, pagina, tamanhoDaPagina);

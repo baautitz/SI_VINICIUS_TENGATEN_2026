@@ -5,7 +5,6 @@ using Backend.Core.Features.Parceiros.Entities;
 using Backend.Core.Features.Parceiros.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;
 using Dapper;
-using Npgsql;
 
 namespace Backend.Infrastructure.PostgreSQL.Features.Parceiros;
 
@@ -30,22 +29,24 @@ public class EmitentesRepository : IEmitentesRepository
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    c.id AS CidadeId, c.id AS Id, c.cidade, c.ddd,
                    st.id AS EstadoId, st.id AS Id, st.estado, st.uf,
+                   pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.sigla_iso, pe.ddi, pe.moeda, pe.simbolo_moeda,
                    p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM emitentes e
             INNER JOIN paises p ON p.id = e.nacionalidade_id
             LEFT JOIN bairros b ON b.id = e.bairro_id
             LEFT JOIN cidades c ON c.id = b.cidade_id
             LEFT JOIN estados st ON st.id = c.estado_id
+            LEFT JOIN paises pe ON pe.id = st.pais_id
             ORDER BY e.nome_razaosocial
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
 
-        var itens = await _session.Connection.QueryAsync<Emitentes, Bairros, Cidades, Estados, Paises, Emitentes>(
+        var itens = await _session.Connection.QueryAsync<Emitentes, Bairros, Cidades, Estados, Paises, Paises, Emitentes>(
             sqlData,
-            (emitente, bairro, cidade, estado, pais) =>
+            (emitente, bairro, cidade, estado, paisEstado, pais) =>
             {
-                if (pais is not null && estado is not null) estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
+                if (paisEstado is not null && estado is not null) estado.AtualizarResultado(estado.Estado, estado.Uf, paisEstado);
                 if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
                 if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
 
@@ -54,7 +55,7 @@ public class EmitentesRepository : IEmitentesRepository
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "BairroId,CidadeId,EstadoId,PaisId"
+            splitOn: "BairroId,CidadeId,EstadoId,PaisEstadoId,PaisId"
         );
 
         return new ResultadoPaginado<Emitentes>(itens.ToList(), total, pagina, tamanhoDaPagina);
@@ -69,19 +70,21 @@ public class EmitentesRepository : IEmitentesRepository
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    c.id AS CidadeId, c.id AS Id, c.cidade, c.ddd,
                    st.id AS EstadoId, st.id AS Id, st.estado, st.uf,
+                   pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.sigla_iso, pe.ddi, pe.moeda, pe.simbolo_moeda,
                    p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM emitentes e
             INNER JOIN paises p ON p.id = e.nacionalidade_id
             LEFT JOIN bairros b ON b.id = e.bairro_id
             LEFT JOIN cidades c ON c.id = b.cidade_id
             LEFT JOIN estados st ON st.id = c.estado_id
+            LEFT JOIN paises pe ON pe.id = st.pais_id
             WHERE e.id = @Id;";
 
-        var result = await _session.Connection.QueryAsync<Emitentes, Bairros, Cidades, Estados, Paises, Emitentes>(
+        var result = await _session.Connection.QueryAsync<Emitentes, Bairros, Cidades, Estados, Paises, Paises, Emitentes>(
             sql,
-            (emitente, bairro, cidade, estado, pais) =>
+            (emitente, bairro, cidade, estado, paisEstado, pais) =>
             {
-                if (pais is not null && estado is not null) estado.AtualizarResultado(estado.Estado, estado.Uf, pais);
+                if (paisEstado is not null && estado is not null) estado.AtualizarResultado(estado.Estado, estado.Uf, paisEstado);
                 if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
                 if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
 
@@ -91,7 +94,7 @@ public class EmitentesRepository : IEmitentesRepository
             },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "BairroId,CidadeId,EstadoId,PaisId"
+            splitOn: "BairroId,CidadeId,EstadoId,PaisEstadoId,PaisId"
         );
 
         return result.SingleOrDefault();
@@ -198,9 +201,17 @@ public class EmitentesRepository : IEmitentesRepository
             SELECT e.id AS Id, e.tipo_pessoa AS TipoPessoa, e.nome_razaosocial AS NomeRazaoSocial, e.cpf_cnpj AS CpfCnpj, e.apelido_nomefantasia AS ApelidoNomeFantasia, e.endereco AS Endereco,
                    e.telefone AS Telefone, e.email AS Email, e.rg_ie AS RgIe, e.inscricao_municipal AS InscricaoMunicipal, e.regime_tributario AS RegimeTributario,
                    e.ativo AS Ativo, e.criado_em AS CriadoEm, e.observacao AS Observacao,
+                   b.id AS BairroId, b.id AS Id, b.bairro,
+                   c.id AS CidadeId, c.id AS Id, c.cidade, c.ddd,
+                   st.id AS EstadoId, st.id AS Id, st.estado, st.uf,
+                   pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.sigla_iso, pe.ddi, pe.moeda, pe.simbolo_moeda,
                    p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM emitentes e
             INNER JOIN paises p ON p.id = e.nacionalidade_id
+            LEFT JOIN bairros b ON b.id = e.bairro_id
+            LEFT JOIN cidades c ON c.id = b.cidade_id
+            LEFT JOIN estados st ON st.id = c.estado_id
+            LEFT JOIN paises pe ON pe.id = st.pais_id
             WHERE e.nome_razaosocial ILIKE @Termo OR e.cpf_cnpj ILIKE @Termo
                OR e.apelido_nomefantasia ILIKE @Termo OR e.email ILIKE @Termo
             ORDER BY e.nome_razaosocial
@@ -208,19 +219,23 @@ public class EmitentesRepository : IEmitentesRepository
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
 
-        var itens = await _session.Connection.QueryAsync<Emitentes, Paises, Emitentes>(
+        var itens = await _session.Connection.QueryAsync<Emitentes, Bairros, Cidades, Estados, Paises, Paises, Emitentes>(
             sqlData,
-            (emitente, pais) =>
+            (emitente, bairro, cidade, estado, paisEstado, pais) =>
             {
-                emitente.AtualizarDados(emitente.TipoPessoa, emitente.NomeRazaoSocial, emitente.CpfCnpj, pais!, emitente.ApelidoNomeFantasia, emitente.Endereco, null, emitente.Telefone, emitente.Email, emitente.RgIe, emitente.InscricaoMunicipal, emitente.RegimeTributario, emitente.Observacao);
+                if (paisEstado is not null && estado is not null) estado.AtualizarResultado(estado.Estado, estado.Uf, paisEstado);
+                if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
+                if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
+
+                emitente.AtualizarDados(emitente.TipoPessoa, emitente.NomeRazaoSocial, emitente.CpfCnpj, pais!, emitente.ApelidoNomeFantasia, emitente.Endereco, bairro, emitente.Telefone, emitente.Email, emitente.RgIe, emitente.InscricaoMunicipal, emitente.RegimeTributario, emitente.Observacao);
                 return emitente;
             },
             new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "PaisId"
+            splitOn: "BairroId,CidadeId,EstadoId,PaisEstadoId,PaisId"
         );
 
-        return new ResultadoPaginado<Emitentes>(itens, total, pagina, tamanhoDaPagina);
+        return new ResultadoPaginado<Emitentes>(itens.ToList(), total, pagina, tamanhoDaPagina);
     }
 
     public async Task<bool> ExisteEmitenteCpfCnpj(string cpfCnpj, int nacionalidadeId, int? ignorarId = null)

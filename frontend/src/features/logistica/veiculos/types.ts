@@ -5,9 +5,7 @@ import type { Estado } from "@/features/localizacao/estados/types"
 export interface Veiculo {
   id: number
   placa: string
-  estadoId: number
   estado: Estado
-  transportadoraId?: number
   transportadora?: Transportadora
   rntrc?: string
   renavam?: string

@@ -26,27 +26,39 @@ public class FornecedoresRepository : IFornecedoresRepository
             SELECT f.id AS Id, f.tipo_pessoa AS TipoPessoa, f.nome_razaosocial AS NomeRazaosocial, f.cpf_cnpj AS CpfCnpj, f.rg_ie AS RgIe, f.apelido_nomefantasia AS ApelidoNomefantasia,
                    f.endereco AS Endereco, f.telefone AS Telefone, f.email AS Email, f.ativo AS Ativo, f.criado_em AS CriadoEm,
                    f.observacao AS Observacao,
+                   b.id AS BairroId, b.id AS Id, b.bairro,
+                   ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
+                   e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
+                   pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.sigla_iso, pe.ddi, pe.moeda, pe.simbolo_moeda,
                    p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM fornecedores f
             INNER JOIN paises p ON p.id = f.nacionalidade_id
+            LEFT JOIN bairros b ON b.id = f.bairro_id
+            LEFT JOIN cidades ci ON ci.id = b.cidade_id
+            LEFT JOIN estados e ON e.id = ci.estado_id
+            LEFT JOIN paises pe ON pe.id = e.pais_id
             ORDER BY f.nome_razaosocial
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
 
-        var itens = await _session.Connection.QueryAsync<Fornecedores, Paises, Fornecedores>(
+        var itens = await _session.Connection.QueryAsync<Fornecedores, Bairros, Cidades, Estados, Paises, Paises, Fornecedores>(
             sqlData,
-            (fornecedor, pais) =>
+            (fornecedor, bairro, city, state, countryState, country) =>
             {
-                fornecedor.Atualizar(fornecedor.TipoPessoa, fornecedor.NomeRazaosocial, fornecedor.CpfCnpj, pais!, fornecedor.RgIe, fornecedor.ApelidoNomefantasia, fornecedor.Endereco, null, fornecedor.Telefone, fornecedor.Email, fornecedor.Observacao);
+                if (countryState is not null && state is not null) state.AtualizarResultado(state.Estado, state.Uf, countryState);
+                if (state is not null && city is not null) city.AtualizarResultado(city.Cidade, city.Ddd, state);
+                if (city is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, city);
+
+                fornecedor.Atualizar(fornecedor.TipoPessoa, fornecedor.NomeRazaosocial, fornecedor.CpfCnpj, country!, fornecedor.RgIe, fornecedor.ApelidoNomefantasia, fornecedor.Endereco, bairro, fornecedor.Telefone, fornecedor.Email, fornecedor.Observacao);
                 return fornecedor;
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "PaisId"
+            splitOn: "BairroId,CidadeId,EstadoId,PaisEstadoId,PaisId"
         );
 
-        return new ResultadoPaginado<Fornecedores>(itens, total, pagina, tamanhoDaPagina);
+        return new ResultadoPaginado<Fornecedores>(itens.ToList(), total, pagina, tamanhoDaPagina);
     }
 
     public async Task<Fornecedores?> ObterFornecedorPorId(int id)
@@ -58,19 +70,21 @@ public class FornecedoresRepository : IFornecedoresRepository
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
                    e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
+                   pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.sigla_iso, pe.ddi, pe.moeda, pe.simbolo_moeda,
                    p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM fornecedores f
             INNER JOIN paises p ON p.id = f.nacionalidade_id
             LEFT JOIN bairros b ON b.id = f.bairro_id
             LEFT JOIN cidades ci ON ci.id = b.cidade_id
             LEFT JOIN estados e ON e.id = ci.estado_id
+            LEFT JOIN paises pe ON pe.id = e.pais_id
             WHERE f.id = @Id;";
 
-        var result = await _session.Connection.QueryAsync<Fornecedores, Bairros, Cidades, Estados, Paises, Fornecedores>(
+        var result = await _session.Connection.QueryAsync<Fornecedores, Bairros, Cidades, Estados, Paises, Paises, Fornecedores>(
             sql,
-            (fornecedor, bairro, city, state, country) =>
+            (fornecedor, bairro, city, state, countryState, country) =>
             {
-                if (country is not null && state is not null) state.AtualizarResultado(state.Estado, state.Uf, country);
+                if (countryState is not null && state is not null) state.AtualizarResultado(state.Estado, state.Uf, countryState);
                 if (state is not null && city is not null) city.AtualizarResultado(city.Cidade, city.Ddd, state);
                 if (city is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, city);
 
@@ -80,7 +94,7 @@ public class FornecedoresRepository : IFornecedoresRepository
             },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "BairroId,CidadeId,EstadoId,PaisId"
+            splitOn: "BairroId,CidadeId,EstadoId,PaisEstadoId,PaisId"
         );
 
         return result.SingleOrDefault();
@@ -190,12 +204,14 @@ public class FornecedoresRepository : IFornecedoresRepository
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
                    e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
+                   pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.sigla_iso, pe.ddi, pe.moeda, pe.simbolo_moeda,
                    p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM fornecedores f
             INNER JOIN paises p ON p.id = f.nacionalidade_id
             LEFT JOIN bairros b ON b.id = f.bairro_id
             LEFT JOIN cidades ci ON ci.id = b.cidade_id
             LEFT JOIN estados e ON e.id = ci.estado_id
+            LEFT JOIN paises pe ON pe.id = e.pais_id
             WHERE f.nome_razaosocial ILIKE @Termo OR f.cpf_cnpj ILIKE @Termo
                OR f.apelido_nomefantasia ILIKE @Termo OR f.email ILIKE @Termo
             ORDER BY f.nome_razaosocial
@@ -203,11 +219,11 @@ public class FornecedoresRepository : IFornecedoresRepository
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
 
-        var itens = await _session.Connection.QueryAsync<Fornecedores, Bairros, Cidades, Estados, Paises, Fornecedores>(
+        var itens = await _session.Connection.QueryAsync<Fornecedores, Bairros, Cidades, Estados, Paises, Paises, Fornecedores>(
             sqlData,
-            (fornecedor, bairro, city, state, country) =>
+            (fornecedor, bairro, city, state, countryState, country) =>
             {
-                if (country is not null && state is not null) state.AtualizarResultado(state.Estado, state.Uf, country);
+                if (countryState is not null && state is not null) state.AtualizarResultado(state.Estado, state.Uf, countryState);
                 if (state is not null && city is not null) city.AtualizarResultado(city.Cidade, city.Ddd, state);
                 if (city is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, city);
 
@@ -216,7 +232,7 @@ public class FornecedoresRepository : IFornecedoresRepository
             },
             new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "BairroId,CidadeId,EstadoId,PaisId"
+            splitOn: "BairroId,CidadeId,EstadoId,PaisEstadoId,PaisId"
         );
 
         return new ResultadoPaginado<Fornecedores>(itens.ToList(), total, pagina, tamanhoDaPagina);
