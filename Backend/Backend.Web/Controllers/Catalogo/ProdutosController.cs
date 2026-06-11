@@ -20,29 +20,33 @@ public class ProdutosController : ControllerBase
         _produtosService = produtosService;
     }
 
+    private static readonly System.Text.Json.JsonSerializerOptions _jsonOptions = new()
+    {
+        ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+    };
+
     [HttpGet]
-    public Task<ResultadoPaginado<Produtos>> GetProdutos([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-        => _produtosService.ObterProdutos(search, page, pageSize);
+    [ProducesResponseType(typeof(ResultadoPaginado<Produtos>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetProdutos([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        var result = await _produtosService.ObterProdutos(search, page, pageSize);
+        return new JsonResult(result, _jsonOptions);
+    }
 
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<Produtos>> GetProduto(int id)
+    [ProducesResponseType(typeof(Produtos), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetProduto(int id)
     {
         var produto = await _produtosService.ObterProdutoPorId(id);
         if (produto is null)
             return NotFound();
 
-        return Ok(produto);
+        return new JsonResult(produto, _jsonOptions);
     }
 
-    [HttpGet("sku/{sku}")]
-    public async Task<ActionResult<Produtos>> GetProdutoBySku(string sku)
-    {
-        var produto = await _produtosService.ObterProdutoPorSku(sku);
-        if (produto is null)
-            return NotFound();
-
-        return Ok(produto);
-    }
 
     [HttpPost]
     [ProducesResponseType(typeof(Resultado<Produtos>), StatusCodes.Status201Created)]

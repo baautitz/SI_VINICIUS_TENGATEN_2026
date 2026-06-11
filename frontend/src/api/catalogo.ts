@@ -79,7 +79,6 @@ export const produtosApi = {
   update: (id: number, data: ProdutoFormValues) =>
     http.put<Resultado<Produto>>(`/api/catalogo/produtos/${id}`, data),
   delete: (id: number) => http.delete(`/api/catalogo/produtos/${id}`),
-  getBySku: (sku: string) => http.get<Produto>(`/api/catalogo/produtos/sku/${sku}`),
 };
 
 export const skusApi = {

@@ -40,7 +40,7 @@ export function ProdutosFeature({
       };
     },
     fetchById: async (id) => {
-      const res = await produtosApi.getById(id);
+      const res = await produtosApi.getById(Number(id));
       return res;
     },
     deleteItem: async (item) => {

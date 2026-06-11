@@ -15,7 +15,7 @@ public class Skus
     public decimal CustoMedio { get; private set; }
     public decimal CustoUltimaCompra { get; private set; }
     public bool Ativo { get; private set; }
-    public Produtos Produto { get; private set; } = null!;
+    public Produtos? Produto { get; private set; }
 
     public string NomeExibicao => Produto != null
         ? (_atributos.Any()
@@ -55,10 +55,7 @@ public class Skus
         CustoUltimaCompra = custoUltimaCompra;
         Ativo = true;
         
-        if (produto != null)
-        {
-            Produto = produto;
-        }
+        Produto = produto;
     }
 
     public Skus(string sku, decimal preco, decimal estoque, bool ativo, string? gtinEan = null, decimal custoMedio = 0, decimal custoUltimaCompra = 0, Produtos? produto = null)

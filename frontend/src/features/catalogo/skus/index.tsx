@@ -48,10 +48,12 @@ export function SkusFeature({
 
   const handleEdit = async (sku: Sku) => {
     try {
-      const produto = await produtosApi.getBySku(sku.sku);
-      setEditingProduct(produto);
+      if (sku.produto?.id) {
+        const produto = await produtosApi.getById(sku.produto.id);
+        setEditingProduct(produto);
+      }
     } catch (e) {
-      console.error("Erro ao buscar produto pelo SKU", e);
+      console.error("Erro ao buscar produto pelo ID", e);
     }
   };
 

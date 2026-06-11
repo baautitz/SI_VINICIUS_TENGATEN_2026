@@ -49,7 +49,10 @@ public class Program
             };
         });
 
-        builder.Services.AddOpenApiDocument();
+        builder.Services.AddOpenApiDocument(options =>
+        {
+            options.DocumentProcessors.Add(new Backend.Web.Controllers.Catalogo.CircularReferenceDocumentProcessor());
+        });
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("A Connection String 'DefaultConnection' não foi encontrada no appsettings.json.");
