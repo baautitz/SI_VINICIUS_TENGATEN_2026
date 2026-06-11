@@ -32,7 +32,7 @@ interface CidadesUpsertFormProps {
 }
 
 export function CidadesUpsert(props: CidadesUpsertProps) {
-  const { open, editingItem, onClose, onSuccess, readOnly = false } = props;
+  const { open, editingItem, onClose, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -68,7 +68,6 @@ function CidadesUpsertForm({
   editingItem,
   onClose,
   onSuccess,
-  readOnly = false,
 }: CidadesUpsertFormProps) {
   const { mutation, globalError, getFieldError, resetErrors } =
     useUpsertMutation({
@@ -85,14 +84,14 @@ function CidadesUpsertForm({
   const form = useForm({
     defaultValues: {
       cidade: editingItem?.cidade ?? "",
-      ddd: editingItem?.ddd ?? null,
+      ddd: editingItem?.ddd ?? "",
       estadoId: editingItem?.estado?.id ?? null,
     } as CidadeFormValues,
     onSubmit: async ({ value }) => {
       resetErrors();
       const payload = {
         ...value,
-        ddd: value.ddd || null,
+        ddd: value.ddd || "",
         estadoId: value.estadoId || null,
       };
       mutation.mutate(payload as CidadeFormValues);
@@ -126,7 +125,11 @@ function CidadesUpsertForm({
                   "Salvando..."
                 ) : (
                   <span className="flex items-center gap-2">
-                    Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup>
+                    Salvar{" "}
+                    <KbdGroup>
+                      <Kbd>Alt</Kbd>
+                      <Kbd>Enter</Kbd>
+                    </KbdGroup>
                   </span>
                 )}
               </Button>
@@ -145,7 +148,7 @@ function CidadesUpsertForm({
         }}
       >
         <FieldGroup className="gap-4">
-          <div className="flex flex-wrap gap-4 items-start w-full">
+          <div className="flex w-full flex-wrap items-start gap-4">
             {editingItem && (
               <div className="w-fit">
                 <div className="flex flex-col gap-1.5">
@@ -153,13 +156,13 @@ function CidadesUpsertForm({
                   <Input
                     value={editingItem.id}
                     disabled
-                    className="h-8 text-xs font-mono"
+                    className="h-8 font-mono text-xs"
                     inputSize="small"
                   />
                 </div>
               </div>
             )}
-            <div className="flex-1 min-w-48">
+            <div className="min-w-48 flex-1">
               <form.Field
                 name="cidade"
                 validators={{ onChange: cidadeSchema.shape.cidade }}
@@ -185,8 +188,9 @@ function CidadesUpsertForm({
                 field={field}
                 label="DDD"
                 inputSize="small"
-                type="number"
-                decimals={0}
+                type="text"
+                inputMode="numeric"
+                onChangeOverride={(val) => val.replace(/\D/g, "")}
                 getFieldError={getFieldError}
               />
             )}

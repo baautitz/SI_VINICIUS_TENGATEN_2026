@@ -45,8 +45,7 @@ public sealed class CidadesService : BaseService
 
       return await ExecuteResultAsync(async () =>
       {
-        if (!short.TryParse(command.Ddd, out var ddd)) return Resultado<Cidades>.Falha(new ResultadoErro("DDD_INVALIDO", "DDD inválido.", "Ddd"));
-        var result = Cidades.Criar(command.Cidade, ddd, estado);
+        var result = Cidades.Criar(command.Cidade, command.Ddd, estado);
         if (!result.Success) return result;
         var criado = await _cidadesRepository.CriarCidade(result.Data!);
         return Resultado<Cidades>.Sucesso(criado);
@@ -72,8 +71,8 @@ public sealed class CidadesService : BaseService
 
       return await ExecuteResultAsync(async () =>
       {
-          if (!short.TryParse(command.Ddd, out var ddd)) return Resultado<Cidades>.Falha(new ResultadoErro("DDD_INVALIDO", "DDD inválido.", "Ddd"));
-          existente.AtualizarResultado(command.Cidade, ddd, estado);
+          var result = existente.AtualizarResultado(command.Cidade, command.Ddd, estado);
+          if (!result.Success) return result;
           var atualizado = await _cidadesRepository.AtualizarCidade(id, existente);
           return Resultado<Cidades>.Sucesso(atualizado);
       });

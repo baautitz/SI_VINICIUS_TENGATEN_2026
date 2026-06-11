@@ -78,13 +78,13 @@ public class CidadesRepository : ICidadesRepository
     public async Task<ResultadoPaginado<Cidades>> PesquisarCidades(string termo, int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
-        const string sqlCount = "SELECT COUNT(*) FROM cidades WHERE cidade ILIKE @Termo OR ddd::text ILIKE @Termo;";
+        const string sqlCount = "SELECT COUNT(*) FROM cidades WHERE cidade ILIKE @Termo OR ddd ILIKE @Termo;";
         const string sqlData = @"
             SELECT ci.id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.sigla_iso, p.ddi, p.moeda, p.simbolo_moeda
             FROM cidades ci
             INNER JOIN estados st ON st.id = ci.estado_id
             INNER JOIN paises p ON p.id = st.pais_id
-            WHERE ci.cidade ILIKE @Termo OR ci.ddd::text ILIKE @Termo
+            WHERE ci.cidade ILIKE @Termo OR ci.ddd ILIKE @Termo
             ORDER BY ci.cidade
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
