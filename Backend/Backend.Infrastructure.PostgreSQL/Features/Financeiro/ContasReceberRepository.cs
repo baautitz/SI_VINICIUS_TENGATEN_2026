@@ -1,6 +1,7 @@
 using System.Linq;
 using Backend.Core.Common.Results;
 using Backend.Core.Common.Enums;
+using Backend.Core.Common.ValueObjects;
 using Backend.Core.Features.Localizacao.Entities;
 using Backend.Core.Features.Financeiro.DTOs;
 using Backend.Core.Features.Financeiro.Entities;
@@ -301,16 +302,31 @@ public class ContasReceberRepository : IContasReceberRepository
 
     private static ContasReceber BuildContaReceber(ContaReceberDto dto)
     {
-        var pais = new Paises(dto.PaisId, dto.PaisDdi, dto.PaisSiglaIso, dto.PaisMoeda, dto.PaisSimboloMoeda, dto.PaisNome);
+        var ddi = new Ddi(dto.PaisDdi);
+        var pais = new Paises(dto.PaisId, ddi, dto.PaisSiglaIso, dto.PaisMoeda, dto.PaisSimboloMoeda, dto.PaisNome);
         var tipoPessoa = Enum.Parse<TipoPessoa>(dto.ClienteTipoPessoa);
+
+        Documento cpfCnpj;
+        if (pais.SiglaIso == "BRA")
+        {
+            if (tipoPessoa == TipoPessoa.FISICA)
+                cpfCnpj = new Cpf(dto.ClienteCpfCnpj);
+            else
+                cpfCnpj = new Cnpj(dto.ClienteCpfCnpj);
+        }
+        else
+        {
+            cpfCnpj = new DocumentoGenerico(dto.ClienteCpfCnpj);
+        }
+        Documento? rgIe = string.IsNullOrWhiteSpace(dto.ClienteRgIe) ? null : new DocumentoGenerico(dto.ClienteRgIe);
 
         var cliente = new Clientes(
             dto.ClienteId,
             tipoPessoa,
             dto.ClienteNomeRazaoSocial,
-            dto.ClienteCpfCnpj,
+            cpfCnpj,
             pais,
-            dto.ClienteRgIe,
+            rgIe,
             dto.ClienteApelidoNomeFantasia,
             dto.ClienteEndereco,
             null,

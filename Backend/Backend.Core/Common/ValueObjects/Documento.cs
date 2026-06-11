@@ -1,3 +1,5 @@
+using Backend.Core.Common.Enums;
+
 namespace Backend.Core.Common.ValueObjects;
 
 public abstract class Documento : IEquatable<Documento>
@@ -35,4 +37,25 @@ public abstract class Documento : IEquatable<Documento>
     public static bool operator !=(Documento? left, Documento? right) => !Equals(left, right);
 
     public static implicit operator string(Documento documento) => documento.Valor;
+
+    public static Documento Criar(string valor, string siglaIsoPais, TipoPessoa tipoPessoa)
+    {
+        if (siglaIsoPais == "BRA")
+        {
+            if (tipoPessoa == TipoPessoa.FISICA)
+                return new Cpf(valor);
+
+            return new Cnpj(valor);
+        }
+
+        return new DocumentoGenerico(valor);
+    }
+
+    public static Documento? CriarGenerico(string? valor)
+    {
+        if (string.IsNullOrWhiteSpace(valor))
+            return null;
+
+        return new DocumentoGenerico(valor);
+    }
 }

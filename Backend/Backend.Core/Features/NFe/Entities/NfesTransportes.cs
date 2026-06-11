@@ -11,11 +11,11 @@ public class NfesTransportes
     public int Id { get; set; }
     public ModalidadeFrete ModalidadeFrete { get; private set; }
     public string? TransportadoraNomeRazaosocial { get; private set; }
-    public string? TransportadoraCpfCnpj { get; private set; }
-    public string? TransportadoraRgIe { get; private set; }
+    public Documento? TransportadoraCpfCnpj { get; private set; }
+    public Documento? TransportadoraRgIe { get; private set; }
     public string? VeiculoPlaca { get; private set; }
     public string? VeiculoUf { get; private set; }
-    public string? VeiculoRntrc { get; private set; }
+    public Documento? VeiculoRntrc { get; private set; }
     public int? QuantidadeVolumes { get; private set; }
     public string? EspecieVolume { get; private set; }
     public string? MarcaVolume { get; private set; }
@@ -24,14 +24,16 @@ public class NfesTransportes
     public decimal? PesoLiquido { get; private set; }
     public Veiculos? Veiculo { get; private set; }
 
+    protected NfesTransportes() { }
+
     public NfesTransportes(
         ModalidadeFrete modalidadeFrete,
         string? transportadoraNomeRazaosocial = null,
-        string? transportadoraCpfCnpj = null,
-        string? transportadoraRgIe = null,
+        Documento? transportadoraCpfCnpj = null,
+        Documento? transportadoraRgIe = null,
         string? veiculoPlaca = null,
         string? veiculoUf = null,
-        string? veiculoRntrc = null,
+        Documento? veiculoRntrc = null,
         int? quantidadeVolumes = null,
         string? especieVolume = null,
         string? marcaVolume = null,
@@ -41,11 +43,11 @@ public class NfesTransportes
         Veiculos? veiculo = null)
     {
         TransportadoraNomeRazaosocial = TextNormalization.NormalizeOrNull(transportadoraNomeRazaosocial);
-        TransportadoraCpfCnpj = string.IsNullOrWhiteSpace(transportadoraCpfCnpj) ? null : new DocumentoGenerico(transportadoraCpfCnpj).Valor;
-        TransportadoraRgIe = string.IsNullOrWhiteSpace(transportadoraRgIe) ? null : new DocumentoGenerico(transportadoraRgIe).Valor;
+        TransportadoraCpfCnpj = transportadoraCpfCnpj;
+        TransportadoraRgIe = transportadoraRgIe;
         VeiculoPlaca = TextNormalization.NormalizeOrNull(veiculoPlaca);
         VeiculoUf = TextNormalization.NormalizeOrNull(veiculoUf);
-        VeiculoRntrc = string.IsNullOrWhiteSpace(veiculoRntrc) ? null : new DocumentoGenerico(veiculoRntrc).Valor;
+        VeiculoRntrc = veiculoRntrc;
         QuantidadeVolumes = quantidadeVolumes;
         EspecieVolume = TextNormalization.NormalizeOrNull(especieVolume);
         MarcaVolume = TextNormalization.NormalizeOrNull(marcaVolume);
@@ -57,7 +59,7 @@ public class NfesTransportes
 
         if (modalidadeFrete != ModalidadeFrete.SEM_TRANSPORTE)
         {
-            if (string.IsNullOrWhiteSpace(TransportadoraNomeRazaosocial) || string.IsNullOrWhiteSpace(TransportadoraCpfCnpj))
+            if (string.IsNullOrWhiteSpace(TransportadoraNomeRazaosocial) || string.IsNullOrWhiteSpace(TransportadoraCpfCnpj?.Valor))
                 throw new DomainException("Transportadora é obrigatória para modalidade de frete.");
         }
 

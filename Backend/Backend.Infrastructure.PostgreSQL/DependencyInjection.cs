@@ -35,6 +35,10 @@ public static class DependencyInjection
     {
         DefaultTypeMap.MatchNamesWithUnderscores = true;
 
+        SqlMapper.AddTypeHandler(new DddTypeHandler());
+        SqlMapper.AddTypeHandler(new DdiTypeHandler());
+        SqlMapper.AddTypeHandler(new DocumentoTypeHandler());
+
         services.AddScoped(provider => new DbSession(connectionString));
         services.AddScoped<IUnitOfWork, PostgreSQLUnitOfWork>();
 

@@ -20,8 +20,8 @@ public class Nfes
     public DateTime? DataSaida { get; private set; }
 
     public string EmitenteNomeRazaosocial { get; private set; }
-    public string EmitenteCpfCnpj { get; private set; }
-    public string? EmitenteRgIe { get; private set; }
+    public Documento EmitenteCpfCnpj { get; private set; }
+    public Documento? EmitenteRgIe { get; private set; }
     public string? EmitenteApelidoNomefantasia { get; private set; }
     public string? EmitenteEndereco { get; private set; }
     public Bairros? EmitenteBairro { get; private set; }
@@ -29,8 +29,8 @@ public class Nfes
     public string? EmitenteEmail { get; private set; }
 
     public string ClienteNomeRazaosocial { get; private set; }
-    public string ClienteCpfCnpj { get; private set; }
-    public string? ClienteRgIe { get; private set; }
+    public Documento ClienteCpfCnpj { get; private set; }
+    public Documento? ClienteRgIe { get; private set; }
     public string? ClienteApelidoNomefantasia { get; private set; }
     public string? ClienteEndereco { get; private set; }
     public Bairros? ClienteBairro { get; private set; }
@@ -54,6 +54,16 @@ public class Nfes
 
     public IReadOnlyCollection<NfesItens> NfesItens => _itens.AsReadOnly();
     public IReadOnlyCollection<NfesPagamentos> NfesPagamentos => _pagamentos.AsReadOnly();
+
+    protected Nfes()
+    {
+        EmitenteNomeRazaosocial = null!;
+        EmitenteCpfCnpj = null!;
+        ClienteNomeRazaosocial = null!;
+        ClienteCpfCnpj = null!;
+        Emitente = null!;
+        Cliente = null!;
+    }
 
     public Nfes(
         int numero,
@@ -101,16 +111,16 @@ public class Nfes
         DataSaida = dataSaida;
         ChaveAcesso = TextNormalization.NormalizeOrNull(chaveAcesso);
         EmitenteNomeRazaosocial = TextNormalization.Normalize(emitente.NomeRazaoSocial);
-        EmitenteCpfCnpj = new DocumentoGenerico(emitente.CpfCnpj).Valor;
-        EmitenteRgIe = string.IsNullOrWhiteSpace(emitente.RgIe) ? null : new DocumentoGenerico(emitente.RgIe).Valor;
+        EmitenteCpfCnpj = emitente.CpfCnpj;
+        EmitenteRgIe = emitente.RgIe;
         EmitenteApelidoNomefantasia = TextNormalization.NormalizeOrNull(emitente.ApelidoNomeFantasia);
         EmitenteEndereco = TextNormalization.NormalizeOrNull(emitente.Endereco);
         EmitenteBairro = emitente.Bairro;
         EmitenteTelefone = TextNormalization.NormalizeOrNull(emitente.Telefone);
         EmitenteEmail = TextNormalization.NormalizeOrNull(emitente.Email);
         ClienteNomeRazaosocial = TextNormalization.Normalize(cliente.NomeRazaoSocial);
-        ClienteCpfCnpj = new DocumentoGenerico(cliente.CpfCnpj).Valor;
-        ClienteRgIe = string.IsNullOrWhiteSpace(cliente.RgIe) ? null : new DocumentoGenerico(cliente.RgIe).Valor;
+        ClienteCpfCnpj = cliente.CpfCnpj;
+        ClienteRgIe = cliente.RgIe;
         ClienteApelidoNomefantasia = TextNormalization.NormalizeOrNull(cliente.ApelidoNomeFantasia);
         ClienteEndereco = TextNormalization.NormalizeOrNull(cliente.Endereco);
         ClienteBairro = cliente.Bairro;

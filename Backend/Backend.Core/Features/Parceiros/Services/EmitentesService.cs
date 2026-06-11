@@ -73,17 +73,20 @@ public sealed class EmitentesService : BaseService
 
         return await ExecuteResultAsync(async () =>
         {
+            Documento documento = Documento.Criar(command.CpfCnpj, nacionalidade.SiglaIso, command.TipoPessoa);
+            Documento? rgIe = Documento.CriarGenerico(command.RgIe);
+
             var emitente = new Emitentes(
                 command.TipoPessoa,
                 command.NomeRazaoSocial,
-                documentoLimpo,
+                documento,
                 nacionalidade,
                 command.ApelidoNomeFantasia,
                 command.Endereco,
                 bairro,
                 command.Telefone,
                 command.Email,
-                command.RgIe,
+                rgIe,
                 command.InscricaoMunicipal,
                 command.RegimeTributario,
                 command.Observacao,
@@ -142,17 +145,20 @@ public sealed class EmitentesService : BaseService
 
         return await ExecuteResultAsync(async () =>
         {
+            Documento documento = Documento.Criar(command.CpfCnpj, nacionalidade.SiglaIso, command.TipoPessoa);
+            Documento? rgIe = Documento.CriarGenerico(command.RgIe);
+
             existente.AtualizarDados(
                 command.TipoPessoa,
                 command.NomeRazaoSocial,
-                documentoLimpo,
+                documento,
                 nacionalidade,
                 command.ApelidoNomeFantasia,
                 command.Endereco,
                 bairro,
                 command.Telefone,
                 command.Email,
-                command.RgIe,
+                rgIe,
                 command.InscricaoMunicipal,
                 command.RegimeTributario,
                 command.Observacao

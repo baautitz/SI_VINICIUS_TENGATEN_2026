@@ -11,8 +11,8 @@ public class Clientes
     public int Id { get; set; }
     public TipoPessoa TipoPessoa { get; private set; }
     public string NomeRazaoSocial { get; private set; }
-    public string CpfCnpj { get; private set; }
-    public string? RgIe { get; private set; }
+    public Documento CpfCnpj { get; private set; }
+    public Documento? RgIe { get; private set; }
     public string? ApelidoNomeFantasia { get; private set; }
     public string? Endereco { get; private set; }
     public Bairros? Bairro { get; private set; }
@@ -35,9 +35,9 @@ public class Clientes
     public Clientes(
         TipoPessoa tipoPessoa,
         string nomeRazaoSocial,
-        string cpfCnpj,
+        Documento cpfCnpj,
         Paises nacionalidade,
-        string? rgIe = null,
+        Documento? rgIe = null,
         string? apelidoNomeFantasia = null,
         string? endereco = null,
         Bairros? bairro = null,
@@ -48,12 +48,11 @@ public class Clientes
         bool ativo = true)
     {
         nomeRazaoSocial = TextNormalization.Normalize(nomeRazaoSocial);
-        var documentoLimpo = new DocumentoGenerico(cpfCnpj).Valor;
 
         if (string.IsNullOrWhiteSpace(nomeRazaoSocial))
             throw new DomainException("Nome ou razão social do cliente é obrigatório.");
 
-        if (string.IsNullOrWhiteSpace(documentoLimpo))
+        if (cpfCnpj == null || string.IsNullOrWhiteSpace(cpfCnpj.Valor))
             throw new DomainException("CPF/CNPJ ou Documento do cliente é obrigatório.");
 
         if (nacionalidade == null)
@@ -64,10 +63,9 @@ public class Clientes
 
         TipoPessoa = tipoPessoa;
         NomeRazaoSocial = nomeRazaoSocial;
-        CpfCnpj = documentoLimpo;
+        CpfCnpj = cpfCnpj;
         Nacionalidade = nacionalidade;
-        RgIe = new DocumentoGenerico(rgIe ?? "").Valor;
-        if (string.IsNullOrWhiteSpace(RgIe)) RgIe = null;
+        RgIe = rgIe;
         ApelidoNomeFantasia = TextNormalization.NormalizeOrNull(apelidoNomeFantasia);
         Endereco = TextNormalization.NormalizeOrNull(endereco);
         Bairro = bairro;
@@ -82,9 +80,9 @@ public class Clientes
     public Clientes(int id,
         TipoPessoa tipoPessoa,
         string nomeRazaoSocial,
-        string cpfCnpj,
+        Documento cpfCnpj,
         Paises nacionalidade,
-        string? rgIe = null,
+        Documento? rgIe = null,
         string? apelidoNomeFantasia = null,
         string? endereco = null,
         Bairros? bairro = null,
@@ -103,9 +101,9 @@ public class Clientes
     public void AtualizarDados(
         TipoPessoa tipoPessoa,
         string nomeRazaoSocial,
-        string cpfCnpj,
+        Documento cpfCnpj,
         Paises nacionalidade,
-        string? rgIe = null,
+        Documento? rgIe = null,
         string? apelidoNomeFantasia = null,
         string? endereco = null,
         Bairros? bairro = null,
@@ -115,12 +113,11 @@ public class Clientes
         string? observacao = null)
     {
         nomeRazaoSocial = TextNormalization.Normalize(nomeRazaoSocial);
-        var documentoLimpo = new DocumentoGenerico(cpfCnpj).Valor;
 
         if (string.IsNullOrWhiteSpace(nomeRazaoSocial))
             throw new DomainException("Nome ou razão social do cliente é obrigatório.");
 
-        if (string.IsNullOrWhiteSpace(documentoLimpo))
+        if (cpfCnpj == null || string.IsNullOrWhiteSpace(cpfCnpj.Valor))
             throw new DomainException("CPF/CNPJ ou Documento do cliente é obrigatório.");
 
         if (nacionalidade == null)
@@ -131,10 +128,9 @@ public class Clientes
 
         TipoPessoa = tipoPessoa;
         NomeRazaoSocial = nomeRazaoSocial;
-        CpfCnpj = documentoLimpo;
+        CpfCnpj = cpfCnpj;
         Nacionalidade = nacionalidade;
-        RgIe = new DocumentoGenerico(rgIe ?? "").Valor;
-        if (string.IsNullOrWhiteSpace(RgIe)) RgIe = null;
+        RgIe = rgIe;
         ApelidoNomeFantasia = TextNormalization.NormalizeOrNull(apelidoNomeFantasia);
         Endereco = TextNormalization.NormalizeOrNull(endereco);
         Bairro = bairro;

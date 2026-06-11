@@ -73,12 +73,15 @@ public sealed class ClientesService : BaseService
 
         return await ExecuteResultAsync(async () =>
         {
+            Documento documento = Documento.Criar(command.CpfCnpj, nacionalidade.SiglaIso, command.TipoPessoa);
+            Documento? rgIe = Documento.CriarGenerico(command.RgIe);
+
             var cliente = new Clientes(
                 command.TipoPessoa,
                 command.NomeRazaoSocial,
-                documentoLimpo,
+                documento,
                 nacionalidade,
-                command.RgIe,
+                rgIe,
                 command.ApelidoNomeFantasia,
                 command.Endereco,
                 bairro,
@@ -141,12 +144,15 @@ public sealed class ClientesService : BaseService
 
         return await ExecuteResultAsync(async () =>
         {
+            Documento documento = Documento.Criar(command.CpfCnpj, nacionalidade.SiglaIso, command.TipoPessoa);
+            Documento? rgIe = Documento.CriarGenerico(command.RgIe);
+
             existente.AtualizarDados(
                 command.TipoPessoa,
                 command.NomeRazaoSocial,
-                documentoLimpo,
+                documento,
                 nacionalidade,
-                command.RgIe,
+                rgIe,
                 command.ApelidoNomeFantasia,
                 command.Endereco,
                 bairro,

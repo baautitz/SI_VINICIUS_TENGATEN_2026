@@ -22,6 +22,12 @@ public class Program
             .AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+                options.JsonSerializerOptions.Converters.Add(new Backend.Web.Common.DddJsonConverter());
+                options.JsonSerializerOptions.Converters.Add(new Backend.Web.Common.DdiJsonConverter());
+                options.JsonSerializerOptions.Converters.Add(new Backend.Web.Common.DocumentoJsonConverter());
+                options.JsonSerializerOptions.Converters.Add(new Backend.Web.Common.CpfJsonConverter());
+                options.JsonSerializerOptions.Converters.Add(new Backend.Web.Common.CnpjJsonConverter());
+                options.JsonSerializerOptions.Converters.Add(new Backend.Web.Common.DocumentoGenericoJsonConverter());
             });
 
         builder.Services.Configure<Microsoft.AspNetCore.Mvc.ApiBehaviorOptions>(options =>
@@ -52,6 +58,12 @@ public class Program
         builder.Services.AddOpenApiDocument(options =>
         {
             options.DocumentProcessors.Add(new Backend.Web.Controllers.Catalogo.CircularReferenceDocumentProcessor());
+            options.SchemaSettings.TypeMappers.Add(new NJsonSchema.Generation.TypeMappers.PrimitiveTypeMapper(typeof(Backend.Core.Common.ValueObjects.Ddd), schema => schema.Type = NJsonSchema.JsonObjectType.String));
+            options.SchemaSettings.TypeMappers.Add(new NJsonSchema.Generation.TypeMappers.PrimitiveTypeMapper(typeof(Backend.Core.Common.ValueObjects.Ddi), schema => schema.Type = NJsonSchema.JsonObjectType.String));
+            options.SchemaSettings.TypeMappers.Add(new NJsonSchema.Generation.TypeMappers.PrimitiveTypeMapper(typeof(Backend.Core.Common.ValueObjects.Documento), schema => schema.Type = NJsonSchema.JsonObjectType.String));
+            options.SchemaSettings.TypeMappers.Add(new NJsonSchema.Generation.TypeMappers.PrimitiveTypeMapper(typeof(Backend.Core.Common.ValueObjects.Cpf), schema => schema.Type = NJsonSchema.JsonObjectType.String));
+            options.SchemaSettings.TypeMappers.Add(new NJsonSchema.Generation.TypeMappers.PrimitiveTypeMapper(typeof(Backend.Core.Common.ValueObjects.Cnpj), schema => schema.Type = NJsonSchema.JsonObjectType.String));
+            options.SchemaSettings.TypeMappers.Add(new NJsonSchema.Generation.TypeMappers.PrimitiveTypeMapper(typeof(Backend.Core.Common.ValueObjects.DocumentoGenerico), schema => schema.Type = NJsonSchema.JsonObjectType.String));
         });
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")

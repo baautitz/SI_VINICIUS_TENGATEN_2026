@@ -5,6 +5,7 @@ using Backend.Core.Features.Parceiros.Repositories;
 using Backend.Core.Features.Parceiros.Validators.Commands;
 using Backend.Core.Common.Extensions;
 using Backend.Core.Common;
+using Backend.Core.Common.Enums;
 using Backend.Core.Common.ValueObjects;
 using Backend.Core.Features.Localizacao.Repositories;
 using FluentValidation;
@@ -55,12 +56,15 @@ public sealed class FornecedoresService : BaseService
 
         return await ExecuteResultAsync(async () =>
         {
+            Documento documento = Documento.Criar(command.CpfCnpj, nacionalidade.SiglaIso, command.TipoPessoa);
+            Documento? rgIe = Documento.CriarGenerico(command.RgIe);
+
             var fornecedor = new Fornecedores(
                 command.TipoPessoa,
                 command.NomeRazaosocial,
-                documentoLimpo,
+                documento,
                 nacionalidade,
-                command.RgIe,
+                rgIe,
                 command.ApelidoNomefantasia,
                 command.Endereco,
                 bairro,
@@ -106,12 +110,15 @@ public sealed class FornecedoresService : BaseService
 
         return await ExecuteResultAsync(async () =>
         {
+            Documento documento = Documento.Criar(command.CpfCnpj, nacionalidade.SiglaIso, command.TipoPessoa);
+            Documento? rgIe = Documento.CriarGenerico(command.RgIe);
+
             existente.Atualizar(
                 command.TipoPessoa,
                 command.NomeRazaosocial,
-                documentoLimpo,
+                documento,
                 nacionalidade,
-                command.RgIe,
+                rgIe,
                 command.ApelidoNomefantasia,
                 command.Endereco,
                 bairro,

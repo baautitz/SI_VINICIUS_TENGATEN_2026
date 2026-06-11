@@ -11,14 +11,14 @@ public class Emitentes
     public int Id { get; set; }
     public TipoPessoa TipoPessoa { get; private set; }
     public string NomeRazaoSocial { get; private set; }
-    public string CpfCnpj { get; private set; }
+    public Documento CpfCnpj { get; private set; }
     public string? ApelidoNomeFantasia { get; private set; }
     public string? Endereco { get; private set; }
     public Bairros? Bairro { get; private set; }
     public Paises Nacionalidade { get; private set; }
     public string? Telefone { get; private set; }
     public string? Email { get; private set; }
-    public string? RgIe { get; private set; }
+    public Documento? RgIe { get; private set; }
     public string? InscricaoMunicipal { get; private set; }
     public string? RegimeTributario { get; private set; }
     public bool Ativo { get; private set; }
@@ -36,26 +36,25 @@ public class Emitentes
     public Emitentes(
         TipoPessoa tipoPessoa,
         string nomeRazaoSocial,
-        string cpfCnpj,
+        Documento cpfCnpj,
         Paises nacionalidade,
         string? apelidoNomeFantasia = null,
         string? endereco = null,
         Bairros? bairro = null,
         string? telefone = null,
         string? email = null,
-        string? rgIe = null,
+        Documento? rgIe = null,
         string? inscricaoMunicipal = null,
         string? regimeTributario = null,
         string? observacao = null,
         bool ativo = true)
     {
         nomeRazaoSocial = TextNormalization.Normalize(nomeRazaoSocial);
-        var documentoLimpo = new DocumentoGenerico(cpfCnpj).Valor;
 
         if (string.IsNullOrWhiteSpace(nomeRazaoSocial))
             throw new DomainException("Nome ou razão social do emitente é obrigatório.");
 
-        if (string.IsNullOrWhiteSpace(documentoLimpo))
+        if (cpfCnpj == null || string.IsNullOrWhiteSpace(cpfCnpj.Valor))
             throw new DomainException("CPF/CNPJ ou Documento do emitente é obrigatório.");
 
         if (nacionalidade == null)
@@ -63,15 +62,14 @@ public class Emitentes
 
         TipoPessoa = tipoPessoa;
         NomeRazaoSocial = nomeRazaoSocial;
-        CpfCnpj = documentoLimpo;
+        CpfCnpj = cpfCnpj;
         Nacionalidade = nacionalidade;
         ApelidoNomeFantasia = TextNormalization.NormalizeOrNull(apelidoNomeFantasia);
         Endereco = TextNormalization.NormalizeOrNull(endereco);
         Bairro = bairro;
         Telefone = TextNormalization.NormalizeOrNull(telefone);
         Email = TextNormalization.NormalizeOrNull(email);
-        RgIe = new DocumentoGenerico(rgIe ?? "").Valor;
-        if (string.IsNullOrWhiteSpace(RgIe)) RgIe = null;
+        RgIe = rgIe;
         InscricaoMunicipal = TextNormalization.NormalizeOrNull(inscricaoMunicipal);
         RegimeTributario = TextNormalization.NormalizeOrNull(regimeTributario);
         Observacao = TextNormalization.NormalizeOrNull(observacao);
@@ -82,14 +80,14 @@ public class Emitentes
     public Emitentes(int id,
         TipoPessoa tipoPessoa,
         string nomeRazaoSocial,
-        string cpfCnpj,
+        Documento cpfCnpj,
         Paises nacionalidade,
         string? apelidoNomeFantasia = null,
         string? endereco = null,
         Bairros? bairro = null,
         string? telefone = null,
         string? email = null,
-        string? rgIe = null,
+        Documento? rgIe = null,
         string? inscricaoMunicipal = null,
         string? regimeTributario = null,
         string? observacao = null,
@@ -104,25 +102,24 @@ public class Emitentes
     public void AtualizarDados(
         TipoPessoa tipoPessoa,
         string nomeRazaoSocial,
-        string cpfCnpj,
+        Documento cpfCnpj,
         Paises nacionalidade,
         string? apelidoNomeFantasia = null,
         string? endereco = null,
         Bairros? bairro = null,
         string? telefone = null,
         string? email = null,
-        string? rgIe = null,
+        Documento? rgIe = null,
         string? inscricaoMunicipal = null,
         string? regimeTributario = null,
         string? observacao = null)
     {
         nomeRazaoSocial = TextNormalization.Normalize(nomeRazaoSocial);
-        var documentoLimpo = new DocumentoGenerico(cpfCnpj).Valor;
 
         if (string.IsNullOrWhiteSpace(nomeRazaoSocial))
             throw new DomainException("Nome ou razão social do emitente é obrigatório.");
 
-        if (string.IsNullOrWhiteSpace(documentoLimpo))
+        if (cpfCnpj == null || string.IsNullOrWhiteSpace(cpfCnpj.Valor))
             throw new DomainException("CPF/CNPJ ou Documento do emitente é obrigatório.");
 
         if (nacionalidade == null)
@@ -130,15 +127,14 @@ public class Emitentes
 
         TipoPessoa = tipoPessoa;
         NomeRazaoSocial = nomeRazaoSocial;
-        CpfCnpj = documentoLimpo;
+        CpfCnpj = cpfCnpj;
         Nacionalidade = nacionalidade;
         ApelidoNomeFantasia = TextNormalization.NormalizeOrNull(apelidoNomeFantasia);
         Endereco = TextNormalization.NormalizeOrNull(endereco);
         Bairro = bairro;
         Telefone = TextNormalization.NormalizeOrNull(telefone);
         Email = TextNormalization.NormalizeOrNull(email);
-        RgIe = new DocumentoGenerico(rgIe ?? "").Valor;
-        if (string.IsNullOrWhiteSpace(RgIe)) RgIe = null;
+        RgIe = rgIe;
         InscricaoMunicipal = TextNormalization.NormalizeOrNull(inscricaoMunicipal);
         RegimeTributario = TextNormalization.NormalizeOrNull(regimeTributario);
         Observacao = TextNormalization.NormalizeOrNull(observacao);

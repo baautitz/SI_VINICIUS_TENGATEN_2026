@@ -73,18 +73,22 @@ public sealed class TransportadorasService : BaseService
 
         return await ExecuteResultAsync(async () =>
         {
+            Documento documento = Documento.Criar(command.CpfCnpj, nacionalidade.SiglaIso, command.TipoPessoa);
+            Documento? rgIe = Documento.CriarGenerico(command.RgIe);
+            Documento? rntrc = Documento.CriarGenerico(command.Rntrc);
+
             var transportadora = new Transportadoras(
                 command.TipoPessoa,
                 command.NomeRazaosocial,
-                documentoLimpo,
+                documento,
                 nacionalidade,
-                command.RgIe,
+                rgIe,
                 command.ApelidoNomefantasia,
                 command.Endereco,
                 bairro,
                 command.Telefone,
                 command.Email,
-                command.Rntrc,
+                rntrc,
                 command.Observacao
             );
 
@@ -142,18 +146,22 @@ public sealed class TransportadorasService : BaseService
 
         return await ExecuteResultAsync(async () =>
         {
+            Documento documento = Documento.Criar(command.CpfCnpj, nacionalidade.SiglaIso, command.TipoPessoa);
+            Documento? rgIe = Documento.CriarGenerico(command.RgIe);
+            Documento? rntrc = Documento.CriarGenerico(command.Rntrc);
+
             existente.Atualizar(
                 command.TipoPessoa,
                 command.NomeRazaosocial,
-                documentoLimpo,
+                documento,
                 nacionalidade,
-                command.RgIe,
+                rgIe,
                 command.ApelidoNomefantasia,
                 command.Endereco,
                 bairro,
                 command.Telefone,
                 command.Email,
-                command.Rntrc,
+                rntrc,
                 command.Observacao
             );
 

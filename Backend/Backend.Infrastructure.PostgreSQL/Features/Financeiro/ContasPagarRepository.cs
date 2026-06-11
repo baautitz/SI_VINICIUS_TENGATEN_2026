@@ -1,6 +1,7 @@
 using System.Linq;
 using Backend.Core.Common.Results;
 using Backend.Core.Common.Enums;
+using Backend.Core.Common.ValueObjects;
 using Backend.Core.Features.Localizacao.Entities;
 using Backend.Core.Features.Financeiro.DTOs;
 using Backend.Core.Features.Financeiro.Entities;
@@ -299,16 +300,31 @@ public class ContasPagarRepository : IContasPagarRepository
 
     private static ContasPagar BuildContaPagar(ContaPagarDto dto)
     {
-        var pais = new Paises(dto.PaisId, dto.PaisDdi, dto.PaisSiglaIso, dto.PaisMoeda, dto.PaisSimboloMoeda, dto.PaisNome);
+        var ddi = new Ddi(dto.PaisDdi);
+        var pais = new Paises(dto.PaisId, ddi, dto.PaisSiglaIso, dto.PaisMoeda, dto.PaisSimboloMoeda, dto.PaisNome);
         var tipoPessoa = Enum.Parse<TipoPessoa>(dto.FornecedorTipoPessoa);
+
+        Documento cpfCnpj;
+        if (pais.SiglaIso == "BRA")
+        {
+            if (tipoPessoa == TipoPessoa.FISICA)
+                cpfCnpj = new Cpf(dto.FornecedorCpfCnpj);
+            else
+                cpfCnpj = new Cnpj(dto.FornecedorCpfCnpj);
+        }
+        else
+        {
+            cpfCnpj = new DocumentoGenerico(dto.FornecedorCpfCnpj);
+        }
+        Documento? rgIe = string.IsNullOrWhiteSpace(dto.FornecedorRgIe) ? null : new DocumentoGenerico(dto.FornecedorRgIe);
 
         var fornecedor = new Fornecedores(
             dto.FornecedorId,
             tipoPessoa,
             dto.FornecedorNomeRazaosocial,
-            dto.FornecedorCpfCnpj,
+            cpfCnpj,
             pais,
-            dto.FornecedorRgIe,
+            rgIe,
             dto.FornecedorApelidoNomeFantasia,
             dto.FornecedorEndereco,
             null,
