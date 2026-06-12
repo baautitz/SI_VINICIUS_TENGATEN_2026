@@ -33,7 +33,7 @@ interface BairrosUpsertFormProps {
 }
 
 export function BairrosUpsert(props: BairrosUpsertProps) {
-  const { open, editingItem, onClose, onSuccess, readOnly = false } = props;
+  const { open, editingItem, onClose, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -69,7 +69,6 @@ function BairrosUpsertForm({
   editingItem,
   onClose,
   onSuccess,
-  readOnly = false,
 }: BairrosUpsertFormProps) {
   const { mutation, globalError, getFieldError, resetErrors } =
     useUpsertMutation({

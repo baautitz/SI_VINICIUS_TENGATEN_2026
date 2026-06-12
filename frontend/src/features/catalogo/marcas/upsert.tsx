@@ -61,7 +61,6 @@ function MarcasUpsertForm({
   editingItem,
   onClose,
   onSuccess,
-  readOnly = false,
 }: MarcasUpsertProps) {
   const { mutation, globalError, getFieldError, resetErrors } =
   useUpsertMutation({

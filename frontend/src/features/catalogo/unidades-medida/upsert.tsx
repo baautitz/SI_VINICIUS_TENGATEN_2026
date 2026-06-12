@@ -35,7 +35,7 @@ interface UnidadesMedidaUpsertFormProps {
 }
 
 export function UnidadesMedidaUpsert(props: UnidadesMedidaUpsertProps) {
-  const { open, editingItem, onClose, onSuccess, readOnly = false } = props;
+  const { open, editingItem, onClose, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -71,7 +71,6 @@ function UnidadesMedidaUpsertForm({
   editingItem,
   onClose,
   onSuccess,
-  readOnly = false,
 }: UnidadesMedidaUpsertFormProps) {
   const { mutation, globalError, getFieldError, resetErrors } =
     useUpsertMutation({

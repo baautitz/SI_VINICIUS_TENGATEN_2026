@@ -41,7 +41,7 @@ interface TransportadorasUpsertFormProps {
 }
 
 export function TransportadorasUpsert(props: TransportadorasUpsertProps) {
-  const { open, editingItem, onClose, onSuccess, readOnly = false } = props;
+  const { open, editingItem, onClose, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -77,7 +77,6 @@ function TransportadorasUpsertForm({
   editingItem,
   onClose,
   onSuccess,
-  readOnly = false,
 }: TransportadorasUpsertFormProps) {
   const [selectedPais, setSelectedPais] = useState<Pais | null>(
     editingItem?.nacionalidade ?? null,

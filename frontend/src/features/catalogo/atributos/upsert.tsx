@@ -81,7 +81,6 @@ function AtributosUpsertForm({
   editingItem,
   onClose,
   onSuccess,
-  readOnly = false,
 }: AtributosUpsertFormProps) {
   const { mutation, globalError, getFieldError, resetErrors } =
     useUpsertMutation({

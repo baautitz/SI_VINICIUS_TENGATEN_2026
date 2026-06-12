@@ -61,7 +61,6 @@ function CategoriasUpsertForm({
   editingItem,
   onClose,
   onSuccess,
-  readOnly = false,
 }: CategoriasUpsertProps) {
   const { mutation, globalError, getFieldError, resetErrors } =
   useUpsertMutation({

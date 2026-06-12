@@ -41,7 +41,7 @@ interface ClientesUpsertFormProps {
 }
 
 export function ClientesUpsert(props: ClientesUpsertProps) {
-  const { open, editingItem, onClose, onSuccess, readOnly = false } = props;
+  const { open, editingItem, onClose, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -77,7 +77,6 @@ function ClientesUpsertForm({
   editingItem,
   onClose,
   onSuccess,
-  readOnly = false,
 }: ClientesUpsertFormProps) {
   const [selectedPais, setSelectedPais] = useState<Pais | null>(
     editingItem?.nacionalidade ?? null,

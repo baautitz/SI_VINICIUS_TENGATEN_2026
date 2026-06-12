@@ -41,7 +41,7 @@ interface EmitentesUpsertFormProps {
 }
 
 export function EmitentesUpsert(props: EmitentesUpsertProps) {
-  const { open, editingItem, onClose, onSuccess, readOnly = false } = props;
+  const { open, editingItem, onClose, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -77,7 +77,6 @@ function EmitentesUpsertForm({
   editingItem,
   onClose,
   onSuccess,
-  readOnly = false,
 }: EmitentesUpsertFormProps) {
   const [selectedPais, setSelectedPais] = useState<Pais | null>(
     editingItem?.nacionalidade ?? null,
