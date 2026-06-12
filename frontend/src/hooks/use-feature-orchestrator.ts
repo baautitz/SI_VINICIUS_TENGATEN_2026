@@ -1,8 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { RowSelectionState, OnChangeFn } from "@tanstack/react-table";
 import { useFeatureList } from "./use-feature-list";
-import { toast } from "sonner";
-import { extractApiErrors } from "@/utils/api-error";
 
 export interface FeatureListProps<TDto> {
   items: TDto[];
@@ -39,7 +37,9 @@ interface UseFeatureOrchestratorProps<TDto> {
   additionalKeysToInvalidate?: string[][];
 }
 
-export function useFeatureOrchestrator<TDto extends { id?: string | number; sku?: string }>({
+export function useFeatureOrchestrator<
+  TDto extends { id?: string | number; sku?: string },
+>({
   queryKey,
   initialSearchTerm = "",
   fetchPage,
@@ -83,9 +83,8 @@ export function useFeatureOrchestrator<TDto extends { id?: string | number; sku?
       await invalidateAll();
       list.setDeleteDialogVisible(false);
     },
-    onError: (e) => {
-      const apiErrors = extractApiErrors(e);
-      toast.error(apiErrors.globalError || "Erro ao deletar o registro.");
+    onError: () => {
+      // O erro já foi exibido via toast globalmente no interceptor do cliente HTTP (http.ts)
     },
   });
 
