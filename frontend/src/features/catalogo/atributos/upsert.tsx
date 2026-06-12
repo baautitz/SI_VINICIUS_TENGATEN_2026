@@ -182,7 +182,7 @@ function AtributosUpsertForm({
                   <Input
                     value={editingItem.id}
                     disabled
-                    className="h-8 font-mono text-xs"
+                    className="h-8 text-xs"
                     inputSize="small"
                   />
                 </div>

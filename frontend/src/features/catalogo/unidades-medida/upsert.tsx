@@ -155,12 +155,12 @@ function UnidadesMedidaUpsertForm({
             <div className="w-fit">
               <div className="flex flex-col gap-1.5">
                 <FieldLabel>Código</FieldLabel>
-                <Input
-                  value={editingItem.id}
-                  disabled
-                  className="h-8 font-mono text-xs"
-                  inputSize="small"
-                />
+                  <Input
+                    value={editingItem.id}
+                    disabled
+                    className="h-8 text-xs"
+                    inputSize="small"
+                  />
               </div>
             </div>
           )}

@@ -186,7 +186,7 @@ function ClientesUpsertForm({
                   <Input
                     value={editingItem.id}
                     disabled
-                    className="h-8 text-xs font-mono"
+                    className="h-8 text-xs"
                     inputSize="small"
                   />
                 </div>
