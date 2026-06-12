@@ -76,8 +76,12 @@ export function CondicoesList({
         const acr = row.original.acrescimoPercentual;
         return (
           <div className="flex flex-col text-xs">
-            <span className="text-emerald-600 font-medium">Desc: {desc.toFixed(2)}%</span>
-            <span className="text-amber-600 font-medium">Acr: {acr.toFixed(2)}%</span>
+            <span className="font-medium text-emerald-600">
+              Desc: {desc.toFixed(2)}%
+            </span>
+            <span className="font-medium text-amber-600">
+              Acrésc: {acr.toFixed(2)}%
+            </span>
           </div>
         );
       },
@@ -90,7 +94,7 @@ export function CondicoesList({
         const juros = row.original.taxaJurosPercentual;
         const multa = row.original.multaPercentual;
         return (
-          <div className="flex flex-col text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex flex-col text-xs">
             <span>Juros: {juros.toFixed(2)}%</span>
             <span>Multa: {multa.toFixed(2)}%</span>
           </div>
@@ -110,11 +114,16 @@ export function CondicoesList({
         );
       },
     },
-    getActionsColumn<CondicaoPagamento>({ onEdit, onDelete, selectionMode, onSelect }),
+    getActionsColumn<CondicaoPagamento>({
+      onEdit,
+      onDelete,
+      selectionMode,
+      onSelect,
+    }),
   ];
 
   return (
-    <div ref={listRef} className="flex-1 min-h-0 flex flex-col h-full">
+    <div ref={listRef} className="flex h-full min-h-0 flex-1 flex-col">
       <FeatureLayout>
         <FeatureHeader
           title="Condições de Pagamento"
