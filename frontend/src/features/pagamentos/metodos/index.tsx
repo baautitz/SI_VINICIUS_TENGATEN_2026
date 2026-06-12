@@ -28,7 +28,11 @@ export function MetodosFeature({
     queryKey: "metodosPagamento",
     initialSearchTerm,
     fetchPage: async (searchTerm, page, pageSize) => {
-      const res = await metodosApi.list(searchTerm || undefined, page, pageSize);
+      const res = await metodosApi.list(
+        searchTerm || undefined,
+        page,
+        pageSize,
+      );
       if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
 
       return {
@@ -54,10 +58,7 @@ export function MetodosFeature({
       />
 
       {list.isUpsertOpen && (
-        <MetodosUpsert
-          key={list.editingItem?.id ?? "new"}
-          {...upsertProps}
-        />
+        <MetodosUpsert key={list.editingItem?.id ?? "new"} {...upsertProps} />
       )}
 
       <DeleteDialog
@@ -66,7 +67,8 @@ export function MetodosFeature({
         description={
           <p>
             Deseja realmente excluir o método de pagamento{" "}
-            <strong>{list.itemToDelete?.descricao}</strong>? Esta ação não poderá ser desfeita.
+            <strong>{list.itemToDelete?.descricao}</strong>? Esta ação não
+            poderá ser desfeita.
           </p>
         }
       />
