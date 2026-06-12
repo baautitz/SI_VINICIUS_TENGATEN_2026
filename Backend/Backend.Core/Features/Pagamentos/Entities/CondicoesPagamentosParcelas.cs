@@ -8,6 +8,8 @@ public class CondicoesPagamentosParcelas
     public decimal Percentual { get; private set; }
     public int PrazoDias { get; private set; }
 
+    protected CondicoesPagamentosParcelas() { }
+
     public CondicoesPagamentosParcelas(int numeroParcela, decimal percentual, int prazoDias)
     {
         if (numeroParcela <= 0)

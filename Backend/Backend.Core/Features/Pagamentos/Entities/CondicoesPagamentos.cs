@@ -18,6 +18,12 @@ public class CondicoesPagamentos
     public MetodosPagamentos MetodoPagamento { get; private set; }
     public IReadOnlyCollection<CondicoesPagamentosParcelas> CondicoesPagamentosParcelas => _parcelas.AsReadOnly();
 
+    protected CondicoesPagamentos() 
+    { 
+        Descricao = null!; 
+        MetodoPagamento = null!; 
+    }
+
     public CondicoesPagamentos(
         string descricao,
         MetodosPagamentos metodoPagamento,
@@ -65,6 +71,53 @@ public class CondicoesPagamentos
         Descricao = descricao;
     }
 
+    public void Atualizar(
+        string descricao,
+        MetodosPagamentos metodo,
+        decimal entradaMinimaPercentual,
+        decimal descontoPercentual,
+        decimal acrescimoPercentual,
+        decimal multaPercentual,
+        decimal taxaJurosPercentual,
+        IEnumerable<CondicoesPagamentosParcelas> parcelas)
+    {
+        descricao = TextNormalization.Normalize(descricao);
+        if (string.IsNullOrWhiteSpace(descricao))
+            throw new DomainException("Descrição da condição de pagamento é obrigatória.");
+
+        MetodoPagamento = metodo ?? throw new DomainException("Método de pagamento é obrigatório.");
+
+        if (entradaMinimaPercentual < 0 || entradaMinimaPercentual > 100)
+            throw new DomainException("Entrada mínima percentual deve estar entre 0 e 100.");
+
+        if (descontoPercentual < 0 || descontoPercentual > 100)
+            throw new DomainException("Desconto percentual deve estar entre 0 e 100.");
+
+        if (acrescimoPercentual < 0)
+            throw new DomainException("Acréscimo percentual não pode ser negativo.");
+
+        if (multaPercentual < 0)
+            throw new DomainException("Multa percentual não pode ser negativa.");
+
+        if (taxaJurosPercentual < 0)
+            throw new DomainException("Taxa de juros percentual não pode ser negativa.");
+
+        Descricao = descricao;
+        EntradaMinimaPercentual = entradaMinimaPercentual;
+        DescontoPercentual = descontoPercentual;
+        AcrescimoPercentual = acrescimoPercentual;
+        MultaPercentual = multaPercentual;
+        TaxaJurosPercentual = taxaJurosPercentual;
+
+        _parcelas.Clear();
+        if (parcelas != null)
+        {
+            _parcelas.AddRange(parcelas);
+        }
+
+        ValidarParcelas();
+    }
+
     public void AtualizarDescricao(string descricao)
     {
         descricao = TextNormalization.Normalize(descricao);
@@ -73,6 +126,11 @@ public class CondicoesPagamentos
             throw new DomainException("Descrição da condição de pagamento é obrigatória.");
 
         Descricao = descricao;
+    }
+
+    public void AtualizarMetodoPagamento(MetodosPagamentos metodoPagamento)
+    {
+        MetodoPagamento = metodoPagamento ?? throw new DomainException("Método de pagamento é obrigatório.");
     }
 
     public void AtualizarPercentuais(
@@ -115,6 +173,15 @@ public class CondicoesPagamentos
 
         _parcelas.Add(parcela);
         ValidarParcelas();
+    }
+
+    public void CarregarParcelas(IEnumerable<CondicoesPagamentosParcelas> parcelas)
+    {
+        _parcelas.Clear();
+        if (parcelas != null)
+        {
+            _parcelas.AddRange(parcelas);
+        }
     }
 
     public void RemoverParcela(CondicoesPagamentosParcelas parcela)

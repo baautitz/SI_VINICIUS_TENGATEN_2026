@@ -9,6 +9,12 @@ public class MetodosPagamentos
     public string Descricao { get; private set; }
     public bool Ativo { get; private set; }
 
+    protected MetodosPagamentos() 
+    { 
+        Codigo = null!; 
+        Descricao = null!; 
+    }
+
     public MetodosPagamentos(string codigo, string descricao, bool ativo = true)
     {
         codigo = TextNormalization.Normalize(codigo);

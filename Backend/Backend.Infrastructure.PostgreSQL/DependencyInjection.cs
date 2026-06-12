@@ -14,6 +14,8 @@ using Backend.Core.Features.NFe.Repositories;
 using Backend.Core.Features.Parceiros.Repositories;
 using Backend.Core.Features.Parceiros.Services;
 using Backend.Core.Features.Vendas.Repositories;
+using Backend.Core.Features.Pagamentos.Repositories;
+using Backend.Core.Features.Pagamentos.Services;
 using Backend.Infrastructure.PostgreSQL.Common;
 using Backend.Infrastructure.PostgreSQL.Features.Acesso;
 using Backend.Infrastructure.PostgreSQL.Features.Catalogo;
@@ -24,6 +26,7 @@ using Backend.Infrastructure.PostgreSQL.Features.Logistica;
 using Backend.Infrastructure.PostgreSQL.Features.NFe;
 using Backend.Infrastructure.PostgreSQL.Features.Parceiros;
 using Backend.Infrastructure.PostgreSQL.Features.Vendas;
+using Backend.Infrastructure.PostgreSQL.Features.Pagamentos;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -91,6 +94,11 @@ public static class DependencyInjection
 
         services.AddScoped<IVeiculosRepository, VeiculosRepository>();
         services.AddScoped<VeiculosService>();
+
+        services.AddScoped<IMetodosPagamentosRepository, MetodosPagamentosRepository>();
+        services.AddScoped<ICondicoesPagamentosRepository, CondicoesPagamentosRepository>();
+        services.AddScoped<MetodosPagamentosService>();
+        services.AddScoped<CondicoesPagamentosService>();
 
         return services;
     }
