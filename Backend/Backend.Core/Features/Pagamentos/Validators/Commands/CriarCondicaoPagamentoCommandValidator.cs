@@ -31,7 +31,7 @@ public class CriarCondicaoPagamentoCommandValidator : AbstractValidator<CriarCon
             .GreaterThanOrEqualTo(0).WithMessage("Taxa de juros percentual não pode ser negativa.");
 
         RuleFor(x => x.Parcelas)
-            .NotEmpty().WithMessage("Condição de pagamento deve conter ao menos uma parcela.");
+            .NotEmpty().When(x => x.EntradaMinimaPercentual < 100).WithMessage("Condição de pagamento deve conter ao menos uma parcela.");
 
         RuleForEach(x => x.Parcelas).ChildRules(p =>
         {
@@ -44,7 +44,7 @@ public class CriarCondicaoPagamentoCommandValidator : AbstractValidator<CriarCon
 
             p.RuleFor(x => x.PrazoDias)
                 .GreaterThanOrEqualTo(0).WithMessage("Prazo em dias não pode ser negativo.");
-        });
+        }).When(x => x.EntradaMinimaPercentual < 100);
 
         RuleFor(x => x).Custom((cmd, context) =>
         {
@@ -54,7 +54,20 @@ public class CriarCondicaoPagamentoCommandValidator : AbstractValidator<CriarCon
                 context.AddFailure("AcrescimoPercentual", "Não é permitido definir desconto e acréscimo simultaneamente.");
             }
 
-            if (cmd.Parcelas == null || !cmd.Parcelas.Any()) return;
+            if (cmd.EntradaMinimaPercentual == 100)
+            {
+                if (cmd.Parcelas != null && cmd.Parcelas.Any())
+                {
+                    context.AddFailure("Parcelas", "Uma condição de pagamento à vista (100% de entrada) não deve possuir parcelas.");
+                }
+                return;
+            }
+
+            if (cmd.Parcelas == null || !cmd.Parcelas.Any())
+            {
+                context.AddFailure("Parcelas", "Condição de pagamento a prazo deve conter ao menos uma parcela.");
+                return;
+            }
 
             var totalPercentual = cmd.Parcelas.Sum(p => p.Percentual);
             if (totalPercentual <= 0)

@@ -63,10 +63,13 @@ public class CondicoesPagamentos
         if (TaxaJurosPercentual < 0)
             throw new DomainException("Taxa de juros percentual não pode ser negativa.");
 
-        if (parcelas == null || !parcelas.Any())
+        if (entradaMinimaPercentual != 100m && (parcelas == null || !parcelas.Any()))
             throw new DomainException("Condição de pagamento deve conter ao menos uma parcela.");
 
-        _parcelas.AddRange(parcelas);
+        if (parcelas != null)
+        {
+            _parcelas.AddRange(parcelas);
+        }
         ValidarParcelas();
         Descricao = descricao;
     }
@@ -199,6 +202,13 @@ public class CondicoesPagamentos
 
     private void ValidarParcelas()
     {
+        if (EntradaMinimaPercentual == 100m)
+        {
+            if (_parcelas.Any())
+                throw new DomainException("Uma condição de pagamento à vista (100% de entrada) não deve possuir parcelas.");
+            return;
+        }
+
         if (!_parcelas.Any())
             throw new DomainException("Condição de pagamento deve conter ao menos uma parcela.");
 
@@ -210,8 +220,8 @@ public class CondicoesPagamentos
         if (totalParcelas > 100m)
             throw new DomainException("O percentual total das parcelas não pode exceder 100%.");
 
-        if (EntradaMinimaPercentual + totalParcelas > 100m)
-            throw new DomainException("A soma da entrada mínima e das parcelas não pode exceder 100%.");
+        if (EntradaMinimaPercentual + totalParcelas != 100m)
+            throw new DomainException("A soma da entrada mínima e das parcelas deve ser exatamente igual a 100%.");
 
         if (_parcelas.GroupBy(p => p.NumeroParcela).Any(g => g.Count() > 1))
             throw new DomainException("Não pode haver parcelas com números repetidos.");
