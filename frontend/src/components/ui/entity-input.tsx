@@ -13,6 +13,7 @@ interface EntityInputProps<T, TResumo = T> {
   placeholder?: string;
   error?: string;
   initialItem?: T | TResumo | null;
+  disabled?: boolean;
 
   onSelectId: (id: number | null) => void;
   onSelectItem?: (item: T | null) => void;
@@ -37,6 +38,7 @@ export function EntityInput<T, TResumo = T>({
   placeholder = "Digite, ou Enter para buscar...",
   error,
   initialItem = null,
+  disabled = false,
   onSelectId,
   onSelectItem,
   fetchById,
@@ -147,8 +149,10 @@ export function EntityInput<T, TResumo = T>({
             id={name}
             placeholder={placeholder}
             value={searchText}
+            disabled={disabled}
             onChange={(e) => setSearchText(e.target.value)}
             onKeyDown={(e) => {
+              if (disabled) return;
               if (e.key === "Enter") {
                 e.preventDefault();
                 handleSearch(searchText);
@@ -160,7 +164,7 @@ export function EntityInput<T, TResumo = T>({
               }
             }}
             onBlur={() => {
-              if (searchText !== selectedLabel) {
+              if (!disabled && searchText !== selectedLabel) {
                 handleSearch(searchText, true);
               }
             }}
@@ -172,8 +176,9 @@ export function EntityInput<T, TResumo = T>({
             variant="ghost"
             type="button"
             tabIndex={-1}
+            disabled={disabled}
             className="text-muted-foreground hover:text-foreground absolute top-1 right-1 h-6 w-6"
-            onClick={() => setIsOpen(true)}
+            onClick={() => !disabled && setIsOpen(true)}
           >
             <Search className="size-4" />
           </Button>
