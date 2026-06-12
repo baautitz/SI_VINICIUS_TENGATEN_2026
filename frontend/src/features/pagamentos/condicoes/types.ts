@@ -40,7 +40,7 @@ export const condicaoPagamentoBaseSchema = z
     multaPercentual: z.coerce.number().min(0, "Multa não pode ser negativa."),
     taxaJurosPercentual: z.coerce.number().min(0, "Taxa de juros não pode ser negativa."),
     ativo: z.boolean().default(true),
-    parcelas: z.array(condicaoPagamentoParcelaSchema).min(1, "Pelo menos uma parcela é obrigatória."),
+    parcelas: z.array(condicaoPagamentoParcelaSchema),
   });
 
 export const condicaoPagamentoSchema = condicaoPagamentoBaseSchema
@@ -56,6 +56,26 @@ export const condicaoPagamentoSchema = condicaoPagamentoBaseSchema
         path: ["acrescimoPercentual"],
         message: "Não é permitido definir desconto e acréscimo simultaneamente.",
       });
+    }
+
+    if (data.entradaMinimaPercentual === 100) {
+      if (data.parcelas.length > 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["parcelas"],
+          message: "Uma condição de pagamento à vista (100% de entrada) não deve possuir parcelas.",
+        });
+      }
+      return;
+    }
+
+    if (data.parcelas.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["parcelas"],
+        message: "Pelo menos uma parcela é obrigatória para condições a prazo.",
+      });
+      return;
     }
 
     const totalPercentual = data.parcelas.reduce((sum, p) => sum + p.percentual, 0);

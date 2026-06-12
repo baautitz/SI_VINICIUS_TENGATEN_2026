@@ -12,13 +12,7 @@ import { NumberInput } from "@/components/ui/number-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FormFieldUI } from "@/components/ui/form-field-ui";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { MetodoPagamentoInput } from "@/components/entity-inputs/metodo-pagamento-input";
 import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import {
@@ -29,7 +23,7 @@ import {
   CondicaoPagamentoFormValues,
 } from "./types";
 import { useQuery } from "@tanstack/react-query";
-import { condicoesApi, metodosApi } from "@/api/pagamentos";
+import { condicoesApi } from "@/api/pagamentos";
 import { Plus, Trash2, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -87,15 +81,6 @@ function CondicoesUpsertForm({
       prazoDias: p.prazoDias,
     })) ?? [],
   );
-
-  const { data: metodosData } = useQuery({
-    queryKey: ["metodosPagamento", "active-list"],
-    queryFn: async () => {
-      const res = await metodosApi.list(undefined, 1, 1000);
-      return res?.itens?.filter((m) => m.ativo) ?? [];
-    },
-    enabled: open,
-  });
 
   const {
     mutation,
@@ -192,7 +177,7 @@ function CondicoesUpsertForm({
           handleAddParcela();
         },
         options: {
-          enabled: open && !readOnly,
+          enabled: open && !readOnly && form.state.values.entradaMinimaPercentual !== 100,
           ignoreInputs: false,
         },
       },
@@ -286,7 +271,7 @@ function CondicoesUpsertForm({
               Informações Gerais
             </h3>
 
-            <div className="flex w-full flex-wrap items-end gap-4">
+            <div className="flex w-full flex-wrap items-start gap-4">
               {editingItem && (
                 <div className="w-20 shrink-0">
                   <div className="flex flex-col gap-1.5">
@@ -335,38 +320,13 @@ function CondicoesUpsertForm({
                       field.state.meta.errors,
                     );
                     return (
-                      <div className="flex w-full flex-col gap-1.5">
-                        <FieldLabel htmlFor={field.name}>
-                          Método de Pagamento
-                        </FieldLabel>
-                        <Select
-                          value={
-                            field.state.value
-                              ? field.state.value.toString()
-                              : ""
-                          }
-                          onValueChange={(val) =>
-                            field.handleChange(Number(val))
-                          }
-                          disabled={readOnly}
-                        >
-                          <SelectTrigger id={field.name} className="h-9 w-full">
-                            <SelectValue placeholder="Selecione um método..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {metodosData?.map((m) => (
-                              <SelectItem key={m.id} value={m.id.toString()}>
-                                {m.codigo} - {m.descricao}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {error && (
-                          <span className="text-destructive text-xs">
-                            {error}
-                          </span>
-                        )}
-                      </div>
+                      <MetodoPagamentoInput
+                        name={field.name}
+                        error={error}
+                        initialItem={editingItem?.metodoPagamento ?? null}
+                        onSelectId={(id) => field.handleChange(id ?? 0)}
+                        disabled={readOnly}
+                      />
                     );
                   }}
                 </form.Field>
@@ -394,16 +354,41 @@ function CondicoesUpsertForm({
                               .entradaMinimaPercentual,
                         }}
                       >
-                        {(field) => (
-                          <FormFieldUI
-                            field={field}
-                            label="Entrada Mínima (%)"
-                            type="number"
-                            inputSize="full"
-                            getFieldError={getFieldError}
-                            disabled={readOnly}
-                          />
-                        )}
+                        {(field) => {
+                          const isChecked = field.state.value === 100;
+                          return (
+                            <div className="flex flex-col gap-2">
+                              <FormFieldUI
+                                field={field}
+                                label="Entrada Mínima (%)"
+                                type="number"
+                                inputSize="full"
+                                getFieldError={getFieldError}
+                                disabled={readOnly || isChecked}
+                                min={0}
+                                max={100}
+                              />
+                              <div className="flex items-center gap-2 mt-1">
+                                <Checkbox
+                                  id="a-vista-checkbox"
+                                  checked={isChecked}
+                                  disabled={readOnly}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      field.handleChange(100);
+                                      setParcelas([]);
+                                    } else {
+                                      field.handleChange(0);
+                                    }
+                                  }}
+                                />
+                                <FieldLabel htmlFor="a-vista-checkbox" className="cursor-pointer text-xs font-semibold select-none">
+                                  À Vista (100% Entrada)
+                                </FieldLabel>
+                              </div>
+                            </div>
+                          );
+                        }}
                       </form.Field>
 
                       <form.Field
@@ -523,7 +508,7 @@ function CondicoesUpsertForm({
           <div className="border-muted-foreground/10 flex w-full flex-col gap-4 border-t pt-6">
             <div className="flex items-center justify-between border-b pb-2">
               <h3 className="text-sm font-semibold tracking-wider">Parcelas</h3>
-              {!readOnly && (
+              {!readOnly && form.state.values.entradaMinimaPercentual !== 100 && (
                 <Button
                   type="button"
                   variant="outline"
@@ -544,10 +529,18 @@ function CondicoesUpsertForm({
                   field.name,
                   field.state.meta.errors,
                 );
+                const isAVista = form.state.values.entradaMinimaPercentual === 100;
                 return (
                   <div className="flex min-h-0 w-full flex-1 flex-col">
                     <div className="max-h-62.5 flex-1 overflow-y-auto pr-2">
-                      {parcelas.length === 0 ? (
+                      {isAVista ? (
+                        <div className="flex flex-col items-center justify-center rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-6 text-center text-emerald-600">
+                          <span className="text-sm font-medium">Condição de Pagamento À Vista</span>
+                          <span className="text-xs text-muted-foreground mt-1">
+                            Não há parcelas a serem configuradas pois a entrada é de 100%.
+                          </span>
+                        </div>
+                      ) : parcelas.length === 0 ? (
                         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 text-center">
                           <HelpCircle className="mb-2 h-8 w-8 opacity-50" />
                           <span className="text-sm font-medium">
