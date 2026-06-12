@@ -16,6 +16,9 @@ import {
   ClipboardList,
   MapPinned,
   LayoutDashboard,
+  CreditCard,
+  Landmark,
+  Receipt,
 } from "lucide-react";
 import React from "react";
 
@@ -87,6 +90,16 @@ export const navigationConfig: NavGroup[] = [
     items: [
       { title: "Transportadoras", url: "/logistica/transportadoras", icon: Truck },
       { title: "Veículos", url: "/logistica/veiculos", icon: Car },
+    ],
+  },
+  {
+    id: "pagamentos",
+    title: "Pagamentos",
+    icon: CreditCard,
+    urlPrefix: "/pagamentos",
+    items: [
+      { title: "Métodos de Pagamento", url: "/pagamentos/metodos", icon: Landmark },
+      { title: "Condições de Pagamento", url: "/pagamentos/condicoes", icon: Receipt },
     ],
   },
 ];
