@@ -6,11 +6,11 @@ namespace Backend.Core.Features.Pagamentos.Repositories;
 public interface IMetodosPagamentosRepository
 {
     public Task<ResultadoPaginado<MetodosPagamentos>> ObterMetodosPagamentos(int pagina = 1, int tamanhoDaPagina = 20);
-    public Task<MetodosPagamentos?> ObterMetodoPagamentoPorId(int id);
+    public Task<MetodosPagamentos?> ObterMetodoPagamentoPorCodigo(string codigo);
     public Task<MetodosPagamentos> CriarMetodoPagamento(MetodosPagamentos metodo);
-    public Task<MetodosPagamentos> AtualizarMetodoPagamento(int id, MetodosPagamentos metodo);
-    public Task<bool> DeletarMetodoPagamento(int id);
+    public Task<MetodosPagamentos> AtualizarMetodoPagamento(string codigo, MetodosPagamentos metodo);
+    public Task<bool> DeletarMetodoPagamento(string codigo);
     public Task<ResultadoPaginado<MetodosPagamentos>> PesquisarMetodosPagamentos(string termo, int pagina = 1, int tamanhoDaPagina = 20);
-    public Task<bool> ExisteCodigo(string codigo, int? ignorarId = null);
+    public Task<bool> ExisteCodigo(string codigo, string? ignorarCodigo = null);
     public Task<string?> ObterUltimoCodigo();
 }

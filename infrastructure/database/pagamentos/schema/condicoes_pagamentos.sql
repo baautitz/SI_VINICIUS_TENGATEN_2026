@@ -3,7 +3,7 @@ SET search_path TO projeto_sistemas;
 CREATE TABLE IF NOT EXISTS condicoes_pagamentos (
   id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   descricao VARCHAR(150) NOT NULL UNIQUE,
-  metodo_pagamento_id INTEGER NOT NULL,
+  metodo_pagamento_codigo VARCHAR(10) NOT NULL,
   entrada_minima_percentual NUMERIC(7, 4) NOT NULL DEFAULT 0,
   desconto_percentual NUMERIC(7, 4) NOT NULL DEFAULT 0,
   acrescimo_percentual NUMERIC(7, 4) NOT NULL DEFAULT 0,
@@ -11,10 +11,10 @@ CREATE TABLE IF NOT EXISTS condicoes_pagamentos (
   taxa_juros_percentual NUMERIC(7, 4) NOT NULL DEFAULT 0,
   ativo BOOLEAN NOT NULL DEFAULT TRUE,
   CONSTRAINT condicoes_pagamentos_metodo_fk
-    FOREIGN KEY (metodo_pagamento_id)
-    REFERENCES metodos_pagamento (id)
+    FOREIGN KEY (metodo_pagamento_codigo)
+    REFERENCES metodos_pagamento (codigo)
     ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
+    ON UPDATE CASCADE,
   CONSTRAINT condicoes_pagamentos_entrada_ck
     CHECK (entrada_minima_percentual >= 0 AND entrada_minima_percentual <= 100),
   CONSTRAINT condicoes_pagamentos_desconto_ck

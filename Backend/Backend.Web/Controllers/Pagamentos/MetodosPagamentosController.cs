@@ -29,10 +29,10 @@ public class MetodosPagamentosController : ControllerBase
         return _metodosService.ObterMetodosPagamentos(page, pageSize);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<MetodosPagamentos>> GetMetodo(int id)
+    [HttpGet("{codigo}")]
+    public async Task<ActionResult<MetodosPagamentos>> GetMetodo(string codigo)
     {
-        var metodo = await _metodosService.ObterMetodoPagamentoPorId(id);
+        var metodo = await _metodosService.ObterMetodoPagamentoPorCodigo(codigo);
         if (metodo is null)
             return NotFound();
 
@@ -47,13 +47,13 @@ public class MetodosPagamentosController : ControllerBase
         if (!result.Success)
             return BadRequest(result);
 
-        return CreatedAtAction(nameof(GetMetodo), new { id = result.Data!.Id }, result);
+        return CreatedAtAction(nameof(GetMetodo), new { codigo = result.Data!.Codigo }, result);
     }
 
-    [HttpPut("{id:int}")]
-    public async Task<ActionResult<Resultado<MetodosPagamentos>>> UpdateMetodo(int id, [FromBody] AtualizarMetodoPagamentoCommand command)
+    [HttpPut("{codigo}")]
+    public async Task<ActionResult<Resultado<MetodosPagamentos>>> UpdateMetodo(string codigo, [FromBody] AtualizarMetodoPagamentoCommand command)
     {
-        var result = await _metodosService.AtualizarMetodoPagamento(id, command);
+        var result = await _metodosService.AtualizarMetodoPagamento(codigo, command);
         if (!result.Success)
         {
             if (result.Errors is not null && result.Errors.Any(error => error.Code == "METODO_NAO_ENCONTRADO"))
@@ -65,10 +65,10 @@ public class MetodosPagamentosController : ControllerBase
         return Ok(result);
     }
 
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> DeleteMetodo(int id)
+    [HttpDelete("{codigo}")]
+    public async Task<IActionResult> DeleteMetodo(string codigo)
     {
-        var deleted = await _metodosService.DeletarMetodoPagamento(id);
+        var deleted = await _metodosService.DeletarMetodoPagamento(codigo);
         return deleted ? NoContent() : NotFound();
     }
 }

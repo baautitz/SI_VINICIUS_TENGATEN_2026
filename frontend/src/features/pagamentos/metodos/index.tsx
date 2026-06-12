@@ -41,11 +41,11 @@ export function MetodosFeature({
         totalItems: res.totalDeItens ?? 0,
       };
     },
-    fetchById: async (id) => {
-      return await metodosApi.getById(id as number);
+    fetchById: async (_id, item) => {
+      return await metodosApi.getById(item!.codigo);
     },
     deleteItem: async (item) => {
-      await metodosApi.delete(item.id);
+      await metodosApi.delete(item.codigo);
     },
   });
 
@@ -58,7 +58,7 @@ export function MetodosFeature({
       />
 
       {list.isUpsertOpen && (
-        <MetodosUpsert key={list.editingItem?.id ?? "new"} {...upsertProps} />
+        <MetodosUpsert key={list.editingItem?.codigo ?? "new"} {...upsertProps} />
       )}
 
       <DeleteDialog

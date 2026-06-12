@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ListDialog } from "@/components/ui/list-dialog";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 
-interface EntityInputProps<T, TResumo = T> {
+interface EntityInputProps<T, TResumo = T, TId extends string | number = number> {
   name: string;
   label: string;
   placeholder?: string;
@@ -15,14 +15,14 @@ interface EntityInputProps<T, TResumo = T> {
   initialItem?: T | TResumo | null;
   disabled?: boolean;
 
-  onSelectId: (id: number | null) => void;
+  onSelectId: (id: TId | null) => void;
   onSelectItem?: (item: T | null) => void;
 
-  fetchById: (id: number) => Promise<T | null>;
+  fetchById: (id: TId) => Promise<T | null>;
   fetchList: (term: string) => Promise<{ itens?: TResumo[] } | null>;
   getDisplayLabel: (item: T | TResumo) => string;
   getSearchTerm: (item: TResumo) => string;
-  getId: (item: T | TResumo) => number;
+  getId: (item: T | TResumo) => TId;
 
   modalTitle: string;
   renderFeature: (props: {
@@ -32,7 +32,7 @@ interface EntityInputProps<T, TResumo = T> {
   }) => React.ReactNode;
 }
 
-export function EntityInput<T, TResumo = T>({
+export function EntityInput<T, TResumo = T, TId extends string | number = number>({
   name,
   label,
   placeholder = "Digite, ou Enter para buscar...",
@@ -48,7 +48,7 @@ export function EntityInput<T, TResumo = T>({
   getId,
   modalTitle,
   renderFeature,
-}: EntityInputProps<T, TResumo>) {
+}: EntityInputProps<T, TResumo, TId>) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<TResumo | null>(
     (initialItem as TResumo | null) ?? null,
@@ -88,10 +88,11 @@ export function EntityInput<T, TResumo = T>({
     if (isBlur && selectedLabel === text) return;
 
     try {
-      const numericId = parseInt(text, 10);
-      if (!isNaN(numericId) && /^\d+$/.test(text.trim())) {
+      const textTrimmed = text.trim();
+      const numericId = parseInt(textTrimmed, 10);
+      if (!isNaN(numericId) && /^\d+$/.test(textTrimmed)) {
         try {
-          const matched = await fetchById(numericId);
+          const matched = await fetchById(numericId as TId);
           if (matched) {
             applySelection(matched);
             return;

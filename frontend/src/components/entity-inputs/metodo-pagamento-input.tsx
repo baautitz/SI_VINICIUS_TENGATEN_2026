@@ -10,7 +10,7 @@ interface MetodoPagamentoInputProps {
   label?: string;
   error?: string;
   initialItem?: MetodoPagamento | null;
-  onSelectId: (id: number | null) => void;
+  onSelectCodigo: (codigo: string | null) => void;
   onSelectItem?: (item: MetodoPagamento | null) => void;
   disabled?: boolean;
 }
@@ -20,17 +20,17 @@ export function MetodoPagamentoInput({
   label = "Método de Pagamento",
   error,
   initialItem,
-  onSelectId,
+  onSelectCodigo,
   onSelectItem,
   disabled,
 }: MetodoPagamentoInputProps) {
   return (
-    <EntityInput<MetodoPagamento, MetodoPagamento>
+    <EntityInput<MetodoPagamento, MetodoPagamento, string>
       name={name}
       label={label}
       error={error}
       initialItem={initialItem}
-      onSelectId={onSelectId}
+      onSelectId={onSelectCodigo}
       onSelectItem={onSelectItem}
       disabled={disabled}
       modalTitle="Selecionar Método de Pagamento"
@@ -38,10 +38,10 @@ export function MetodoPagamentoInput({
         item ? `${item.codigo} - ${item.descricao}` : ""
       }
       getSearchTerm={(item) => item.descricao}
-      getId={(item) => item.id}
-      fetchById={async (id) => {
+      getId={(item) => item.codigo}
+      fetchById={async (codigo) => {
         try {
-          return await metodosApi.getById(id);
+          return await metodosApi.getById(String(codigo));
         } catch {
           return null;
         }

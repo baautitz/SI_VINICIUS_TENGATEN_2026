@@ -8,7 +8,7 @@ public record AtualizarCondicaoPagamentoParcelaCommand(
 
 public record AtualizarCondicaoPagamentoCommand(
     string Descricao,
-    int MetodoPagamentoId,
+    string MetodoPagamentoCodigo,
     decimal EntradaMinimaPercentual,
     decimal DescontoPercentual,
     decimal AcrescimoPercentual,

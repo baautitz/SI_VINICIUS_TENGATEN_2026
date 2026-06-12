@@ -3,7 +3,7 @@ SET search_path TO projeto_sistemas;
 CREATE TABLE IF NOT EXISTS nfes_pagamentos (
   id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   nfe_id INTEGER NOT NULL,
-  metodo_pagamento_id INTEGER NOT NULL,
+  metodo_pagamento_codigo VARCHAR(10) NOT NULL,
   indicador_pagamento indicador_pagamento_enum NOT NULL,
   valor_pagamento NUMERIC(14, 2) NOT NULL,
   CONSTRAINT nfes_pagamentos_nfe_fk
@@ -12,10 +12,10 @@ CREATE TABLE IF NOT EXISTS nfes_pagamentos (
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT nfes_pagamentos_metodo_fk
-    FOREIGN KEY (metodo_pagamento_id)
-    REFERENCES metodos_pagamento (id)
+    FOREIGN KEY (metodo_pagamento_codigo)
+    REFERENCES metodos_pagamento (codigo)
     ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
+    ON UPDATE CASCADE,
   CONSTRAINT nfes_pagamentos_valor_ck
     CHECK (valor_pagamento >= 0)
 );

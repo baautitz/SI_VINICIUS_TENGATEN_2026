@@ -37,14 +37,6 @@ export function MetodosList({
   const columns: ColumnDef<MetodoPagamento>[] = [
     getSelectColumn<MetodoPagamento>(),
     {
-      accessorKey: "id",
-      header: "ID",
-      size: 80,
-      cell: ({ row }) => (
-        <span className="font-semibold">{row.getValue("id")}</span>
-      ),
-    },
-    {
       accessorKey: "codigo",
       header: "Código",
       size: 100,
@@ -100,7 +92,7 @@ export function MetodosList({
           onRowSelectionChange={rowSelection ? onRowSelectionChange : undefined}
           selectAllAcrossPages={selectAllAcrossPages}
           onSelectAllAcrossPagesChange={onSelectAllAcrossPagesChange}
-          getRowId={(row) => row.id.toString()}
+          getRowId={(row) => row.codigo}
           onRowSelect={selectionMode ? onSelect : undefined}
           onEditRow={onEdit}
           onDeleteRow={onDelete}

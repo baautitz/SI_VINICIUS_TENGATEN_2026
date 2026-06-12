@@ -8,7 +8,7 @@ public record CriarCondicaoPagamentoParcelaCommand(
 
 public record CriarCondicaoPagamentoCommand(
     string Descricao,
-    int MetodoPagamentoId,
+    string MetodoPagamentoCodigo,
     decimal EntradaMinimaPercentual,
     decimal DescontoPercentual,
     decimal AcrescimoPercentual,

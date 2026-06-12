@@ -25,7 +25,7 @@ public class MetodosPagamentosRepository : IMetodosPagamentosRepository
 
         const string sqlCount = "SELECT COUNT(*) FROM metodos_pagamento;";
         const string sqlData = @"
-            SELECT id, codigo, descricao, ativo
+            SELECT codigo, descricao, ativo
             FROM metodos_pagamento
             ORDER BY codigo
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
@@ -36,10 +36,10 @@ public class MetodosPagamentosRepository : IMetodosPagamentosRepository
         return new ResultadoPaginado<MetodosPagamentos>(itens.ToList(), total, pagina, tamanhoDaPagina);
     }
 
-    public async Task<MetodosPagamentos?> ObterMetodoPagamentoPorId(int id)
+    public async Task<MetodosPagamentos?> ObterMetodoPagamentoPorCodigo(string codigo)
     {
-        const string sql = "SELECT id, codigo, descricao, ativo FROM metodos_pagamento WHERE id = @Id;";
-        return await _session.Connection.QuerySingleOrDefaultAsync<MetodosPagamentos>(sql, new { Id = id }, transaction: _session.Transaction);
+        const string sql = "SELECT codigo, descricao, ativo FROM metodos_pagamento WHERE codigo = @Codigo;";
+        return await _session.Connection.QuerySingleOrDefaultAsync<MetodosPagamentos>(sql, new { Codigo = codigo }, transaction: _session.Transaction);
     }
 
     public async Task<MetodosPagamentos> CriarMetodoPagamento(MetodosPagamentos metodo)
@@ -48,16 +48,14 @@ public class MetodosPagamentosRepository : IMetodosPagamentosRepository
         {
             const string sql = @"
                 INSERT INTO metodos_pagamento (codigo, descricao, ativo)
-                VALUES (@Codigo, @Descricao, @Ativo)
-                RETURNING id;";
+                VALUES (@Codigo, @Descricao, @Ativo);";
 
-            var idGerado = await _session.Connection.ExecuteScalarAsync<int>(
+            await _session.Connection.ExecuteAsync(
                 sql,
                 new { metodo.Codigo, metodo.Descricao, metodo.Ativo },
                 transaction: _session.Transaction
             );
 
-            metodo.Id = idGerado;
             return metodo;
         }
         catch (PostgresException ex)
@@ -66,25 +64,24 @@ public class MetodosPagamentosRepository : IMetodosPagamentosRepository
         }
     }
 
-    public async Task<MetodosPagamentos> AtualizarMetodoPagamento(int id, MetodosPagamentos metodo)
+    public async Task<MetodosPagamentos> AtualizarMetodoPagamento(string codigo, MetodosPagamentos metodo)
     {
         try
         {
             const string sql = @"
                 UPDATE metodos_pagamento
-                SET codigo = @Codigo, descricao = @Descricao, ativo = @Ativo
-                WHERE id = @Id;";
+                SET descricao = @Descricao, ativo = @Ativo
+                WHERE codigo = @Codigo;";
 
             var linhasAfetadas = await _session.Connection.ExecuteAsync(
                 sql,
-                new { Id = id, metodo.Codigo, metodo.Descricao, metodo.Ativo },
+                new { Codigo = codigo, metodo.Descricao, metodo.Ativo },
                 transaction: _session.Transaction
             );
 
             if (linhasAfetadas == 0)
-                throw new Exception($"Falha ao atualizar: O método de pagamento com ID {id} não foi encontrado.");
+                throw new Exception($"Falha ao atualizar: o método de pagamento com código '{codigo}' não foi encontrado.");
 
-            metodo.Id = id;
             return metodo;
         }
         catch (PostgresException ex)
@@ -93,12 +90,12 @@ public class MetodosPagamentosRepository : IMetodosPagamentosRepository
         }
     }
 
-    public async Task<bool> DeletarMetodoPagamento(int id)
+    public async Task<bool> DeletarMetodoPagamento(string codigo)
     {
         try
         {
-            const string sql = "DELETE FROM metodos_pagamento WHERE id = @Id;";
-            var linhasAfetadas = await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+            const string sql = "DELETE FROM metodos_pagamento WHERE codigo = @Codigo;";
+            var linhasAfetadas = await _session.Connection.ExecuteAsync(sql, new { Codigo = codigo }, transaction: _session.Transaction);
             return linhasAfetadas > 0;
         }
         catch (PostgresException ex)
@@ -114,7 +111,7 @@ public class MetodosPagamentosRepository : IMetodosPagamentosRepository
 
         const string sqlCount = "SELECT COUNT(*) FROM metodos_pagamento WHERE codigo ILIKE @Termo OR descricao ILIKE @Termo;";
         const string sqlData = @"
-            SELECT id, codigo, descricao, ativo
+            SELECT codigo, descricao, ativo
             FROM metodos_pagamento
             WHERE codigo ILIKE @Termo OR descricao ILIKE @Termo
             ORDER BY codigo
@@ -126,17 +123,17 @@ public class MetodosPagamentosRepository : IMetodosPagamentosRepository
         return new ResultadoPaginado<MetodosPagamentos>(itens.ToList(), total, pagina, tamanhoDaPagina);
     }
 
-    public async Task<bool> ExisteCodigo(string codigo, int? ignorarId = null)
+    public async Task<bool> ExisteCodigo(string codigo, string? ignorarCodigo = null)
     {
         var sql = "SELECT COUNT(1) FROM metodos_pagamento WHERE codigo = @Codigo";
-        if (ignorarId.HasValue)
+        if (ignorarCodigo is not null)
         {
-            sql += " AND id != @IgnorarId";
+            sql += " AND codigo != @IgnorarCodigo";
         }
 
         var count = await _session.Connection.ExecuteScalarAsync<int>(
             sql,
-            new { Codigo = codigo, IgnorarId = ignorarId },
+            new { Codigo = codigo, IgnorarCodigo = ignorarCodigo },
             transaction: _session.Transaction
         );
 
@@ -150,7 +147,6 @@ public class MetodosPagamentosRepository : IMetodosPagamentosRepository
         return codigos
             .Where(c => int.TryParse(c, out _))
             .OrderByDescending(c => int.Parse(c))
-            .Select(c => c)
             .FirstOrDefault();
     }
 }

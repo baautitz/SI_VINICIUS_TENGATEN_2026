@@ -29,9 +29,9 @@ public class CondicoesPagamentosRepository : ICondicoesPagamentosRepository
             SELECT cp.id AS Id, cp.descricao AS Descricao, cp.entrada_minima_percentual AS EntradaMinimaPercentual,
                    cp.desconto_percentual AS DescontoPercentual, cp.acrescimo_percentual AS AcrescimoPercentual,
                    cp.multa_percentual AS MultaPercentual, cp.taxa_juros_percentual AS TaxaJurosPercentual, cp.ativo AS Ativo,
-                   mp.id AS MetodoId, mp.id AS Id, mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo
+                   mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo
             FROM condicoes_pagamentos cp
-            INNER JOIN metodos_pagamento mp ON mp.id = cp.metodo_pagamento_id
+            INNER JOIN metodos_pagamento mp ON mp.codigo = cp.metodo_pagamento_codigo
             ORDER BY cp.descricao
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
@@ -47,7 +47,7 @@ public class CondicoesPagamentosRepository : ICondicoesPagamentosRepository
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "MetodoId"
+            splitOn: "Codigo"
         )).ToList();
 
         if (condicoes.Any())
@@ -91,9 +91,9 @@ public class CondicoesPagamentosRepository : ICondicoesPagamentosRepository
             SELECT cp.id AS Id, cp.descricao AS Descricao, cp.entrada_minima_percentual AS EntradaMinimaPercentual,
                    cp.desconto_percentual AS DescontoPercentual, cp.acrescimo_percentual AS AcrescimoPercentual,
                    cp.multa_percentual AS MultaPercentual, cp.taxa_juros_percentual AS TaxaJurosPercentual, cp.ativo AS Ativo,
-                   mp.id AS MetodoId, mp.id AS Id, mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo
+                   mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo
             FROM condicoes_pagamentos cp
-            INNER JOIN metodos_pagamento mp ON mp.id = cp.metodo_pagamento_id
+            INNER JOIN metodos_pagamento mp ON mp.codigo = cp.metodo_pagamento_codigo
             WHERE cp.id = @Id;";
 
         var result = await _session.Connection.QueryAsync<CondicoesPagamentos, MetodosPagamentos, CondicoesPagamentos>(
@@ -106,7 +106,7 @@ public class CondicoesPagamentosRepository : ICondicoesPagamentosRepository
             },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "MetodoId"
+            splitOn: "Codigo"
         );
 
         var condicao = result.SingleOrDefault();
@@ -133,10 +133,10 @@ public class CondicoesPagamentosRepository : ICondicoesPagamentosRepository
         try
         {
             const string sql = @"
-                INSERT INTO condicoes_pagamentos (descricao, metodo_pagamento_id, entrada_minima_percentual,
+                INSERT INTO condicoes_pagamentos (descricao, metodo_pagamento_codigo, entrada_minima_percentual,
                                                  desconto_percentual, acrescimo_percentual, multa_percentual,
                                                  taxa_juros_percentual, ativo)
-                VALUES (@Descricao, @MetodoPagamentoId, @EntradaMinimaPercentual,
+                VALUES (@Descricao, @MetodoPagamentoCodigo, @EntradaMinimaPercentual,
                         @DescontoPercentual, @AcrescimoPercentual, @MultaPercentual,
                         @TaxaJurosPercentual, @Ativo)
                 RETURNING id;";
@@ -146,7 +146,7 @@ public class CondicoesPagamentosRepository : ICondicoesPagamentosRepository
                 new
                 {
                     condicao.Descricao,
-                    MetodoPagamentoId = condicao.MetodoPagamento.Id,
+                    MetodoPagamentoCodigo = condicao.MetodoPagamento.Codigo,
                     condicao.EntradaMinimaPercentual,
                     condicao.DescontoPercentual,
                     condicao.AcrescimoPercentual,
@@ -175,7 +175,7 @@ public class CondicoesPagamentosRepository : ICondicoesPagamentosRepository
         {
             const string sql = @"
                 UPDATE condicoes_pagamentos
-                SET descricao = @Descricao, metodo_pagamento_id = @MetodoPagamentoId,
+                SET descricao = @Descricao, metodo_pagamento_codigo = @MetodoPagamentoCodigo,
                     entrada_minima_percentual = @EntradaMinimaPercentual, desconto_percentual = @DescontoPercentual,
                     acrescimo_percentual = @AcrescimoPercentual, multa_percentual = @MultaPercentual,
                     taxa_juros_percentual = @TaxaJurosPercentual, ativo = @Ativo
@@ -187,7 +187,7 @@ public class CondicoesPagamentosRepository : ICondicoesPagamentosRepository
                 {
                     Id = id,
                     condicao.Descricao,
-                    MetodoPagamentoId = condicao.MetodoPagamento.Id,
+                    MetodoPagamentoCodigo = condicao.MetodoPagamento.Codigo,
                     condicao.EntradaMinimaPercentual,
                     condicao.DescontoPercentual,
                     condicao.AcrescimoPercentual,
@@ -246,16 +246,16 @@ public class CondicoesPagamentosRepository : ICondicoesPagamentosRepository
 
         const string sqlCount = @"
             SELECT COUNT(*) FROM condicoes_pagamentos cp
-            INNER JOIN metodos_pagamento mp ON mp.id = cp.metodo_pagamento_id
+            INNER JOIN metodos_pagamento mp ON mp.codigo = cp.metodo_pagamento_codigo
             WHERE cp.descricao ILIKE @Termo OR mp.descricao ILIKE @Termo;";
 
         const string sqlData = @"
             SELECT cp.id AS Id, cp.descricao AS Descricao, cp.entrada_minima_percentual AS EntradaMinimaPercentual,
                    cp.desconto_percentual AS DescontoPercentual, cp.acrescimo_percentual AS AcrescimoPercentual,
                    cp.multa_percentual AS MultaPercentual, cp.taxa_juros_percentual AS TaxaJurosPercentual, cp.ativo AS Ativo,
-                   mp.id AS MetodoId, mp.id AS Id, mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo
+                   mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo
             FROM condicoes_pagamentos cp
-            INNER JOIN metodos_pagamento mp ON mp.id = cp.metodo_pagamento_id
+            INNER JOIN metodos_pagamento mp ON mp.codigo = cp.metodo_pagamento_codigo
             WHERE cp.descricao ILIKE @Termo OR mp.descricao ILIKE @Termo
             ORDER BY cp.descricao
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
@@ -272,7 +272,7 @@ public class CondicoesPagamentosRepository : ICondicoesPagamentosRepository
             },
             new { Termo = queryTermo, TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "MetodoId"
+            splitOn: "Codigo"
         )).ToList();
 
         if (condicoes.Any())

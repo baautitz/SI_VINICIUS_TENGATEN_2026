@@ -4,7 +4,6 @@ namespace Backend.Core.Features.Pagamentos.Entities;
 
 public class MetodosPagamentos
 {
-    public int Id { get; set; }
     public string Codigo { get; private set; }
     public string Descricao { get; private set; }
     public bool Ativo { get; private set; }

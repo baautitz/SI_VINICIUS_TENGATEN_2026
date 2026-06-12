@@ -12,8 +12,8 @@ public class AtualizarCondicaoPagamentoCommandValidator : AbstractValidator<Atua
             .NotEmpty().WithMessage("Descrição da condição de pagamento é obrigatória.")
             .MaximumLength(150).WithMessage("Descrição da condição de pagamento deve ter no máximo 150 caracteres.");
 
-        RuleFor(x => x.MetodoPagamentoId)
-            .GreaterThan(0).WithMessage("Método de pagamento é obrigatório.");
+        RuleFor(x => x.MetodoPagamentoCodigo)
+            .NotEmpty().WithMessage("Método de pagamento é obrigatório.");
 
         RuleFor(x => x.EntradaMinimaPercentual)
             .InclusiveBetween(0, 100).WithMessage("Entrada mínima percentual deve estar entre 0 e 100.");
@@ -58,7 +58,7 @@ public class AtualizarCondicaoPagamentoCommandValidator : AbstractValidator<Atua
             {
                 if (cmd.Parcelas != null && cmd.Parcelas.Any())
                 {
-                    context.AddFailure("Parcelas", "Uma condição de pagamento à vista (100% de entrada) não deve possuir parcelas.");
+                    context.AddFailure("Parcelas", "Uma condição de pagamento à vista não deve possuir parcelas.");
                 }
                 return;
             }

@@ -32,13 +32,13 @@ interface UseFeatureOrchestratorProps<TDto> {
     page: number,
     pageSize: number,
   ) => Promise<{ itens: TDto[]; totalPages: number; totalItems: number }>;
-  fetchById?: (id: string | number) => Promise<TDto>;
+  fetchById?: (id: string | number, item?: TDto) => Promise<TDto>;
   deleteItem?: (item: TDto) => Promise<void>;
   additionalKeysToInvalidate?: string[][];
 }
 
 export function useFeatureOrchestrator<
-  TDto extends { id?: string | number; sku?: string },
+  TDto extends { id?: string | number; sku?: string; codigo?: string },
 >({
   queryKey,
   initialSearchTerm = "",
@@ -66,10 +66,10 @@ export function useFeatureOrchestrator<
       await fetchPage(list.deferredSearch.trim(), list.page, 50),
   });
 
-  const itemId = list.editingItem?.id ?? list.editingItem?.sku;
+  const itemId = list.editingItem?.id ?? list.editingItem?.sku ?? list.editingItem?.codigo;
   const { data: freshItem, isLoading: isLoadingDetail } = useQuery({
     queryKey: [queryKey, "detail", itemId],
-    queryFn: () => fetchById!(itemId!),
+    queryFn: () => fetchById!(itemId!, list.editingItem ?? undefined),
     enabled: !!itemId && !!fetchById && list.isUpsertOpen,
   });
 

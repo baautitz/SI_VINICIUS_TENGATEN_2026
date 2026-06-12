@@ -20,8 +20,8 @@ public sealed class MetodosPagamentosService : BaseService
     public Task<ResultadoPaginado<MetodosPagamentos>> ObterMetodosPagamentos(int pagina = 1, int tamanhoDaPagina = 20)
         => _metodosRepository.ObterMetodosPagamentos(pagina, tamanhoDaPagina);
 
-    public Task<MetodosPagamentos?> ObterMetodoPagamentoPorId(int id)
-        => _metodosRepository.ObterMetodoPagamentoPorId(id);
+    public Task<MetodosPagamentos?> ObterMetodoPagamentoPorCodigo(string codigo)
+        => _metodosRepository.ObterMetodoPagamentoPorCodigo(codigo);
 
     public Task<ResultadoPaginado<MetodosPagamentos>> PesquisarMetodosPagamentos(string termo, int pagina = 1, int tamanhoDaPagina = 20)
         => _metodosRepository.PesquisarMetodosPagamentos(termo, pagina, tamanhoDaPagina);
@@ -33,7 +33,7 @@ public sealed class MetodosPagamentosService : BaseService
         if (!validation.IsValid)
             return Resultado<MetodosPagamentos>.Falha(validation.ToResultadoErros());
 
-        string codigoFinal = command.Codigo;
+        string? codigoFinal = command.Codigo;
 
         if (string.IsNullOrWhiteSpace(codigoFinal))
         {
@@ -59,14 +59,14 @@ public sealed class MetodosPagamentosService : BaseService
         });
     }
 
-    public async Task<Resultado<MetodosPagamentos>> AtualizarMetodoPagamento(int id, AtualizarMetodoPagamentoCommand command)
+    public async Task<Resultado<MetodosPagamentos>> AtualizarMetodoPagamento(string codigo, AtualizarMetodoPagamentoCommand command)
     {
         var validator = new ResumoAtualizarMetodoPagamentoCommandValidator();
         var validation = await validator.ValidateAsync(command);
         if (!validation.IsValid)
             return Resultado<MetodosPagamentos>.Falha(validation.ToResultadoErros());
 
-        var existente = await _metodosRepository.ObterMetodoPagamentoPorId(id);
+        var existente = await _metodosRepository.ObterMetodoPagamentoPorCodigo(codigo);
         if (existente is null)
             return Resultado<MetodosPagamentos>.Falha(new ResultadoErro("METODO_NAO_ENCONTRADO", "Método de pagamento não encontrado."));
 
@@ -76,11 +76,11 @@ public sealed class MetodosPagamentosService : BaseService
             if (command.Ativo) existente.Ativar();
             else existente.Desativar();
 
-            var atualizado = await _metodosRepository.AtualizarMetodoPagamento(id, existente);
+            var atualizado = await _metodosRepository.AtualizarMetodoPagamento(codigo, existente);
             return Resultado<MetodosPagamentos>.Sucesso(atualizado);
         });
     }
 
-    public Task<bool> DeletarMetodoPagamento(int id)
-        => _metodosRepository.DeletarMetodoPagamento(id);
+    public Task<bool> DeletarMetodoPagamento(string codigo)
+        => _metodosRepository.DeletarMetodoPagamento(codigo);
 }

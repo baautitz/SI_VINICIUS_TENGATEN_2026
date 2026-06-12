@@ -6,10 +6,10 @@ import type { CondicaoPagamento, CondicaoPagamentoFormValues } from "@/features/
 export const metodosApi = {
   list: (search?: string, page = 1, pageSize = 20) =>
     http.get<PaginatedResult<MetodoPagamento>>(`/api/pagamentos/metodos?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`),
-  getById: (id: number) => http.get<MetodoPagamento>(`/api/pagamentos/metodos/${id}`),
+  getById: (codigo: string) => http.get<MetodoPagamento>(`/api/pagamentos/metodos/${encodeURIComponent(codigo)}`),
   create: (data: MetodoPagamentoFormValues) => http.post<Resultado<MetodoPagamento>>("/api/pagamentos/metodos", data),
-  update: (id: number, data: MetodoPagamentoFormValues) => http.put<Resultado<MetodoPagamento>>(`/api/pagamentos/metodos/${id}`, data),
-  delete: (id: number) => http.delete(`/api/pagamentos/metodos/${id}`),
+  update: (codigo: string, data: MetodoPagamentoFormValues) => http.put<Resultado<MetodoPagamento>>(`/api/pagamentos/metodos/${encodeURIComponent(codigo)}`, data),
+  delete: (codigo: string) => http.delete(`/api/pagamentos/metodos/${encodeURIComponent(codigo)}`),
 };
 
 export const condicoesApi = {

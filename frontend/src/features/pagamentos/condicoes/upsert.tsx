@@ -14,6 +14,24 @@ import { FormFieldUI } from "@/components/ui/form-field-ui";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MetodoPagamentoInput } from "@/components/entity-inputs/metodo-pagamento-input";
 import { useForm } from "@tanstack/react-form";
+import { useSelector } from "@tanstack/react-store";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyTitle,
+  EmptyDescription,
+} from "@/components/ui/empty";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import {
   condicaoPagamentoSchema,
@@ -24,7 +42,7 @@ import {
 } from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { condicoesApi } from "@/api/pagamentos";
-import { Plus, Trash2, HelpCircle } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CondicoesUpsertProps {
@@ -107,7 +125,7 @@ function CondicoesUpsertForm({
   const form = useForm({
     defaultValues: {
       descricao: editingItem?.descricao ?? "",
-      metodoPagamentoId: editingItem?.metodoPagamento?.id ?? 0,
+      metodoPagamentoCodigo: editingItem?.metodoPagamento?.codigo ?? "",
       entradaMinimaPercentual: editingItem?.entradaMinimaPercentual ?? 0,
       descontoPercentual: editingItem?.descontoPercentual ?? 0,
       acrescimoPercentual: editingItem?.acrescimoPercentual ?? 0,
@@ -121,7 +139,7 @@ function CondicoesUpsertForm({
       setLocalErrors({});
       const payload = {
         ...value,
-        parcelas: parcelas,
+        parcelas: value.entradaMinimaPercentual === 100 ? [] : parcelas,
       };
 
       const validationResult = condicaoPagamentoSchema.safeParse(payload);
@@ -143,6 +161,11 @@ function CondicoesUpsertForm({
     form.setFieldValue("parcelas", parcelas);
   }, [parcelas, form]);
 
+  const entradaMinimaPercentual = useSelector(
+    form.store,
+    (state) => state.values.entradaMinimaPercentual,
+  );
+
   const totalParcelasPercent = parcelas.reduce(
     (sum, p) => sum + p.percentual,
     0,
@@ -150,7 +173,7 @@ function CondicoesUpsertForm({
 
   const handleAddParcela = () => {
     if (readOnly) return;
-    const currentEntrada = form.state.values.entradaMinimaPercentual ?? 0;
+    const currentEntrada = entradaMinimaPercentual ?? 0;
     const currentTotalPercent = currentEntrada + totalParcelasPercent;
     const nextNum = parcelas.length + 1;
     const remaining = Math.max(0, 100 - currentTotalPercent);
@@ -177,7 +200,7 @@ function CondicoesUpsertForm({
           handleAddParcela();
         },
         options: {
-          enabled: open && !readOnly && form.state.values.entradaMinimaPercentual !== 100,
+          enabled: open && !readOnly && entradaMinimaPercentual !== 100,
           ignoreInputs: false,
         },
       },
@@ -267,9 +290,12 @@ function CondicoesUpsertForm({
       >
         <div className="flex w-full flex-col gap-6">
           <div className="flex flex-col gap-4">
-            <h3 className="border-b pb-2 text-sm font-semibold tracking-wider">
-              Informações Gerais
-            </h3>
+            <div className="flex flex-col gap-2">
+              <h3 className="text-sm font-semibold tracking-wider">
+                Informações Gerais
+              </h3>
+              <Separator />
+            </div>
 
             <div className="flex w-full flex-wrap items-start gap-4">
               {editingItem && (
@@ -308,10 +334,10 @@ function CondicoesUpsertForm({
 
               <div className="w-72 min-w-48 flex-1 shrink-0 md:flex-initial">
                 <form.Field
-                  name="metodoPagamentoId"
+                  name="metodoPagamentoCodigo"
                   validators={{
                     onChange:
-                      condicaoPagamentoBaseSchema.shape.metodoPagamentoId,
+                      condicaoPagamentoBaseSchema.shape.metodoPagamentoCodigo,
                   }}
                 >
                   {(field) => {
@@ -324,7 +350,9 @@ function CondicoesUpsertForm({
                         name={field.name}
                         error={error}
                         initialItem={editingItem?.metodoPagamento ?? null}
-                        onSelectId={(id) => field.handleChange(id ?? 0)}
+                        onSelectCodigo={(codigo) =>
+                          field.handleChange(codigo ?? "")
+                        }
                         disabled={readOnly}
                       />
                     );
@@ -368,22 +396,20 @@ function CondicoesUpsertForm({
                                 min={0}
                                 max={100}
                               />
-                              <div className="flex items-center gap-2 mt-1">
+                              <div className="mt-1 flex items-center gap-2">
                                 <Checkbox
                                   id="a-vista-checkbox"
                                   checked={isChecked}
                                   disabled={readOnly}
                                   onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      field.handleChange(100);
-                                      setParcelas([]);
-                                    } else {
-                                      field.handleChange(0);
-                                    }
+                                    field.handleChange(checked ? 100 : 0);
                                   }}
                                 />
-                                <FieldLabel htmlFor="a-vista-checkbox" className="cursor-pointer text-xs font-semibold select-none">
-                                  À Vista (100% Entrada)
+                                <FieldLabel
+                                  htmlFor="a-vista-checkbox"
+                                  className="cursor-pointer text-xs font-semibold select-none"
+                                >
+                                  À Vista
                                 </FieldLabel>
                               </div>
                             </div>
@@ -505,226 +531,234 @@ function CondicoesUpsertForm({
             </form.Field>
           </div>
 
-          <div className="border-muted-foreground/10 flex w-full flex-col gap-4 border-t pt-6">
-            <div className="flex items-center justify-between border-b pb-2">
-              <h3 className="text-sm font-semibold tracking-wider">Parcelas</h3>
-              {!readOnly && form.state.values.entradaMinimaPercentual !== 100 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleAddParcela}
-                >
-                  <Plus className="mr-1 h-4 w-4" /> Adicionar Parcela{" "}
-                  <KbdGroup>
-                    <Kbd>Alt</Kbd>
-                    <Kbd>P</Kbd>
-                  </KbdGroup>
-                </Button>
-              )}
-            </div>
+          {entradaMinimaPercentual === 100 ? null : (
+            <div className="flex w-full flex-col gap-4">
+              <Separator />
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold tracking-wider">
+                    Parcelas
+                  </h3>
+                  {!readOnly && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleAddParcela}
+                    >
+                      <Plus className="mr-1 h-4 w-4" /> Adicionar Parcela{" "}
+                      <KbdGroup>
+                        <Kbd>Alt</Kbd>
+                        <Kbd>P</Kbd>
+                      </KbdGroup>
+                    </Button>
+                  )}
+                </div>
+                <Separator />
+              </div>
 
-            <form.Field name="parcelas">
-              {(field) => {
-                const error = getFieldError(
-                  field.name,
-                  field.state.meta.errors,
-                );
-                const isAVista = form.state.values.entradaMinimaPercentual === 100;
-                return (
-                  <div className="flex min-h-0 w-full flex-1 flex-col">
-                    <div className="max-h-62.5 flex-1 overflow-y-auto pr-2">
-                      {isAVista ? (
-                        <div className="flex flex-col items-center justify-center rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-6 text-center text-emerald-600">
-                          <span className="text-sm font-medium">Condição de Pagamento À Vista</span>
-                          <span className="text-xs text-muted-foreground mt-1">
-                            Não há parcelas a serem configuradas pois a entrada é de 100%.
-                          </span>
-                        </div>
-                      ) : parcelas.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 text-center">
-                          <HelpCircle className="mb-2 h-8 w-8 opacity-50" />
-                          <span className="text-sm font-medium">
-                            Nenhuma parcela cadastrada
-                          </span>
-                          <span className="text-xs">
-                            Clique no botão acima para adicionar uma parcela.
-                          </span>
-                        </div>
-                      ) : (
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b text-xs font-medium">
-                              <th className="w-20 py-2 text-left">Nº</th>
-                              <th className="py-2 pr-4 text-right">
-                                Percentual (%)
-                              </th>
-                              <th className="py-2 pr-4 text-right">
-                                Prazo (Dias)
-                              </th>
-                              {!readOnly && (
-                                <th className="w-12 py-2 text-right"></th>
-                              )}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {parcelas.map((p, index) => (
-                              <tr
-                                key={index}
-                                className="border-b align-middle last:border-0"
-                              >
-                                <td className="py-2 font-semibold">
-                                  #{p.numeroParcela}
-                                </td>
-                                <td className="py-2 pr-2">
-                                  <div className="flex w-full flex-col gap-1">
-                                    <NumberInput
-                                      inputSize="full"
-                                      value={p.percentual}
-                                      decimals={2}
-                                      inputMode="decimal"
-                                      onNumberChange={(num) =>
-                                        handleUpdateParcelaField(
-                                          index,
-                                          "percentual",
-                                          num,
-                                        )
-                                      }
-                                      className={cn(
-                                        "h-8 text-right font-semibold",
-                                        localErrors[
-                                          `parcelas.${index}.percentual`
-                                        ] &&
-                                          "border-destructive focus-visible:ring-destructive",
-                                      )}
-                                      aria-invalid={
-                                        !!localErrors[
-                                          `parcelas.${index}.percentual`
-                                        ]
-                                      }
-                                      disabled={readOnly}
-                                    />
-                                    {localErrors[
-                                      `parcelas.${index}.percentual`
-                                    ] && (
-                                      <span className="text-destructive mt-1 block text-right text-xs">
-                                        {
+              <form.Field name="parcelas">
+                {(field) => {
+                  const error = getFieldError(
+                    field.name,
+                    field.state.meta.errors,
+                  );
+                  return (
+                    <div className="flex min-h-0 w-full flex-1 flex-col">
+                      <ScrollArea className="max-h-60 flex-1 pr-2">
+                        {parcelas.length === 0 ? (
+                          <Empty>
+                            <EmptyHeader>
+                              <EmptyTitle>
+                                Nenhuma parcela adicionada
+                              </EmptyTitle>
+                              <EmptyDescription>
+                                Clique no botão acima para adicionar uma
+                                parcela.
+                              </EmptyDescription>
+                            </EmptyHeader>
+                          </Empty>
+                        ) : (
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="hover:bg-transparent">
+                                <TableHead className="h-9 w-20 px-2 text-left">
+                                  Nº
+                                </TableHead>
+                                <TableHead className="h-9 px-2 text-right">
+                                  Percentual (%)
+                                </TableHead>
+                                <TableHead className="h-9 px-2 text-right">
+                                  Prazo (Dias)
+                                </TableHead>
+                                {!readOnly && (
+                                  <TableHead className="h-9 w-12 px-2 text-right" />
+                                )}
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {parcelas.map((p, index) => (
+                                <TableRow
+                                  key={index}
+                                  className="hover:bg-transparent"
+                                >
+                                  <TableCell className="px-2 py-2 font-semibold">
+                                    #{p.numeroParcela}
+                                  </TableCell>
+                                  <TableCell className="px-2 py-2">
+                                    <div className="flex w-full flex-col gap-1">
+                                      <NumberInput
+                                        inputSize="full"
+                                        value={p.percentual}
+                                        decimals={2}
+                                        inputMode="decimal"
+                                        onNumberChange={(num) =>
+                                          handleUpdateParcelaField(
+                                            index,
+                                            "percentual",
+                                            num,
+                                          )
+                                        }
+                                        className={cn(
+                                          "h-8 text-right font-semibold",
                                           localErrors[
+                                            `parcelas.${index}.percentual`
+                                          ] &&
+                                            "border-destructive focus-visible:ring-destructive",
+                                        )}
+                                        aria-invalid={
+                                          !!localErrors[
                                             `parcelas.${index}.percentual`
                                           ]
                                         }
-                                      </span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="py-2 pr-2">
-                                  <div className="flex w-full flex-col gap-1">
-                                    <NumberInput
-                                      inputSize="full"
-                                      value={p.prazoDias}
-                                      decimals={0}
-                                      inputMode="numeric"
-                                      onNumberChange={(num) =>
-                                        handleUpdateParcelaField(
-                                          index,
-                                          "prazoDias",
-                                          num,
-                                        )
-                                      }
-                                      className={cn(
-                                        "h-8 text-right font-semibold",
-                                        localErrors[
-                                          `parcelas.${index}.prazoDias`
-                                        ] &&
-                                          "border-destructive focus-visible:ring-destructive",
+                                        disabled={readOnly}
+                                      />
+                                      {localErrors[
+                                        `parcelas.${index}.percentual`
+                                      ] && (
+                                        <span className="text-destructive mt-1 block text-right text-xs">
+                                          {
+                                            localErrors[
+                                              `parcelas.${index}.percentual`
+                                            ]
+                                          }
+                                        </span>
                                       )}
-                                      aria-invalid={
-                                        !!localErrors[
-                                          `parcelas.${index}.prazoDias`
-                                        ]
-                                      }
-                                      disabled={readOnly}
-                                    />
-                                    {localErrors[
-                                      `parcelas.${index}.prazoDias`
-                                    ] && (
-                                      <span className="text-destructive mt-1 block text-right text-xs">
-                                        {
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="px-2 py-2">
+                                    <div className="flex w-full flex-col gap-1">
+                                      <NumberInput
+                                        inputSize="full"
+                                        value={p.prazoDias}
+                                        decimals={0}
+                                        inputMode="numeric"
+                                        onNumberChange={(num) =>
+                                          handleUpdateParcelaField(
+                                            index,
+                                            "prazoDias",
+                                            num,
+                                          )
+                                        }
+                                        className={cn(
+                                          "h-8 text-right font-semibold",
                                           localErrors[
+                                            `parcelas.${index}.prazoDias`
+                                          ] &&
+                                            "border-destructive focus-visible:ring-destructive",
+                                        )}
+                                        aria-invalid={
+                                          !!localErrors[
                                             `parcelas.${index}.prazoDias`
                                           ]
                                         }
-                                      </span>
-                                    )}
-                                  </div>
-                                </td>
-                                {!readOnly && (
-                                  <td className="py-2 text-right">
-                                    <Button
-                                      type="button"
-                                      size="icon"
-                                      variant="ghost"
-                                      className="text-destructive hover:bg-destructive/10 h-8 w-8"
-                                      onClick={() => handleRemoveParcela(index)}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </td>
-                                )}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                                        disabled={readOnly}
+                                      />
+                                      {localErrors[
+                                        `parcelas.${index}.prazoDias`
+                                      ] && (
+                                        <span className="text-destructive mt-1 block text-right text-xs">
+                                          {
+                                            localErrors[
+                                              `parcelas.${index}.prazoDias`
+                                            ]
+                                          }
+                                        </span>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                  {!readOnly && (
+                                    <TableCell className="px-2 py-2 text-right">
+                                      <Button
+                                        type="button"
+                                        size="icon"
+                                        variant="ghost"
+                                        className="text-destructive hover:bg-destructive/10 h-8 w-8"
+                                        onClick={() =>
+                                          handleRemoveParcela(index)
+                                        }
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </TableCell>
+                                  )}
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        )}
+                      </ScrollArea>
+                      {error && (
+                        <FieldError className="mt-2 block">{error}</FieldError>
                       )}
                     </div>
-                    {error && (
-                      <FieldError className="mt-2 block">{error}</FieldError>
-                    )}
-                  </div>
-                );
-              }}
-            </form.Field>
+                  );
+                }}
+              </form.Field>
 
-            <form.Subscribe
-              selector={(state) => state.values.entradaMinimaPercentual}
-            >
-              {(entradaVal) => {
-                const entrada = entradaVal ?? 0;
-                const totalPercent = entrada + totalParcelasPercent;
-                return (
-                  <div className="bg-muted/50 mt-auto flex flex-col gap-2 rounded-lg border p-4">
-                    <div className="flex items-center justify-between">
-                      <span>Entrada Mínima:</span>
-                      <span className="font-semibold">
-                        {entrada.toFixed(2)}%
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Soma das Parcelas:</span>
-                      <span
-                        className={`font-semibold ${totalParcelasPercent > 100 ? "text-destructive" : ""}`}
-                      >
-                        {totalParcelasPercent.toFixed(2)}%
-                      </span>
-                    </div>
-                    <div className="mt-1 flex items-center justify-between border-t pt-2 text-sm font-semibold">
-                      <span>Total (Entrada + Parcelas):</span>
-                      <span
-                        className={
-                          totalPercent === 100
-                            ? "text-emerald-600"
-                            : totalPercent > 100
-                              ? "text-destructive"
-                              : "text-amber-600"
-                        }
-                      >
-                        {totalPercent.toFixed(2)}% / 100.00%
-                      </span>
-                    </div>
+              <Card size="sm" className="bg-muted/50 mt-auto">
+                <CardContent className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <span>Entrada Mínima:</span>
+                    <span className="font-semibold">
+                      {(entradaMinimaPercentual ?? 0).toFixed(2)}%
+                    </span>
                   </div>
-                );
-              }}
-            </form.Subscribe>
-          </div>
+                  <div className="flex items-center justify-between">
+                    <span>Soma das Parcelas:</span>
+                    <span
+                      className={`font-semibold ${
+                        totalParcelasPercent > 100 ? "text-destructive" : ""
+                      }`}
+                    >
+                      {totalParcelasPercent.toFixed(2)}%
+                    </span>
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between text-sm font-semibold">
+                    <span>Total (Entrada + Parcelas):</span>
+                    <span
+                      className={
+                        (entradaMinimaPercentual ?? 0) +
+                          totalParcelasPercent ===
+                        100
+                          ? "text-emerald-600"
+                          : (entradaMinimaPercentual ?? 0) +
+                                totalParcelasPercent >
+                              100
+                            ? "text-destructive"
+                            : "text-amber-600"
+                      }
+                    >
+                      {(
+                        (entradaMinimaPercentual ?? 0) + totalParcelasPercent
+                      ).toFixed(2)}
+                      % / 100.00%
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
 
         {globalError && (

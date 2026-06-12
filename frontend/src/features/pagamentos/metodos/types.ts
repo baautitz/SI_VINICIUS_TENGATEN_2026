@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 export interface MetodoPagamento {
-  id: number;
   codigo: string;
   descricao: string;
   ativo: boolean;

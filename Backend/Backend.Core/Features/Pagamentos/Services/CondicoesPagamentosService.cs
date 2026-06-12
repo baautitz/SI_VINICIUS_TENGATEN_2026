@@ -42,9 +42,9 @@ public sealed class CondicoesPagamentosService : BaseService
         if (!validation.IsValid)
             return Resultado<CondicoesPagamentos>.Falha(validation.ToResultadoErros());
 
-        var metodo = await _metodosRepository.ObterMetodoPagamentoPorId(command.MetodoPagamentoId);
+        var metodo = await _metodosRepository.ObterMetodoPagamentoPorCodigo(command.MetodoPagamentoCodigo);
         if (metodo is null)
-            return Resultado<CondicoesPagamentos>.Falha(new ResultadoErro("METODO_PAGAMENTO_INEXISTENTE", "O método de pagamento informado não existe.", "MetodoPagamentoId"));
+            return Resultado<CondicoesPagamentos>.Falha(new ResultadoErro("METODO_PAGAMENTO_INEXISTENTE", "O método de pagamento informado não existe.", "MetodoPagamentoCodigo"));
 
         if (await _condicoesRepository.ExisteDescricao(command.Descricao))
             return Resultado<CondicoesPagamentos>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe uma condição de pagamento com esta descrição.", "Descricao"));
@@ -92,9 +92,9 @@ public sealed class CondicoesPagamentosService : BaseService
         if (existente is null)
             return Resultado<CondicoesPagamentos>.Falha(new ResultadoErro("CONDICAO_NAO_ENCONTRADA", "Condição de pagamento não encontrada."));
 
-        var metodo = await _metodosRepository.ObterMetodoPagamentoPorId(command.MetodoPagamentoId);
+        var metodo = await _metodosRepository.ObterMetodoPagamentoPorCodigo(command.MetodoPagamentoCodigo);
         if (metodo is null)
-            return Resultado<CondicoesPagamentos>.Falha(new ResultadoErro("METODO_PAGAMENTO_INEXISTENTE", "O método de pagamento informado não existe.", "MetodoPagamentoId"));
+            return Resultado<CondicoesPagamentos>.Falha(new ResultadoErro("METODO_PAGAMENTO_INEXISTENTE", "O método de pagamento informado não existe.", "MetodoPagamentoCodigo"));
 
         if (await _condicoesRepository.ExisteDescricao(command.Descricao, id))
             return Resultado<CondicoesPagamentos>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe outra condição de pagamento com esta descrição.", "Descricao"));

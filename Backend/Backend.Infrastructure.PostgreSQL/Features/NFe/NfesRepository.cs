@@ -78,9 +78,9 @@ public class NfesRepository : INfesRepository
 
             const string pagamentosSql = @"
                 SELECT np.id AS Id, np.indicador_pagamento, np.valor_pagamento, np.nfe_id,
-                       mp.id AS MetodosPagamentoId, mp.codigo, mp.descricao, mp.ativo
+                       mp.codigo AS Codigo, mp.descricao, mp.ativo
                 FROM nfes_pagamentos np
-                JOIN metodos_pagamento mp ON mp.id = np.metodo_pagamento_id
+                JOIN metodos_pagamento mp ON mp.codigo = np.metodo_pagamento_codigo
                 WHERE np.nfe_id = ANY(@Ids);";
 
             var itens = (await _session.Connection.QueryAsync<NfesItens, Skus, UnidadesMedida, NfesItens>(
@@ -105,7 +105,7 @@ public class NfesRepository : INfesRepository
                 },
                 new { Ids = ids },
                 transaction: _session.Transaction,
-                splitOn: "MetodosPagamentoId")).ToList();
+                splitOn: "Codigo")).ToList();
 
             var itensPorNfe = itens.GroupBy(i => i.NfeId).ToDictionary(g => g.Key, g => g.AsEnumerable());
             var pagamentosPorNfe = pagamentos.GroupBy(p => p.NfeId).ToDictionary(g => g.Key, g => g.AsEnumerable());
@@ -157,9 +157,9 @@ public class NfesRepository : INfesRepository
 
         const string pagamentosSql = @"
             SELECT np.id AS Id, np.indicador_pagamento, np.valor_pagamento,
-                   mp.id AS MetodosPagamentoId, mp.codigo, mp.descricao, mp.ativo
+                   mp.codigo AS Codigo, mp.descricao, mp.ativo
             FROM nfes_pagamentos np
-            JOIN metodos_pagamento mp ON mp.id = np.metodo_pagamento_id
+            JOIN metodos_pagamento mp ON mp.codigo = np.metodo_pagamento_codigo
             WHERE np.nfe_id = @Id;";
 
         const string infoSql = @"
@@ -203,7 +203,7 @@ public class NfesRepository : INfesRepository
             (pag, metodo) => { pag.AtualizarMetodosPagamento(metodo); return pag; },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "MetodosPagamentoId");
+            splitOn: "Codigo");
 
         nfe.DefinirPagamentos(pagamentos.ToList());
 
@@ -440,8 +440,8 @@ public class NfesRepository : INfesRepository
     private async Task InserirPagamentos(int nfeId, IEnumerable<NfesPagamentos> pagamentos)
     {
         const string sql = @"
-            INSERT INTO nfes_pagamentos (indicador_pagamento, valor_pagamento, metodo_pagamento_id, nfe_id)
-            VALUES (@IndicadorPagamento, @ValorPagamento, @MetodoPagamentoId, @NfeId);";
+            INSERT INTO nfes_pagamentos (indicador_pagamento, valor_pagamento, metodo_pagamento_codigo, nfe_id)
+            VALUES (@IndicadorPagamento, @ValorPagamento, @MetodoPagamentoCodigo, @NfeId);";
 
         await _session.Connection.ExecuteAsync(
             sql,
@@ -449,7 +449,7 @@ public class NfesRepository : INfesRepository
             {
                 p.IndicadorPagamento,
                 p.ValorPagamento,
-                MetodoPagamentoId = p.MetodosPagamento.Id,
+                MetodoPagamentoCodigo = p.MetodosPagamento.Codigo,
                 NfeId = nfeId
             }),
             transaction: _session.Transaction);

@@ -205,7 +205,7 @@ public class CondicoesPagamentos
         if (EntradaMinimaPercentual == 100m)
         {
             if (_parcelas.Any())
-                throw new DomainException("Uma condição de pagamento à vista (100% de entrada) não deve possuir parcelas.");
+                throw new DomainException("Uma condição de pagamento à vista não deve possuir parcelas.");
             return;
         }
 
