@@ -44,7 +44,7 @@ public class SkuAtributosChavesRepository : ISkuAtributosChavesRepository
             var ids = chaves.Select(x => x.Id).ToArray();
             const string valuesSql = "SELECT id, chave_id AS ChaveId, valor FROM sku_atributos_valores WHERE chave_id = ANY(@Ids);";
 
-            var valores = (await _session.Connection.QueryAsync<ValoresDto>(
+            var valores = (await _session.Connection.QueryAsync<ValoresDbRow>(
                 valuesSql,
                 new { Ids = ids },
                 transaction: _session.Transaction
@@ -79,7 +79,7 @@ public class SkuAtributosChavesRepository : ISkuAtributosChavesRepository
         if (chave is null) return null;
 
         const string valuesSql = "SELECT id, chave_id AS ChaveId, valor FROM sku_atributos_valores WHERE chave_id = @Id;";
-        var valores = await _session.Connection.QueryAsync<ValoresDto>(
+        var valores = await _session.Connection.QueryAsync<ValoresDbRow>(
             valuesSql,
             new { Id = id },
             transaction: _session.Transaction
@@ -206,7 +206,7 @@ public class SkuAtributosChavesRepository : ISkuAtributosChavesRepository
             var ids = chaves.Select(x => x.Id).ToArray();
             const string valuesSql = "SELECT id, chave_id AS ChaveId, valor FROM sku_atributos_valores WHERE chave_id = ANY(@Ids) ORDER BY valor;";
 
-            var valores = (await _session.Connection.QueryAsync<ValoresDto>(
+            var valores = (await _session.Connection.QueryAsync<ValoresDbRow>(
                 valuesSql,
                 new { Ids = ids },
                 transaction: _session.Transaction
@@ -246,10 +246,10 @@ public class SkuAtributosChavesRepository : ISkuAtributosChavesRepository
     {
         if (ids == null || !ids.Any()) return new List<SkuAtributosValores>();
         const string sql = "SELECT id, chave_id AS ChaveId, valor FROM sku_atributos_valores WHERE id = ANY(@Ids);";
-        var dtos = await _session.Connection.QueryAsync<ValoresDto>(
+        var rows = await _session.Connection.QueryAsync<ValoresDbRow>(
             sql, new { Ids = ids.ToArray() }, transaction: _session.Transaction);
-        return dtos.Select(d => new SkuAtributosValores(d.Id, d.ChaveId, d.Valor)).ToList();
+        return rows.Select(d => new SkuAtributosValores(d.Id, d.ChaveId, d.Valor)).ToList();
     }
 
-    private sealed record ValoresDto(int Id, int ChaveId, string Valor);
+    private sealed record ValoresDbRow(int Id, int ChaveId, string Valor);
 }

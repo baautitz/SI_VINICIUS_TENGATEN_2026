@@ -40,12 +40,12 @@ public class SkusRepository : ISkusRepository
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
-        var dtos = (await _session.Connection.QueryAsync<SkuFullDto>(
+        var rows = (await _session.Connection.QueryAsync<SkuFullDbRow>(
             sqlData,
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction)).ToList();
 
-        var skus = dtos.Select(BuildSkuFromFullDto).ToList();
+        var skus = rows.Select(BuildSkuFromFullDbRow).ToList();
 
         if (skus.Count > 0)
         {
@@ -66,7 +66,7 @@ public class SkusRepository : ISkusRepository
             JOIN sku_atributos_chaves sak ON sak.id = sav.chave_id
             WHERE savr.sku = ANY(@Skus);";
 
-        var atributos = (await _session.Connection.QueryAsync<AtributoDto>(
+        var atributos = (await _session.Connection.QueryAsync<AtributoDbRow>(
             atributosSql,
             new { Skus = skuCodes },
             transaction: _session.Transaction)).ToList();
@@ -79,9 +79,9 @@ public class SkusRepository : ISkusRepository
         {
             if (atributosPorSku.TryGetValue(sku.Sku, out var sub))
             {
-                foreach (var atributoDto in sub)
+                foreach (var atributoDbRow in sub)
                 {
-                    sku.AdicionarAtributo(BuildAtributo(atributoDto));
+                    sku.AdicionarAtributo(BuildAtributo(atributoDbRow));
                 }
             }
         }
@@ -117,16 +117,16 @@ public class SkusRepository : ISkusRepository
         var total = await _session.Connection.ExecuteScalarAsync<int>(
             countSql, new { ProdutoId = produtoId }, transaction: _session.Transaction);
 
-        var dtos = (await _session.Connection.QueryAsync<SkuFullDto>(
+        var rows = (await _session.Connection.QueryAsync<SkuFullDbRow>(
             skusSql, 
             new { ProdutoId = produtoId }, 
             transaction: _session.Transaction)).ToList();
 
-        var skus = dtos.Select(BuildSkuFromFullDto).ToList();
+        var skus = rows.Select(BuildSkuFromFullDbRow).ToList();
 
         if (skus.Count > 0)
         {
-            var atributos = (await _session.Connection.QueryAsync<AtributoDto>(
+            var atributos = (await _session.Connection.QueryAsync<AtributoDbRow>(
                 atributosSql,
                 new { ProdutoId = produtoId },
                 transaction: _session.Transaction)).ToList();
@@ -139,9 +139,9 @@ public class SkusRepository : ISkusRepository
             {
                 if (atributosPorSku.TryGetValue(sku.Sku, out var sub))
                 {
-                    foreach (var atributoDto in sub)
+                    foreach (var atributoDbRow in sub)
                     {
-                        var atributo = BuildAtributo(atributoDto);
+                        var atributo = BuildAtributo(atributoDbRow);
                         sku.AdicionarAtributo(atributo);
                     }
                 }
@@ -175,23 +175,23 @@ public class SkusRepository : ISkusRepository
             JOIN sku_atributos_chaves sak ON sak.id = sav.chave_id
             WHERE savr.sku = @Sku;";
 
-        var dto = await _session.Connection.QueryFirstOrDefaultAsync<SkuFullDto>(
+        var row = await _session.Connection.QueryFirstOrDefaultAsync<SkuFullDbRow>(
             skuSql, 
             new { Sku = sku }, 
             transaction: _session.Transaction);
             
-        if (dto is null) return null;
+        if (row is null) return null;
 
-        var skuEntity = BuildSkuFromFullDto(dto);
+        var skuEntity = BuildSkuFromFullDbRow(row);
 
-        var atributos = await _session.Connection.QueryAsync<AtributoDto>(
+        var atributos = await _session.Connection.QueryAsync<AtributoDbRow>(
             atributosSql,
             new { Sku = skuEntity.Sku },
             transaction: _session.Transaction);
 
-        foreach (var atributoDto in atributos)
+        foreach (var atributoDbRow in atributos)
         {
-            var atributo = BuildAtributo(atributoDto);
+            var atributo = BuildAtributo(atributoDbRow);
             skuEntity.AdicionarAtributo(atributo);
         }
 
@@ -289,12 +289,12 @@ public class SkusRepository : ISkusRepository
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
         
-        var dtos = (await _session.Connection.QueryAsync<SkuFullDto>(
+        var rows = (await _session.Connection.QueryAsync<SkuFullDbRow>(
             sqlData,
             new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction)).ToList();
 
-        var skus = dtos.Select(BuildSkuFromFullDto).ToList();
+        var skus = rows.Select(BuildSkuFromFullDbRow).ToList();
 
         if (skus.Count > 0)
         {
@@ -343,37 +343,37 @@ public class SkusRepository : ISkusRepository
         await InserirAtributos(skuCodigo, atributos);
     }
 
-    private static Skus BuildSkuFromFullDto(SkuFullDto dto)
+    private static Skus BuildSkuFromFullDbRow(SkuFullDbRow row)
     {
-        var categoria = new Categorias(dto.CategoriaId, dto.CategoriaNome, dto.CategoriaDescricao);
-        if (!dto.CategoriaAtivo) categoria.Desativar();
+        var categoria = new Categorias(row.CategoriaId, row.CategoriaNome, row.CategoriaDescricao);
+        if (!row.CategoriaAtivo) categoria.Desativar();
 
-        var marca = new Marcas(dto.MarcaId, dto.MarcaNome, dto.MarcaDescricao);
-        if (!dto.MarcaAtivo) marca.Desativar();
+        var marca = new Marcas(row.MarcaId, row.MarcaNome, row.MarcaDescricao);
+        if (!row.MarcaAtivo) marca.Desativar();
 
         var unidadeMedida = new UnidadesMedida(
-            dto.UnidadeMedidaSigla,
-            dto.UnidadeMedidaDescricao,
-            dto.UnidadeMedidaCategoria,
-            dto.PermiteDecimais,
-            dto.UnidadeMedidaAtivo)
+            row.UnidadeMedidaSigla,
+            row.UnidadeMedidaDescricao,
+            row.UnidadeMedidaCategoria,
+            row.PermiteDecimais,
+            row.UnidadeMedidaAtivo)
         {
-            Id = dto.UnidadeMedidaId
+            Id = row.UnidadeMedidaId
         };
 
-        var produto = new Produtos(dto.ProdutoId, dto.ProdutoNome, dto.ProdutoDescricao, categoria, marca, unidadeMedida);
-        if (!dto.ProdutoAtivo) produto.Desativar();
+        var produto = new Produtos(row.ProdutoId, row.ProdutoNome, row.ProdutoDescricao, categoria, marca, unidadeMedida);
+        if (!row.ProdutoAtivo) produto.Desativar();
 
-        var sku = new Skus(dto.Sku, dto.Preco, dto.Estoque, dto.Ativo, dto.GtinEan, dto.CustoMedio, dto.CustoUltimaCompra, produto);
+        var sku = new Skus(row.Sku, row.Preco, row.Estoque, row.Ativo, row.GtinEan, row.CustoMedio, row.CustoUltimaCompra, produto);
         return sku;
     }
 
-    private static SkuAtributosValores BuildAtributo(AtributoDto dto)
+    private static SkuAtributosValores BuildAtributo(AtributoDbRow row)
     {
-        return new SkuAtributosValores(dto.Id, dto.ChaveId, dto.Valor);
+        return new SkuAtributosValores(row.Id, row.ChaveId, row.Valor);
     }
 
-    private sealed class SkuFullDto
+    private sealed class SkuFullDbRow
     {
         public string Sku { get; set; } = null!;
         public string? GtinEan { get; set; }
@@ -406,6 +406,6 @@ public class SkusRepository : ISkusRepository
         public bool PermiteDecimais { get; set; }
     }
 
-    private sealed record SkuDto(string Sku, string? GtinEan, decimal Preco, decimal Estoque, bool Ativo, decimal CustoMedio, decimal CustoUltimaCompra);
-    private sealed record AtributoDto(string Sku, int ChaveId, string Valor, int Id, string Chave);
+    private sealed record SkuDbRow(string Sku, string? GtinEan, decimal Preco, decimal Estoque, bool Ativo, decimal CustoMedio, decimal CustoUltimaCompra);
+    private sealed record AtributoDbRow(string Sku, int ChaveId, string Valor, int Id, string Chave);
 }
