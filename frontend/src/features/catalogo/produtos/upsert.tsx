@@ -119,6 +119,14 @@ function ProdutosUpsertForm({
   readOnly = false,
   onSuccessWithAdjustment,
 }: ProdutosUpsertFormProps) {
+  const isEditMode = !!editingItem;
+
+  const getCustoMedio = (skuCode: string) => {
+    if (!editingItem || !editingItem.skus) return 0;
+    const match = editingItem.skus.find((s) => s.sku === skuCode);
+    return match ? match.custoMedio : 0;
+  };
+
   const [selectedUM, setSelectedUM] = useState<UnidadeMedida | null>(
     editingItem?.unidadeMedida ?? null,
   );
@@ -722,6 +730,21 @@ function ProdutosUpsertForm({
                   </div>
                 )}
               </form.Field>
+
+              {isEditMode && editingItem && editingItem.skus?.[0] && (
+                <div className="flex flex-col gap-1.5">
+                  <FieldLabel className="text-right font-semibold">Custo Médio</FieldLabel>
+                  <Input
+                    value={editingItem.skus[0].custoMedio.toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}
+                    disabled
+                    className="bg-muted/50 h-8 text-right font-semibold"
+                    inputSize="full"
+                  />
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex flex-col gap-4">
@@ -884,6 +907,11 @@ function ProdutosUpsertForm({
                             <TableHead className="text-foreground h-10 px-4 py-2 text-right text-sm font-semibold">
                               Estoque
                             </TableHead>
+                            {isEditMode && (
+                              <TableHead className="text-foreground h-10 px-4 py-2 text-right text-sm font-semibold">
+                                Custo Médio
+                              </TableHead>
+                            )}
                             <TableHead className="text-foreground h-10 px-4 py-2 text-center text-sm font-semibold">
                               Ativo
                             </TableHead>
@@ -1031,6 +1059,16 @@ function ProdutosUpsertForm({
                                   )}
                                 </form.Field>
                               </TableCell>
+                              {isEditMode && (
+                                <TableCell className="px-4 py-2.5 text-right align-middle">
+                                  <span className="text-foreground/90 font-semibold">
+                                    {getCustoMedio(sku.sku || "").toLocaleString("pt-BR", {
+                                      style: "currency",
+                                      currency: "BRL",
+                                    })}
+                                  </span>
+                                </TableCell>
+                              )}
                               <TableCell className="px-4 py-2.5 text-center align-middle">
                                 <form.Field name={`skus[${index}].ativo`}>
                                   {(field) => (

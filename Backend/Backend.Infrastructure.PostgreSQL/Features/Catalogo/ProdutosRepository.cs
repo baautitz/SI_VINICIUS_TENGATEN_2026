@@ -38,23 +38,22 @@ public class ProdutosRepository : IProdutosRepository
         var total = await _session.Connection.ExecuteScalarAsync<int>(
             countSql, transaction: _session.Transaction);
 
-        var produtosDto = (await _session.Connection.QueryAsync<ProdutoDto>(
+        var produtosDbRow = (await _session.Connection.QueryAsync<ProdutoDbRow>(
             querySql,
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction)).ToList();
 
-        var produtos = produtosDto.Select(p => BuildProdutoFromDto(p)).ToList();
+        var produtos = produtosDbRow.Select(p => BuildProdutoFromDbRow(p)).ToList();
 
-        // Carregar SKUs
         if (produtos.Any())
         {
             var ids = produtos.Select(p => p.Id).ToArray();
             const string skusSql = @"
-                SELECT sku, gtin_ean, preco, estoque, ativo, produto_id AS ProdutoId
+                SELECT sku, gtin_ean, preco, estoque, ativo, produto_id AS ProdutoId, custo_medio AS CustoMedio, custo_ultima_compra AS CustoUltimaCompra
                 FROM skus
                 WHERE produto_id = ANY(@Ids);";
 
-            var allSkus = (await _session.Connection.QueryAsync<SkuDto>(
+            var allSkus = (await _session.Connection.QueryAsync<SkuDbRow>(
                 skusSql, new { Ids = ids }, transaction: _session.Transaction)).ToList();
 
             var skuCodes = allSkus.Select(s => s.Sku).ToArray();
@@ -64,7 +63,7 @@ public class ProdutosRepository : IProdutosRepository
                 JOIN sku_atributos_valores sav ON sav.id = savr.valor_id
                 WHERE savr.sku = ANY(@Skus);";
 
-            var atributos = (await _session.Connection.QueryAsync<SkuAtributoDto>(
+            var atributos = (await _session.Connection.QueryAsync<SkuAtributoDbRow>(
                 atributosSql, new { Skus = skuCodes }, transaction: _session.Transaction)).ToList();
 
             var atributosPorSku = atributos.GroupBy(a => a.Sku).ToDictionary(g => g.Key, g => g.AsEnumerable());
@@ -72,9 +71,9 @@ public class ProdutosRepository : IProdutosRepository
             foreach (var produto in produtos)
             {
                 var skus = allSkus.Where(s => s.ProdutoId == produto.Id);
-                foreach (var skuDto in skus)
+                foreach (var skuDbRow in skus)
                 {
-                    produto.AdicionarSku(BuildSkuFromDto(skuDto, atributosPorSku.GetValueOrDefault(skuDto.Sku, Enumerable.Empty<SkuAtributoDto>())));
+                    produto.AdicionarSku(BuildSkuFromDbRow(skuDbRow, atributosPorSku.GetValueOrDefault(skuDbRow.Sku, Enumerable.Empty<SkuAtributoDbRow>())));
                 }
             }
         }
@@ -96,20 +95,20 @@ public class ProdutosRepository : IProdutosRepository
             WHERE p.id = @Id;";
 
         const string skusSql = @"
-            SELECT sku, gtin_ean, preco, estoque, ativo, produto_id AS ProdutoId
+            SELECT sku, gtin_ean, preco, estoque, ativo, produto_id AS ProdutoId, custo_medio AS CustoMedio, custo_ultima_compra AS CustoUltimaCompra
             FROM skus
             WHERE produto_id = @Id;";
 
-        var produtoDto = await _session.Connection.QuerySingleOrDefaultAsync<ProdutoDto>(
+        var produtoDbRow = await _session.Connection.QuerySingleOrDefaultAsync<ProdutoDbRow>(
             produtoSql,
             new { Id = id },
             transaction: _session.Transaction);
 
-        if (produtoDto is null) return null;
+        if (produtoDbRow is null) return null;
 
-        var produto = BuildProdutoFromDto(produtoDto);
+        var produto = BuildProdutoFromDbRow(produtoDbRow);
 
-        var skus = await _session.Connection.QueryAsync<SkuDto>(
+        var skus = await _session.Connection.QueryAsync<SkuDbRow>(
             skusSql, new { Id = id }, transaction: _session.Transaction);
 
         if (skus.Any())
@@ -121,7 +120,7 @@ public class ProdutosRepository : IProdutosRepository
                 JOIN sku_atributos_valores sav ON sav.id = savr.valor_id
                 WHERE savr.sku = ANY(@Skus);";
 
-            var atributos = (await _session.Connection.QueryAsync<SkuAtributoDto>(
+            var atributos = (await _session.Connection.QueryAsync<SkuAtributoDbRow>(
                 atributosSql,
                 new { Skus = skuCodes },
                 transaction: _session.Transaction)).ToList();
@@ -129,9 +128,9 @@ public class ProdutosRepository : IProdutosRepository
             var atributosPorSku = atributos.GroupBy(a => a.Sku)
                 .ToDictionary(g => g.Key, g => g.AsEnumerable());
 
-            foreach (var skuDto in skus)
+            foreach (var skuDbRow in skus)
             {
-                var sku = BuildSkuFromDto(skuDto, atributosPorSku.GetValueOrDefault(skuDto.Sku, Enumerable.Empty<SkuAtributoDto>()));
+                var sku = BuildSkuFromDbRow(skuDbRow, atributosPorSku.GetValueOrDefault(skuDbRow.Sku, Enumerable.Empty<SkuAtributoDbRow>()));
                 produto.AdicionarSku(sku);
             }
         }
@@ -153,15 +152,15 @@ public class ProdutosRepository : IProdutosRepository
             JOIN skus s ON s.produto_id = p.id
             WHERE s.sku = @Sku;";
 
-        var produtoDto = await _session.Connection.QuerySingleOrDefaultAsync<ProdutoDto>(
+        var produtoDbRow = await _session.Connection.QuerySingleOrDefaultAsync<ProdutoDbRow>(
             sql,
             new { Sku = sku },
             transaction: _session.Transaction);
 
-        if (produtoDto is null)
+        if (produtoDbRow is null)
             return null;
 
-        return await ObterProdutoPorId(produtoDto.Id);
+        return await ObterProdutoPorId(produtoDbRow.Id);
     }
     public async Task<Produtos> CriarProduto(Produtos produto)
     {
@@ -284,23 +283,22 @@ public class ProdutosRepository : IProdutosRepository
         var total = await _session.Connection.ExecuteScalarAsync<int>(
             countSql, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
 
-        var produtosDto = (await _session.Connection.QueryAsync<ProdutoDto>(
+        var produtosDbRow = (await _session.Connection.QueryAsync<ProdutoDbRow>(
             querySql,
             new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction)).ToList();
 
-        var produtos = produtosDto.Select(p => BuildProdutoFromDto(p)).ToList();
+        var produtos = produtosDbRow.Select(p => BuildProdutoFromDbRow(p)).ToList();
 
-        // Carregar SKUs
         if (produtos.Any())
         {
             var ids = produtos.Select(p => p.Id).ToArray();
             const string skusSql = @"
-                SELECT sku, gtin_ean, preco, estoque, ativo, produto_id AS ProdutoId
+                SELECT sku, gtin_ean, preco, estoque, ativo, produto_id AS ProdutoId, custo_medio AS CustoMedio, custo_ultima_compra AS CustoUltimaCompra
                 FROM skus
                 WHERE produto_id = ANY(@Ids);";
 
-            var allSkus = (await _session.Connection.QueryAsync<SkuDto>(
+            var allSkus = (await _session.Connection.QueryAsync<SkuDbRow>(
                 skusSql, new { Ids = ids }, transaction: _session.Transaction)).ToList();
 
             var skuCodes = allSkus.Select(s => s.Sku).ToArray();
@@ -310,7 +308,7 @@ public class ProdutosRepository : IProdutosRepository
                 JOIN sku_atributos_valores sav ON sav.id = savr.valor_id
                 WHERE savr.sku = ANY(@Skus);";
 
-            var atributos = (await _session.Connection.QueryAsync<SkuAtributoDto>(
+            var atributos = (await _session.Connection.QueryAsync<SkuAtributoDbRow>(
                 atributosSql, new { Skus = skuCodes }, transaction: _session.Transaction)).ToList();
 
             var atributosPorSku = atributos.GroupBy(a => a.Sku).ToDictionary(g => g.Key, g => g.AsEnumerable());
@@ -318,9 +316,9 @@ public class ProdutosRepository : IProdutosRepository
             foreach (var produto in produtos)
             {
                 var skus = allSkus.Where(s => s.ProdutoId == produto.Id);
-                foreach (var skuDto in skus)
+                foreach (var skuDbRow in skus)
                 {
-                    produto.AdicionarSku(BuildSkuFromDto(skuDto, atributosPorSku.GetValueOrDefault(skuDto.Sku, Enumerable.Empty<SkuAtributoDto>())));
+                    produto.AdicionarSku(BuildSkuFromDbRow(skuDbRow, atributosPorSku.GetValueOrDefault(skuDbRow.Sku, Enumerable.Empty<SkuAtributoDbRow>())));
                 }
             }
         }
@@ -341,38 +339,38 @@ public class ProdutosRepository : IProdutosRepository
         ) > 0;
     }
 
-    private static Produtos BuildProdutoFromDto(ProdutoDto dto)
+    private static Produtos BuildProdutoFromDbRow(ProdutoDbRow row)
     {
-        var categoria = new Categorias(dto.CategoriaId, dto.CategoriaNome, dto.CategoriaDescricao);
-        if (!dto.CategoriaAtivo)
+        var categoria = new Categorias(row.CategoriaId, row.CategoriaNome, row.CategoriaDescricao);
+        if (!row.CategoriaAtivo)
             categoria.Desativar();
 
-        var marca = new Marcas(dto.MarcaId, dto.MarcaNome, dto.MarcaDescricao);
-        if (!dto.MarcaAtivo)
+        var marca = new Marcas(row.MarcaId, row.MarcaNome, row.MarcaDescricao);
+        if (!row.MarcaAtivo)
             marca.Desativar();
 
         var unidadeMedida = new UnidadesMedida(
-            dto.UnidadeMedidaSigla,
-            dto.UnidadeMedidaDescricao,
-            dto.UnidadeMedidaCategoria,
-            dto.PermiteDecimais,
-            dto.UnidadeMedidaAtivo)
+            row.UnidadeMedidaSigla,
+            row.UnidadeMedidaDescricao,
+            row.UnidadeMedidaCategoria,
+            row.PermiteDecimais,
+            row.UnidadeMedidaAtivo)
         {
-            Id = dto.UnidadeMedidaId
+            Id = row.UnidadeMedidaId
         };
 
-        var produto = new Produtos(dto.Id, dto.Produto, dto.Descricao, categoria, marca, unidadeMedida);
-        if (!dto.Ativo)
+        var produto = new Produtos(row.Id, row.Produto, row.Descricao, categoria, marca, unidadeMedida);
+        if (!row.Ativo)
             produto.Desativar();
 
         return produto;
     }
 
-    private static Skus BuildSkuFromDto(SkuDto dto, IEnumerable<SkuAtributoDto> atributos)
+    private static Skus BuildSkuFromDbRow(SkuDbRow row, IEnumerable<SkuAtributoDbRow> atributos)
     {
-        var sku = new Skus(dto.Sku, dto.Preco, dto.Estoque, dto.GtinEan);
+        var sku = new Skus(row.Sku, row.Preco, row.Estoque, row.Ativo, row.GtinEan, row.CustoMedio, row.CustoUltimaCompra);
 
-        if (!dto.Ativo)
+        if (!row.Ativo)
             sku.Desativar();
 
         foreach (var atributo in atributos)
@@ -381,7 +379,7 @@ public class ProdutosRepository : IProdutosRepository
         return sku;
     }
 
-    private sealed class ProdutoDto
+    private sealed class ProdutoDbRow
     {
         public int Id { get; set; }
         public string Produto { get; set; } = null!;
@@ -406,7 +404,7 @@ public class ProdutosRepository : IProdutosRepository
         public bool PermiteDecimais { get; set; }
     }
 
-    private sealed class SkuDto
+    private sealed class SkuDbRow
     {
         public string Sku { get; set; } = null!;
         public string? GtinEan { get; set; }
@@ -414,9 +412,11 @@ public class ProdutosRepository : IProdutosRepository
         public decimal Estoque { get; set; }
         public bool Ativo { get; set; }
         public int ProdutoId { get; set; }
+        public decimal CustoMedio { get; set; }
+        public decimal CustoUltimaCompra { get; set; }
     }
 
-    private sealed class SkuAtributoDto
+    private sealed class SkuAtributoDbRow
     {
         public string Sku { get; set; } = null!;
         public int Id { get; set; }

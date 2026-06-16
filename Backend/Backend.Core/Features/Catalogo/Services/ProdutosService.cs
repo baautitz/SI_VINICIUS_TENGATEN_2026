@@ -119,11 +119,9 @@ public sealed class ProdutosService : BaseService
         {
             var atualizado = await _produtosRepository.AtualizarProduto(id, existente);
             
-            // Get current SKUs to decide what to delete, update or create
             var skusAtuais = await _skusRepository.ObterSkusPorProduto(id);
             var skusParaManter = command.Skus.Where(s => !string.IsNullOrWhiteSpace(s.Sku)).Select(s => s.Sku).ToList();
             
-            // Delete removed SKUs
             foreach (var skuAtual in skusAtuais.Itens)
             {
                 if (!skusParaManter.Contains(skuAtual.Sku))
@@ -152,7 +150,6 @@ public sealed class ProdutosService : BaseService
                 else
                 {
                     var skuExistente = skusAtuais.Itens.First(s => s.Sku == skuCode);
-                    // Maintain current stock and average cost during basic update
                     var skuParaUpdate = new Skus(skuCode, skuCommand.Preco, skuExistente.Estoque, skuCommand.Ativo, skuCommand.GtinEan, skuExistente.CustoMedio, skuExistente.CustoUltimaCompra);
                     skuParaUpdate.DefinirAtributos(sku.Atributos);
                     await _skusRepository.AtualizarSku(skuCode, skuParaUpdate);
