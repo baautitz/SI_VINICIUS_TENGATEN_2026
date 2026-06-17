@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { UpsertDialog } from "@/components/ui/upsert-dialog";
 import { DialogClose } from "@/components/ui/dialog";
-import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { FieldLabel, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NumberInput } from "@/components/ui/number-input";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,6 +35,7 @@ import {
   contasReceberSchema,
   contasReceberBaseSchema,
   ContasReceber,
+  ContasReceberParcela,
   ContasReceberFormValues,
 } from "./types";
 import { Plus, Trash2 } from "lucide-react";
@@ -56,7 +57,7 @@ export function ContasReceberUpsertForm({
   readOnly = false,
 }: ContasReceberUpsertProps) {
   const isEditMode = !!editingItem;
-  const [parcelas, setParcelas] = useState<any[]>(
+  const [parcelas, setParcelas] = useState<ContasReceberParcela[]>(
     editingItem?.contasReceberParcelas?.map((p) => ({
       numeroParcela: p.numeroParcela,
       dataVencimento: p.dataVencimento ? p.dataVencimento.split("T")[0] : "",
@@ -142,10 +143,14 @@ export function ContasReceberUpsertForm({
     form.setFieldValue("parcelas", parcelas);
   }, [parcelas, form]);
 
-  const gerarSugeridas = (valor: any, cond: CondicaoPagamento | null, emissaoStr: any) => {
+  const gerarSugeridas = (
+    valor: number,
+    cond: CondicaoPagamento | null,
+    emissaoStr?: string | null
+  ) => {
     if (!cond || valor <= 0) return;
     const baseDate = emissaoStr ? new Date(emissaoStr + "T12:00:00") : new Date();
-    const sugeridas: any[] = [];
+    const sugeridas: ContasReceberParcela[] = [];
     let count = 1;
 
     const entradaPercent = cond.entradaMinimaPercentual ?? 0;
@@ -221,13 +226,17 @@ export function ContasReceberUpsertForm({
     setParcelas(reindexed);
   };
 
-  const handleUpdateParcela = (index: number, key: string, value: any) => {
+  const handleUpdateParcela = (
+    index: number,
+    key: keyof ContasReceberParcela,
+    value: string | number
+  ) => {
     if (readOnly) return;
     const updated = [...parcelas];
     updated[index] = {
       ...updated[index],
       [key]: value,
-    };
+    } as ContasReceberParcela;
     setParcelas(updated);
   };
 
@@ -361,7 +370,7 @@ export function ContasReceberUpsertForm({
                       inputMode="decimal"
                       onNumberChange={(num) => {
                         field.handleChange(num);
-                        gerarSugeridas(num, condicao, form.getFieldValue("dataEmissao"));
+                        gerarSugeridas(num, condicao, form.getFieldValue("dataEmissao") as string | null);
                       }}
                       disabled={readOnly}
                       className={cn(
@@ -389,7 +398,7 @@ export function ContasReceberUpsertForm({
                         onSelectId={(id) => field.handleChange(id)}
                         onSelectItem={(cond) => {
                           setCondicao(cond);
-                          gerarSugeridas(form.getFieldValue("valorOriginal"), cond, form.getFieldValue("dataEmissao"));
+                          gerarSugeridas(form.getFieldValue("valorOriginal") as number, cond, form.getFieldValue("dataEmissao") as string | null);
                         }}
                         disabled={readOnly}
                       />
@@ -426,7 +435,7 @@ export function ContasReceberUpsertForm({
                       value={field.state.value ?? ""}
                       onChange={(e) => {
                         field.handleChange(e.target.value);
-                        gerarSugeridas(form.getFieldValue("valorOriginal"), condicao, e.target.value);
+                        gerarSugeridas(form.getFieldValue("valorOriginal") as number, condicao, e.target.value);
                       }}
                       disabled={readOnly}
                       inputSize="full"

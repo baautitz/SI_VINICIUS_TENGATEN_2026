@@ -26,14 +26,14 @@ export function ContasPagarFeature() {
     upsertProps,
     deleteDialogProps,
     featureList: list,
-  } = useFeatureOrchestrator<any>({
+  } = useFeatureOrchestrator<ContasPagar>({
     queryKey: "contas-pagar",
     initialSearchTerm: "",
     fetchPage: async (searchTerm, page, pageSize) => {
       const res = await contasPagarApi.list(
         searchTerm || undefined,
         page,
-        pageSize
+        pageSize,
       );
       if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
       return {
@@ -96,13 +96,17 @@ export function ContasPagarFeature() {
         description={
           <p>
             Deseja realmente excluir a conta a pagar{" "}
-            <strong>#{list.itemToDelete?.id} - {list.itemToDelete?.descricao}</strong>? Esta ação não poderá ser desfeita.
+            <strong>
+              #{list.itemToDelete?.id} - {list.itemToDelete?.descricao}
+            </strong>
+            ? Esta ação não poderá ser desfeita.
           </p>
         }
       />
 
       {baixaOpen && baixaContaId && baixaParcela && (
         <BaixaParcelaDialog
+          key={`${baixaContaId}-${baixaParcela.numeroParcela}`}
           open={baixaOpen}
           onOpenChange={setBaixaOpen}
           contaId={baixaContaId}

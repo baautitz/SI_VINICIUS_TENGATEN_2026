@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
@@ -39,19 +39,11 @@ export function BaixaParcelaDialog({
   onSuccess,
 }: BaixaParcelaDialogProps) {
   const queryClient = useQueryClient();
-  const [valorBaixa, setValorBaixa] = useState<number>(0);
-  const [error, setError] = useState<string | null>(null);
-
   const saldoRestante = parcela
     ? Math.max(0, parcela.valorParcela - parcela.valorPagoOuRecebido)
     : 0;
-
-  useEffect(() => {
-    if (parcela) {
-      setValorBaixa(saldoRestante);
-      setError(null);
-    }
-  }, [parcela, saldoRestante]);
+  const [valorBaixa, setValorBaixa] = useState<number>(saldoRestante);
+  const [error, setError] = useState<string | null>(null);
 
   const mutation = useMutation({
     mutationFn: async () => {
