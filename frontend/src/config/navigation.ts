@@ -102,6 +102,16 @@ export const navigationConfig: NavGroup[] = [
       { title: "Condições de Pagamento", url: "/pagamentos/condicoes", icon: Receipt },
     ],
   },
+  {
+    id: "financeiro",
+    title: "Financeiro",
+    icon: Landmark,
+    urlPrefix: "/financeiro",
+    items: [
+      { title: "Contas a Pagar", url: "/financeiro/contas-pagar", icon: Receipt },
+      { title: "Contas a Receber", url: "/financeiro/contas-receber", icon: Landmark },
+    ],
+  },
 ];
 
 export const homeItem = {

@@ -19,8 +19,8 @@ export interface MovimentacaoEstoque {
   status: "RASCUNHO" | "CONFIRMADA" | "CANCELADA";
   observacao?: string | null;
   usuario?: { id: number; nome: string } | null;
-  nfe?: { id: number; chaveAcesso?: string | null } | null;
-  venda?: { id: number } | null;
+  nfeId?: number | null;
+  vendaId?: number | null;
   movimentacoesEstoquesItens: MovimentacaoEstoqueItem[];
   valorTotal?: number; // Opcional, calculado ou enviado pelo backend
 }

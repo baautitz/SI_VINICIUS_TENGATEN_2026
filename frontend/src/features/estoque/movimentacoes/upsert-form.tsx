@@ -228,8 +228,8 @@ export function MovimentacoesUpsertForm({
     defaultValues: {
       tipoMovimentacao: editingItem?.tipoMovimentacao ?? fixedTipo ?? "ENTRADA",
       usuarioId: editingItem?.usuario?.id ?? null,
-      nfeId: editingItem?.nfe?.id ?? null,
-      vendaId: editingItem?.venda?.id ?? null,
+      nfeId: editingItem?.nfeId ?? null,
+      vendaId: editingItem?.vendaId ?? null,
       observacao: editingItem?.observacao ?? "",
       itens: [] as MovimentacaoEstoqueItemFormValues[],
     } as MovimentacaoEstoqueFormValues,
