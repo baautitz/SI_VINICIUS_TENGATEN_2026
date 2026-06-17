@@ -12,6 +12,12 @@ public class ContasPagar
 
     public int Id { get; private set; }
     public string Descricao { get; private set; }
+
+    protected ContasPagar()
+    {
+        Descricao = string.Empty;
+        Fornecedor = null!;
+    }
     public DateTime? DataEmissao { get; private set; }
     public DateTime? DataVencimento { get; private set; }
     public decimal ValorOriginal { get; private set; }

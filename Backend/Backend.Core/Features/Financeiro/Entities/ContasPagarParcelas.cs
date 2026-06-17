@@ -7,6 +7,8 @@ public class ContasPagarParcelas
 {
     public int Id { get; private set; }
     public int ContaPagarId { get; private set; }
+
+    protected ContasPagarParcelas() { }
     public int NumeroParcela { get; private set; }
     public DateTime DataVencimento { get; private set; }
     public decimal ValorParcela { get; private set; }

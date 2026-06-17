@@ -11,6 +11,7 @@ import { DialogClose } from "@/components/ui/dialog";
 import { FieldLabel, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NumberInput } from "@/components/ui/number-input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -429,15 +430,13 @@ export function ContasPagarUpsertForm({
                 {(field) => (
                   <div className="flex flex-col gap-1.5">
                     <FieldLabel>Data Emissão</FieldLabel>
-                    <Input
-                      type="date"
-                      value={field.state.value ?? ""}
-                      onChange={(e) => {
-                        field.handleChange(e.target.value);
-                        gerarSugeridas(form.getFieldValue("valorOriginal") as number, condicao, e.target.value);
+                    <DatePicker
+                      value={field.state.value}
+                      onChange={(val) => {
+                        field.handleChange(val);
+                        gerarSugeridas(form.getFieldValue("valorOriginal") as number, condicao, val);
                       }}
                       disabled={readOnly}
-                      inputSize="full"
                     />
                   </div>
                 )}
@@ -447,12 +446,10 @@ export function ContasPagarUpsertForm({
                 {(field) => (
                   <div className="flex flex-col gap-1.5">
                     <FieldLabel>Data Vencimento Geral (Opcional)</FieldLabel>
-                    <Input
-                      type="date"
-                      value={field.state.value ?? ""}
-                      onChange={(e) => field.handleChange(e.target.value || null)}
+                    <DatePicker
+                      value={field.state.value}
+                      onChange={(val) => field.handleChange(val)}
                       disabled={readOnly}
-                      inputSize="full"
                     />
                   </div>
                 )}
@@ -524,11 +521,10 @@ export function ContasPagarUpsertForm({
                                   #{p.numeroParcela}
                                 </TableCell>
                                 <TableCell className="px-2 py-2 align-middle">
-                                  <Input
-                                    type="date"
+                                  <DatePicker
                                     value={p.dataVencimento}
-                                    onChange={(e) =>
-                                      handleUpdateParcela(index, "dataVencimento", e.target.value)
+                                    onChange={(val) =>
+                                      handleUpdateParcela(index, "dataVencimento", val ?? "")
                                     }
                                     disabled={readOnly || p.status === "PAGO"}
                                     className={cn(
@@ -536,7 +532,6 @@ export function ContasPagarUpsertForm({
                                       localErrors[`parcelas.${index}.dataVencimento`] &&
                                         "border-destructive focus-visible:ring-destructive"
                                     )}
-                                    inputSize="full"
                                   />
                                 </TableCell>
                                 <TableCell className="px-2 py-2 align-middle">
