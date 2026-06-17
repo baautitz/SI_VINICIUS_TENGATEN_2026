@@ -9,7 +9,11 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface DatePickerProps {
   value?: string | null;
@@ -20,7 +24,9 @@ interface DatePickerProps {
   inputSize?: "sm" | "default" | "lg" | "full";
 }
 
-const parseStringDate = (dateStr: string | null | undefined): Date | undefined => {
+const parseStringDate = (
+  dateStr: string | null | undefined,
+): Date | undefined => {
   if (!dateStr) return undefined;
   const parts = dateStr.split("-");
   if (parts.length !== 3) return undefined;
@@ -47,10 +53,22 @@ const parseBrDateToIso = (brDateStr: string): string | null => {
   const year = parseInt(parts[2], 10);
   if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
 
-  if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1000 || year > 9999) return null;
+  if (
+    day < 1 ||
+    day > 31 ||
+    month < 1 ||
+    month > 12 ||
+    year < 1000 ||
+    year > 9999
+  )
+    return null;
 
   const dateObj = new Date(year, month - 1, day);
-  if (dateObj.getFullYear() !== year || dateObj.getMonth() !== month - 1 || dateObj.getDate() !== day) {
+  if (
+    dateObj.getFullYear() !== year ||
+    dateObj.getMonth() !== month - 1 ||
+    dateObj.getDate() !== day
+  ) {
     return null;
   }
 
@@ -62,7 +80,7 @@ const parseBrDateToIso = (brDateStr: string): string | null => {
 const getIsoFromInput = (text: string): string | null => {
   const clean = text.replace(/\D/g, "");
   if (clean.length === 0) return null;
-  if (clean.length < 8) return ""; // incomplete date maps to ""
+  if (clean.length < 8) return "";
   return parseBrDateToIso(text) || "invalid-date";
 };
 
@@ -85,7 +103,6 @@ export function DatePicker({
 
   if (value !== prevValue) {
     setPrevValue(value);
-    // Only synchronize if the parent value is actually different from the current input value's meaning
     if (value !== getIsoFromInput(inputValue)) {
       if (value && value !== "invalid-date") {
         const parsed = parseStringDate(value);
@@ -110,7 +127,7 @@ export function DatePicker({
         setInputValue("");
       }
     },
-    [onChange]
+    [onChange],
   );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,7 +163,12 @@ export function DatePicker({
   const hasError = className?.includes("border-destructive");
 
   return (
-    <div className={cn("flex gap-1 items-center", inputSize === "full" && "w-full")}>
+    <div
+      className={cn(
+        "flex items-center gap-1",
+        inputSize === "full" && "w-full",
+      )}
+    >
       <Input
         type="text"
         value={inputValue}
@@ -157,8 +179,8 @@ export function DatePicker({
         inputMode="numeric"
         className={cn(
           "flex-1",
-          isSmall ? "h-8 text-xs px-2" : "h-10 text-sm px-3",
-          hasError && "border-destructive focus-visible:ring-destructive"
+          isSmall ? "h-8 px-2 text-xs" : "h-10 px-3 text-sm",
+          hasError && "border-destructive focus-visible:ring-destructive",
         )}
       />
       <Popover>
@@ -168,10 +190,8 @@ export function DatePicker({
             variant="outline"
             size="icon"
             disabled={disabled}
-            className={cn(
-              "shrink-0",
-              isSmall ? "h-8 w-8" : "h-10 w-10"
-            )}
+            tabIndex={-1}
+            className={cn("shrink-0", isSmall ? "h-8 w-8" : "h-10 w-10")}
           >
             <CalendarIcon className="h-4 w-4 opacity-50" />
           </Button>

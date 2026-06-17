@@ -249,7 +249,7 @@ public class ContasReceberRepository : IContasReceberRepository
             INSERT INTO contas_receber (descricao, data_emissao, data_vencimento, valor_original, valor_saldo,
                                        status, observacao, criado_em, cliente_id, nfe_id, condicao_pagamento_id, venda_id)
             VALUES (@Descricao, @DataEmissao, @DataVencimento, @ValorOriginal, @ValorSaldo,
-                    @Status, @Observacao, @CriadoEm, @ClienteId, @NfeId, @CondicaoPagamentoId, @VendaId)
+                    @Status::status_titulo_financeiro_enum, @Observacao, @CriadoEm, @ClienteId, @NfeId, @CondicaoPagamentoId, @VendaId)
             RETURNING id;";
 
         var idGerado = await _session.Connection.ExecuteScalarAsync<int>(
@@ -261,7 +261,7 @@ public class ContasReceberRepository : IContasReceberRepository
                 conta.DataVencimento,
                 conta.ValorOriginal,
                 conta.ValorSaldo,
-                conta.Status,
+                Status = conta.Status.ToString(),
                 conta.Observacao,
                 CriadoEm = DateTime.UtcNow,
                 ClienteId = conta.Cliente.Id,
@@ -287,7 +287,7 @@ public class ContasReceberRepository : IContasReceberRepository
         const string sql = @"
             UPDATE contas_receber
             SET descricao = @Descricao, data_emissao = @DataEmissao, data_vencimento = @DataVencimento,
-                valor_original = @ValorOriginal, valor_saldo = @ValorSaldo, status = @Status,
+                valor_original = @ValorOriginal, valor_saldo = @ValorSaldo, status = @Status::status_titulo_financeiro_enum,
                 observacao = @Observacao,
                 cliente_id = @ClienteId, nfe_id = @NfeId, condicao_pagamento_id = @CondicaoPagamentoId, venda_id = @VendaId
             WHERE id = @Id;";
@@ -302,7 +302,7 @@ public class ContasReceberRepository : IContasReceberRepository
                 conta.DataVencimento,
                 conta.ValorOriginal,
                 conta.ValorSaldo,
-                conta.Status,
+                Status = conta.Status.ToString(),
                 conta.Observacao,
                 ClienteId = conta.Cliente.Id,
                 NfeId = conta.NfeId,
@@ -467,7 +467,7 @@ public class ContasReceberRepository : IContasReceberRepository
     {
         const string sql = @"
             INSERT INTO contas_receber_parcelas (numero_parcela, data_vencimento, valor_parcela, valor_recebido, status, conta_receber_id)
-            VALUES (@NumeroParcela, @DataVencimento, @ValorParcela, @ValorRecebido, @Status, @ContaId);";
+            VALUES (@NumeroParcela, @DataVencimento, @ValorParcela, @ValorRecebido, @Status::status_titulo_financeiro_enum, @ContaId);";
 
         await _session.Connection.ExecuteAsync(
             sql,
@@ -477,7 +477,7 @@ public class ContasReceberRepository : IContasReceberRepository
                 p.DataVencimento,
                 p.ValorParcela,
                 p.ValorRecebido,
-                p.Status,
+                Status = p.Status.ToString(),
                 ContaId = contaId
             }),
             transaction: _session.Transaction);
