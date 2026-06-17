@@ -18,8 +18,8 @@ public class ContasReceberParcelas
         if (numeroParcela <= 0)
             throw new DomainException("Número da parcela deve ser maior que zero.");
 
-        if (dataVencimento <= DateTime.UtcNow.Date)
-            throw new DomainException("Data de vencimento deve ser futura.");
+        if (dataVencimento == default)
+            throw new DomainException("Data de vencimento é obrigatória.");
 
         if (valorParcela <= 0)
             throw new DomainException("Valor da parcela deve ser maior que zero.");

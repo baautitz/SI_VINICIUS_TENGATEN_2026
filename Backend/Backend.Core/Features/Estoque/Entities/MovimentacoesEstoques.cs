@@ -3,8 +3,6 @@ using Backend.Core.Common.Helpers;
 using Backend.Core.Features.Acesso.Entities;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Estoque.Entities.Enums;
-using Backend.Core.Features.NFe.Entities;
-using Backend.Core.Features.Vendas.Entities;
 
 namespace Backend.Core.Features.Estoque.Entities;
 
@@ -18,8 +16,8 @@ public class MovimentacoesEstoques
     public StatusMovimentacaoEstoque Status { get; private set; }
     public string? Observacao { get; private set; }
     public Usuarios? Usuario { get; private set; }
-    public Nfes? Nfe { get; private set; }
-    public Venda? Venda { get; private set; }
+    public int? NfeId { get; private set; }
+    public int? VendaId { get; private set; }
     public IReadOnlyCollection<MovimentacoesEstoquesItens> MovimentacoesEstoquesItens => _itens.AsReadOnly();
 
     protected MovimentacoesEstoques() { }
@@ -27,15 +25,15 @@ public class MovimentacoesEstoques
     public MovimentacoesEstoques(
         TipoMovimentacaoEstoque tipoMovimentacao,
         Usuarios? usuario = null,
-        Nfes? nfe = null,
-        Venda? venda = null,
+        int? nfeId = null,
+        int? vendaId = null,
         string? observacao = null,
         StatusMovimentacaoEstoque status = StatusMovimentacaoEstoque.RASCUNHO)
     {
         TipoMovimentacao = tipoMovimentacao;
         Usuario = usuario;
-        Nfe = nfe;
-        Venda = venda;
+        NfeId = nfeId;
+        VendaId = vendaId;
         Observacao = TextNormalization.NormalizeOrNull(observacao);
         DataMovimentacao = DateTime.UtcNow;
         Status = status;
@@ -46,11 +44,11 @@ public class MovimentacoesEstoques
         DateTime dataMovimentacao,
         TipoMovimentacaoEstoque tipoMovimentacao,
         Usuarios? usuario = null,
-        Nfes? nfe = null,
-        Venda? venda = null,
+        int? nfeId = null,
+        int? vendaId = null,
         string? observacao = null,
         StatusMovimentacaoEstoque status = StatusMovimentacaoEstoque.RASCUNHO)
-        : this(tipoMovimentacao, usuario, nfe, venda, observacao, status)
+        : this(tipoMovimentacao, usuario, nfeId, vendaId, observacao, status)
     {
         Id = id;
         DataMovimentacao = dataMovimentacao;

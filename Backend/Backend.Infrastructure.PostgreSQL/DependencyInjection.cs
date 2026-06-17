@@ -4,6 +4,7 @@ using Backend.Core.Features.Acesso.Repositories;
 using Backend.Core.Features.Catalogo.Repositories;
 using Backend.Core.Features.Estoque.Repositories;
 using Backend.Core.Features.Financeiro.Repositories;
+using Backend.Core.Features.Financeiro.Services;
 using Backend.Core.Features.Localizacao.Repositories;
 using Backend.Core.Features.Logistica.Repositories;
 using Backend.Core.Features.Logistica.Services;
@@ -76,6 +77,8 @@ public static class DependencyInjection
 
         services.AddScoped<IContasPagarRepository, ContasPagarRepository>();
         services.AddScoped<IContasReceberRepository, ContasReceberRepository>();
+        services.AddScoped<ContasPagarService>();
+        services.AddScoped<ContasReceberService>();
 
         services.AddScoped<INfesRepository, NfesRepository>();
 

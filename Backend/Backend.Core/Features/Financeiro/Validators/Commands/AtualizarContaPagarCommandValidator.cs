@@ -1,0 +1,47 @@
+using Backend.Core.Features.Financeiro.Commands;
+using FluentValidation;
+using System.Linq;
+
+namespace Backend.Core.Features.Financeiro.Validators.Commands;
+
+public class AtualizarContaPagarCommandValidator : AbstractValidator<AtualizarContaPagarCommand>
+{
+    public AtualizarContaPagarCommandValidator()
+    {
+        RuleFor(x => x.Descricao)
+            .NotEmpty().WithMessage("Descrição da conta a pagar é obrigatória.")
+            .MaximumLength(150).WithMessage("Descrição deve ter no máximo 150 caracteres.");
+
+        RuleFor(x => x.FornecedorId)
+            .GreaterThan(0).WithMessage("Fornecedor é obrigatório.");
+
+        RuleFor(x => x.ValorOriginal)
+            .GreaterThan(0).WithMessage("Valor original deve ser maior que zero.");
+
+        RuleFor(x => x.Parcelas)
+            .NotEmpty().WithMessage("A conta a pagar deve conter ao menos uma parcela.");
+
+        RuleForEach(x => x.Parcelas).ChildRules(parcela =>
+        {
+            parcela.RuleFor(p => p.NumeroParcela)
+                .GreaterThan(0).WithMessage("Número da parcela deve ser maior que zero.");
+
+            parcela.RuleFor(p => p.DataVencimento)
+                .NotEmpty().WithMessage("Data de vencimento da parcela é obrigatória.");
+
+            parcela.RuleFor(p => p.ValorParcela)
+                .GreaterThan(0).WithMessage("Valor da parcela deve ser maior que zero.");
+
+            parcela.RuleFor(p => p.ValorPago)
+                .GreaterThanOrEqualTo(0).WithMessage("Valor pago não pode ser negativo.");
+
+            parcela.RuleFor(p => p.Status)
+                .IsInEnum().WithMessage("Status da parcela é inválido.");
+        });
+
+        RuleFor(x => x)
+            .Must(x => x.Parcelas != null && x.Parcelas.Sum(p => p.ValorParcela) == x.ValorOriginal)
+            .WithMessage("A soma dos valores das parcelas deve ser exatamente igual ao valor original da conta.")
+            .When(x => x.ValorOriginal > 0 && x.Parcelas != null);
+    }
+}

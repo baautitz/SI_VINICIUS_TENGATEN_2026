@@ -3,11 +3,11 @@ using Backend.Core.Common.Results;
 using Backend.Core.Common.Enums;
 using Backend.Core.Common.ValueObjects;
 using Backend.Core.Features.Localizacao.Entities;
-using Backend.Core.Features.Financeiro.DTOs;
 using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.Financeiro.Repositories;
 using Backend.Core.Features.Parceiros.Entities;
+using Backend.Core.Features.Pagamentos.Entities;
 using Backend.Infrastructure.PostgreSQL.Common;
 using Dapper;
 
@@ -31,28 +31,74 @@ public class ContasPagarRepository : IContasPagarRepository
         const string querySql = @"
             SELECT cp.id AS Id, cp.descricao AS Descricao, cp.data_emissao AS DataEmissao, cp.data_vencimento AS DataVencimento, cp.valor_original AS ValorOriginal,
                    cp.valor_saldo AS ValorSaldo, cp.status AS Status, cp.observacao AS Observacao, cp.criado_em AS CriadoEm,
-                   f.id AS FornecedorId, f.tipo_pessoa AS FornecedorTipoPessoa, f.nome_razaosocial AS FornecedorNomeRazaosocial, f.cpf_cnpj AS FornecedorCpfCnpj,
-                   f.rg_ie AS FornecedorRgIe, f.apelido_nomefantasia AS FornecedorApelidoNomeFantasia, f.endereco AS FornecedorEndereco,
-                   f.telefone AS FornecedorTelefone, f.email AS FornecedorEmail, f.ativo AS FornecedorAtivo, f.criado_em AS FornecedorCriadoEm, f.observacao AS FornecedorObservacao,
-                   p.id AS PaisId, p.ddi AS PaisDdi, p.codigo_iso_pais AS PaisCodigoIsoPais, p.codigo_iso_moeda AS PaisCodigoIsoMoeda, p.simbolo_moeda AS PaisSimboloMoeda, p.pais AS PaisNome
+                   cp.nfe_id AS NfeId,
+                   f.id AS Id, f.tipo_pessoa AS TipoPessoa, f.nome_razaosocial AS NomeRazaosocial, f.cpf_cnpj AS CpfCnpj,
+                   f.rg_ie AS RgIe, f.apelido_nomefantasia AS ApelidoNomefantasia, f.endereco AS Endereco,
+                   f.telefone AS Telefone, f.email AS Email, f.ativo AS Ativo, f.criado_em AS CriadoEm, f.observacao AS Observacao,
+                   p.id AS Id, p.ddi AS Ddi, p.codigo_iso_pais AS CodigoIsoPais, p.codigo_iso_moeda AS CodigoIsoMoeda, p.simbolo_moeda AS SimboloMoeda, p.pais AS Pais,
+                   con.id AS Id, con.descricao AS Descricao, con.entrada_minima_percentual AS EntradaMinimaPercentual,
+                   con.desconto_percentual AS DescontoPercentual, con.acrescimo_percentual AS AcrescimoPercentual,
+                   con.multa_percentual AS MultaPercentual, con.taxa_juros_percentual AS TaxaJurosPercentual, con.ativo AS Ativo,
+                   mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo
             FROM contas_pagar cp
             JOIN fornecedores f ON f.id = cp.fornecedor_id
             JOIN paises p ON p.id = f.nacionalidade_id
+            LEFT JOIN condicoes_pagamentos con ON con.id = cp.condicao_pagamento_id
+            LEFT JOIN metodos_pagamento mp ON mp.codigo = con.metodo_pagamento_codigo
             ORDER BY cp.data_vencimento
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(
             countSql, transaction: _session.Transaction);
 
-        var contasDto = (await _session.Connection.QueryAsync<ContaPagarDto>(
+        var contas = (await _session.Connection.QueryAsync<ContasPagar, Fornecedores, Paises, CondicoesPagamentos, MetodosPagamentos, ContasPagar>(
             querySql,
-            new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
-            transaction: _session.Transaction)).ToList();
+            (conta, fornecedor, pais, condicao, metodo) =>
+            {
+                var f = new Fornecedores(
+                    fornecedor.Id,
+                    fornecedor.TipoPessoa,
+                    fornecedor.NomeRazaosocial,
+                    fornecedor.CpfCnpj,
+                    pais,
+                    fornecedor.RgIe,
+                    fornecedor.ApelidoNomefantasia,
+                    fornecedor.Endereco,
+                    null,
+                    fornecedor.Telefone,
+                    fornecedor.Email,
+                    fornecedor.Observacao,
+                    fornecedor.Ativo,
+                    fornecedor.CriadoEm
+                );
 
-        var contas = new List<ContasPagar>();
-        if (contasDto.Count > 0)
+                if (condicao != null && metodo != null)
+                {
+                    condicao.AtualizarMetodoPagamento(metodo);
+                }
+
+                return new ContasPagar(
+                    conta.Id,
+                    conta.Descricao,
+                    conta.ValorOriginal,
+                    f,
+                    conta.DataEmissao,
+                    conta.DataVencimento,
+                    condicao,
+                    conta.NfeId,
+                    conta.Observacao,
+                    conta.CriadoEm,
+                    conta.Status
+                );
+            },
+            new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
+            transaction: _session.Transaction,
+            splitOn: "Id,Id,Id,Codigo"
+        )).ToList();
+
+        if (contas.Count > 0)
         {
-            var ids = contasDto.Select(c => c.Id).ToArray();
+            var ids = contas.Select(c => c.Id).ToArray();
 
             const string parcelasSql = @"
                 SELECT id, conta_pagar_id AS ContaPagarId, numero_parcela AS NumeroParcela, data_vencimento AS DataVencimento,
@@ -68,18 +114,15 @@ public class ContasPagarRepository : IContasPagarRepository
                 .GroupBy(p => p.ContaPagarId)
                 .ToDictionary(g => g.Key, g => g.AsEnumerable());
 
-            foreach (var dto in contasDto)
+            foreach (var conta in contas)
             {
-                var conta = BuildContaPagar(dto);
-                if (parcelasPorConta.TryGetValue(dto.Id, out var sub))
+                if (parcelasPorConta.TryGetValue(conta.Id, out var sub))
                 {
                     foreach (var parcelaDto in sub)
                     {
                         conta.AdicionarParcelaExistente(BuildParcelaPagar(parcelaDto));
                     }
                 }
-
-                contas.Add(conta);
             }
         }
 
@@ -91,13 +134,20 @@ public class ContasPagarRepository : IContasPagarRepository
         const string contaSql = @"
             SELECT cp.id AS Id, cp.descricao AS Descricao, cp.data_emissao AS DataEmissao, cp.data_vencimento AS DataVencimento, cp.valor_original AS ValorOriginal,
                    cp.valor_saldo AS ValorSaldo, cp.status AS Status, cp.observacao AS Observacao, cp.criado_em AS CriadoEm,
-                   f.id AS FornecedorId, f.tipo_pessoa AS FornecedorTipoPessoa, f.nome_razaosocial AS FornecedorNomeRazaosocial, f.cpf_cnpj AS FornecedorCpfCnpj,
-                   f.rg_ie AS FornecedorRgIe, f.apelido_nomefantasia AS FornecedorApelidoNomeFantasia, f.endereco AS FornecedorEndereco,
-                   f.telefone AS FornecedorTelefone, f.email AS FornecedorEmail, f.ativo AS FornecedorAtivo, f.criado_em AS FornecedorCriadoEm, f.observacao AS FornecedorObservacao,
-                   p.id AS PaisId, p.ddi AS PaisDdi, p.codigo_iso_pais AS PaisCodigoIsoPais, p.codigo_iso_moeda AS PaisCodigoIsoMoeda, p.simbolo_moeda AS PaisSimboloMoeda, p.pais AS PaisNome
+                   cp.nfe_id AS NfeId,
+                   f.id AS Id, f.tipo_pessoa AS TipoPessoa, f.nome_razaosocial AS NomeRazaosocial, f.cpf_cnpj AS CpfCnpj,
+                   f.rg_ie AS RgIe, f.apelido_nomefantasia AS ApelidoNomefantasia, f.endereco AS Endereco,
+                   f.telefone AS Telefone, f.email AS Email, f.ativo AS Ativo, f.criado_em AS CriadoEm, f.observacao AS Observacao,
+                   p.id AS Id, p.ddi AS Ddi, p.codigo_iso_pais AS CodigoIsoPais, p.codigo_iso_moeda AS CodigoIsoMoeda, p.simbolo_moeda AS SimboloMoeda, p.pais AS Pais,
+                   con.id AS Id, con.descricao AS Descricao, con.entrada_minima_percentual AS EntradaMinimaPercentual,
+                   con.desconto_percentual AS DescontoPercentual, con.acrescimo_percentual AS AcrescimoPercentual,
+                   con.multa_percentual AS MultaPercentual, con.taxa_juros_percentual AS TaxaJurosPercentual, con.ativo AS Ativo,
+                   mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo
             FROM contas_pagar cp
             JOIN fornecedores f ON f.id = cp.fornecedor_id
             JOIN paises p ON p.id = f.nacionalidade_id
+            LEFT JOIN condicoes_pagamentos con ON con.id = cp.condicao_pagamento_id
+            LEFT JOIN metodos_pagamento mp ON mp.codigo = con.metodo_pagamento_codigo
             WHERE cp.id = @Id;";
 
         const string parcelasSql = @"
@@ -107,14 +157,53 @@ public class ContasPagarRepository : IContasPagarRepository
             WHERE conta_pagar_id = @Id
             ORDER BY numero_parcela;";
 
-        var dto = await _session.Connection.QuerySingleOrDefaultAsync<ContaPagarDto>(
+        var conta = (await _session.Connection.QueryAsync<ContasPagar, Fornecedores, Paises, CondicoesPagamentos, MetodosPagamentos, ContasPagar>(
             contaSql,
+            (conta, fornecedor, pais, condicao, metodo) =>
+            {
+                var f = new Fornecedores(
+                    fornecedor.Id,
+                    fornecedor.TipoPessoa,
+                    fornecedor.NomeRazaosocial,
+                    fornecedor.CpfCnpj,
+                    pais,
+                    fornecedor.RgIe,
+                    fornecedor.ApelidoNomefantasia,
+                    fornecedor.Endereco,
+                    null,
+                    fornecedor.Telefone,
+                    fornecedor.Email,
+                    fornecedor.Observacao,
+                    fornecedor.Ativo,
+                    fornecedor.CriadoEm
+                );
+
+                if (condicao != null && metodo != null)
+                {
+                    condicao.AtualizarMetodoPagamento(metodo);
+                }
+
+                return new ContasPagar(
+                    conta.Id,
+                    conta.Descricao,
+                    conta.ValorOriginal,
+                    f,
+                    conta.DataEmissao,
+                    conta.DataVencimento,
+                    condicao,
+                    conta.NfeId,
+                    conta.Observacao,
+                    conta.CriadoEm,
+                    conta.Status
+                );
+            },
             new { Id = id },
-            transaction: _session.Transaction);
+            transaction: _session.Transaction,
+            splitOn: "Id,Id,Id,Codigo"
+        )).SingleOrDefault();
 
-        if (dto is null) return null;
+        if (conta is null) return null;
 
-        var conta = BuildContaPagar(dto);
         var parcelas = await _session.Connection.QueryAsync<ParcelaPagarDto>(
             parcelasSql, new { Id = id }, transaction: _session.Transaction);
 
@@ -148,14 +237,14 @@ public class ContasPagarRepository : IContasPagarRepository
                 conta.Observacao,
                 CriadoEm = DateTime.UtcNow,
                 FornecedorId = conta.Fornecedor.Id,
-                NfeId = conta.Nfe?.Id,
+                NfeId = conta.NfeId,
                 CondicaoPagamentoId = conta.CondicaoPagamento?.Id
             },
             transaction: _session.Transaction);
 
         await InserirParcelas(idGerado, conta.ContasPagarParcelas);
 
-        var created = new ContasPagar(idGerado, conta.Descricao, conta.ValorOriginal, conta.Fornecedor, conta.DataEmissao, conta.DataVencimento, conta.CondicaoPagamento, conta.Nfe, conta.Observacao, conta.CriadoEm, conta.Status);
+        var created = new ContasPagar(idGerado, conta.Descricao, conta.ValorOriginal, conta.Fornecedor, conta.DataEmissao, conta.DataVencimento, conta.CondicaoPagamento, conta.NfeId, conta.Observacao, conta.CriadoEm, conta.Status);
         foreach (var parcela in conta.ContasPagarParcelas)
         {
             created.AdicionarParcelaExistente(new ContasPagarParcelas(parcela.Id, idGerado, parcela.NumeroParcela, parcela.DataVencimento, parcela.ValorParcela, parcela.ValorPago, parcela.Status));
@@ -187,14 +276,14 @@ public class ContasPagarRepository : IContasPagarRepository
                 conta.Status,
                 conta.Observacao,
                 FornecedorId = conta.Fornecedor.Id,
-                NfeId = conta.Nfe?.Id,
+                NfeId = conta.NfeId,
                 CondicaoPagamentoId = conta.CondicaoPagamento?.Id
             },
             transaction: _session.Transaction);
 
         await ReplacerParcelas(id, conta.ContasPagarParcelas);
 
-        var updated = new ContasPagar(id, conta.Descricao, conta.ValorOriginal, conta.Fornecedor, conta.DataEmissao, conta.DataVencimento, conta.CondicaoPagamento, conta.Nfe, conta.Observacao, conta.CriadoEm, conta.Status);
+        var updated = new ContasPagar(id, conta.Descricao, conta.ValorOriginal, conta.Fornecedor, conta.DataEmissao, conta.DataVencimento, conta.CondicaoPagamento, conta.NfeId, conta.Observacao, conta.CriadoEm, conta.Status);
         foreach (var parcela in conta.ContasPagarParcelas)
         {
             updated.AdicionarParcelaExistente(new ContasPagarParcelas(parcela.Id, id, parcela.NumeroParcela, parcela.DataVencimento, parcela.ValorParcela, parcela.ValorPago, parcela.Status));
@@ -216,57 +305,118 @@ public class ContasPagarRepository : IContasPagarRepository
         return linhasAfetadas > 0;
     }
 
-    public async Task<ResultadoPaginado<ContasPagarResumo>> ObterContasPagarResumo(int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<ContasPagar>> PesquisarContasPagar(string termo, int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
-        const string sql = @"
-            SELECT COUNT(*) FROM contas_pagar;
-
-            SELECT cp.id, f.nome_razaosocial AS fornecedor_nome, cp.descricao,
-                   cp.data_vencimento, cp.valor_saldo, cp.status
-            FROM contas_pagar cp
-            JOIN fornecedores f ON f.id = cp.fornecedor_id
-            ORDER BY cp.data_vencimento
-            LIMIT @TamanhoDaPagina OFFSET @Offset;";
-
-        using var multi = await _session.Connection.QueryMultipleAsync(
-            sql, new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
-            transaction: _session.Transaction);
-
-        var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<ContasPagarResumo>();
-
-        return new ResultadoPaginado<ContasPagarResumo>(itens, total, pagina, tamanhoDaPagina);
-    }
-
-    public async Task<ResultadoPaginado<ContasPagarResumo>> PesquisarContasPagar(string termo, int pagina = 1, int tamanhoDaPagina = 20)
-    {
-        var offset = (pagina - 1) * tamanhoDaPagina;
-
-        const string sql = @"
+        const string countSql = @"
             SELECT COUNT(*)
             FROM contas_pagar cp
             JOIN fornecedores f ON f.id = cp.fornecedor_id
-            WHERE cp.descricao ILIKE @Termo OR f.nome_razaosocial ILIKE @Termo;
+            WHERE cp.descricao ILIKE @Termo OR f.nome_razaosocial ILIKE @Termo;";
 
-            SELECT cp.id, f.nome_razaosocial AS fornecedor_nome, cp.descricao,
-                   cp.data_vencimento, cp.valor_saldo, cp.status
+        const string querySql = @"
+            SELECT cp.id AS Id, cp.descricao AS Descricao, cp.data_emissao AS DataEmissao, cp.data_vencimento AS DataVencimento, cp.valor_original AS ValorOriginal,
+                   cp.valor_saldo AS ValorSaldo, cp.status AS Status, cp.observacao AS Observacao, cp.criado_em AS CriadoEm,
+                   cp.nfe_id AS NfeId,
+                   f.id AS Id, f.tipo_pessoa AS TipoPessoa, f.nome_razaosocial AS NomeRazaosocial, f.cpf_cnpj AS CpfCnpj,
+                   f.rg_ie AS RgIe, f.apelido_nomefantasia AS ApelidoNomefantasia, f.endereco AS Endereco,
+                   f.telefone AS Telefone, f.email AS Email, f.ativo AS Ativo, f.criado_em AS CriadoEm, f.observacao AS Observacao,
+                   p.id AS Id, p.ddi AS Ddi, p.codigo_iso_pais AS CodigoIsoPais, p.codigo_iso_moeda AS CodigoIsoMoeda, p.simbolo_moeda AS SimboloMoeda, p.pais AS Pais,
+                   con.id AS Id, con.descricao AS Descricao, con.entrada_minima_percentual AS EntradaMinimaPercentual,
+                   con.desconto_percentual AS DescontoPercentual, con.acrescimo_percentual AS AcrescimoPercentual,
+                   con.multa_percentual AS MultaPercentual, con.taxa_juros_percentual AS TaxaJurosPercentual, con.ativo AS Ativo,
+                   mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo
             FROM contas_pagar cp
             JOIN fornecedores f ON f.id = cp.fornecedor_id
+            JOIN paises p ON p.id = f.nacionalidade_id
+            LEFT JOIN condicoes_pagamentos con ON con.id = cp.condicao_pagamento_id
+            LEFT JOIN metodos_pagamento mp ON mp.codigo = con.metodo_pagamento_codigo
             WHERE cp.descricao ILIKE @Termo OR f.nome_razaosocial ILIKE @Termo
             ORDER BY cp.data_vencimento
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
-        using var multi = await _session.Connection.QueryMultipleAsync(
-            sql,
-            new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
+        var total = await _session.Connection.ExecuteScalarAsync<int>(
+            countSql,
+            new { Termo = $"%{termo}%" },
             transaction: _session.Transaction);
 
-        var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<ContasPagarResumo>();
+        var contas = (await _session.Connection.QueryAsync<ContasPagar, Fornecedores, Paises, CondicoesPagamentos, MetodosPagamentos, ContasPagar>(
+            querySql,
+            (conta, fornecedor, pais, condicao, metodo) =>
+            {
+                var f = new Fornecedores(
+                    fornecedor.Id,
+                    fornecedor.TipoPessoa,
+                    fornecedor.NomeRazaosocial,
+                    fornecedor.CpfCnpj,
+                    pais,
+                    fornecedor.RgIe,
+                    fornecedor.ApelidoNomefantasia,
+                    fornecedor.Endereco,
+                    null,
+                    fornecedor.Telefone,
+                    fornecedor.Email,
+                    fornecedor.Observacao,
+                    fornecedor.Ativo,
+                    fornecedor.CriadoEm
+                );
 
-        return new ResultadoPaginado<ContasPagarResumo>(itens, total, pagina, tamanhoDaPagina);
+                if (condicao != null && metodo != null)
+                {
+                    condicao.AtualizarMetodoPagamento(metodo);
+                }
+
+                return new ContasPagar(
+                    conta.Id,
+                    conta.Descricao,
+                    conta.ValorOriginal,
+                    f,
+                    conta.DataEmissao,
+                    conta.DataVencimento,
+                    condicao,
+                    conta.NfeId,
+                    conta.Observacao,
+                    conta.CriadoEm,
+                    conta.Status
+                );
+            },
+            new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
+            transaction: _session.Transaction,
+            splitOn: "Id,Id,Id,Codigo"
+        )).ToList();
+
+        if (contas.Count > 0)
+        {
+            var ids = contas.Select(c => c.Id).ToArray();
+
+            const string parcelasSql = @"
+                SELECT id, conta_pagar_id AS ContaPagarId, numero_parcela AS NumeroParcela, data_vencimento AS DataVencimento,
+                       valor_parcela AS ValorParcela, valor_pago AS ValorPago, status AS Status
+                FROM contas_pagar_parcelas
+                WHERE conta_pagar_id = ANY(@Ids)
+                ORDER BY conta_pagar_id, numero_parcela;";
+
+            var parcelas = (await _session.Connection.QueryAsync<ParcelaPagarDto>(
+                parcelasSql, new { Ids = ids }, transaction: _session.Transaction)).ToList();
+
+            var parcelasPorConta = parcelas
+                .GroupBy(p => p.ContaPagarId)
+                .ToDictionary(g => g.Key, g => g.AsEnumerable());
+
+            foreach (var conta in contas)
+            {
+                if (parcelasPorConta.TryGetValue(conta.Id, out var sub))
+                {
+                    foreach (var parcelaDto in sub)
+                    {
+                        conta.AdicionarParcelaExistente(BuildParcelaPagar(parcelaDto));
+                    }
+                }
+            }
+        }
+
+        return new ResultadoPaginado<ContasPagar>(contas, total, pagina, tamanhoDaPagina);
     }
 
     private async Task InserirParcelas(int contaId, IEnumerable<ContasPagarParcelas> parcelas)
@@ -298,89 +448,10 @@ public class ContasPagarRepository : IContasPagarRepository
         await InserirParcelas(contaId, parcelas);
     }
 
-    private static ContasPagar BuildContaPagar(ContaPagarDto dto)
-    {
-        var ddi = new Ddi(dto.PaisDdi);
-        var pais = new Paises(dto.PaisId, ddi, dto.PaisCodigoIsoPais, dto.PaisCodigoIsoMoeda, dto.PaisSimboloMoeda, dto.PaisNome);
-        var tipoPessoa = Enum.Parse<TipoPessoa>(dto.FornecedorTipoPessoa);
-
-        Documento cpfCnpj;
-        if (pais.CodigoIsoPais == "BRA")
-        {
-            if (tipoPessoa == TipoPessoa.FISICA)
-                cpfCnpj = new Cpf(dto.FornecedorCpfCnpj);
-            else
-                cpfCnpj = new Cnpj(dto.FornecedorCpfCnpj);
-        }
-        else
-        {
-            cpfCnpj = new DocumentoGenerico(dto.FornecedorCpfCnpj);
-        }
-        Documento? rgIe = string.IsNullOrWhiteSpace(dto.FornecedorRgIe) ? null : new DocumentoGenerico(dto.FornecedorRgIe);
-
-        var fornecedor = new Fornecedores(
-            dto.FornecedorId,
-            tipoPessoa,
-            dto.FornecedorNomeRazaosocial,
-            cpfCnpj,
-            pais,
-            rgIe,
-            dto.FornecedorApelidoNomeFantasia,
-            dto.FornecedorEndereco,
-            null,
-            dto.FornecedorTelefone,
-            dto.FornecedorEmail,
-            dto.FornecedorObservacao,
-            dto.FornecedorAtivo,
-            dto.FornecedorCriadoEm);
-
-        return new ContasPagar(
-            dto.Id,
-            dto.Descricao,
-            dto.ValorOriginal,
-            fornecedor,
-            dto.DataEmissao,
-            dto.DataVencimento,
-            null,
-            null,
-            dto.Observacao,
-            dto.CriadoEm,
-            dto.Status);
-    }
-
     private static ContasPagarParcelas BuildParcelaPagar(ParcelaPagarDto dto)
     {
         return new ContasPagarParcelas(dto.Id, dto.ContaPagarId, dto.NumeroParcela, dto.DataVencimento, dto.ValorParcela, dto.ValorPago, dto.Status);
     }
-
-    private sealed record ContaPagarDto(
-        int Id,
-        string Descricao,
-        DateTime? DataEmissao,
-        DateTime? DataVencimento,
-        decimal ValorOriginal,
-        decimal ValorSaldo,
-        StatusTituloFinanceiro Status,
-        string? Observacao,
-        DateTime CriadoEm,
-        int FornecedorId,
-        string FornecedorTipoPessoa,
-        string FornecedorNomeRazaosocial,
-        string FornecedorCpfCnpj,
-        string? FornecedorRgIe,
-        string? FornecedorApelidoNomeFantasia,
-        string? FornecedorEndereco,
-        string? FornecedorTelefone,
-        string? FornecedorEmail,
-        bool FornecedorAtivo,
-        DateTime FornecedorCriadoEm,
-        string? FornecedorObservacao,
-        int PaisId,
-        string PaisDdi,
-        string PaisCodigoIsoPais,
-        string PaisCodigoIsoMoeda,
-        string PaisSimboloMoeda,
-        string PaisNome);
 
     private sealed record ParcelaPagarDto(
         int Id,

@@ -2,7 +2,6 @@ using Backend.Core.Common.Exceptions;
 using Backend.Core.Common.Helpers;
 using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.Parceiros.Entities;
-using Backend.Core.Features.NFe.Entities;
 using Backend.Core.Features.Pagamentos.Entities;
 
 namespace Backend.Core.Features.Financeiro.Entities;
@@ -22,12 +21,12 @@ public class ContasPagar
     public DateTime CriadoEm { get; private set; }
 
     public Fornecedores Fornecedor { get; private set; }
-    public Nfes? Nfe { get; private set; }
+    public int? NfeId { get; private set; }
     public CondicoesPagamentos? CondicaoPagamento { get; private set; }
 
     public IReadOnlyCollection<ContasPagarParcelas> ContasPagarParcelas => _parcelas.AsReadOnly();
 
-    public ContasPagar(string descricao, decimal valorOriginal, Fornecedores fornecedor, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, Nfes? nfe = null, string? observacao = null)
+    public ContasPagar(string descricao, decimal valorOriginal, Fornecedores fornecedor, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, int? nfeId = null, string? observacao = null)
     {
         descricao = TextNormalization.Normalize(descricao);
         observacao = TextNormalization.NormalizeOrNull(observacao);
@@ -47,14 +46,14 @@ public class ContasPagar
         DataEmissao = dataEmissao;
         DataVencimento = dataVencimento;
         CondicaoPagamento = condicaoPagamento;
-        Nfe = nfe;
+        NfeId = nfeId;
         Observacao = observacao;
         CriadoEm = DateTime.UtcNow;
         Status = StatusTituloFinanceiro.ABERTO;
     }
 
-    public ContasPagar(int id, string descricao, decimal valorOriginal, Fornecedores fornecedor, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, Nfes? nfe = null, string? observacao = null, DateTime? criadoEm = null, StatusTituloFinanceiro status = StatusTituloFinanceiro.ABERTO)
-        : this(descricao, valorOriginal, fornecedor, dataEmissao, dataVencimento, condicaoPagamento, nfe, observacao)
+    public ContasPagar(int id, string descricao, decimal valorOriginal, Fornecedores fornecedor, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, int? nfeId = null, string? observacao = null, DateTime? criadoEm = null, StatusTituloFinanceiro status = StatusTituloFinanceiro.ABERTO)
+        : this(descricao, valorOriginal, fornecedor, dataEmissao, dataVencimento, condicaoPagamento, nfeId, observacao)
     {
         Id = id;
         CriadoEm = criadoEm ?? DateTime.UtcNow;
@@ -89,7 +88,7 @@ public class ContasPagar
         AtualizarSaldo();
     }
 
-    public void Atualizar(string descricao, decimal valorOriginal, Fornecedores fornecedor, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, Nfes? nfe = null, string? observacao = null)
+    public void Atualizar(string descricao, decimal valorOriginal, Fornecedores fornecedor, IEnumerable<ContasPagarParcelas> parcelas, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, int? nfeId = null, string? observacao = null)
     {
         descricao = TextNormalization.Normalize(descricao);
         observacao = TextNormalization.NormalizeOrNull(observacao);
@@ -101,13 +100,31 @@ public class ContasPagar
             throw new DomainException("Valor original deve ser maior que zero.");
 
         Fornecedor = fornecedor ?? throw new DomainException("Fornecedor é obrigatório para contas a pagar.");
+
+        if (Status == StatusTituloFinanceiro.PAGO || Status == StatusTituloFinanceiro.CANCELADO)
+            throw new DomainException("Não é possível alterar uma conta a pagar que já está paga ou cancelada.");
+
+        if (parcelas == null || !parcelas.Any())
+            throw new DomainException("A conta a pagar deve conter ao menos uma parcela.");
+
+        var totalParcelas = parcelas.Sum(p => p.ValorParcela);
+        if (totalParcelas != valorOriginal)
+            throw new DomainException("A soma das parcelas deve ser exactly igual ao valor original da conta.");
+
         Descricao = descricao;
         ValorOriginal = valorOriginal;
         DataEmissao = dataEmissao;
         DataVencimento = dataVencimento;
         CondicaoPagamento = condicaoPagamento;
-        Nfe = nfe;
+        NfeId = nfeId;
         Observacao = observacao;
+
+        _parcelas.Clear();
+        foreach (var p in parcelas)
+        {
+            _parcelas.Add(p);
+        }
+
         AtualizarSaldo();
     }
 

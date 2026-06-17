@@ -76,7 +76,7 @@ public sealed class MovimentacoesEstoquesService : BaseService
 
         Enum.TryParse<TipoMovimentacaoEstoque>(command.TipoMovimentacao, true, out var tipoMovimentacao);
 
-        var movimentacao = new MovimentacoesEstoques(tipoMovimentacao, usuario, nfe, venda, command.Observacao, StatusMovimentacaoEstoque.RASCUNHO);
+        var movimentacao = new MovimentacoesEstoques(tipoMovimentacao, usuario, command.NfeId, command.VendaId, command.Observacao, StatusMovimentacaoEstoque.RASCUNHO);
 
         foreach (var itemCommand in command.Itens)
         {

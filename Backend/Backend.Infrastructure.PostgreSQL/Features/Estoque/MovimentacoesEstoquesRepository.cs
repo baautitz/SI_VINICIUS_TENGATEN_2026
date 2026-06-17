@@ -5,7 +5,6 @@ using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Estoque.Entities;
 using Backend.Core.Features.Estoque.Entities.Enums;
 using Backend.Core.Features.Estoque.Repositories;
-using Backend.Core.Features.Vendas.Entities;
 using Backend.Infrastructure.PostgreSQL.Common;
 using Dapper;
 using Npgsql;
@@ -31,7 +30,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
             SELECT me.id, me.data_movimentacao, me.tipo_movimentacao, me.status, me.observacao,
                    u.id AS UsuarioId, u.nome AS UsuarioNome, u.cpf_cnpj AS UsuarioCpfCnpj, u.email AS UsuarioEmail,
                    u.telefone AS UsuarioTelefone, u.usuario AS UsuarioUsuario, u.senha AS UsuarioSenha, u.ativo AS UsuarioAtivo,
-                   me.venda_id AS VendaId
+                   me.venda_id AS VendaId, me.nfe_id AS NfeId
             FROM movimentacoes_estoque me
             LEFT JOIN usuarios u ON u.id = me.usuario_id
             ORDER BY me.data_movimentacao DESC
@@ -99,8 +98,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
         var movimentacoes = movimentacoesDbRow.Select(row =>
         {
             var usuario = row.UsuarioId.HasValue ? BuildUsuario(new UsuarioDbRow(row.UsuarioId.Value, row.UsuarioNome ?? string.Empty, row.UsuarioCpfCnpj ?? string.Empty, row.UsuarioEmail ?? string.Empty, row.UsuarioTelefone ?? string.Empty, row.UsuarioUsuario ?? string.Empty, row.UsuarioSenha ?? string.Empty, row.UsuarioAtivo ?? false)) : null;
-            var venda = row.VendaId.HasValue ? new Venda(row.VendaId.Value) : null;
-            var movimentacao = new MovimentacoesEstoques(row.Id, row.DataMovimentacao, row.TipoMovimentacao, usuario, null, venda, row.Observacao, row.Status);
+            var movimentacao = new MovimentacoesEstoques(row.Id, row.DataMovimentacao, row.TipoMovimentacao, usuario, row.NfeId, row.VendaId, row.Observacao, row.Status);
 
             if (itensPorMovimentacao.TryGetValue(row.Id, out var itens))
             {
@@ -122,7 +120,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
             SELECT me.id, me.data_movimentacao, me.tipo_movimentacao, me.status, me.observacao,
                    u.id AS UsuarioId, u.nome AS UsuarioNome, u.cpf_cnpj AS UsuarioCpfCnpj, u.email AS UsuarioEmail,
                    u.telefone AS UsuarioTelefone, u.usuario AS UsuarioUsuario, u.senha AS UsuarioSenha, u.ativo AS UsuarioAtivo,
-                   me.venda_id AS VendaId
+                   me.venda_id AS VendaId, me.nfe_id AS NfeId
             FROM movimentacoes_estoque me
             LEFT JOIN usuarios u ON u.id = me.usuario_id
             WHERE me.id = @Id;";
@@ -160,8 +158,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
         if (row is null) return null;
 
         var usuario = row.UsuarioId.HasValue ? BuildUsuario(new UsuarioDbRow(row.UsuarioId.Value, row.UsuarioNome ?? string.Empty, row.UsuarioCpfCnpj ?? string.Empty, row.UsuarioEmail ?? string.Empty, row.UsuarioTelefone ?? string.Empty, row.UsuarioUsuario ?? string.Empty, row.UsuarioSenha ?? string.Empty, row.UsuarioAtivo ?? false)) : null;
-        var venda = row.VendaId.HasValue ? new Venda(row.VendaId.Value) : null;
-        var movimentacao = new MovimentacoesEstoques(row.Id, row.DataMovimentacao, row.TipoMovimentacao, usuario, null, venda, row.Observacao, row.Status);
+        var movimentacao = new MovimentacoesEstoques(row.Id, row.DataMovimentacao, row.TipoMovimentacao, usuario, row.NfeId, row.VendaId, row.Observacao, row.Status);
 
         var itensDbRow = (await _session.Connection.QueryAsync<MovimentacaoItemDbRow, Produtos, Categorias, Marcas, UnidadesMedida, MovimentacaoItemDbRow>(
             itensSql,
@@ -213,14 +210,14 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
                     Status = movimentacao.Status.ToString(),
                     movimentacao.Observacao,
                     UsuarioId = movimentacao.Usuario?.Id,
-                    NfeId = movimentacao.Nfe?.Id,
-                    VendaId = movimentacao.Venda?.Id
+                    NfeId = movimentacao.NfeId,
+                    VendaId = movimentacao.VendaId
                 },
                 transaction: _session.Transaction);
 
             await InserirItens(idGerado, movimentacao.MovimentacoesEstoquesItens);
 
-            var persisted = new MovimentacoesEstoques(idGerado, movimentacao.DataMovimentacao, movimentacao.TipoMovimentacao, movimentacao.Usuario, movimentacao.Nfe, movimentacao.Venda, movimentacao.Observacao, movimentacao.Status);
+            var persisted = new MovimentacoesEstoques(idGerado, movimentacao.DataMovimentacao, movimentacao.TipoMovimentacao, movimentacao.Usuario, movimentacao.NfeId, movimentacao.VendaId, movimentacao.Observacao, movimentacao.Status);
             foreach (var item in movimentacao.MovimentacoesEstoquesItens)
             {
                 persisted.AdicionarItemExistente(new MovimentacoesEstoquesItens(item.Id, idGerado, item.Sku, item.Quantidade, item.CustoUnitario, item.QuantidadeAnterior, item.CustoMedioAnterior, item.ProdutoNome, item.UnidadeMedidaSigla));
@@ -259,12 +256,12 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
                     Status = movimentacao.Status.ToString(),
                     movimentacao.Observacao,
                     UsuarioId = movimentacao.Usuario?.Id,
-                    NfeId = movimentacao.Nfe?.Id,
-                    VendaId = movimentacao.Venda?.Id
+                    NfeId = movimentacao.NfeId,
+                    VendaId = movimentacao.VendaId
                 },
                 transaction: _session.Transaction);
 
-            var updated = new MovimentacoesEstoques(id, movimentacao.DataMovimentacao, movimentacao.TipoMovimentacao, movimentacao.Usuario, movimentacao.Nfe, movimentacao.Venda, movimentacao.Observacao, movimentacao.Status);
+            var updated = new MovimentacoesEstoques(id, movimentacao.DataMovimentacao, movimentacao.TipoMovimentacao, movimentacao.Usuario, movimentacao.NfeId, movimentacao.VendaId, movimentacao.Observacao, movimentacao.Status);
 
             await ReplacerItens(id, movimentacao.MovimentacoesEstoquesItens);
             foreach (var item in movimentacao.MovimentacoesEstoquesItens)
@@ -313,7 +310,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
             SELECT me.id, me.data_movimentacao, me.tipo_movimentacao, me.status, me.observacao,
                    u.id AS UsuarioId, u.nome AS UsuarioNome, u.cpf_cnpj AS UsuarioCpfCnpj, u.email AS UsuarioEmail,
                    u.telefone AS UsuarioTelefone, u.usuario AS UsuarioUsuario, u.senha AS UsuarioSenha, u.ativo AS UsuarioAtivo,
-                   me.venda_id AS VendaId
+                   me.venda_id AS VendaId, me.nfe_id AS NfeId
             FROM movimentacoes_estoque me
             LEFT JOIN usuarios u ON u.id = me.usuario_id
             WHERE me.observacao ILIKE @Termo OR me.tipo_movimentacao::text ILIKE @Termo OR me.status::text ILIKE @Termo
@@ -382,8 +379,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
         var movimentacoes = movimentacoesDbRow.Select(row =>
         {
             var usuario = row.UsuarioId.HasValue ? BuildUsuario(new UsuarioDbRow(row.UsuarioId.Value, row.UsuarioNome ?? string.Empty, row.UsuarioCpfCnpj ?? string.Empty, row.UsuarioEmail ?? string.Empty, row.UsuarioTelefone ?? string.Empty, row.UsuarioUsuario ?? string.Empty, row.UsuarioSenha ?? string.Empty, row.UsuarioAtivo ?? false)) : null;
-            var venda = row.VendaId.HasValue ? new Venda(row.VendaId.Value) : null;
-            var movimentacao = new MovimentacoesEstoques(row.Id, row.DataMovimentacao, row.TipoMovimentacao, usuario, null, venda, row.Observacao, row.Status);
+            var movimentacao = new MovimentacoesEstoques(row.Id, row.DataMovimentacao, row.TipoMovimentacao, usuario, row.NfeId, row.VendaId, row.Observacao, row.Status);
 
             if (itensPorMovimentacao.TryGetValue(row.Id, out var itens))
             {
@@ -451,7 +447,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
 
     private sealed record MovimentacaoDbRow(int Id, DateTime DataMovimentacao, TipoMovimentacaoEstoque TipoMovimentacao, StatusMovimentacaoEstoque Status, string? Observacao,
         int? UsuarioId, string? UsuarioNome, string? UsuarioCpfCnpj, string? UsuarioEmail, string? UsuarioTelefone,
-        string? UsuarioUsuario, string? UsuarioSenha, bool? UsuarioAtivo, int? VendaId);
+        string? UsuarioUsuario, string? UsuarioSenha, bool? UsuarioAtivo, int? VendaId, int? NfeId);
 
     private sealed class MovimentacaoItemDbRow
     {
