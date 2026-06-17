@@ -59,6 +59,13 @@ const parseBrDateToIso = (brDateStr: string): string | null => {
   return `${year}-${mStr}-${dStr}`;
 };
 
+const getIsoFromInput = (text: string): string | null => {
+  const clean = text.replace(/\D/g, "");
+  if (clean.length === 0) return null;
+  if (clean.length < 8) return ""; // incomplete date maps to ""
+  return parseBrDateToIso(text) || "invalid-date";
+};
+
 export function DatePicker({
   value,
   onChange,
@@ -67,23 +74,31 @@ export function DatePicker({
   className,
   inputSize = "full",
 }: DatePickerProps) {
-  const [inputValue, setInputValue] = React.useState("");
-
-  const selectedDate = React.useMemo(() => parseStringDate(value), [value]);
-
-  // Sync internal state when parent value changes
-  React.useEffect(() => {
+  const [prevValue, setPrevValue] = React.useState(value);
+  const [inputValue, setInputValue] = React.useState(() => {
     if (value && value !== "invalid-date") {
       const parsed = parseStringDate(value);
-      if (parsed) {
-        setInputValue(format(parsed, "dd/MM/yyyy"));
-        return;
+      return parsed ? format(parsed, "dd/MM/yyyy") : "";
+    }
+    return "";
+  });
+
+  if (value !== prevValue) {
+    setPrevValue(value);
+    // Only synchronize if the parent value is actually different from the current input value's meaning
+    if (value !== getIsoFromInput(inputValue)) {
+      if (value && value !== "invalid-date") {
+        const parsed = parseStringDate(value);
+        if (parsed) {
+          setInputValue(format(parsed, "dd/MM/yyyy"));
+        }
+      } else if (!value) {
+        setInputValue("");
       }
     }
-    if (!value) {
-      setInputValue("");
-    }
-  }, [value]);
+  }
+
+  const selectedDate = React.useMemo(() => parseStringDate(value), [value]);
 
   const handleSelect = React.useCallback(
     (date: Date | undefined) => {
