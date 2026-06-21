@@ -17,14 +17,9 @@ export function useFeatureHotkeys({
         hotkey: "Alt+N",
         callback: (e: KeyboardEvent) => {
           if (typeof document !== "undefined" && listRef.current) {
-            const isHidden = !!listRef.current.closest('[aria-hidden="true"]');
-            if (isHidden) return;
-
-            const dialogs = document.querySelectorAll('[role="dialog"]');
-            const topDialog =
-              dialogs.length > 0 ? dialogs[dialogs.length - 1] : null;
+            const anyDialogOpen = document.querySelectorAll('[role="dialog"]').length > 0;
             const myDialog = listRef.current.closest('[role="dialog"]');
-            if (dialogs.length > 0 && myDialog !== topDialog) return;
+            if (anyDialogOpen && !myDialog) return;
           }
           e.preventDefault();
           onAdd?.();

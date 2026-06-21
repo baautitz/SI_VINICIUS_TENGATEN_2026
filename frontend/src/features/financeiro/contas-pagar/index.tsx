@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { ContasPagarList } from "./list";
-import { ContasPagarUpsertForm } from "./upsert-form";
+import { ContasPagarUpsertForm } from "./upsert";
 import { ContasPagar, ContasPagarParcela } from "./types";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { BaixaParcelaDialog } from "../components/baixa-parcela-dialog";
@@ -14,6 +14,7 @@ export * from "./types";
 export function ContasPagarFeature() {
   const [baixaOpen, setBaixaOpen] = useState(false);
   const [baixaContaId, setBaixaContaId] = useState<number | null>(null);
+  const [baixaIsEstorno, setBaixaIsEstorno] = useState(false);
   const [baixaParcela, setBaixaParcela] = useState<{
     numeroParcela: number;
     valorParcela: number;
@@ -58,6 +59,19 @@ export function ContasPagarFeature() {
       valorPagoOuRecebido: parcela.valorPago,
       status: parcela.status,
     });
+    setBaixaIsEstorno(false);
+    setBaixaOpen(true);
+  };
+
+  const handleEstorno = (contaId: number, parcela: ContasPagarParcela) => {
+    setBaixaContaId(contaId);
+    setBaixaParcela({
+      numeroParcela: parcela.numeroParcela,
+      valorParcela: parcela.valorParcela,
+      valorPagoOuRecebido: parcela.valorPago,
+      status: parcela.status,
+    });
+    setBaixaIsEstorno(true);
     setBaixaOpen(true);
   };
 
@@ -87,6 +101,8 @@ export function ContasPagarFeature() {
         <ContasPagarUpsertForm
           key={list.editingItem?.id ?? "new"}
           {...upsertProps}
+          onBaixa={handleBaixa}
+          onEstorno={handleEstorno}
         />
       )}
 
@@ -106,12 +122,13 @@ export function ContasPagarFeature() {
 
       {baixaOpen && baixaContaId && baixaParcela && (
         <BaixaParcelaDialog
-          key={`${baixaContaId}-${baixaParcela.numeroParcela}`}
+          key={`${baixaContaId}-${baixaParcela.numeroParcela}-${baixaIsEstorno}`}
           open={baixaOpen}
           onOpenChange={setBaixaOpen}
           contaId={baixaContaId}
           parcela={baixaParcela}
           tipo="PAGAR"
+          isEstorno={baixaIsEstorno}
           onSuccess={() => {
             // Recarrega listagens e detalhes ativos invalidando queryKey
           }}

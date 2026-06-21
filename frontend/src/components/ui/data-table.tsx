@@ -61,6 +61,7 @@ interface DataTableProps<TData, TValue> {
   onDeleteRow?: (row: TData) => void;
 
   searchInputRef?: React.RefObject<HTMLInputElement | null>;
+  hideSearchKbd?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -84,6 +85,7 @@ export function DataTable<TData, TValue>({
   onEditRow,
   onDeleteRow,
   searchInputRef,
+  hideSearchKbd,
 }: DataTableProps<TData, TValue>) {
   "use no memo";
 
@@ -389,12 +391,14 @@ export function DataTable<TData, TValue>({
                   <Search className="size-4 text-muted-foreground" />
                 </InputGroupAddon>
 
-                <InputGroupAddon align="inline-end">
-                  <KbdGroup>
-                    <Kbd>Alt</Kbd>
-                    <Kbd>Q</Kbd>
-                  </KbdGroup>
-                </InputGroupAddon>
+                {!hideSearchKbd && (
+                  <InputGroupAddon align="inline-end">
+                    <KbdGroup>
+                      <Kbd>Alt</Kbd>
+                      <Kbd>Q</Kbd>
+                    </KbdGroup>
+                  </InputGroupAddon>
+                )}
               </InputGroup>
             </div>
           )}

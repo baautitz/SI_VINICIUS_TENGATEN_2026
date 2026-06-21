@@ -47,8 +47,15 @@ public class ContasPagarParcelas
         if (valor <= 0)
             throw new DomainException("Valor de pagamento deve ser maior que zero.");
 
+        if (Status == StatusTituloFinanceiro.PAGO)
+            throw new DomainException("Não é possível pagar uma parcela que já está quitada.");
+
         if (Status == StatusTituloFinanceiro.CANCELADO)
             throw new DomainException("Não é possível pagar uma parcela cancelada.");
+
+        var saldoRestante = ValorParcela - ValorPago;
+        if (valor > saldoRestante)
+            throw new DomainException($"O valor informado (R$ {valor:F2}) excede o saldo restante da parcela (R$ {saldoRestante:F2}).");
 
         ValorPago += valor;
 
@@ -56,6 +63,29 @@ public class ContasPagarParcelas
         {
             Status = StatusTituloFinanceiro.PAGO;
             ValorPago = ValorParcela;
+        }
+        else
+        {
+            Status = StatusTituloFinanceiro.PARCIAL;
+        }
+    }
+
+    public void EstornarPagamento(decimal valor)
+    {
+        if (valor <= 0)
+            throw new DomainException("Valor de estorno deve ser maior que zero.");
+
+        if (valor > ValorPago)
+            throw new DomainException($"O valor do estorno (R$ {valor:F2}) não pode ser maior do que o valor já pago (R$ {ValorPago:F2}).");
+
+        if (Status == StatusTituloFinanceiro.CANCELADO)
+            throw new DomainException("Não é possível estornar uma parcela cancelada.");
+
+        ValorPago -= valor;
+
+        if (ValorPago == 0)
+        {
+            Status = StatusTituloFinanceiro.ABERTO;
         }
         else
         {

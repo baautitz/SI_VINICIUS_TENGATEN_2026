@@ -89,7 +89,8 @@ export function MovimentacoesUpsertForm({
           custoMedio: i.custoMedioAnterior ?? i.sku.custoMedio,
           custoUltimaCompra: Number(i.sku.custoUltimaCompra),
           unidadeMedidaSigla: i.unidadeMedidaSigla,
-          permiteDecimais: i.sku.produto?.unidadeMedida?.permiteDecimais ?? false,
+          permiteDecimais:
+            i.sku.produto?.unidadeMedida?.permiteDecimais ?? false,
         };
       }) ?? []
     );
@@ -471,7 +472,7 @@ export function MovimentacoesUpsertForm({
         >
           <FieldGroup className="flex flex-row flex-wrap items-end gap-4">
             {editingItem && (
-              <div className="flex w-fit flex-col gap-1.5">
+              <div className="flex w-fit flex-col gap-2">
                 <FieldLabel>Código</FieldLabel>
                 <div className="bg-muted/50 text-foreground/80 flex h-8 items-center rounded-lg border px-3 font-mono text-sm">
                   {editingItem.id}
@@ -484,7 +485,7 @@ export function MovimentacoesUpsertForm({
             >
               {([tipoMovimentacao]) => (
                 <>
-                  <div className="flex w-48 flex-col gap-1.5">
+                  <div className="flex w-48 flex-col gap-2">
                     <form.Field name="tipoMovimentacao">
                       {(field) => (
                         <Field>
@@ -540,7 +541,7 @@ export function MovimentacoesUpsertForm({
                   </div>
 
                   {tipoMovimentacao === "VENDA" && (
-                    <div className="flex w-48 flex-col gap-1.5">
+                    <div className="flex w-48 flex-col gap-2">
                       <form.Field name="vendaId">
                         {(field) => {
                           const err =
@@ -563,7 +564,7 @@ export function MovimentacoesUpsertForm({
                     </div>
                   )}
 
-                  <div className="flex w-48 flex-col gap-1.5">
+                  <div className="flex w-48 flex-col gap-2">
                     <form.Field name="nfeId">
                       {(field) => (
                         <FormFieldUI

@@ -480,7 +480,7 @@ function ProdutosUpsertForm({
           <div className="flex w-full flex-wrap items-start gap-4">
             {editingItem && (
               <div className="w-fit">
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-2">
                   <FieldLabel>Código</FieldLabel>
                   <Input
                     value={editingItem.id}
@@ -719,7 +719,7 @@ function ProdutosUpsertForm({
 
               <form.Field name="skus[0].estoque">
                 {(field) => (
-                  <div className="flex flex-col gap-1.5">
+                  <div className="flex flex-col gap-2">
                     <FieldLabel>Estoque Atual</FieldLabel>
                     <Input
                       value={field.state.value}
@@ -732,13 +732,18 @@ function ProdutosUpsertForm({
               </form.Field>
 
               {isEditMode && editingItem && editingItem.skus?.[0] && (
-                <div className="flex flex-col gap-1.5">
-                  <FieldLabel className="text-right font-semibold">Custo Médio</FieldLabel>
+                <div className="flex flex-col gap-2">
+                  <FieldLabel className="text-right font-semibold">
+                    Custo Médio
+                  </FieldLabel>
                   <Input
-                    value={editingItem.skus[0].custoMedio.toLocaleString("pt-BR", {
-                      style: "currency",
-                      currency: "BRL",
-                    })}
+                    value={editingItem.skus[0].custoMedio.toLocaleString(
+                      "pt-BR",
+                      {
+                        style: "currency",
+                        currency: "BRL",
+                      },
+                    )}
                     disabled
                     className="bg-muted/50 h-8 text-right font-semibold"
                     inputSize="full"
@@ -755,7 +760,7 @@ function ProdutosUpsertForm({
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-8 gap-1.5"
+                    className="h-8 gap-2"
                     onClick={() => {
                       const newOptions = [
                         ...options,
@@ -876,7 +881,7 @@ function ProdutosUpsertForm({
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="text-muted-foreground text-md h-7 gap-1.5 px-2"
+                          className="text-muted-foreground text-md h-7 gap-2 px-2"
                           onClick={() => setCopyPriceDialogOpen(true)}
                         >
                           Replicar Preço Focado
@@ -1062,7 +1067,9 @@ function ProdutosUpsertForm({
                               {isEditMode && (
                                 <TableCell className="px-4 py-2.5 text-right align-middle">
                                   <span className="text-foreground/90 font-semibold">
-                                    {getCustoMedio(sku.sku || "").toLocaleString("pt-BR", {
+                                    {getCustoMedio(
+                                      sku.sku || "",
+                                    ).toLocaleString("pt-BR", {
                                       style: "currency",
                                       currency: "BRL",
                                     })}

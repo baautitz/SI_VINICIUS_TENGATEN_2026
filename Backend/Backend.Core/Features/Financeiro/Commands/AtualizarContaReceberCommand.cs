@@ -18,7 +18,6 @@ public record AtualizarContaReceberCommand(
     int? NfeId,
     int? VendaId,
     DateTime? DataEmissao,
-    DateTime? DataVencimento,
     decimal ValorOriginal,
     int? CondicaoPagamentoId,
     string? Observacao,

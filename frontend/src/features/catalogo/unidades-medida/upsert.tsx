@@ -152,14 +152,14 @@ function UnidadesMedidaUpsertForm({
         <div className="flex flex-wrap items-start gap-4">
           {editingItem && (
             <div className="w-fit">
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-2">
                 <FieldLabel>Código</FieldLabel>
-                  <Input
-                    value={editingItem.id}
-                    disabled
-                    className="h-8 text-xs"
-                    inputSize="small"
-                  />
+                <Input
+                  value={editingItem.id}
+                  disabled
+                  className="h-8 text-xs"
+                  inputSize="small"
+                />
               </div>
             </div>
           )}

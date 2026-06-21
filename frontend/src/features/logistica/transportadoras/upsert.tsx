@@ -158,7 +158,11 @@ function TransportadorasUpsertForm({
                   "Salvando..."
                 ) : (
                   <span className="flex items-center gap-2">
-                    Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup>
+                    Salvar{" "}
+                    <KbdGroup>
+                      <Kbd>Alt</Kbd>
+                      <Kbd>Enter</Kbd>
+                    </KbdGroup>
                   </span>
                 )}
               </Button>
@@ -180,7 +184,7 @@ function TransportadorasUpsertForm({
           <div className="flex flex-wrap items-start gap-4">
             {editingItem && (
               <div className="w-fit">
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-2">
                   <FieldLabel>Código</FieldLabel>
                   <Input
                     value={editingItem.id}
@@ -211,7 +215,7 @@ function TransportadorasUpsertForm({
                 )}
               </form.Field>
             </div>
-            <div className="flex-1 min-w-62.5">
+            <div className="min-w-62.5 flex-1">
               <form.Field
                 name="nacionalidadeId"
                 validators={{
@@ -233,7 +237,7 @@ function TransportadorasUpsertForm({
                 )}
               </form.Field>
             </div>
-            <div className="flex-2 min-w-75">
+            <div className="min-w-75 flex-2">
               <form.Field
                 name="nomeRazaosocial"
                 validators={{
@@ -253,7 +257,7 @@ function TransportadorasUpsertForm({
           </div>
 
           <div className="flex flex-wrap items-start gap-4">
-            <div className="flex-1 min-w-62.5">
+            <div className="min-w-62.5 flex-1">
               <form.Field
                 name="apelidoNomefantasia"
                 validators={{
@@ -330,7 +334,7 @@ function TransportadorasUpsertForm({
                 )}
               </form.Field>
             </div>
-            <div className="flex-1 min-w-75">
+            <div className="min-w-75 flex-1">
               <form.Field
                 name="email"
                 validators={{ onChange: transportadoraSchema.shape.email }}

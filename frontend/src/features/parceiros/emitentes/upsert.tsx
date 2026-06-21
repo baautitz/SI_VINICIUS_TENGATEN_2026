@@ -14,11 +14,7 @@ import { PaisInput } from "@/components/entity-inputs/pais-input";
 import { TipoPessoaSelect } from "@/components/tipo-pessoa-select";
 import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
-import {
-  emitenteSchema,
-  Emitente,
-  EmitenteFormValues,
-} from "./types";
+import { emitenteSchema, Emitente, EmitenteFormValues } from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { emitentesApi } from "@/api/parceiros";
 import { TipoPessoa } from "@/api/types";
@@ -159,7 +155,11 @@ function EmitentesUpsertForm({
                   "Salvando..."
                 ) : (
                   <span className="flex items-center gap-2">
-                    Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup>
+                    Salvar{" "}
+                    <KbdGroup>
+                      <Kbd>Alt</Kbd>
+                      <Kbd>Enter</Kbd>
+                    </KbdGroup>
                   </span>
                 )}
               </Button>
@@ -181,7 +181,7 @@ function EmitentesUpsertForm({
           <div className="flex flex-wrap items-start gap-4">
             {editingItem && (
               <div className="w-fit">
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-2">
                   <FieldLabel>Código</FieldLabel>
                   <Input
                     value={editingItem.id}
@@ -212,7 +212,7 @@ function EmitentesUpsertForm({
                 )}
               </form.Field>
             </div>
-            <div className="flex-1 min-w-62.5">
+            <div className="min-w-62.5 flex-1">
               <form.Field
                 name="nacionalidadeId"
                 validators={{ onChange: emitenteSchema.shape.nacionalidadeId }}
@@ -232,7 +232,7 @@ function EmitentesUpsertForm({
                 )}
               </form.Field>
             </div>
-            <div className="flex-2 min-w-75">
+            <div className="min-w-75 flex-2">
               <form.Field
                 name="nomeRazaoSocial"
                 validators={{ onChange: emitenteSchema.shape.nomeRazaoSocial }}
@@ -250,7 +250,7 @@ function EmitentesUpsertForm({
           </div>
 
           <div className="flex flex-wrap items-start gap-4">
-            <div className="flex-1 min-w-62.5">
+            <div className="min-w-62.5 flex-1">
               <form.Field
                 name="apelidoNomeFantasia"
                 validators={{
@@ -359,7 +359,7 @@ function EmitentesUpsertForm({
                 )}
               </form.Field>
             </div>
-            <div className="flex-1 min-w-75">
+            <div className="min-w-75 flex-1">
               <form.Field
                 name="email"
                 validators={{ onChange: emitenteSchema.shape.email }}

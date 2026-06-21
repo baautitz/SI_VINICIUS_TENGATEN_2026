@@ -8,7 +8,7 @@ import { FeatureLayout } from "@/components/ui/feature-layout";
 import { FeatureHeader } from "@/components/ui/feature-header";
 import { Badge } from "@/components/ui/badge";
 import { useFeatureHotkeys } from "@/hooks/use-feature-hotkeys";
-import { formatToLocal } from "@/utils/date-utils";
+import { formatDateToLocal } from "@/utils/date-utils";
 import { Landmark, Pencil, Trash2, Eye, Coins } from "lucide-react";
 import { ContasReceber, ContasReceberParcela } from "./types";
 import { statusTituloLabels, StatusTituloFinanceiro } from "../contas-pagar/types";
@@ -71,7 +71,7 @@ export function ContasReceberList({
       header: "Emissão",
       cell: ({ row }) => {
         const val = row.getValue("dataEmissao") as string;
-        return <span>{val ? formatToLocal(val).split(" ")[0] : "-"}</span>;
+        return <span>{val ? formatDateToLocal(val) : "-"}</span>;
       },
     },
     {
@@ -92,7 +92,7 @@ export function ContasReceberList({
           (a, b) => new Date(a.dataVencimento).getTime() - new Date(b.dataVencimento).getTime()
         )[0];
 
-        const dateStr = formatToLocal(maisProxima.dataVencimento).split(" ")[0];
+        const dateStr = formatDateToLocal(maisProxima.dataVencimento);
         const isAtrasada = new Date(maisProxima.dataVencimento).getTime() < new Date().setHours(0, 0, 0, 0);
 
         return (

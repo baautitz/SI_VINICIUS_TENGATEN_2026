@@ -22,6 +22,7 @@ public class Program
             .AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+                options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
                 options.JsonSerializerOptions.Converters.Add(new Backend.Web.Common.DddJsonConverter());
                 options.JsonSerializerOptions.Converters.Add(new Backend.Web.Common.DdiJsonConverter());
                 options.JsonSerializerOptions.Converters.Add(new Backend.Web.Common.DocumentoJsonConverter());

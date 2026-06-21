@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useHotkeys } from "@tanstack/react-hotkeys";
 
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 
@@ -30,27 +31,47 @@ export function DeleteDialog({
   description,
   loading,
 }: DeleteDialogProps) {
+  const contentRef = React.useRef<HTMLDivElement>(null);
+
+  useHotkeys(
+    [
+      {
+        hotkey: "Alt+Enter",
+        callback: (e) => {
+          if (typeof document !== "undefined" && contentRef.current) {
+            const dialogs = document.querySelectorAll('[role="dialog"]');
+            const topDialog =
+              dialogs.length > 0 ? dialogs[dialogs.length - 1] : null;
+            const myDialog =
+              contentRef.current.closest('[role="dialog"]') ||
+              contentRef.current;
+            if (topDialog && myDialog !== topDialog) return;
+          }
+          e.preventDefault();
+          e.stopPropagation();
+          onConfirm();
+        },
+        options: {
+          enabled: open && !loading,
+          ignoreInputs: false,
+        },
+      },
+    ],
+    { conflictBehavior: "allow" },
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="sm:max-w-106.25"
-        onKeyDown={(e) => {
-          if (e.altKey && e.key === "Enter") {
-            e.preventDefault();
-            e.stopPropagation();
-            onConfirm();
-          }
-        }}
-      >
+      <DialogContent ref={contentRef} className="sm:max-w-106.25">
         <DialogHeader>
-          <div className="flex items-center gap-2 text-destructive mb-2">
+          <div className="text-destructive mb-2 flex items-center gap-2">
             <DialogTitle>{title}</DialogTitle>
           </div>
           <DialogDescription asChild>
             <div className="text-foreground/80 py-2">{description}</div>
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter className="gap-2 mt-4">
+        <DialogFooter className="mt-4 gap-2">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -62,7 +83,7 @@ export function DeleteDialog({
             {loading ? (
               "Excluindo..."
             ) : (
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-2">
                 Confirmar Exclusão
                 <KbdGroup>
                   <Kbd>Alt</Kbd>

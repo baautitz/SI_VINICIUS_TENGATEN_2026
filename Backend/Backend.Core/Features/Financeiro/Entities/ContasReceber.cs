@@ -96,6 +96,15 @@ public class ContasReceber
         AtualizarSaldo();
     }
 
+    public void EstornarRecebimento(int numeroParcela, decimal valorEstornado)
+    {
+        var parcela = _parcelas.SingleOrDefault(p => p.NumeroParcela == numeroParcela)
+            ?? throw new DomainException("Parcela não encontrada.");
+
+        parcela.EstornarRecebimento(valorEstornado);
+        AtualizarSaldo();
+    }
+
     public void Atualizar(string descricao, decimal valorOriginal, Clientes cliente, IEnumerable<ContasReceberParcelas> parcelas, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, int? nfeId = null, int? vendaId = null, string? observacao = null)
     {
         descricao = TextNormalization.Normalize(descricao);
@@ -111,6 +120,36 @@ public class ContasReceber
 
         if (Status == StatusTituloFinanceiro.PAGO || Status == StatusTituloFinanceiro.CANCELADO)
             throw new DomainException("Não é possível alterar uma conta a receber que já está paga ou cancelada.");
+
+        var temParcelaBaixada = _parcelas.Any(p => p.Status == StatusTituloFinanceiro.PAGO || p.Status == StatusTituloFinanceiro.PARCIAL || p.ValorRecebido > 0);
+        if (temParcelaBaixada)
+        {
+            if (valorOriginal != ValorOriginal)
+                throw new DomainException("Não é possível alterar o valor original de uma conta com parcelas baixadas.");
+            if (condicaoPagamento?.Id != CondicaoPagamento?.Id)
+                throw new DomainException("Não é possível alterar a condição de pagamento de uma conta com parcelas baixadas.");
+            if (dataEmissao?.Date != DataEmissao?.Date)
+                throw new DomainException("Não é possível alterar a data de emissão de uma conta com parcelas baixadas.");
+            
+            var novasParcelas = parcelas.ToList();
+            if (novasParcelas.Count != _parcelas.Count)
+                throw new DomainException("Não é possível alterar a quantidade de parcelas de uma conta com baixas realizadas.");
+
+            foreach (var nova in novasParcelas)
+            {
+                var existente = _parcelas.SingleOrDefault(p => p.NumeroParcela == nova.NumeroParcela)
+                    ?? throw new DomainException($"Parcela número {nova.NumeroParcela} não encontrada na conta original.");
+                
+                if (nova.ValorParcela != existente.ValorParcela)
+                    throw new DomainException($"Não é possível alterar o valor da parcela {nova.NumeroParcela} pois o título possui baixas.");
+                if (nova.DataVencimento.Date != existente.DataVencimento.Date)
+                    throw new DomainException($"Não é possível alterar o vencimento da parcela {nova.NumeroParcela} pois o título possui baixas.");
+                if (nova.ValorRecebido != existente.ValorRecebido)
+                    throw new DomainException($"Não é possível alterar o valor recebido da parcela {nova.NumeroParcela} diretamente.");
+                if (nova.Status != existente.Status)
+                    throw new DomainException($"Não é possível alterar o status da parcela {nova.NumeroParcela} diretamente.");
+            }
+        }
 
         if (parcelas == null || !parcelas.Any())
             throw new DomainException("A conta a receber deve conter ao menos uma parcela.");
@@ -141,11 +180,22 @@ public class ContasReceber
     {
         var recebido = _parcelas.Sum(p => p.ValorRecebido);
         ValorSaldo = Math.Max(0, ValorOriginal - recebido);
-        Status = ValorSaldo == 0 ? StatusTituloFinanceiro.PAGO : StatusTituloFinanceiro.PARCIAL;
+
+        if (ValorSaldo == 0)
+            Status = StatusTituloFinanceiro.PAGO;
+        else if (recebido > 0)
+            Status = StatusTituloFinanceiro.PARCIAL;
+        else
+            Status = StatusTituloFinanceiro.ABERTO;
 
         if (_parcelas.All(p => p.Status == StatusTituloFinanceiro.CANCELADO))
         {
             Status = StatusTituloFinanceiro.CANCELADO;
         }
+
+        DataVencimento = _parcelas
+            .Where(p => p.Status == StatusTituloFinanceiro.ABERTO || p.Status == StatusTituloFinanceiro.PARCIAL)
+            .OrderBy(p => p.DataVencimento)
+            .FirstOrDefault()?.DataVencimento;
     }
 }

@@ -63,16 +63,16 @@ function CategoriasUpsertForm({
   onSuccess,
 }: CategoriasUpsertProps) {
   const { mutation, globalError, getFieldError, resetErrors } =
-  useUpsertMutation({
-    mutationFn: async (value: CategoriaFormValues) => {
-      return editingItem
-        ? await categoriasApi.update(editingItem.id, value)
-        : await categoriasApi.create(value);
-    },
-    queryKey: [["categorias"], ["produtos"]],
-    onSuccessCallback: onSuccess,
-    onClose: onClose,
-  });
+    useUpsertMutation({
+      mutationFn: async (value: CategoriaFormValues) => {
+        return editingItem
+          ? await categoriasApi.update(editingItem.id, value)
+          : await categoriasApi.create(value);
+      },
+      queryKey: [["categorias"], ["produtos"]],
+      onSuccessCallback: onSuccess,
+      onClose: onClose,
+    });
 
   const form = useForm({
     defaultValues: {
@@ -113,7 +113,11 @@ function CategoriasUpsertForm({
                   "Salvando..."
                 ) : (
                   <span className="flex items-center gap-2">
-                    Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup>
+                    Salvar{" "}
+                    <KbdGroup>
+                      <Kbd>Alt</Kbd>
+                      <Kbd>Enter</Kbd>
+                    </KbdGroup>
                   </span>
                 )}
               </Button>
@@ -132,10 +136,10 @@ function CategoriasUpsertForm({
         }}
       >
         <FieldGroup className="gap-4">
-          <div className="flex flex-wrap gap-4 items-start w-full">
+          <div className="flex w-full flex-wrap items-start gap-4">
             {editingItem && (
               <div className="w-fit">
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-2">
                   <FieldLabel>Código</FieldLabel>
                   <Input
                     value={editingItem.id}
@@ -146,7 +150,7 @@ function CategoriasUpsertForm({
                 </div>
               </div>
             )}
-            <div className="flex-1 min-w-48">
+            <div className="min-w-48 flex-1">
               <form.Field
                 name="categoria"
                 validators={{ onChange: categoriaSchema.shape.categoria }}

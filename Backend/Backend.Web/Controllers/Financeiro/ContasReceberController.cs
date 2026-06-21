@@ -83,6 +83,24 @@ public class ContasReceberController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPost("{id:int}/parcelas/{numeroParcela:int}/estornar")]
+    public async Task<ActionResult<Resultado<ContasReceber>>> EstornarRecebimento(int id, int numeroParcela, [FromBody] EstornarRecebimentoParcelaCommand command)
+    {
+        if (command.NumeroParcela != numeroParcela)
+            return BadRequest("O número da parcela no path não corresponde ao número do corpo da requisição.");
+
+        var result = await _service.EstornarRecebimento(id, command);
+        if (!result.Success)
+        {
+            if (result.Errors is not null && result.Errors.Any(error => error.Code == "CONTA_RECEBER_NAO_ENCONTRADA"))
+                return NotFound(result);
+
+            return BadRequest(result);
+        }
+
+        return Ok(result);
+    }
+
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteConta(int id)
     {

@@ -31,14 +31,12 @@ export function TipoPessoaSelect({
   inputSize = "full",
   disabled = false,
 }: TipoPessoaSelectProps) {
-  const stringValue = String(value);
-
   return (
     <Field data-invalid={!!error}>
       <FieldLabel htmlFor={name}>{label}</FieldLabel>
       <Select
-        value={stringValue}
-        onValueChange={(val) => onChange(Number(val) as TipoPessoa)}
+        value={value}
+        onValueChange={(val) => onChange(val as TipoPessoa)}
         disabled={disabled}
       >
         <SelectTrigger
@@ -57,8 +55,8 @@ export function TipoPessoaSelect({
           <SelectValue placeholder="Selecione o tipo..." />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={String(TipoPessoa.FISICA)}>Física</SelectItem>
-          <SelectItem value={String(TipoPessoa.JURIDICA)}>Jurídica</SelectItem>
+          <SelectItem value={TipoPessoa.FISICA}>Física</SelectItem>
+          <SelectItem value={TipoPessoa.JURIDICA}>Jurídica</SelectItem>
         </SelectContent>
       </Select>
       {error && <FieldError>{error}</FieldError>}

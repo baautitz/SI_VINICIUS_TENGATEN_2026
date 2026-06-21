@@ -2,7 +2,11 @@
 
 import * as React from "react";
 import { X } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 interface ComboboxContextType {
@@ -40,7 +44,8 @@ export function Combobox({
   onValueChange,
   children,
 }: ComboboxProps) {
-  const [selectedValuesState, setSelectedValuesState] = React.useState<string[]>(defaultValue);
+  const [selectedValuesState, setSelectedValuesState] =
+    React.useState<string[]>(defaultValue);
   const [searchText, setSearchText] = React.useState("");
   const [isOpen, setIsOpen] = React.useState(false);
   const [focusedIndex, setFocusedIndex] = React.useState(-1);
@@ -57,7 +62,14 @@ export function Combobox({
   const filteredItems = React.useMemo(() => {
     if (!searchText) return [...items];
     return items.filter((item) => {
-      const label = typeof item === "string" ? item : String((item as Record<string, unknown>).label || (item as Record<string, unknown>).value || "");
+      const label =
+        typeof item === "string"
+          ? item
+          : String(
+              (item as Record<string, unknown>).label ||
+                (item as Record<string, unknown>).value ||
+                "",
+            );
       return label.toLowerCase().includes(searchText.toLowerCase());
     });
   }, [items, searchText]);
@@ -107,38 +119,42 @@ export function useComboboxAnchor() {
 
 type ComboboxChipsProps = React.ComponentPropsWithRef<"div">;
 
-export const ComboboxChips = ({ children, className, ref, ...props }: ComboboxChipsProps) => {
-    const context = React.useContext(ComboboxContext);
-    if (!context) return null;
+export const ComboboxChips = ({
+  children,
+  className,
+  ref,
+  ...props
+}: ComboboxChipsProps) => {
+  const context = React.useContext(ComboboxContext);
+  if (!context) return null;
 
-    return (
-      <PopoverTrigger asChild>
-        <div
-          ref={ref}
-          className={cn(
-            "flex min-h-8 w-full flex-wrap items-center gap-1.5 rounded-lg border border-input bg-background px-2.5 py-0.5 text-base ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 cursor-text md:text-sm",
-            className
-          )}
-          onClick={(e) => {
-            const target = e.target as HTMLElement;
-            const isInput = target.tagName === "INPUT";
-            const isChip = !!target.closest(".combobox-chip");
-            
-            if (isInput || isChip || context.isOpen) {
-              e.preventDefault();
-            }
+  return (
+    <PopoverTrigger asChild>
+      <div
+        ref={ref}
+        className={cn(
+          "border-input bg-background ring-offset-background focus-within:ring-ring flex min-h-8 w-full cursor-text flex-wrap items-center gap-2 rounded-lg border px-2.5 py-0.5 text-base focus-within:ring-2 focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+          className,
+        )}
+        onClick={(e) => {
+          const target = e.target as HTMLElement;
+          const isInput = target.tagName === "INPUT";
+          const isChip = !!target.closest(".combobox-chip");
 
-            const input = e.currentTarget.querySelector("input");
-            if (input) input.focus();
-          }}
-          {...props}
-        >
-          {children}
-        </div>
-      </PopoverTrigger>
-    );
+          if (isInput || isChip || context.isOpen) {
+            e.preventDefault();
+          }
+
+          const input = e.currentTarget.querySelector("input");
+          if (input) input.focus();
+        }}
+        {...props}
+      >
+        {children}
+      </div>
+    </PopoverTrigger>
+  );
 };
-
 
 interface ComboboxValueProps {
   children: (values: string[]) => React.ReactNode;
@@ -156,7 +172,12 @@ interface ComboboxChipProps extends React.HTMLAttributes<HTMLSpanElement> {
   onRemove?: () => void;
 }
 
-export function ComboboxChip({ children, className, onRemove, ...props }: ComboboxChipProps) {
+export function ComboboxChip({
+  children,
+  className,
+  onRemove,
+  ...props
+}: ComboboxChipProps) {
   const context = React.useContext(ComboboxContext);
 
   const handleRemove = (e: React.MouseEvent) => {
@@ -167,7 +188,9 @@ export function ComboboxChip({ children, className, onRemove, ...props }: Combob
     } else if (context) {
       const val = typeof children === "string" ? children : "";
       if (val) {
-        context.setSelectedValues(context.selectedValues.filter((v) => v !== val));
+        context.setSelectedValues(
+          context.selectedValues.filter((v) => v !== val),
+        );
       }
     }
   };
@@ -175,8 +198,8 @@ export function ComboboxChip({ children, className, onRemove, ...props }: Combob
   return (
     <span
       className={cn(
-        "combobox-chip inline-flex items-center gap-1 rounded bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground",
-        className
+        "combobox-chip bg-secondary text-secondary-foreground inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium",
+        className,
       )}
       {...props}
     >
@@ -184,7 +207,7 @@ export function ComboboxChip({ children, className, onRemove, ...props }: Combob
       <button
         type="button"
         onClick={handleRemove}
-        className="rounded-sm opacity-70 hover:opacity-100 focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+        className="focus:ring-ring cursor-pointer rounded-sm opacity-70 hover:opacity-100 focus:ring-1 focus:outline-none"
       >
         <X className="size-3" />
       </button>
@@ -194,7 +217,11 @@ export function ComboboxChip({ children, className, onRemove, ...props }: Combob
 
 type ComboboxChipsInputProps = React.InputHTMLAttributes<HTMLInputElement>;
 
-export function ComboboxChipsInput({ className, autoComplete = "off", ...props }: ComboboxChipsInputProps) {
+export function ComboboxChipsInput({
+  className,
+  autoComplete = "off",
+  ...props
+}: ComboboxChipsInputProps) {
   const context = React.useContext(ComboboxContext);
   if (!context) return null;
 
@@ -206,13 +233,30 @@ export function ComboboxChipsInput({ className, autoComplete = "off", ...props }
     }
     if (e.key === "Enter") {
       e.preventDefault();
-      if (context.focusedIndex >= 0 && context.focusedIndex < context.filteredItems.length) {
+      if (
+        context.focusedIndex >= 0 &&
+        context.focusedIndex < context.filteredItems.length
+      ) {
         const item = context.filteredItems[context.focusedIndex];
-        const val = typeof item === "string" ? item : String((item as Record<string, unknown>).value || (item as Record<string, unknown>).id || "");
+        const val =
+          typeof item === "string"
+            ? item
+            : String(
+                (item as Record<string, unknown>).value ||
+                  (item as Record<string, unknown>).id ||
+                  "",
+              );
         context.handleSelect(val);
       } else if (context.filteredItems.length === 1) {
         const item = context.filteredItems[0];
-        const val = typeof item === "string" ? item : String((item as Record<string, unknown>).value || (item as Record<string, unknown>).id || "");
+        const val =
+          typeof item === "string"
+            ? item
+            : String(
+                (item as Record<string, unknown>).value ||
+                  (item as Record<string, unknown>).id ||
+                  "",
+              );
         context.handleSelect(val);
       }
     }
@@ -220,7 +264,7 @@ export function ComboboxChipsInput({ className, autoComplete = "off", ...props }
       e.preventDefault();
       context.setIsOpen(true);
       context.setFocusedIndex(
-        Math.min(context.focusedIndex + 1, context.filteredItems.length - 1)
+        Math.min(context.focusedIndex + 1, context.filteredItems.length - 1),
       );
     }
     if (e.key === "ArrowUp") {
@@ -246,8 +290,8 @@ export function ComboboxChipsInput({ className, autoComplete = "off", ...props }
       }}
       onKeyDown={handleKeyDown}
       className={cn(
-        "flex-1 min-w-15 bg-transparent outline-none border-none p-0 text-sm focus:ring-0",
-        className
+        "min-w-15 flex-1 border-none bg-transparent p-0 text-sm outline-none focus:ring-0",
+        className,
       )}
       {...props}
     />
@@ -265,7 +309,7 @@ export function ComboboxContent({ children, className }: ComboboxContentProps) {
 
   return (
     <PopoverContent
-      className={cn("p-1 w-(--radix-popover-trigger-width)", className)}
+      className={cn("w-(--radix-popover-trigger-width) p-1", className)}
       align="start"
       onOpenAutoFocus={(e) => e.preventDefault()}
     >
@@ -284,7 +328,11 @@ export function ComboboxEmpty({ children }: ComboboxEmptyProps) {
 
   if (context.filteredItems.length > 0) return null;
 
-  return <div className="p-2 text-sm text-muted-foreground text-center">{children}</div>;
+  return (
+    <div className="text-muted-foreground p-2 text-center text-sm">
+      {children}
+    </div>
+  );
 }
 
 interface ComboboxListProps<T = unknown> {
@@ -296,7 +344,7 @@ export function ComboboxList<T = unknown>({ children }: ComboboxListProps<T>) {
   if (!context) return null;
 
   return (
-    <div className="max-h-50 overflow-y-auto flex flex-col gap-0.5 p-1">
+    <div className="flex max-h-50 flex-col gap-0.5 overflow-y-auto p-1">
       {context.filteredItems.map((item) => children(item as T))}
     </div>
   );
@@ -308,7 +356,11 @@ interface ComboboxItemProps {
   className?: string;
 }
 
-export function ComboboxItem({ value, children, className }: ComboboxItemProps) {
+export function ComboboxItem({
+  value,
+  children,
+  className,
+}: ComboboxItemProps) {
   const context = React.useContext(ComboboxContext);
   if (!context) return null;
 
@@ -319,18 +371,28 @@ export function ComboboxItem({ value, children, className }: ComboboxItemProps) 
     (typeof context.filteredItems[context.focusedIndex] === "string"
       ? context.filteredItems[context.focusedIndex] === value
       : String(
-          (context.filteredItems[context.focusedIndex] as Record<string, unknown>).value ||
-            (context.filteredItems[context.focusedIndex] as Record<string, unknown>).id ||
-            ""
+          (
+            context.filteredItems[context.focusedIndex] as Record<
+              string,
+              unknown
+            >
+          ).value ||
+            (
+              context.filteredItems[context.focusedIndex] as Record<
+                string,
+                unknown
+              >
+            ).id ||
+            "",
         ) === value);
 
   return (
     <div
       onClick={() => context.handleSelect(value)}
       className={cn(
-        "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[focused=true]:bg-accent data-[focused=true]:text-accent-foreground",
+        "hover:bg-accent hover:text-accent-foreground data-[focused=true]:bg-accent data-[focused=true]:text-accent-foreground relative flex cursor-pointer items-center rounded-sm px-2 py-1.5 text-sm transition-colors outline-none select-none",
         isSelected && "bg-accent/50 font-medium",
-        className
+        className,
       )}
       data-focused={isFocused}
     >
@@ -352,7 +414,14 @@ export function ComboboxCreate({ onClick, children }: ComboboxCreateProps) {
   if (!text) return null;
 
   const hasExactMatch = context.items.some((item) => {
-    const label = typeof item === "string" ? item : String((item as Record<string, unknown>).label || (item as Record<string, unknown>).value || "");
+    const label =
+      typeof item === "string"
+        ? item
+        : String(
+            (item as Record<string, unknown>).label ||
+              (item as Record<string, unknown>).value ||
+              "",
+          );
     return label.toLowerCase() === text.toLowerCase();
   });
 
@@ -365,7 +434,7 @@ export function ComboboxCreate({ onClick, children }: ComboboxCreateProps) {
         context.setSearchText("");
         context.setIsOpen(false);
       }}
-      className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none text-primary font-medium hover:bg-accent hover:text-accent-foreground"
+      className="text-primary hover:bg-accent hover:text-accent-foreground relative flex cursor-pointer items-center rounded-sm px-2 py-1.5 text-sm font-medium outline-none select-none"
     >
       {children(text)}
     </div>

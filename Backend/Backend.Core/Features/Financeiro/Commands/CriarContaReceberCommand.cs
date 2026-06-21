@@ -15,7 +15,6 @@ public record CriarContaReceberCommand(
     int? NfeId,
     int? VendaId,
     DateTime? DataEmissao,
-    DateTime? DataVencimento,
     decimal ValorOriginal,
     int? CondicaoPagamentoId,
     string? Observacao,

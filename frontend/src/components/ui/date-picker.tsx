@@ -160,6 +160,7 @@ export function DatePicker({
   };
 
   const isSmall = className?.includes("h-8") || className?.includes("text-xs");
+  const isLarge = className?.includes("h-10");
   const hasError = className?.includes("border-destructive");
 
   return (
@@ -167,6 +168,7 @@ export function DatePicker({
       className={cn(
         "flex items-center gap-1",
         inputSize === "full" && "w-full",
+        className,
       )}
     >
       <Input
@@ -179,7 +181,7 @@ export function DatePicker({
         inputMode="numeric"
         className={cn(
           "flex-1",
-          isSmall ? "h-8 px-2 text-xs" : "h-10 px-3 text-sm",
+          isLarge ? "h-10 px-3 text-sm" : isSmall ? "h-8 px-2 text-xs" : "h-8 px-2.5 text-sm",
           hasError && "border-destructive focus-visible:ring-destructive",
         )}
       />
@@ -191,7 +193,7 @@ export function DatePicker({
             size="icon"
             disabled={disabled}
             tabIndex={-1}
-            className={cn("shrink-0", isSmall ? "h-8 w-8" : "h-10 w-10")}
+            className={cn("shrink-0", isLarge ? "h-10 w-10" : "h-8 w-8")}
           >
             <CalendarIcon className="h-4 w-4 opacity-50" />
           </Button>

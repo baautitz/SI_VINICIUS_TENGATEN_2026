@@ -17,7 +17,6 @@ public record AtualizarContaPagarCommand(
     int FornecedorId,
     int? NfeId,
     DateTime? DataEmissao,
-    DateTime? DataVencimento,
     decimal ValorOriginal,
     int? CondicaoPagamentoId,
     string? Observacao,

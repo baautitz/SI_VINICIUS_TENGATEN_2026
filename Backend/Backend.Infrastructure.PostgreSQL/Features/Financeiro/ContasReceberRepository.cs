@@ -254,21 +254,21 @@ public class ContasReceberRepository : IContasReceberRepository
 
         var idGerado = await _session.Connection.ExecuteScalarAsync<int>(
             sql,
-            new
-            {
+            new ContaReceberDbRow(
+                0,
                 conta.Descricao,
                 conta.DataEmissao,
                 conta.DataVencimento,
                 conta.ValorOriginal,
                 conta.ValorSaldo,
-                Status = conta.Status.ToString(),
+                conta.Status.ToString(),
                 conta.Observacao,
-                CriadoEm = DateTime.UtcNow,
-                ClienteId = conta.Cliente.Id,
-                NfeId = conta.NfeId,
-                CondicaoPagamentoId = conta.CondicaoPagamento?.Id,
-                VendaId = conta.VendaId
-            },
+                DateTime.UtcNow,
+                conta.Cliente.Id,
+                conta.NfeId,
+                conta.CondicaoPagamento?.Id,
+                conta.VendaId
+            ),
             transaction: _session.Transaction);
 
         await InserirParcelas(idGerado, conta.ContasReceberParcelas);
@@ -294,21 +294,21 @@ public class ContasReceberRepository : IContasReceberRepository
 
         await _session.Connection.ExecuteAsync(
             sql,
-            new
-            {
-                Id = id,
+            new ContaReceberDbRow(
+                id,
                 conta.Descricao,
                 conta.DataEmissao,
                 conta.DataVencimento,
                 conta.ValorOriginal,
                 conta.ValorSaldo,
-                Status = conta.Status.ToString(),
+                conta.Status.ToString(),
                 conta.Observacao,
-                ClienteId = conta.Cliente.Id,
-                NfeId = conta.NfeId,
-                CondicaoPagamentoId = conta.CondicaoPagamento?.Id,
-                VendaId = conta.VendaId
-            },
+                conta.CriadoEm,
+                conta.Cliente.Id,
+                conta.NfeId,
+                conta.CondicaoPagamento?.Id,
+                conta.VendaId
+            ),
             transaction: _session.Transaction);
 
         await ReplacerParcelas(id, conta.ContasReceberParcelas);
@@ -471,15 +471,14 @@ public class ContasReceberRepository : IContasReceberRepository
 
         await _session.Connection.ExecuteAsync(
             sql,
-            parcelas.Select(p => new
-            {
+            parcelas.Select(p => new ParcelaReceberDbRow(
                 p.NumeroParcela,
                 p.DataVencimento,
                 p.ValorParcela,
                 p.ValorRecebido,
-                Status = p.Status.ToString(),
-                ContaId = contaId
-            }),
+                p.Status.ToString(),
+                contaId
+            )).ToList(),
             transaction: _session.Transaction);
     }
 
@@ -505,4 +504,27 @@ public class ContasReceberRepository : IContasReceberRepository
         decimal ValorParcela,
         decimal ValorRecebido,
         StatusTituloFinanceiro Status);
+
+    private sealed record ContaReceberDbRow(
+        int Id,
+        string Descricao,
+        DateTime? DataEmissao,
+        DateTime? DataVencimento,
+        decimal ValorOriginal,
+        decimal ValorSaldo,
+        string Status,
+        string? Observacao,
+        DateTime CriadoEm,
+        int ClienteId,
+        int? NfeId,
+        int? CondicaoPagamentoId,
+        int? VendaId);
+
+    private sealed record ParcelaReceberDbRow(
+        int NumeroParcela,
+        DateTime DataVencimento,
+        decimal ValorParcela,
+        decimal ValorRecebido,
+        string Status,
+        int ContaId);
 }

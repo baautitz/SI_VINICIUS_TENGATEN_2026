@@ -49,7 +49,6 @@ export const contasReceberBaseSchema = z.object({
   nfeId: z.number().nullable().optional(),
   vendaId: z.number().nullable().optional(),
   dataEmissao: z.string().nullable().optional(),
-  dataVencimento: z.string().nullable().optional(),
   valorOriginal: z.coerce
     .number({ invalid_type_error: "Valor original deve ser um número." })
     .positive("Valor original deve ser maior que zero."),

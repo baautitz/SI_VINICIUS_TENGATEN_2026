@@ -151,7 +151,7 @@ function CidadesUpsertForm({
           <div className="flex w-full flex-wrap items-start gap-4">
             {editingItem && (
               <div className="w-fit">
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-2">
                   <FieldLabel>Código</FieldLabel>
                   <Input
                     value={editingItem.id}

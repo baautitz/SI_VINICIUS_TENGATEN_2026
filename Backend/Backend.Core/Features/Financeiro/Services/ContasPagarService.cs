@@ -4,6 +4,7 @@ using Backend.Core.Common.Extensions;
 using Backend.Core.Common.Interfaces;
 using Backend.Core.Features.Financeiro.Commands;
 using Backend.Core.Features.Financeiro.Entities;
+using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.Financeiro.Repositories;
 using Backend.Core.Features.Financeiro.Validators.Commands;
 using Backend.Core.Features.Parceiros.Repositories;
@@ -85,7 +86,7 @@ public sealed class ContasPagarService : BaseService
                     command.ValorOriginal,
                     fornecedor,
                     command.DataEmissao,
-                    command.DataVencimento,
+                    null,
                     condicao,
                     command.NfeId,
                     command.Observacao
@@ -155,7 +156,7 @@ public sealed class ContasPagarService : BaseService
                     fornecedor,
                     parcelas,
                     command.DataEmissao,
-                    command.DataVencimento,
+                    null,
                     condicao,
                     command.NfeId,
                     command.Observacao
@@ -204,10 +205,46 @@ public sealed class ContasPagarService : BaseService
         });
     }
 
+    public async Task<Resultado<ContasPagar>> EstornarPagamento(int id, EstornarPagamentoParcelaCommand command)
+    {
+        if (command.ValorEstorno <= 0)
+            return Resultado<ContasPagar>.Falha(new ResultadoErro("VALOR_INVALIDO", "O valor de estorno deve ser maior que zero.", "ValorEstorno"));
+
+        var existente = await _contasRepository.ObterContaPagarPorId(id);
+        if (existente is null)
+            return Resultado<ContasPagar>.Falha(new ResultadoErro("CONTA_PAGAR_NAO_ENCONTRADA", "Conta a pagar não encontrada."));
+
+        return await ExecuteResultAsync(async () =>
+        {
+            try
+            {
+                _unitOfWork.BeginTransaction();
+
+                existente.EstornarPagamento(command.NumeroParcela, command.ValorEstorno);
+
+                var atualizada = await _contasRepository.AtualizarContaPagar(id, existente);
+                _unitOfWork.Commit();
+
+                return Resultado<ContasPagar>.Sucesso(atualizada);
+            }
+            catch
+            {
+                _unitOfWork.Rollback();
+                throw;
+            }
+        });
+    }
+
     public async Task<bool> DeletarContaPagar(int id)
     {
         var existente = await _contasRepository.ObterContaPagarPorId(id);
         if (existente is null) return false;
+
+        if (existente.NfeId.HasValue)
+            throw new Backend.Core.Common.Exceptions.DomainException("Não é possível excluir uma conta a pagar gerada por Notas Fiscais.");
+
+        if (existente.ValorSaldo < existente.ValorOriginal || existente.ContasPagarParcelas.Any(p => p.Status != StatusTituloFinanceiro.ABERTO))
+            throw new Backend.Core.Common.Exceptions.DomainException("Não é possível excluir uma conta a pagar que já possui parcelas pagas ou alteradas.");
 
         return await _contasRepository.DeletarContaPagar(id);
     }

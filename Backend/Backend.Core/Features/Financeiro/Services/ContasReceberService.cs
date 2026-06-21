@@ -4,6 +4,7 @@ using Backend.Core.Common.Extensions;
 using Backend.Core.Common.Interfaces;
 using Backend.Core.Features.Financeiro.Commands;
 using Backend.Core.Features.Financeiro.Entities;
+using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.Financeiro.Repositories;
 using Backend.Core.Features.Financeiro.Validators.Commands;
 using Backend.Core.Features.Parceiros.Repositories;
@@ -98,7 +99,7 @@ public sealed class ContasReceberService : BaseService
                     command.ValorOriginal,
                     cliente,
                     command.DataEmissao,
-                    command.DataVencimento,
+                    null,
                     condicao,
                     command.NfeId,
                     command.VendaId,
@@ -177,7 +178,7 @@ public sealed class ContasReceberService : BaseService
                     cliente,
                     parcelas,
                     command.DataEmissao,
-                    command.DataVencimento,
+                    null,
                     condicao,
                     command.NfeId,
                     command.VendaId,
@@ -227,10 +228,46 @@ public sealed class ContasReceberService : BaseService
         });
     }
 
+    public async Task<Resultado<ContasReceber>> EstornarRecebimento(int id, EstornarRecebimentoParcelaCommand command)
+    {
+        if (command.ValorEstorno <= 0)
+            return Resultado<ContasReceber>.Falha(new ResultadoErro("VALOR_INVALIDO", "O valor de estorno deve ser maior que zero.", "ValorEstorno"));
+
+        var existente = await _contasRepository.ObterContaReceberPorId(id);
+        if (existente is null)
+            return Resultado<ContasReceber>.Falha(new ResultadoErro("CONTA_RECEBER_NAO_ENCONTRADA", "Conta a receber não encontrada."));
+
+        return await ExecuteResultAsync(async () =>
+        {
+            try
+            {
+                _unitOfWork.BeginTransaction();
+
+                existente.EstornarRecebimento(command.NumeroParcela, command.ValorEstorno);
+
+                var atualizada = await _contasRepository.AtualizarContaReceber(id, existente);
+                _unitOfWork.Commit();
+
+                return Resultado<ContasReceber>.Sucesso(atualizada);
+            }
+            catch
+            {
+                _unitOfWork.Rollback();
+                throw;
+            }
+        });
+    }
+
     public async Task<bool> DeletarContaReceber(int id)
     {
         var existente = await _contasRepository.ObterContaReceberPorId(id);
         if (existente is null) return false;
+
+        if (existente.NfeId.HasValue || existente.VendaId.HasValue)
+            throw new Backend.Core.Common.Exceptions.DomainException("Não é possível excluir uma conta a receber gerada por Vendas ou Notas Fiscais.");
+
+        if (existente.ValorSaldo < existente.ValorOriginal || existente.ContasReceberParcelas.Any(p => p.Status != StatusTituloFinanceiro.ABERTO))
+            throw new Backend.Core.Common.Exceptions.DomainException("Não é possível excluir uma conta a receber que já possui parcelas baixadas ou alteradas.");
 
         return await _contasRepository.DeletarContaReceber(id);
     }

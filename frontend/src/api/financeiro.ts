@@ -60,6 +60,11 @@ export const contasPagarApi = {
       numeroParcela,
       valorPago,
     }),
+  estornarPagamento: (id: number, numeroParcela: number, valorEstorno: number) =>
+    http.post<Resultado<ContasPagar>>(`/api/financeiro/contas-pagar/${id}/parcelas/${numeroParcela}/estornar`, {
+      numeroParcela,
+      valorEstorno,
+    }),
 };
 
 export const contasReceberApi = {
@@ -77,5 +82,10 @@ export const contasReceberApi = {
     http.post<Resultado<ContasReceber>>(`/api/financeiro/contas-receber/${id}/parcelas/${numeroParcela}/receber`, {
       numeroParcela,
       valorRecebido,
+    }),
+  estornarRecebimento: (id: number, numeroParcela: number, valorEstorno: number) =>
+    http.post<Resultado<ContasReceber>>(`/api/financeiro/contas-receber/${id}/parcelas/${numeroParcela}/estornar`, {
+      numeroParcela,
+      valorEstorno,
     }),
 };

@@ -185,7 +185,7 @@ export function MovimentacoesFeature() {
             </DialogDescription>
           </DialogHeader>
 
-          <DialogFooter className="mt-4 flex gap-2 justify-end">
+          <DialogFooter className="mt-4 flex justify-end gap-2">
             <Button
               type="button"
               variant="outline"
@@ -216,7 +216,7 @@ export function MovimentacoesFeature() {
               {confirmMutation.isPending || cancelMutation.isPending ? (
                 "Processando..."
               ) : actionType === "CONFIRM" ? (
-                <span className="flex items-center gap-1.5">
+                <span className="flex items-center gap-2">
                   Efetivar
                   <KbdGroup>
                     <Kbd>Alt</Kbd>
@@ -224,7 +224,7 @@ export function MovimentacoesFeature() {
                   </KbdGroup>
                 </span>
               ) : (
-                <span className="flex items-center gap-1.5">
+                <span className="flex items-center gap-2">
                   Confirmar Estorno
                   <KbdGroup>
                     <Kbd>Alt</Kbd>

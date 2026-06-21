@@ -300,7 +300,7 @@ function CondicoesUpsertForm({
             <div className="flex w-full flex-wrap items-start gap-4">
               {editingItem && (
                 <div className="w-20 shrink-0">
-                  <div className="flex flex-col gap-1.5">
+                  <div className="flex flex-col gap-2">
                     <FieldLabel>ID</FieldLabel>
                     <Input
                       value={editingItem.id}
