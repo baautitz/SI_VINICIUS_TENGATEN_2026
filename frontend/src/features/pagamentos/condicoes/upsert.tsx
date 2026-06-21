@@ -191,6 +191,28 @@ function CondicoesUpsertForm({
     ]);
   };
 
+  const handleCalcularPorcentagens = () => {
+    if (readOnly || parcelas.length === 0) return;
+    const remaining = 100 - (entradaMinimaPercentual ?? 0);
+    if (remaining <= 0) return;
+
+    const basePercent = parseFloat((remaining / parcelas.length).toFixed(2));
+    const distributed = parcelas.map((p) => ({
+      ...p,
+      percentual: basePercent,
+    }));
+
+    const sumOfDistributed = basePercent * parcelas.length;
+    const diff = remaining - sumOfDistributed;
+    if (Math.abs(diff) > 0.001) {
+      distributed[distributed.length - 1].percentual = parseFloat(
+        (distributed[distributed.length - 1].percentual + diff).toFixed(2),
+      );
+    }
+
+    setParcelas(distributed);
+  };
+
   useHotkeys(
     [
       {
@@ -201,6 +223,17 @@ function CondicoesUpsertForm({
         },
         options: {
           enabled: open && !readOnly && entradaMinimaPercentual !== 100,
+          ignoreInputs: false,
+        },
+      },
+      {
+        hotkey: "Alt+C",
+        callback: (e: KeyboardEvent) => {
+          e.preventDefault();
+          handleCalcularPorcentagens();
+        },
+        options: {
+          enabled: open && !readOnly && parcelas.length > 0 && entradaMinimaPercentual !== 100,
           ignoreInputs: false,
         },
       },
@@ -231,6 +264,35 @@ function CondicoesUpsertForm({
       [fieldName]: value,
     };
     setParcelas(updated);
+  };
+
+  const handleParcelaKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    index: number,
+    field: "percentual" | "prazo"
+  ) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const nextInput = document.getElementById(`parcela-${index + 1}-${field}`);
+      if (nextInput) {
+        nextInput.focus();
+        (nextInput as HTMLInputElement).select?.();
+      }
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const nextInput = document.getElementById(`parcela-${index + 1}-${field}`);
+      if (nextInput) {
+        nextInput.focus();
+        (nextInput as HTMLInputElement).select?.();
+      }
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const prevInput = document.getElementById(`parcela-${index - 1}-${field}`);
+      if (prevInput) {
+        prevInput.focus();
+        (prevInput as HTMLInputElement).select?.();
+      }
+    }
   };
 
   return (
@@ -540,17 +602,31 @@ function CondicoesUpsertForm({
                     Parcelas
                   </h3>
                   {!readOnly && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleAddParcela}
-                    >
-                      <Plus className="mr-1 h-4 w-4" /> Adicionar Parcela{" "}
-                      <KbdGroup>
-                        <Kbd>Alt</Kbd>
-                        <Kbd>P</Kbd>
-                      </KbdGroup>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleCalcularPorcentagens}
+                        disabled={parcelas.length === 0}
+                      >
+                        Distribuir Porcentagens{" "}
+                        <KbdGroup className="ml-1">
+                          <Kbd>Alt</Kbd>
+                          <Kbd>C</Kbd>
+                        </KbdGroup>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleAddParcela}
+                      >
+                        <Plus className="mr-1 h-4 w-4" /> Adicionar Parcela{" "}
+                        <KbdGroup>
+                          <Kbd>Alt</Kbd>
+                          <Kbd>P</Kbd>
+                        </KbdGroup>
+                      </Button>
+                    </div>
                   )}
                 </div>
                 <Separator />
@@ -607,6 +683,8 @@ function CondicoesUpsertForm({
                                   <TableCell className="px-2 py-2">
                                     <div className="flex w-full flex-col gap-1">
                                       <NumberInput
+                                        id={`parcela-${index}-percentual`}
+                                        name={`parcelas.${index}.percentual`}
                                         inputSize="full"
                                         value={p.percentual}
                                         decimals={2}
@@ -618,6 +696,10 @@ function CondicoesUpsertForm({
                                             num,
                                           )
                                         }
+                                        onKeyDown={(e) =>
+                                          handleParcelaKeyDown(e, index, "percentual")
+                                        }
+                                        onFocus={(e) => e.target.select()}
                                         className={cn(
                                           "h-8 text-right font-semibold",
                                           localErrors[
@@ -648,6 +730,8 @@ function CondicoesUpsertForm({
                                   <TableCell className="px-2 py-2">
                                     <div className="flex w-full flex-col gap-1">
                                       <NumberInput
+                                        id={`parcela-${index}-prazo`}
+                                        name={`parcelas.${index}.prazo`}
                                         inputSize="full"
                                         value={p.prazoDias}
                                         decimals={0}
@@ -659,6 +743,10 @@ function CondicoesUpsertForm({
                                             num,
                                           )
                                         }
+                                        onKeyDown={(e) =>
+                                          handleParcelaKeyDown(e, index, "prazo")
+                                        }
+                                        onFocus={(e) => e.target.select()}
                                         className={cn(
                                           "h-8 text-right font-semibold",
                                           localErrors[

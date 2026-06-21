@@ -355,6 +355,35 @@ function ContasPagarFormBody({
     setParcelas(updated);
   };
 
+  const handleParcelaKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    index: number,
+    field: "dataVencimento" | "valorParcela"
+  ) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const nextInput = document.getElementById(`parcela-${index + 1}-${field}`);
+      if (nextInput) {
+        nextInput.focus();
+        (nextInput as HTMLInputElement).select?.();
+      }
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const nextInput = document.getElementById(`parcela-${index + 1}-${field}`);
+      if (nextInput) {
+        nextInput.focus();
+        (nextInput as HTMLInputElement).select?.();
+      }
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const prevInput = document.getElementById(`parcela-${index - 1}-${field}`);
+      if (prevInput) {
+        prevInput.focus();
+        (prevInput as HTMLInputElement).select?.();
+      }
+    }
+  };
+
   const totalParcelasSum = parcelas.reduce((sum, p) => sum + p.valorParcela, 0);
   const valorOriginalForm = useSelector(
     form.store,
@@ -404,11 +433,13 @@ function ContasPagarFormBody({
             >
               {(field) => (
                 <div className="col-span-1 flex flex-col gap-2 md:col-span-2">
-                  <FieldLabel>Descrição</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>Descrição</FieldLabel>
                   <Input
+                    id={field.name}
                     name={field.name}
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
                     disabled={readOnly}
                     inputSize="full"
                     maxLength={150}
@@ -460,8 +491,11 @@ function ContasPagarFormBody({
             >
               {(field) => (
                 <div className="flex flex-col gap-2">
-                  <FieldLabel>Valor Original (R$)</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>Valor Original (R$)</FieldLabel>
                   <NumberInput
+                    id={field.name}
+                    name={field.name}
+                    onBlur={field.handleBlur}
                     inputSize="full"
                     value={field.state.value}
                     decimals={2}
@@ -525,8 +559,11 @@ function ContasPagarFormBody({
             <form.Field name="nfeId">
               {(field) => (
                 <div className="flex flex-col gap-2">
-                  <FieldLabel>ID Nota Fiscal</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>ID Nota Fiscal</FieldLabel>
                   <NumberInput
+                    id={field.name}
+                    name={field.name}
+                    onBlur={field.handleBlur}
                     inputSize="full"
                     value={field.state.value ?? 0}
                     decimals={0}
@@ -544,8 +581,11 @@ function ContasPagarFormBody({
             <form.Field name="dataEmissao">
               {(field) => (
                 <div className="flex flex-col gap-2">
-                  <FieldLabel>Data Emissão</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>Data Emissão</FieldLabel>
                   <DatePicker
+                    id={field.name}
+                    name={field.name}
+                    onBlur={field.handleBlur}
                     value={field.state.value}
                     onChange={(val) => {
                       if (val !== field.state.value) {
@@ -567,8 +607,11 @@ function ContasPagarFormBody({
           <form.Field name="observacao">
             {(field) => (
               <div className="flex flex-col gap-2">
-                <FieldLabel>Observações</FieldLabel>
+                <FieldLabel htmlFor={field.name}>Observações</FieldLabel>
                 <Textarea
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
                   value={field.state.value ?? ""}
                   onChange={(e) => field.handleChange(e.target.value)}
                   disabled={readOnly}
@@ -657,6 +700,8 @@ function ContasPagarFormBody({
                               </TableCell>
                               <TableCell className="px-2 py-2 align-middle">
                                 <DatePicker
+                                  id={`parcela-${index}-dataVencimento`}
+                                  name={`parcelas.${index}.dataVencimento`}
                                   value={p.dataVencimento}
                                   onChange={(val) =>
                                     handleUpdateParcela(
@@ -665,6 +710,10 @@ function ContasPagarFormBody({
                                       val ?? "",
                                     )
                                   }
+                                  onKeyDown={(e) =>
+                                    handleParcelaKeyDown(e, index, "dataVencimento")
+                                  }
+                                  onFocus={(e) => e.target.select()}
                                   disabled={
                                     readOnly ||
                                     temParcelaPagaOuParcial ||
@@ -681,6 +730,8 @@ function ContasPagarFormBody({
                               </TableCell>
                               <TableCell className="px-2 py-2 align-middle">
                                 <NumberInput
+                                  id={`parcela-${index}-valorParcela`}
+                                  name={`parcelas.${index}.valorParcela`}
                                   inputSize="full"
                                   value={p.valorParcela}
                                   decimals={2}
@@ -692,6 +743,10 @@ function ContasPagarFormBody({
                                       num,
                                     )
                                   }
+                                  onKeyDown={(e) =>
+                                    handleParcelaKeyDown(e, index, "valorParcela")
+                                  }
+                                  onFocus={(e) => e.target.select()}
                                   disabled={
                                     readOnly ||
                                     temParcelaPagaOuParcial ||

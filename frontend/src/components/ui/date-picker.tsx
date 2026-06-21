@@ -16,6 +16,11 @@ import {
 } from "@/components/ui/popover";
 
 interface DatePickerProps {
+  id?: string;
+  name?: string;
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   value?: string | null;
   onChange: (value: string | null) => void;
   placeholder?: string;
@@ -85,6 +90,11 @@ const getIsoFromInput = (text: string): string | null => {
 };
 
 export function DatePicker({
+  id,
+  name,
+  onBlur,
+  onFocus,
+  onKeyDown,
   value,
   onChange,
   placeholder = "DD/MM/AAAA",
@@ -172,6 +182,11 @@ export function DatePicker({
       )}
     >
       <Input
+        id={id}
+        name={name}
+        onBlur={onBlur}
+        onFocus={onFocus}
+        onKeyDown={onKeyDown}
         type="text"
         value={inputValue}
         onChange={handleInputChange}

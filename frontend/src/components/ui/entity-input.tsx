@@ -94,7 +94,7 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
         try {
           const matched = await fetchById(numericId as TId);
           if (matched) {
-            applySelection(matched);
+            applySelection(matched, isBlur);
             return;
           }
         } catch {}
@@ -104,7 +104,7 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
       if (listRes?.itens && listRes.itens.length === 1) {
         const matched = await fetchById(getId(listRes.itens[0]));
         if (matched) {
-          applySelection(listRes.itens[0]);
+          applySelection(listRes.itens[0], isBlur);
           return;
         }
       }
@@ -123,7 +123,7 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
     }
   };
 
-  const applySelection = async (item: T | TResumo) => {
+  const applySelection = async (item: T | TResumo, isBlur = false) => {
     const itemId = getId(item);
     const fullItem = await fetchById(itemId);
     if (fullItem) {
@@ -135,9 +135,11 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
       setSelectedLabel(newLabel);
     }
     setIsOpen(false);
-    setTimeout(() => {
-      document.getElementById(name)?.focus();
-    }, 100);
+    if (!isBlur) {
+      setTimeout(() => {
+        document.getElementById(name)?.focus();
+      }, 100);
+    }
   };
 
   return (
