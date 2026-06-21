@@ -191,6 +191,28 @@ function CondicoesUpsertForm({
     ]);
   };
 
+  const handleCalcularPorcentagens = () => {
+    if (readOnly || parcelas.length === 0) return;
+    const remaining = 100 - (entradaMinimaPercentual ?? 0);
+    if (remaining <= 0) return;
+
+    const basePercent = parseFloat((remaining / parcelas.length).toFixed(2));
+    const distributed = parcelas.map((p) => ({
+      ...p,
+      percentual: basePercent,
+    }));
+
+    const sumOfDistributed = basePercent * parcelas.length;
+    const diff = remaining - sumOfDistributed;
+    if (Math.abs(diff) > 0.001) {
+      distributed[distributed.length - 1].percentual = parseFloat(
+        (distributed[distributed.length - 1].percentual + diff).toFixed(2),
+      );
+    }
+
+    setParcelas(distributed);
+  };
+
   useHotkeys(
     [
       {
@@ -201,6 +223,17 @@ function CondicoesUpsertForm({
         },
         options: {
           enabled: open && !readOnly && entradaMinimaPercentual !== 100,
+          ignoreInputs: false,
+        },
+      },
+      {
+        hotkey: "Alt+C",
+        callback: (e: KeyboardEvent) => {
+          e.preventDefault();
+          handleCalcularPorcentagens();
+        },
+        options: {
+          enabled: open && !readOnly && parcelas.length > 0 && entradaMinimaPercentual !== 100,
           ignoreInputs: false,
         },
       },
@@ -540,17 +573,31 @@ function CondicoesUpsertForm({
                     Parcelas
                   </h3>
                   {!readOnly && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleAddParcela}
-                    >
-                      <Plus className="mr-1 h-4 w-4" /> Adicionar Parcela{" "}
-                      <KbdGroup>
-                        <Kbd>Alt</Kbd>
-                        <Kbd>P</Kbd>
-                      </KbdGroup>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleCalcularPorcentagens}
+                        disabled={parcelas.length === 0}
+                      >
+                        Distribuir Porcentagens{" "}
+                        <KbdGroup className="ml-1">
+                          <Kbd>Alt</Kbd>
+                          <Kbd>C</Kbd>
+                        </KbdGroup>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleAddParcela}
+                      >
+                        <Plus className="mr-1 h-4 w-4" /> Adicionar Parcela{" "}
+                        <KbdGroup>
+                          <Kbd>Alt</Kbd>
+                          <Kbd>P</Kbd>
+                        </KbdGroup>
+                      </Button>
+                    </div>
                   )}
                 </div>
                 <Separator />
