@@ -803,6 +803,7 @@ function ContasReceberFormBody({
                                           type="button"
                                           size="icon"
                                           variant="ghost"
+                                          tabIndex={-1}
                                           className="h-8 w-8 text-green-600 hover:bg-green-50 hover:text-green-700 dark:text-green-400 dark:hover:bg-green-950"
                                           onClick={() =>
                                             onBaixa(editingItem!.id, p)
@@ -819,6 +820,7 @@ function ContasReceberFormBody({
                                           type="button"
                                           size="icon"
                                           variant="ghost"
+                                          tabIndex={-1}
                                           className="text-destructive hover:bg-destructive/10 h-8 w-8"
                                           onClick={() =>
                                             onEstorno(editingItem!.id, p)
@@ -837,6 +839,7 @@ function ContasReceberFormBody({
                                     type="button"
                                     size="icon"
                                     variant="ghost"
+                                    tabIndex={-1}
                                     className="text-destructive hover:bg-destructive/10 h-8 w-8"
                                     onClick={() => handleRemoveParcela(index)}
                                     disabled={

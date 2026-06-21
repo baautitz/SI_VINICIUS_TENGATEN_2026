@@ -49,6 +49,8 @@ export function ContasPagarFeature() {
     deleteItem: async (item) => {
       await contasPagarApi.delete(item.id);
     },
+    getReadOnly: (item) =>
+      item.status === "PAGO" || item.status === "CANCELADO",
   });
 
   const handleBaixa = (contaId: number, parcela: ContasPagarParcela) => {

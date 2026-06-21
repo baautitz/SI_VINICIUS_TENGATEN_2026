@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import React from "react";
 import { RowSelectionState, OnChangeFn } from "@tanstack/react-table";
 import { useFeatureList } from "./use-feature-list";
 
@@ -35,6 +36,8 @@ interface UseFeatureOrchestratorProps<TDto> {
   fetchById?: (id: string | number, item?: TDto) => Promise<TDto>;
   deleteItem?: (item: TDto) => Promise<void>;
   additionalKeysToInvalidate?: string[][];
+  /** Se fornecido, atualiza readOnly automaticamente quando freshItem mudar (ex: após baixa/estorno). */
+  getReadOnly?: (item: TDto) => boolean;
 }
 
 export function useFeatureOrchestrator<
@@ -46,6 +49,7 @@ export function useFeatureOrchestrator<
   fetchById,
   deleteItem,
   additionalKeysToInvalidate = [],
+  getReadOnly,
 }: UseFeatureOrchestratorProps<TDto>) {
   const list = useFeatureList<TDto>({ initialSearchTerm });
   const queryClient = useQueryClient();
@@ -72,6 +76,15 @@ export function useFeatureOrchestrator<
     queryFn: () => fetchById!(itemId!, list.editingItem ?? undefined),
     enabled: !!itemId && !!fetchById && list.isUpsertOpen,
   });
+
+  // Atualiza readOnly automaticamente quando freshItem mudar (ex: após baixa/estorno)
+  // Só aplica quando há um item sendo visualizado/editado (não em criação)
+  React.useEffect(() => {
+    if (freshItem && getReadOnly && list.editingItem) {
+      list.setReadOnly(getReadOnly(freshItem));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [freshItem]);
 
   const deleteMutation = useMutation({
     mutationFn: async (item: TDto) => {

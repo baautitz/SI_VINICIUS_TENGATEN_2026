@@ -81,6 +81,7 @@ export function useFeatureList<T>({
     setIsUpsertOpen,
     editingItem,
     readOnly,
+    setReadOnly,
     deleteDialogOpen,
     setDeleteDialogVisible,
     itemToDelete,

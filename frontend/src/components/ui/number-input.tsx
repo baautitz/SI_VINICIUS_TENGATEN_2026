@@ -109,12 +109,13 @@ const NumberInput = ({
     let val = internalValue;
 
     if (val !== "" && decimals > 0) {
-      val = pad(val);
-      setInternalValue(val);
-      onValueChange?.(val);
-      
-      const numericValue = toNum(val);
-      onNumberChange?.(isNaN(numericValue) ? 0 : numericValue);
+      const padded = pad(val);
+      if (padded !== val) {
+        setInternalValue(padded);
+        onValueChange?.(padded);
+        // Do NOT call onNumberChange here — numeric value hasn't changed,
+        // calling it would trigger parent re-renders that steal Tab focus.
+      }
     }
 
     props.onBlur?.(e);

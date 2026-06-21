@@ -78,15 +78,30 @@ export function ContasPagarList({
       header: "Vencimento",
       cell: ({ row }) => {
         const item = row.original;
-        if (item.status === "PAGO") {
-          return <span className="text-muted-foreground text-xs font-semibold">Quitado</span>;
+        const parcelas = item.contasPagarParcelas;
+
+        if (!parcelas || parcelas.length === 0) {
+          return <span className="text-muted-foreground">-</span>;
         }
+
+        if (item.status === "PAGO") {
+          // Exibe a data de vencimento da última parcela
+          const ultima = [...parcelas].sort(
+            (a, b) => new Date(b.dataVencimento).getTime() - new Date(a.dataVencimento).getTime()
+          )[0];
+          return (
+            <span className="text-muted-foreground">
+              {formatDateToLocal(ultima.dataVencimento)}
+            </span>
+          );
+        }
+
         // Acha o menor vencimento das parcelas em aberto ou parcial
-        const abertas = item.contasPagarParcelas?.filter(
+        const abertas = parcelas.filter(
           (p) => p.status === "ABERTO" || p.status === "PARCIAL"
         );
         if (!abertas || abertas.length === 0) {
-          return <span>-</span>;
+          return <span className="text-muted-foreground">-</span>;
         }
         const maisProxima = [...abertas].sort(
           (a, b) => new Date(a.dataVencimento).getTime() - new Date(b.dataVencimento).getTime()

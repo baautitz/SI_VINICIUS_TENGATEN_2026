@@ -780,6 +780,7 @@ function CondicoesUpsertForm({
                                         type="button"
                                         size="icon"
                                         variant="ghost"
+                                        tabIndex={-1}
                                         className="text-destructive hover:bg-destructive/10 h-8 w-8"
                                         onClick={() =>
                                           handleRemoveParcela(index)
