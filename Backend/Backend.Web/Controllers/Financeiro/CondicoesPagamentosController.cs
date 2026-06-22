@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Backend.Web.Controllers.Financeiro;
 
 [ApiController]
-[Route("api/pagamentos/condicoes")]
+[Route("api/financeiro/condicoes")]
 public class CondicoesPagamentosController : ControllerBase
 {
     private readonly CondicoesPagamentosService _condicoesService;

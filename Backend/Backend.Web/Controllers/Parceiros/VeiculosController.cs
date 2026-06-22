@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Backend.Web.Controllers.Parceiros;
 
 [ApiController]
-[Route("api/logistica/veiculos")]
+[Route("api/parceiros/veiculos")]
 public class VeiculosController : ControllerBase
 {
     private readonly VeiculosService _veiculosService;

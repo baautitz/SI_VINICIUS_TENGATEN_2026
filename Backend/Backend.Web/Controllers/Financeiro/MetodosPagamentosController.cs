@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Backend.Web.Controllers.Financeiro;
 
 [ApiController]
-[Route("api/pagamentos/metodos")]
+[Route("api/financeiro/metodos")]
 public class MetodosPagamentosController : ControllerBase
 {
     private readonly MetodosPagamentosService _metodosService;

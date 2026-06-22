@@ -98,132 +98,136 @@ export function DataTable<TData, TValue>({
   const internalSearchInputRef = React.useRef<HTMLInputElement>(null);
   const activeSearchInputRef = searchInputRef || internalSearchInputRef;
 
-  useHotkeys([
-    {
-      hotkey: "Alt+Q",
-      callback: (e: KeyboardEvent) => {
-        const isInsideDialog =
-          !!activeSearchInputRef?.current?.closest('[role="dialog"]');
-        const anyDialogOpen =
-          typeof document !== "undefined" &&
-          !!document.querySelectorAll('[role="dialog"]').length;
+  useHotkeys(
+    [
+      {
+        hotkey: "Alt+Q",
+        callback: (e: KeyboardEvent) => {
+          const isInsideDialog =
+            !!activeSearchInputRef?.current?.closest('[role="dialog"]');
+          const anyDialogOpen =
+            typeof document !== "undefined" &&
+            !!document.querySelectorAll('[role="dialog"]').length;
 
-        if (anyDialogOpen && !isInsideDialog) {
-          return;
-        }
+          if (anyDialogOpen && !isInsideDialog) {
+            return;
+          }
 
-        e.preventDefault();
-        activeSearchInputRef?.current?.focus();
-        activeSearchInputRef?.current?.select();
+          e.preventDefault();
+          activeSearchInputRef?.current?.focus();
+          activeSearchInputRef?.current?.select();
+        },
+        options: {
+          ignoreInputs: false,
+        },
       },
-      options: {
-        ignoreInputs: false,
+      {
+        hotkey: "Enter",
+        callback: (e: KeyboardEvent) => {
+          if (focusedRowIndex === null || rows.length === 0) return;
+
+          const activeElement = document.activeElement as HTMLElement;
+          if (
+            activeElement?.tagName === "INPUT" ||
+            activeElement?.tagName === "TEXTAREA" ||
+            activeElement?.tagName === "SELECT" ||
+            activeElement?.tagName === "A" ||
+            activeElement?.tagName === "BUTTON"
+          ) {
+            return;
+          }
+
+          const rowData = rows[focusedRowIndex].original;
+          const dialogs =
+            typeof document !== "undefined"
+              ? document.querySelectorAll('[role="dialog"]')
+              : [];
+          const topDialog =
+            dialogs.length > 0 ? dialogs[dialogs.length - 1] : null;
+
+          if (
+            topDialog &&
+            rowRefs.current[focusedRowIndex]?.closest('[role="dialog"]') !==
+              topDialog
+          ) {
+            return;
+          }
+
+          e.preventDefault();
+          if (onRowSelect) {
+            onRowSelect(rowData);
+          } else if (onEditRow) {
+            onEditRow(rowData);
+          }
+        },
+        options: {
+          enabled: focusedRowIndex !== null,
+          ignoreInputs: true,
+        },
       },
-    },
-    {
-      hotkey: "Enter",
-      callback: (e: KeyboardEvent) => {
-        if (focusedRowIndex === null || rows.length === 0) return;
-
-        const activeElement = document.activeElement as HTMLElement;
-        if (
-          activeElement?.tagName === "INPUT" ||
-          activeElement?.tagName === "TEXTAREA" ||
-          activeElement?.tagName === "SELECT" ||
-          activeElement?.tagName === "A" ||
-          activeElement?.tagName === "BUTTON"
-        ) {
-          return;
-        }
-
-        const rowData = rows[focusedRowIndex].original;
-        const dialogs =
-          typeof document !== "undefined"
-            ? document.querySelectorAll('[role="dialog"]')
-            : [];
-        const topDialog =
-          dialogs.length > 0 ? dialogs[dialogs.length - 1] : null;
-
-        if (
-          topDialog &&
-          rowRefs.current[focusedRowIndex]?.closest('[role="dialog"]') !==
-            topDialog
-        ) {
-          return;
-        }
-
-        e.preventDefault();
-        if (onRowSelect) {
-          onRowSelect(rowData);
-        } else if (onEditRow) {
+      {
+        hotkey: "Alt+E",
+        callback: (e: KeyboardEvent) => {
+          if (focusedRowIndex === null || rows.length === 0 || !onEditRow)
+            return;
+          const rowData = rows[focusedRowIndex].original;
+          e.preventDefault();
           onEditRow(rowData);
-        }
+        },
+        options: {
+          enabled: focusedRowIndex !== null && !!onEditRow,
+          ignoreInputs: false,
+        },
       },
-      options: {
-        enabled: focusedRowIndex !== null,
-        ignoreInputs: true,
-      },
-    },
-    {
-      hotkey: "Alt+E",
-      callback: (e: KeyboardEvent) => {
-        if (focusedRowIndex === null || rows.length === 0 || !onEditRow) return;
-        const rowData = rows[focusedRowIndex].original;
-        e.preventDefault();
-        onEditRow(rowData);
-      },
-      options: {
-        enabled: focusedRowIndex !== null && !!onEditRow,
-        ignoreInputs: false,
-      },
-    },
-    {
-      hotkey: "Delete",
-      callback: (e: KeyboardEvent) => {
-        if (focusedRowIndex === null || rows.length === 0 || !onDeleteRow)
-          return;
+      {
+        hotkey: "Delete",
+        callback: (e: KeyboardEvent) => {
+          if (focusedRowIndex === null || rows.length === 0 || !onDeleteRow)
+            return;
 
-        if (
-          document.activeElement?.tagName === "INPUT" ||
-          document.activeElement?.tagName === "TEXTAREA" ||
-          document.activeElement?.tagName === "SELECT"
-        ) {
-          return;
-        }
+          if (
+            document.activeElement?.tagName === "INPUT" ||
+            document.activeElement?.tagName === "TEXTAREA" ||
+            document.activeElement?.tagName === "SELECT"
+          ) {
+            return;
+          }
 
-        const rowData = rows[focusedRowIndex].original;
-        e.preventDefault();
-        onDeleteRow(rowData);
+          const rowData = rows[focusedRowIndex].original;
+          e.preventDefault();
+          onDeleteRow(rowData);
+        },
+        options: {
+          enabled: focusedRowIndex !== null && !!onDeleteRow,
+          ignoreInputs: true,
+        },
       },
-      options: {
-        enabled: focusedRowIndex !== null && !!onDeleteRow,
-        ignoreInputs: true,
-      },
-    },
-    {
-      hotkey: "Backspace",
-      callback: (e: KeyboardEvent) => {
-        if (focusedRowIndex === null || rows.length === 0 || !onDeleteRow)
-          return;
+      {
+        hotkey: "Backspace",
+        callback: (e: KeyboardEvent) => {
+          if (focusedRowIndex === null || rows.length === 0 || !onDeleteRow)
+            return;
 
-        if (
-          document.activeElement?.tagName === "INPUT" ||
-          document.activeElement?.tagName === "TEXTAREA" ||
-          document.activeElement?.tagName === "SELECT"
-        ) {
-          return;
-        }
+          if (
+            document.activeElement?.tagName === "INPUT" ||
+            document.activeElement?.tagName === "TEXTAREA" ||
+            document.activeElement?.tagName === "SELECT"
+          ) {
+            return;
+          }
 
-        const rowData = rows[focusedRowIndex].original;
-        e.preventDefault();
-        onDeleteRow(rowData);
+          const rowData = rows[focusedRowIndex].original;
+          e.preventDefault();
+          onDeleteRow(rowData);
+        },
+        options: {
+          enabled: focusedRowIndex !== null && !!onDeleteRow,
+          ignoreInputs: true,
+        },
       },
-      options: {
-        enabled: focusedRowIndex !== null && !!onDeleteRow,
-        ignoreInputs: true,
-      },
-    },
-  ], { conflictBehavior: "allow" });
+    ],
+    { conflictBehavior: "allow" },
+  );
 
   React.useEffect(() => {
     const timeout = setTimeout(() => {
@@ -357,14 +361,14 @@ export function DataTable<TData, TValue>({
 
   return (
     <div
-      className="space-y-4 flex-1 min-h-0 flex flex-col"
+      className="flex min-h-0 flex-1 flex-col space-y-4"
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node)) {
           setFocusedRowIndex(null);
         }
       }}
     >
-      <div className="flex items-center justify-between gap-2 shrink-0">
+      <div className="flex shrink-0 items-center justify-between gap-2">
         <div className="flex flex-1 items-center gap-2">
           {onGlobalFilterChange && (
             <div className="w-full flex-1">
@@ -388,7 +392,7 @@ export function DataTable<TData, TValue>({
                 />
 
                 <InputGroupAddon>
-                  <Search className="size-4 text-muted-foreground" />
+                  <Search className="text-muted-foreground size-4" />
                 </InputGroupAddon>
 
                 {!hideSearchKbd && (
@@ -406,19 +410,19 @@ export function DataTable<TData, TValue>({
         </div>
       </div>
 
-      <div className="rounded-xl border bg-card relative overflow-hidden flex-1 min-h-0 flex flex-col">
+      <div className="bg-card relative flex max-h-full flex-1 flex-col overflow-hidden rounded-xl border">
         <Table>
-          <TableHeader className="sticky top-0 bg-muted z-10">
+          <TableHeader className="bg-muted sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 key={headerGroup.id}
-                className="hover:bg-transparent border-b"
+                className="border-b hover:bg-transparent"
               >
                 {headerGroup.headers.map((header) => {
                   return (
                     <TableHead
                       key={header.id}
-                      className="whitespace-nowrap h-11 py-2 font-bold text-foreground"
+                      className="text-foreground h-11 py-2 font-bold whitespace-nowrap"
                       style={{
                         width:
                           header.column.getSize() !== 150
@@ -438,7 +442,7 @@ export function DataTable<TData, TValue>({
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody>
+          <TableBody className="overflow-y-scroll">
             {table.getIsAllPageRowsSelected() &&
               totalItems !== undefined &&
               totalItems > table.getRowModel().rows.length &&
@@ -487,9 +491,9 @@ export function DataTable<TData, TValue>({
                   colSpan={columns.length}
                   className="full text-center"
                 >
-                  <div className="flex flex-col items-center justify-center gap-3 py-8 text-muted-foreground">
+                  <div className="text-muted-foreground flex flex-col items-center justify-center gap-3 py-8">
                     <Spinner className="size-6" />
-                    <span className="font-medium animate-pulse">
+                    <span className="animate-pulse font-medium">
                       Carregando dados...
                     </span>
                   </div>
@@ -510,10 +514,10 @@ export function DataTable<TData, TValue>({
                   }
                   tabIndex={hasKeyboardNav ? 0 : -1}
                   className={[
-                    "group border-b last:border-0 transition-colors",
+                    "group border-b transition-colors last:border-0",
                     hasKeyboardNav ? "cursor-pointer focus:outline-none" : "",
                     hasKeyboardNav && focusedRowIndex === index
-                      ? "bg-primary/5 relative z-10 outline-2 outline-primary -outline-offset-2"
+                      ? "bg-primary/5 outline-primary relative z-10 outline-2 -outline-offset-2"
                       : "",
                   ].join(" ")}
                   onFocus={() => hasKeyboardNav && setFocusedRowIndex(index)}
@@ -544,7 +548,7 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-full text-center text-muted-foreground"
+                  className="text-muted-foreground h-full text-center"
                 >
                   Nenhum resultado encontrado.
                 </TableCell>
@@ -554,19 +558,19 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
 
-      <div className="flex items-center justify-between mt-auto">
-        <div className="flex-1 flex flex-col gap-0.5">
+      <div className="mt-auto flex items-center justify-between">
+        <div className="flex flex-1 flex-col gap-0.5">
           {isSelectionMode ? (
-            <span className="text-xs text-muted-foreground font-medium">
+            <span className="text-muted-foreground text-xs font-medium">
               ↑↓ para navegar · Enter para selecionar
             </span>
           ) : (
-            <span className="text-xs text-muted-foreground font-medium">
+            <span className="text-muted-foreground text-xs font-medium">
               ↑↓ para navegar · Alt+E para editar
             </span>
           )}
           {!isSelectionMode && Object.keys(rowSelection).length > 0 && (
-            <span className="text-xs text-primary font-semibold">
+            <span className="text-primary text-xs font-semibold">
               {selectAllAcrossPages
                 ? totalItems
                 : Object.keys(rowSelection).length}{" "}
@@ -577,14 +581,14 @@ export function DataTable<TData, TValue>({
         </div>
         <div className="flex items-center space-x-6 lg:space-x-8">
           <div className="flex items-center space-x-2">
-            <p className="text-sm font-semibold text-foreground/80">
+            <p className="text-foreground/80 text-sm font-semibold">
               Página {pageIndex} de {pageCount || 1}
             </p>
           </div>
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
-              className="hidden h-9 w-9 p-0 lg:flex rounded-lg"
+              className="hidden h-9 w-9 rounded-lg p-0 lg:flex"
               onClick={() => onPageChange(1)}
               disabled={pageIndex <= 1 || loading}
             >
@@ -593,7 +597,7 @@ export function DataTable<TData, TValue>({
             </Button>
             <Button
               variant="outline"
-              className="h-9 w-9 p-0 rounded-lg"
+              className="h-9 w-9 rounded-lg p-0"
               onClick={() => onPageChange(pageIndex - 1)}
               disabled={pageIndex <= 1 || loading}
             >
@@ -602,7 +606,7 @@ export function DataTable<TData, TValue>({
             </Button>
             <Button
               variant="outline"
-              className="h-9 w-9 p-0 rounded-lg"
+              className="h-9 w-9 rounded-lg p-0"
               onClick={() => onPageChange(pageIndex + 1)}
               disabled={pageIndex >= pageCount || loading}
             >
@@ -611,7 +615,7 @@ export function DataTable<TData, TValue>({
             </Button>
             <Button
               variant="outline"
-              className="hidden h-9 w-9 p-0 lg:flex rounded-lg"
+              className="hidden h-9 w-9 rounded-lg p-0 lg:flex"
               onClick={() => onPageChange(pageCount)}
               disabled={pageIndex >= pageCount || loading}
             >

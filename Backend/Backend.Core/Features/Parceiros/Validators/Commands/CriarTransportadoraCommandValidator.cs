@@ -13,8 +13,8 @@ public class CriarTransportadoraCommandValidator : AbstractValidator<CriarTransp
             .MaximumLength(150).WithMessage("Nome ou Razão Social deve ter no máximo 150 caracteres.");
 
         RuleFor(x => x.CpfCnpj)
-            .NotEmpty().WithMessage("CPF ou CNPJ é obrigatório.")
-            .Must(BeValidDocument).WithMessage("CPF ou CNPJ inválido.");
+            .NotEmpty().WithMessage("CPF/CNPJ ou Documento é obrigatório.")
+            .Must(BeValidDocument).WithMessage("CPF/CNPJ ou Documento inválido.");
 
         RuleFor(x => x.NacionalidadeId)
             .GreaterThan(0).WithMessage("Nacionalidade é obrigatória.");

@@ -21,18 +21,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={cn("font-sans", inter.variable)} suppressHydrationWarning>
+    <html
+      lang="pt-BR"
+      className={cn("font-sans", inter.variable)}
+      suppressHydrationWarning
+    >
       <body className="bg-background text-foreground min-h-screen antialiased">
         <Providers>
           <TooltipProvider>
             <SidebarProvider>
-              <div className="flex h-screen w-full overflow-hidden">
+              <div className="flex h-screen w-full">
                 <AppSidebar />
-                <div className="flex min-h-screen flex-1 flex-col overflow-y-auto">
-                  <main className="flex flex-1 flex-col bg-slate-50/50 p-6 dark:bg-slate-900/10">
-                    {children}
-                  </main>
-                </div>
+                <main className="flex flex-1 flex-col bg-slate-50/50 p-6 dark:bg-slate-900/10">
+                  {children}
+                </main>
               </div>
             </SidebarProvider>
           </TooltipProvider>

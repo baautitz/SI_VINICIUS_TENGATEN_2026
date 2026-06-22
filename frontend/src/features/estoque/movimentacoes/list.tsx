@@ -99,7 +99,7 @@ export function MovimentacoesList({
       accessorKey: "observacao",
       header: "Observação",
       cell: ({ row }) => (
-        <span className="text-muted-foreground truncate max-w-xs block">
+        <span className="text-muted-foreground block max-w-xs truncate">
           {row.getValue("observacao") || "-"}
         </span>
       ),
@@ -112,7 +112,7 @@ export function MovimentacoesList({
         const total =
           item.valorTotal ??
           item.movimentacoesEstoquesItens?.reduce(
-            (sum, i) => sum + (Number(i.quantidade) * Number(i.custoUnitario)),
+            (sum, i) => sum + Number(i.quantidade) * Number(i.custoUnitario),
             0,
           );
 
@@ -128,7 +128,7 @@ export function MovimentacoesList({
     },
     {
       id: "actions",
-      header: () => <div className="text-right px-4">Ações</div>,
+      header: () => <div className="px-4 text-right">Ações</div>,
       cell: ({ row }) => {
         const item = row.original;
         const isRascunho = item.status === "RASCUNHO";
@@ -194,7 +194,7 @@ export function MovimentacoesList({
   ];
 
   return (
-    <div ref={listRef} className="flex-1 min-h-0 flex flex-col h-full">
+    <div ref={listRef} className="flex h-full min-h-0 flex-1 flex-col">
       <FeatureLayout>
         <FeatureHeader
           title="Movimentações de Estoque"

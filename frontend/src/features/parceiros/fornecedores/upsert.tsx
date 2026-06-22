@@ -272,7 +272,14 @@ function FornecedoresUpsertForm({
             <div className="w-fit">
               <form.Field
                 name="cpfCnpj"
-                validators={{ onChange: fornecedorSchema.shape.cpfCnpj }}
+                validators={{
+                  onChange: ({ value }) => {
+                    if (!value || value.trim() === "") {
+                      return isBrasil ? "CPF/CNPJ é obrigatório." : "Documento é obrigatório.";
+                    }
+                    return undefined;
+                  },
+                }}
               >
                 {(field) => {
                   let label = "Documento";
