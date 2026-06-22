@@ -22,8 +22,8 @@ SET search_path TO projeto_sistemas, public;
 \ir parceiros/schema/emitentes.sql
 
 \ir parceiros/schema/fornecedores.sql
-\ir logistica/schema/transportadoras.sql
-\ir logistica/schema/veiculos.sql
+\ir parceiros/schema/transportadoras.sql
+\ir parceiros/schema/veiculos.sql
 
 \ir catalogo/schema/categorias.sql
 \ir catalogo/schema/marcas.sql
@@ -33,9 +33,9 @@ SET search_path TO projeto_sistemas, public;
 \ir catalogo/schema/sku_atributos_valores.sql
 \ir catalogo/schema/skus_atributos_valores_relacionamento.sql
 
-\ir pagamentos/schema/metodos_pagamento.sql
-\ir pagamentos/schema/condicoes_pagamentos.sql
-\ir pagamentos/schema/condicoes_pagamentos_parcelas.sql
+\ir financeiro/schema/metodos_pagamento.sql
+\ir financeiro/schema/condicoes_pagamentos.sql
+\ir financeiro/schema/condicoes_pagamentos_parcelas.sql
 
 \ir vendas/schema/vendas.sql
 \ir vendas/schema/vendas_itens.sql
@@ -60,6 +60,6 @@ SET search_path TO projeto_sistemas, public;
 
 \ir catalogo/seeds/seed_unidades_medida.sql
 \ir localizacao/seeds/seed_brasil.sql
-\ir pagamentos/seeds/seed_metodos_pagamento.sql
+\ir financeiro/seeds/seed_metodos_pagamento.sql
 
 COMMIT;

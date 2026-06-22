@@ -80,26 +80,8 @@ export const navigationConfig: NavGroup[] = [
       { title: "Clientes", url: "/parceiros/clientes", icon: Users },
       { title: "Fornecedores", url: "/parceiros/fornecedores", icon: Truck },
       { title: "Emitentes", url: "/parceiros/emitentes", icon: UserCircle },
-    ],
-  },
-  {
-    id: "logistica",
-    title: "Logística",
-    icon: Truck,
-    urlPrefix: "/logistica",
-    items: [
-      { title: "Transportadoras", url: "/logistica/transportadoras", icon: Truck },
-      { title: "Veículos", url: "/logistica/veiculos", icon: Car },
-    ],
-  },
-  {
-    id: "pagamentos",
-    title: "Pagamentos",
-    icon: CreditCard,
-    urlPrefix: "/pagamentos",
-    items: [
-      { title: "Métodos de Pagamento", url: "/pagamentos/metodos", icon: Landmark },
-      { title: "Condições de Pagamento", url: "/pagamentos/condicoes", icon: Receipt },
+      { title: "Transportadoras", url: "/parceiros/transportadoras", icon: Truck },
+      { title: "Veículos", url: "/parceiros/veiculos", icon: Car },
     ],
   },
   {
@@ -110,6 +92,8 @@ export const navigationConfig: NavGroup[] = [
     items: [
       { title: "Contas a Pagar", url: "/financeiro/contas-pagar", icon: Receipt },
       { title: "Contas a Receber", url: "/financeiro/contas-receber", icon: Landmark },
+      { title: "Métodos de Pagamento", url: "/financeiro/metodos", icon: Landmark },
+      { title: "Condições de Pagamento", url: "/financeiro/condicoes", icon: Receipt },
     ],
   },
 ];

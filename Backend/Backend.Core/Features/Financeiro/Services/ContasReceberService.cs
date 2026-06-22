@@ -10,8 +10,6 @@ using Backend.Core.Features.Financeiro.Validators.Commands;
 using Backend.Core.Features.Parceiros.Repositories;
 using Backend.Core.Features.NFe.Repositories;
 using Backend.Core.Features.NFe.Entities;
-using Backend.Core.Features.Pagamentos.Repositories;
-using Backend.Core.Features.Pagamentos.Entities;
 using Backend.Core.Features.Vendas.Repositories;
 using Backend.Core.Features.Vendas.Entities;
 using System.Linq;
@@ -272,3 +270,4 @@ public sealed class ContasReceberService : BaseService
         return await _contasRepository.DeletarContaReceber(id);
     }
 }
+

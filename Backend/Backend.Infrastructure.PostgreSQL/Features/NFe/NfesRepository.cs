@@ -3,7 +3,7 @@ using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.NFe.DTOs;
 using Backend.Core.Features.NFe.Entities;
 using Backend.Core.Features.NFe.Repositories;
-using Backend.Core.Features.Pagamentos.Entities;
+using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Parceiros.Entities;
 using Backend.Infrastructure.PostgreSQL.Common;
 using Dapper;
@@ -495,3 +495,4 @@ public class NfesRepository : INfesRepository
             await InserirInformacoesAdicionais(nfeId, info);
     }
 }
+

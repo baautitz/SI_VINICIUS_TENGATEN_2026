@@ -1,8 +1,8 @@
 "use client";
 import React from "react";
 import { EntityInput } from "@/components/ui/entity-input";
-import { TransportadorasFeature, Transportadora } from "@/features/logistica/transportadoras";
-import { transportadorasApi } from "@/api/logistica";
+import { TransportadorasFeature, Transportadora } from "@/features/parceiros/transportadoras";
+import { transportadorasApi } from "@/api/parceiros";
 
 interface TransportadoraInputProps {
   name: string;
@@ -48,3 +48,4 @@ export function TransportadoraInput({
     />
   );
 }
+

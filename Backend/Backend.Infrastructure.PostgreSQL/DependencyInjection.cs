@@ -6,28 +6,24 @@ using Backend.Core.Features.Estoque.Repositories;
 using Backend.Core.Features.Financeiro.Repositories;
 using Backend.Core.Features.Financeiro.Services;
 using Backend.Core.Features.Localizacao.Repositories;
-using Backend.Core.Features.Logistica.Repositories;
-using Backend.Core.Features.Logistica.Services;
+using Backend.Core.Features.Parceiros.Repositories;
+using Backend.Core.Features.Parceiros.Services;
 using Backend.Core.Features.Localizacao.Services;
 using Backend.Core.Features.Catalogo.Services;
 using Backend.Core.Features.Estoque.Services;
 using Backend.Core.Features.NFe.Repositories;
-using Backend.Core.Features.Parceiros.Repositories;
-using Backend.Core.Features.Parceiros.Services;
 using Backend.Core.Features.Vendas.Repositories;
-using Backend.Core.Features.Pagamentos.Repositories;
-using Backend.Core.Features.Pagamentos.Services;
 using Backend.Infrastructure.PostgreSQL.Common;
 using Backend.Infrastructure.PostgreSQL.Features.Acesso;
 using Backend.Infrastructure.PostgreSQL.Features.Catalogo;
 using Backend.Infrastructure.PostgreSQL.Features.Estoque;
 using Backend.Infrastructure.PostgreSQL.Features.Financeiro;
 using Backend.Infrastructure.PostgreSQL.Features.Localizacao;
-using Backend.Infrastructure.PostgreSQL.Features.Logistica;
+// Logistica merged into Parceiros
 using Backend.Infrastructure.PostgreSQL.Features.NFe;
 using Backend.Infrastructure.PostgreSQL.Features.Parceiros;
 using Backend.Infrastructure.PostgreSQL.Features.Vendas;
-using Backend.Infrastructure.PostgreSQL.Features.Pagamentos;
+// Pagamentos merged into Financeiro
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 

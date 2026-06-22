@@ -1,4 +1,4 @@
-using Backend.Core.Common.Enums;
+using Backend.Core.Features.Parceiros.Enums;
 
 namespace Backend.Core.Features.Parceiros.Commands;
 
@@ -16,3 +16,4 @@ public record AtualizarFornecedorCommand(
     string? Observacao,
     bool Ativo
 );
+

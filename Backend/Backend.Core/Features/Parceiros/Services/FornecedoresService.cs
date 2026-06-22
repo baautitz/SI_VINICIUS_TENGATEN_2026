@@ -5,7 +5,7 @@ using Backend.Core.Features.Parceiros.Repositories;
 using Backend.Core.Features.Parceiros.Validators.Commands;
 using Backend.Core.Common.Extensions;
 using Backend.Core.Common;
-using Backend.Core.Common.Enums;
+using Backend.Core.Features.Parceiros.Enums;
 using Backend.Core.Common.ValueObjects;
 using Backend.Core.Features.Localizacao.Repositories;
 using FluentValidation;
@@ -141,3 +141,4 @@ public sealed class FornecedoresService : BaseService
     public Task<ResultadoPaginado<Fornecedores>> PesquisarFornecedores(string termo, int pagina = 1, int tamanhoDaPagina = 20)
         => _fornecedoresRepository.PesquisarFornecedores(termo, pagina, tamanhoDaPagina);
 }
+

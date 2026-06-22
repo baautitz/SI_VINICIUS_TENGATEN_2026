@@ -40,7 +40,7 @@ import {
 import type { UseMutationResult } from "@tanstack/react-query";
 import { contasReceberApi } from "@/api/financeiro";
 import { Cliente } from "@/features/parceiros/clientes/types";
-import { CondicaoPagamento } from "@/features/pagamentos/condicoes/types";
+import { CondicaoPagamento } from "@/features/financeiro/condicoes/types";
 import {
   contasReceberSchema,
   contasReceberBaseSchema,
@@ -912,3 +912,4 @@ function ContasReceberFormBody({
     </form>
   );
 }
+

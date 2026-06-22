@@ -1,4 +1,4 @@
-using Backend.Core.Common.Enums;
+using Backend.Core.Features.Parceiros.Enums;
 using Backend.Core.Common.Extensions;
 using Backend.Core.Common.Results;
 using Backend.Core.Common;
@@ -178,3 +178,4 @@ public sealed class EmitentesService : BaseService
     public Task<ResultadoPaginado<Emitentes>> PesquisarEmitentes(string termo, int pagina = 1, int tamanhoDaPagina = 20)
         => _emitentesRepository.PesquisarEmitentes(termo, pagina, tamanhoDaPagina);
 }
+

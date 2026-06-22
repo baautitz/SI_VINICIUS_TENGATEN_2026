@@ -1,4 +1,4 @@
-using Backend.Core.Common.Enums;
+using Backend.Core.Features.Parceiros.Enums;
 using Backend.Core.Common.Exceptions;
 using Backend.Core.Common.Helpers;
 using Backend.Core.Common.ValueObjects;
@@ -149,3 +149,4 @@ public class Clientes
 
     public void Desativar() => Ativo = false;
 }
+

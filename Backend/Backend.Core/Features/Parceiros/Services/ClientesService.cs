@@ -1,4 +1,4 @@
-using Backend.Core.Common.Enums;
+using Backend.Core.Features.Parceiros.Enums;
 using Backend.Core.Common.Extensions;
 using Backend.Core.Common.Results;
 using Backend.Core.Common;
@@ -177,3 +177,4 @@ public sealed class ClientesService : BaseService
     public Task<ResultadoPaginado<Clientes>> PesquisarClientes(string termo, int pagina = 1, int tamanhoDaPagina = 20)
         => _clientesRepository.PesquisarClientes(termo, pagina, tamanhoDaPagina);
 }
+

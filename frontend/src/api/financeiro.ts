@@ -2,6 +2,8 @@ import { http } from "./http";
 import type { PaginatedResult, Resultado } from "./types";
 import type { ContasPagar } from "@/features/financeiro/contas-pagar/types";
 import type { ContasReceber } from "@/features/financeiro/contas-receber/types";
+import type { MetodoPagamento, MetodoPagamentoFormValues } from "@/features/financeiro/metodos/types";
+import type { CondicaoPagamento, CondicaoPagamentoFormValues } from "@/features/financeiro/condicoes/types";
 
 export interface ParcelaPagarCommand {
   numeroParcela: number;
@@ -88,4 +90,22 @@ export const contasReceberApi = {
       numeroParcela,
       valorEstorno,
     }),
+};
+
+export const metodosApi = {
+  list: (search?: string, page = 1, pageSize = 20) =>
+    http.get<PaginatedResult<MetodoPagamento>>(`/api/financeiro/metodos?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`),
+  getById: (codigo: string) => http.get<MetodoPagamento>(`/api/financeiro/metodos/${encodeURIComponent(codigo)}`),
+  create: (data: MetodoPagamentoFormValues) => http.post<Resultado<MetodoPagamento>>("/api/financeiro/metodos", data),
+  update: (codigo: string, data: MetodoPagamentoFormValues) => http.put<Resultado<MetodoPagamento>>(`/api/financeiro/metodos/${encodeURIComponent(codigo)}`, data),
+  delete: (codigo: string) => http.delete(`/api/financeiro/metodos/${encodeURIComponent(codigo)}`),
+};
+
+export const condicoesApi = {
+  list: (search?: string, page = 1, pageSize = 20) =>
+    http.get<PaginatedResult<CondicaoPagamento>>(`/api/financeiro/condicoes?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`),
+  getById: (id: number) => http.get<CondicaoPagamento>(`/api/financeiro/condicoes/${id}`),
+  create: (data: CondicaoPagamentoFormValues) => http.post<Resultado<CondicaoPagamento>>("/api/financeiro/condicoes", data),
+  update: (id: number, data: CondicaoPagamentoFormValues) => http.put<Resultado<CondicaoPagamento>>(`/api/financeiro/condicoes/${id}`, data),
+  delete: (id: number) => http.delete(`/api/financeiro/condicoes/${id}`),
 };

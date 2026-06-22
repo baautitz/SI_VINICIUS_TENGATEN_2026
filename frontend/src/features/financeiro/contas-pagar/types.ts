@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { Fornecedor } from "@/features/parceiros/fornecedores/types";
-import type { CondicaoPagamento } from "@/features/pagamentos/condicoes/types";
+import type { CondicaoPagamento } from "@/features/financeiro/condicoes/types";
 
 export type StatusTituloFinanceiro = "ABERTO" | "PARCIAL" | "PAGO" | "CANCELADO";
 
@@ -98,3 +98,4 @@ export const contasPagarSchema = contasPagarBaseSchema.superRefine((data, ctx) =
 });
 
 export type ContasPagarFormValues = z.infer<typeof contasPagarSchema>;
+

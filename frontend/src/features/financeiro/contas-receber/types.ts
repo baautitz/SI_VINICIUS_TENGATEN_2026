@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { Cliente } from "@/features/parceiros/clientes/types";
-import type { CondicaoPagamento } from "@/features/pagamentos/condicoes/types";
+import type { CondicaoPagamento } from "@/features/financeiro/condicoes/types";
 import type { StatusTituloFinanceiro } from "../contas-pagar/types";
 
 export interface ContasReceberParcela {
@@ -92,3 +92,4 @@ export const contasReceberSchema = contasReceberBaseSchema.superRefine((data, ct
 });
 
 export type ContasReceberFormValues = z.infer<typeof contasReceberSchema>;
+

@@ -1,7 +1,7 @@
 using Backend.Core.Common.Exceptions;
 using Backend.Core.Common.Helpers;
 using Backend.Core.Features.Financeiro.Entities.Enums;
-using Backend.Core.Features.Pagamentos.Entities;
+using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Parceiros.Entities;
 
 namespace Backend.Core.Features.Financeiro.Entities;
@@ -199,3 +199,4 @@ public class ContasReceber
             .FirstOrDefault()?.DataVencimento;
     }
 }
+

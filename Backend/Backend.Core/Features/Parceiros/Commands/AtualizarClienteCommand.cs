@@ -1,4 +1,4 @@
-using Backend.Core.Common.Enums;
+using Backend.Core.Features.Parceiros.Enums;
 
 namespace Backend.Core.Features.Parceiros.Commands;
 
@@ -17,3 +17,4 @@ public record AtualizarClienteCommand(
     string? Observacao,
     bool Ativo
 );
+

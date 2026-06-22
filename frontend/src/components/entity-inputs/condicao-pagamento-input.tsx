@@ -1,9 +1,9 @@
 "use client";
 import React from "react";
 import { EntityInput } from "@/components/ui/entity-input";
-import { CondicoesFeature } from "@/features/pagamentos/condicoes";
-import { CondicaoPagamento } from "@/features/pagamentos/condicoes/types";
-import { condicoesApi } from "@/api/pagamentos";
+import { CondicoesFeature } from "@/features/financeiro/condicoes";
+import { CondicaoPagamento } from "@/features/financeiro/condicoes/types";
+import { condicoesApi } from "@/api/financeiro";
 
 interface CondicaoPagamentoInputProps {
   name: string;
@@ -56,3 +56,4 @@ export function CondicaoPagamentoInput({
     />
   );
 }
+

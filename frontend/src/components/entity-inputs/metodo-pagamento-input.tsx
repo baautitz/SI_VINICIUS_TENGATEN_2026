@@ -1,9 +1,9 @@
 "use client";
 
 import { EntityInput } from "@/components/ui/entity-input";
-import { MetodosFeature } from "@/features/pagamentos/metodos";
-import { metodosApi } from "@/api/pagamentos";
-import { MetodoPagamento } from "@/features/pagamentos/metodos/types";
+import { MetodosFeature } from "@/features/financeiro/metodos";
+import { metodosApi } from "@/api/financeiro";
+import { MetodoPagamento } from "@/features/financeiro/metodos/types";
 
 interface MetodoPagamentoInputProps {
   name: string;
@@ -58,3 +58,4 @@ export function MetodoPagamentoInput({
     />
   );
 }
+

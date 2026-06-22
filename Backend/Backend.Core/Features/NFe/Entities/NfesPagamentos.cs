@@ -1,6 +1,6 @@
 using Backend.Core.Common.Exceptions;
 using Backend.Core.Features.NFe.Entities.Enums;
-using Backend.Core.Features.Pagamentos.Entities;
+using Backend.Core.Features.Financeiro.Entities;
 
 namespace Backend.Core.Features.NFe.Entities;
 
@@ -30,3 +30,4 @@ public class NfesPagamentos
         MetodosPagamento = metodosPagamento ?? throw new DomainException("Método de pagamento é obrigatório.");
     }
 }
+

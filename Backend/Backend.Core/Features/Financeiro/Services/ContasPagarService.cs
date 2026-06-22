@@ -10,8 +10,6 @@ using Backend.Core.Features.Financeiro.Validators.Commands;
 using Backend.Core.Features.Parceiros.Repositories;
 using Backend.Core.Features.NFe.Repositories;
 using Backend.Core.Features.NFe.Entities;
-using Backend.Core.Features.Pagamentos.Repositories;
-using Backend.Core.Features.Pagamentos.Entities;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -249,3 +247,4 @@ public sealed class ContasPagarService : BaseService
         return await _contasRepository.DeletarContaPagar(id);
     }
 }
+

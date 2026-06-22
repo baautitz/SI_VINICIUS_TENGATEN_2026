@@ -2,7 +2,7 @@ using Backend.Core.Common.Exceptions;
 using Backend.Core.Common.Helpers;
 using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.Parceiros.Entities;
-using Backend.Core.Features.Pagamentos.Entities;
+using Backend.Core.Features.Financeiro.Entities;
 
 namespace Backend.Core.Features.Financeiro.Entities;
 
@@ -196,3 +196,4 @@ private void AtualizarSaldo()
             .FirstOrDefault()?.DataVencimento;
     }
 }
+

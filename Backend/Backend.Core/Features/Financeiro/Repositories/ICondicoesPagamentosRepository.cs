@@ -1,0 +1,15 @@
+using Backend.Core.Common.Results;
+using Backend.Core.Features.Financeiro.Entities;
+
+namespace Backend.Core.Features.Financeiro.Repositories;
+
+public interface ICondicoesPagamentosRepository
+{
+    public Task<ResultadoPaginado<CondicoesPagamentos>> ObterCondicoesPagamentos(int pagina = 1, int tamanhoDaPagina = 20);
+    public Task<CondicoesPagamentos?> ObterCondicaoPagamentoPorId(int id);
+    public Task<CondicoesPagamentos> CriarCondicaoPagamento(CondicoesPagamentos condicao);
+    public Task<CondicoesPagamentos> AtualizarCondicaoPagamento(int id, CondicoesPagamentos condicao);
+    public Task<bool> DeletarCondicaoPagamento(int id);
+    public Task<ResultadoPaginado<CondicoesPagamentos>> PesquisarCondicoesPagamentos(string termo, int pagina = 1, int tamanhoDaPagina = 20);
+    public Task<bool> ExisteDescricao(string descricao, int? ignorarId = null);
+}

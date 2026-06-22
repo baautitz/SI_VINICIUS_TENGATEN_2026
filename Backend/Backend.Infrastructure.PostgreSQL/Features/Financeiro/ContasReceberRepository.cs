@@ -1,13 +1,12 @@
 using System.Linq;
 using Backend.Core.Common.Results;
-using Backend.Core.Common.Enums;
+using Backend.Core.Features.Parceiros.Enums;
 using Backend.Core.Common.ValueObjects;
 using Backend.Core.Features.Localizacao.Entities;
 using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.Financeiro.Repositories;
 using Backend.Core.Features.Parceiros.Entities;
-using Backend.Core.Features.Pagamentos.Entities;
 using Backend.Infrastructure.PostgreSQL.Common;
 using Dapper;
 
@@ -528,3 +527,5 @@ public class ContasReceberRepository : IContasReceberRepository
         string Status,
         int ContaId);
 }
+
+

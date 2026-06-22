@@ -1,7 +1,7 @@
 using Backend.Core.Common.Exceptions;
 using Backend.Core.Common.Helpers;
 using Backend.Core.Common.ValueObjects;
-using Backend.Core.Features.Logistica.Entities;
+using Backend.Core.Features.Parceiros.Entities;
 using Backend.Core.Features.NFe.Entities.Enums;
 
 namespace Backend.Core.Features.NFe.Entities;
@@ -73,3 +73,4 @@ public class NfesTransportes
             throw new DomainException("Peso líquido não pode ser negativo.");
     }
 }
+
