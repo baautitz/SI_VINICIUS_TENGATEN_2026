@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-03T16:40:00Z",
+  "title": "Design System: Sistema de Gestão ERP",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Active Blue", "canonical": "oklch(0.52 0.105 223.128)", "tonalRamp": ["#002e5a", "#00437a", "#00599a", "#2575c0", "#5b91cf", "#8dacdc", "#bcd0ea", "#ebf2fb"] },
+      "primary-foreground": { "role": "primary-foreground", "displayName": "Blue Foreground", "canonical": "oklch(0.984 0.019 200.873)" },
+      "foreground": { "role": "neutral", "displayName": "Deep Ink", "canonical": "oklch(0.141 0.005 285.823)", "tonalRamp": ["#111112", "#212124", "#414145", "#626269", "#82818a", "#a3a2aa", "#e5e6e7", "#ffffff"] },
+      "background": { "role": "neutral-bg", "displayName": "Solid White", "canonical": "oklch(1 0 0)" },
+      "secondary": { "role": "secondary", "displayName": "Secondary Gray", "canonical": "oklch(0.967 0.001 286.375)" },
+      "secondary-foreground": { "role": "secondary-foreground", "displayName": "Secondary Foreground", "canonical": "oklch(0.21 0.006 285.885)" },
+      "muted-foreground": { "role": "muted-foreground", "displayName": "Muted Slate", "canonical": "oklch(0.552 0.016 285.938)" },
+      "border": { "role": "border", "displayName": "Clean Border", "canonical": "oklch(0.92 0.004 286.32)" },
+      "ring": { "role": "ring", "displayName": "Focus Ring", "canonical": "oklch(0.705 0.015 286.067)" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display Title", "purpose": "Main headers and global action sections." },
+      "body": { "displayName": "Body", "purpose": "All table cells, descriptive paragraphs, and navigation links." }
+    },
+    "shadows": [
+      { "name": "modal-overlay", "value": "0 4px 12px rgba(0, 0, 0, 0.05)", "purpose": "Elevation for temporary overlapping UI." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary action button, used sparingly for submitting or creating entities.",
+      "html": "<button class=\"ds-btn-primary\">SALVAR</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid transparent; background-color: #2575c0; color: #f4fbfc; font-size: 14px; font-weight: 500; font-family: Inter, sans-serif; cursor: pointer; transition: background-color 0.2s, outline 0.2s; } .ds-btn-primary:hover { background-color: rgba(37, 117, 192, 0.8); } .ds-btn-primary:focus-visible { border-color: #aab0b4; outline: 3px solid rgba(170, 176, 180, 0.5); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Secondary or cancel actions.",
+      "html": "<button class=\"ds-btn-secondary\">CANCELAR</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid transparent; background-color: #f5f5f6; color: #333237; font-size: 14px; font-weight: 500; font-family: Inter, sans-serif; cursor: pointer; transition: background-color 0.2s; } .ds-btn-secondary:hover { background-color: #e5e6e7; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-base",
+      "description": "Standard field for data input in forms.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Digite o valor...\" />",
+      "css": ".ds-input { display: block; width: 100%; height: 32px; padding: 4px 10px; border-radius: 8px; border: 1px solid #e5e6e7; background-color: transparent; color: #212124; font-size: 14px; font-family: Inter, sans-serif; outline: none; transition: border-color 0.2s, box-shadow 0.2s; } .ds-input:focus { border-color: #aab0b4; box-shadow: 0 0 0 3px rgba(170, 176, 180, 0.5); } .ds-input[aria-invalid=\"true\"] { border-color: #c43c2c; box-shadow: 0 0 0 3px rgba(196, 60, 44, 0.2); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "O Livro de Registro Soberano",
+    "overview": "Este sistema de design foi projetado para interfaces operacionais de alta densidade e produtividade extrema. Inspirado por ferramentas técnicas modernas e minimalistas (como as interfaces do Linear e da Vercel), ele prioriza clareza visual, legibilidade absoluta e fluxo ágil para entrada de dados. O design afasta-se de decorações supérfluas e clichês SaaS, focando no alinhamento rigoroso, tipografia estruturada e contrastes limpos. A interface é concebida como uma ferramenta de trabalho confiável, estável e rápida para operadores de sistema.",
+    "keyCharacteristics": [
+      "Densidade Otimizada: Spacing compacto e elements de controle de tamanho uniforme (h-8).",
+      "Teclado como Cidadão de Primeira Classe: Layouts e comportamentos focados em navegação por atalhos e preenchimento ágil.",
+      "Contraste de Confiança: Cores funcionais nítidas e ausência de cinzas lavados."
+    ],
+    "rules": [
+      { "name": "A Regra da Sobriedade do Azul", "body": "O azul primário é usado em menos de 10% de qualquer tela. Sua força está em ser raro, indicando apenas elementos acionáveis ou de foco.", "section": "colors" },
+      { "name": "A Regra da Legibilidade Absoluta", "body": "Textos secundários ou silenciados nunca devem ter contraste inferior a 4.5:1 contra o fundo. Se um cinza parecer difícil de ler, ele deve ser escurecido imediatamente.", "section": "colors" },
+      { "name": "A Regra do Alinhamento de Números", "body": "Todos os valores numéricos, quantitativos e monetários em tabelas e grades devem usar alinhamento à direita (text-right) para facilitar a varredura visual imediata.", "section": "typography" },
+      { "name": "A Regra de Sombras Funcionais", "body": "Sombras só aparecem em elementos temporários que flutuam sobre a interface (dropdowns, modais, tooltips). Elementos da página estática (cards, sidebars) nunca devem usar sombras.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do Alinhar sempre cabeçalhos de colunas monetárias e seus respectivos campos numéricos à direita (text-right).",
+      "Do Manter a altura de botões e inputs padrão em h-8 para consistência e alta densidade.",
+      "Do Garantir que todo campo de input com erro de validação utilize aria-invalid para estilos corretos e acessibilidade.",
+      "Do Utilizar fontes mono-espaçadas (font-mono) estritamente para códigos técnicos, SKUs e siglas de unidades de medida."
+    ],
+    "donts": [
+      "Don't Usar cantos extremamente arredondados (rounded-3xl / 32px+) em cartões ou botões normais.",
+      "Don't Adicionar bordas coloridas espessas em um único lado (border-left-4 / faixa lateral) para destacar cards ou alertas.",
+      "Don't Utilizar degradês ou sombras gigantes com desfocagem maior que 16px para fins decorativos.",
+      "Don't Usar texto em gradiente (background-clip: text) em títulos ou elementos da interface.",
+      "Don't Usar fontes mono-espaçadas para identificadores simples de tabelas ou números sequenciais comuns (ex: #1, #2)."
+    ]
+  }
+}
