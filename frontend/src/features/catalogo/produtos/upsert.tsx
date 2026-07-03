@@ -393,7 +393,6 @@ function ProdutosUpsertForm({
         };
       }
 
-      // Pre-generate SKU based on product ID and sequential index
       const generatedSku = productId ? `${productId}${index + 1}` : "";
 
       return {
@@ -759,7 +758,6 @@ function ProdutosUpsertForm({
                   <Button
                     type="button"
                     variant="outline"
-                    size="sm"
                     className="h-8 gap-2"
                     onClick={() => {
                       const newOptions = [
@@ -879,9 +877,8 @@ function ProdutosUpsertForm({
                       {!readOnly && form.getFieldValue("skus").length > 1 && (
                         <Button
                           type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="text-muted-foreground text-md h-7 gap-2 px-2"
+                          variant="outline"
+                          size="default"
                           onClick={() => setCopyPriceDialogOpen(true)}
                         >
                           Replicar Preço Focado

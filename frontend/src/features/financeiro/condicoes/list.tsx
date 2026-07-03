@@ -60,22 +60,22 @@ export function CondicoesList({
     },
     {
       accessorKey: "entradaMinimaPercentual",
-      header: "Entrada Mín.",
+      header: () => <div className="text-right">Entrada Mín.</div>,
       size: 110,
       cell: ({ row }) => {
         const val = row.getValue("entradaMinimaPercentual") as number;
-        return <span>{val.toFixed(2)}%</span>;
+        return <div className="text-right font-medium">{val.toFixed(2)}%</div>;
       },
     },
     {
       accessorKey: "descontoPercentual",
-      header: "Desc. / Acrésc.",
+      header: () => <div className="text-right">Desc. / Acrésc.</div>,
       size: 140,
       cell: ({ row }) => {
         const desc = row.original.descontoPercentual;
         const acr = row.original.acrescimoPercentual;
         return (
-          <div className="flex flex-col text-xs">
+          <div className="flex flex-col text-right text-xs">
             <span className="font-medium text-emerald-600">
               Desc: {desc.toFixed(2)}%
             </span>
@@ -88,13 +88,13 @@ export function CondicoesList({
     },
     {
       accessorKey: "taxaJurosPercentual",
-      header: "Juros / Multa",
+      header: () => <div className="text-right">Juros / Multa</div>,
       size: 140,
       cell: ({ row }) => {
         const juros = row.original.taxaJurosPercentual;
         const multa = row.original.multaPercentual;
         return (
-          <div className="text-muted-foreground flex flex-col text-xs">
+          <div className="text-muted-foreground flex flex-col text-right text-xs">
             <span>Juros: {juros.toFixed(2)}%</span>
             <span>Multa: {multa.toFixed(2)}%</span>
           </div>

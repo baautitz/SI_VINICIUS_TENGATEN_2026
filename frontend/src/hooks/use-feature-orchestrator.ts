@@ -25,7 +25,7 @@ export interface FeatureListProps<TDto> {
   searchInputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
-interface UseFeatureOrchestratorProps<TDto> {
+interface UseFeatureOrchestratorProps<TDto, TDetail = TDto> {
   queryKey: string;
   initialSearchTerm?: string;
   fetchPage: (
@@ -33,15 +33,15 @@ interface UseFeatureOrchestratorProps<TDto> {
     page: number,
     pageSize: number,
   ) => Promise<{ itens: TDto[]; totalPages: number; totalItems: number }>;
-  fetchById?: (id: string | number, item?: TDto) => Promise<TDto>;
+  fetchById?: (id: string | number, item?: TDto) => Promise<TDetail>;
   deleteItem?: (item: TDto) => Promise<void>;
   additionalKeysToInvalidate?: string[][];
-  /** Se fornecido, atualiza readOnly automaticamente quando freshItem mudar (ex: após baixa/estorno). */
-  getReadOnly?: (item: TDto) => boolean;
+  getReadOnly?: (item: TDetail) => boolean;
 }
 
 export function useFeatureOrchestrator<
   TDto extends { id?: string | number; sku?: string; codigo?: string },
+  TDetail = TDto,
 >({
   queryKey,
   initialSearchTerm = "",
@@ -50,7 +50,7 @@ export function useFeatureOrchestrator<
   deleteItem,
   additionalKeysToInvalidate = [],
   getReadOnly,
-}: UseFeatureOrchestratorProps<TDto>) {
+}: UseFeatureOrchestratorProps<TDto, TDetail>) {
   const list = useFeatureList<TDto>({ initialSearchTerm });
   const queryClient = useQueryClient();
 
@@ -70,7 +70,8 @@ export function useFeatureOrchestrator<
       await fetchPage(list.deferredSearch.trim(), list.page, 50),
   });
 
-  const itemId = list.editingItem?.id ?? list.editingItem?.sku ?? list.editingItem?.codigo;
+  const itemId =
+    list.editingItem?.id ?? list.editingItem?.sku ?? list.editingItem?.codigo;
   const { data: freshItem, isLoading: isLoadingDetail } = useQuery({
     queryKey: [queryKey, "detail", itemId],
     queryFn: () => fetchById!(itemId!, list.editingItem ?? undefined),
@@ -83,7 +84,7 @@ export function useFeatureOrchestrator<
     if (freshItem && getReadOnly && list.editingItem) {
       list.setReadOnly(getReadOnly(freshItem));
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [freshItem]);
 
   const deleteMutation = useMutation({

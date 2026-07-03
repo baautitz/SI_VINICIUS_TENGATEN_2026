@@ -106,7 +106,7 @@ const NumberInput = ({
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     setIsFocused(false);
-    let val = internalValue;
+    const val = internalValue;
 
     if (val !== "" && decimals > 0) {
       const padded = pad(val);

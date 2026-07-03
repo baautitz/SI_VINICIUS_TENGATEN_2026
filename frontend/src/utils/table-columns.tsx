@@ -44,23 +44,31 @@ export function getActionsColumn<T>({
 }: ActionColumnOptions<T>): ColumnDef<T> {
   return {
     id: "actions",
-    header: () => <div className="text-right px-4">Ações</div>,
+    header: () => <div className="px-4 text-right">Ações</div>,
     cell: ({ row }) => {
       const item = row.original;
       return (
         <div className="flex justify-end gap-2 px-4">
           {onEdit && (
-            <Button size="icon-sm" variant="outline" onClick={() => onEdit(item)}>
+            <Button
+              size="icon-sm"
+              variant="outline"
+              onClick={() => onEdit(item)}
+            >
               <Pencil className="size-4" />
             </Button>
           )}
           {onDelete && (
-            <Button size="icon-sm" variant="destructive" onClick={() => onDelete(item)}>
+            <Button
+              size="icon-sm"
+              variant="destructive"
+              onClick={() => onDelete(item)}
+            >
               <Trash2 className="size-4" />
             </Button>
           )}
           {selectionMode && onSelect && (
-            <Button size="sm" variant="secondary" onClick={() => onSelect(item)}>
+            <Button variant="secondary" onClick={() => onSelect(item)}>
               <Check className="mr-2 size-4" />
               Selecionar
             </Button>

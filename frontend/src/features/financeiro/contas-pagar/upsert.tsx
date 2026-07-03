@@ -699,67 +699,87 @@ function ContasPagarFormBody({
                                 #{p.numeroParcela}
                               </TableCell>
                               <TableCell className="px-2 py-2 align-middle">
-                                <DatePicker
-                                  id={`parcela-${index}-dataVencimento`}
-                                  name={`parcelas.${index}.dataVencimento`}
-                                  value={p.dataVencimento}
-                                  onChange={(val) =>
-                                    handleUpdateParcela(
-                                      index,
-                                      "dataVencimento",
-                                      val ?? "",
-                                    )
-                                  }
-                                  onKeyDown={(e) =>
-                                    handleParcelaKeyDown(e, index, "dataVencimento")
-                                  }
-                                  onFocus={(e) => e.target.select()}
-                                  disabled={
-                                    readOnly ||
-                                    temParcelaPagaOuParcial ||
-                                    p.status === "PAGO"
-                                  }
-                                  className={cn(
-                                    "h-8 text-xs",
-                                    localErrors[
-                                      `parcelas.${index}.dataVencimento`
-                                    ] &&
-                                      "border-destructive focus-visible:ring-destructive",
+                                <div className="flex w-full flex-col gap-1">
+                                  <DatePicker
+                                    id={`parcela-${index}-dataVencimento`}
+                                    name={`parcelas.${index}.dataVencimento`}
+                                    value={p.dataVencimento}
+                                    onChange={(val) =>
+                                      handleUpdateParcela(
+                                        index,
+                                        "dataVencimento",
+                                        val ?? "",
+                                      )
+                                    }
+                                    onKeyDown={(e) =>
+                                      handleParcelaKeyDown(e, index, "dataVencimento")
+                                    }
+                                    onFocus={(e) => e.target.select()}
+                                    disabled={
+                                      readOnly ||
+                                      temParcelaPagaOuParcial ||
+                                      p.status === "PAGO"
+                                    }
+                                    className={cn(
+                                      "h-8 text-xs",
+                                      localErrors[
+                                        `parcelas.${index}.dataVencimento`
+                                      ] &&
+                                        "border-destructive focus-visible:ring-destructive",
+                                    )}
+                                    aria-invalid={
+                                      !!localErrors[`parcelas.${index}.dataVencimento`]
+                                    }
+                                  />
+                                  {localErrors[`parcelas.${index}.dataVencimento`] && (
+                                    <span className="text-destructive mt-1 block text-right text-xs">
+                                      {localErrors[`parcelas.${index}.dataVencimento`]}
+                                    </span>
                                   )}
-                                />
+                                </div>
                               </TableCell>
                               <TableCell className="px-2 py-2 align-middle">
-                                <NumberInput
-                                  id={`parcela-${index}-valorParcela`}
-                                  name={`parcelas.${index}.valorParcela`}
-                                  inputSize="full"
-                                  value={p.valorParcela}
-                                  decimals={2}
-                                  inputMode="decimal"
-                                  onNumberChange={(num) =>
-                                    handleUpdateParcela(
-                                      index,
-                                      "valorParcela",
-                                      num,
-                                    )
-                                  }
-                                  onKeyDown={(e) =>
-                                    handleParcelaKeyDown(e, index, "valorParcela")
-                                  }
-                                  onFocus={(e) => e.target.select()}
-                                  disabled={
-                                    readOnly ||
-                                    temParcelaPagaOuParcial ||
-                                    p.status === "PAGO"
-                                  }
-                                  className={cn(
-                                    "h-8 text-right font-semibold",
-                                    localErrors[
-                                      `parcelas.${index}.valorParcela`
-                                    ] &&
-                                      "border-destructive focus-visible:ring-destructive",
+                                <div className="flex w-full flex-col gap-1">
+                                  <NumberInput
+                                    id={`parcela-${index}-valorParcela`}
+                                    name={`parcelas.${index}.valorParcela`}
+                                    inputSize="full"
+                                    value={p.valorParcela}
+                                    decimals={2}
+                                    inputMode="decimal"
+                                    onNumberChange={(num) =>
+                                      handleUpdateParcela(
+                                        index,
+                                        "valorParcela",
+                                        num,
+                                      )
+                                    }
+                                    onKeyDown={(e) =>
+                                      handleParcelaKeyDown(e, index, "valorParcela")
+                                    }
+                                    onFocus={(e) => e.target.select()}
+                                    disabled={
+                                      readOnly ||
+                                      temParcelaPagaOuParcial ||
+                                      p.status === "PAGO"
+                                    }
+                                    className={cn(
+                                      "h-8 text-right font-semibold",
+                                      localErrors[
+                                        `parcelas.${index}.valorParcela`
+                                      ] &&
+                                        "border-destructive focus-visible:ring-destructive",
+                                    )}
+                                    aria-invalid={
+                                      !!localErrors[`parcelas.${index}.valorParcela`]
+                                    }
+                                  />
+                                  {localErrors[`parcelas.${index}.valorParcela`] && (
+                                    <span className="text-destructive mt-1 block text-right text-xs">
+                                      {localErrors[`parcelas.${index}.valorParcela`]}
+                                    </span>
                                   )}
-                                />
+                                </div>
                               </TableCell>
                               <TableCell className="text-muted-foreground px-2 py-2 text-right align-middle font-medium">
                                 {new Intl.NumberFormat("pt-BR", {

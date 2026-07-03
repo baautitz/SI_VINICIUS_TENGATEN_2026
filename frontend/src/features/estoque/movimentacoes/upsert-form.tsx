@@ -777,18 +777,20 @@ export function MovimentacoesUpsertForm({
                                   </span>
                                 </TableCell>
 
-                                <TableCell className="px-4 py-2.5 align-middle">
-                                  <div className="flex flex-col">
+                                <TableCell className="w-44 px-4 py-2.5 text-right align-middle">
+                                  <div className="flex flex-col items-end">
                                     <NumberInput
                                       inputSize="full"
                                       value={item.quantidade}
                                       decimals={item.permiteDecimais ? 4 : 0}
+                                      inputMode={item.permiteDecimais ? "decimal" : "numeric"}
+                                      aria-invalid={!!qtdErr}
                                       disabled={readOnly}
                                       onNumberChange={(num) => {
                                         updateItemRow(index, "quantidade", num);
                                       }}
                                       className={cn(
-                                        "h-8 w-40 text-right text-sm font-bold",
+                                        "h-8 text-right text-sm font-bold",
                                         qtdErr &&
                                           "border-destructive focus-visible:ring-destructive",
                                       )}
@@ -823,12 +825,14 @@ export function MovimentacoesUpsertForm({
                                 )}
 
                                 {comCusto && (
-                                  <TableCell className="px-4 py-2.5 align-middle">
-                                    <div className="flex flex-col">
+                                  <TableCell className="w-48 px-4 py-2.5 text-right align-middle">
+                                    <div className="flex flex-col items-end">
                                       <NumberInput
                                         inputSize="full"
                                         value={item.custoUnitario}
                                         decimals={2}
+                                        inputMode="decimal"
+                                        aria-invalid={!!custoErr}
                                         disabled={
                                           readOnly ||
                                           tipoMovimentacao === "SAIDA" ||
@@ -842,7 +846,7 @@ export function MovimentacoesUpsertForm({
                                           );
                                         }}
                                         className={cn(
-                                          "h-8 w-40 text-right text-sm font-bold",
+                                          "h-8 text-right text-sm font-bold",
                                           custoErr &&
                                             "border-destructive focus-visible:ring-destructive",
                                         )}

@@ -40,7 +40,10 @@ export default function RootLayout({
           </TooltipProvider>
           <Toaster position="top-right" />
         </Providers>
-      </body>
+      {/* impeccable-live-start */}
+<script src="http://localhost:8400/live.js" async></script>
+{/* impeccable-live-end */}
+</body>
     </html>
   );
 }

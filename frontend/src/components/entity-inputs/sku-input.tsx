@@ -145,7 +145,7 @@ export const SkuInput = ({
   const confirmQuantity = () => {
     if (quantityModalItem) {
       const qtde = quantityInput;
-      if (!isNaN(qtde) && qtde !== 0) {
+      if (!isNaN(qtde) && qtde > 0) {
         onSelectSku(quantityModalItem, qtde);
         setSelectedSku(quantityModalItem.sku);
         setSkuText("");
@@ -155,7 +155,7 @@ export const SkuInput = ({
           internalRef.current?.focus();
         }, 150);
       } else {
-        toast.error("Quantidade inválida.");
+        toast.error("Quantidade deve ser maior que zero.");
       }
     }
   };
@@ -194,7 +194,11 @@ export const SkuInput = ({
                   if (text.includes("*")) {
                     const parts = text.split("*");
                     const parsedQtde = parseFloat(parts[0]);
-                    if (!isNaN(parsedQtde) && parsedQtde !== 0) {
+                    if (!isNaN(parsedQtde)) {
+                      if (parsedQtde === 0) {
+                        toast.error("Quantidade deve ser maior que zero.");
+                        return;
+                      }
                       qtde = parsedQtde;
                       codeToSearch = parts.slice(1).join("*").trim();
                     }
