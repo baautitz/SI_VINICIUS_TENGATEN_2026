@@ -14,6 +14,11 @@ public class VendaItens
 
     public Skus Sku { get; private set; }
 
+    protected VendaItens()
+    {
+        Sku = null!;
+    }
+
     public VendaItens(decimal quantidade, decimal valorUnitario, decimal valorDesconto, Skus sku)
     {
         if (quantidade <= 0)

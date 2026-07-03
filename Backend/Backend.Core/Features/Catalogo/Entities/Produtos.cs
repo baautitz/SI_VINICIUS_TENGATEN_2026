@@ -79,4 +79,9 @@ public class Produtos
 
         _skus.Remove(sku);
     }
+
+    public void DefinirUnidadeMedida(UnidadesMedida unidadeMedida)
+    {
+        UnidadeMedida = unidadeMedida ?? throw new DomainException("Unidade de medida é obrigatória.");
+    }
 }

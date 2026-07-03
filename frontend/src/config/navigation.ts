@@ -38,6 +38,13 @@ export interface NavGroup {
 
 export const navigationConfig: NavGroup[] = [
   {
+    id: "vendas",
+    title: "Vendas",
+    icon: CreditCard,
+    urlPrefix: "/vendas",
+    items: [{ title: "Registrar Venda", url: "/vendas", icon: CreditCard }],
+  },
+  {
     id: "catalogo",
     title: "Catálogo",
     icon: Package,
@@ -47,7 +54,11 @@ export const navigationConfig: NavGroup[] = [
       { title: "Marcas", url: "/catalogo/marcas", icon: Tag },
       { title: "Categorias", url: "/catalogo/categorias", icon: Layers },
       { title: "Atributos", url: "/catalogo/atributos", icon: Sliders },
-      { title: "Unidades de Medida", url: "/catalogo/unidades-medida", icon: Scale },
+      {
+        title: "Unidades de Medida",
+        url: "/catalogo/unidades-medida",
+        icon: Scale,
+      },
     ],
   },
   {
@@ -56,7 +67,11 @@ export const navigationConfig: NavGroup[] = [
     icon: ClipboardList,
     urlPrefix: "/estoque",
     items: [
-      { title: "Movimentações", url: "/estoque/movimentacoes", icon: ClipboardList },
+      {
+        title: "Movimentações",
+        url: "/estoque/movimentacoes",
+        icon: ClipboardList,
+      },
     ],
   },
   {
@@ -80,7 +95,11 @@ export const navigationConfig: NavGroup[] = [
       { title: "Clientes", url: "/parceiros/clientes", icon: Users },
       { title: "Fornecedores", url: "/parceiros/fornecedores", icon: Truck },
       { title: "Emitentes", url: "/parceiros/emitentes", icon: UserCircle },
-      { title: "Transportadoras", url: "/parceiros/transportadoras", icon: Truck },
+      {
+        title: "Transportadoras",
+        url: "/parceiros/transportadoras",
+        icon: Truck,
+      },
       { title: "Veículos", url: "/parceiros/veiculos", icon: Car },
     ],
   },
@@ -90,10 +109,26 @@ export const navigationConfig: NavGroup[] = [
     icon: Landmark,
     urlPrefix: "/financeiro",
     items: [
-      { title: "Contas a Pagar", url: "/financeiro/contas-pagar", icon: Receipt },
-      { title: "Contas a Receber", url: "/financeiro/contas-receber", icon: Landmark },
-      { title: "Métodos de Pagamento", url: "/financeiro/metodos", icon: Landmark },
-      { title: "Condições de Pagamento", url: "/financeiro/condicoes", icon: Receipt },
+      {
+        title: "Contas a Pagar",
+        url: "/financeiro/contas-pagar",
+        icon: Receipt,
+      },
+      {
+        title: "Contas a Receber",
+        url: "/financeiro/contas-receber",
+        icon: Landmark,
+      },
+      {
+        title: "Métodos de Pagamento",
+        url: "/financeiro/metodos",
+        icon: Landmark,
+      },
+      {
+        title: "Condições de Pagamento",
+        url: "/financeiro/condicoes",
+        icon: Receipt,
+      },
     ],
   },
 ];

@@ -1,11 +1,23 @@
 {
   "version": 1,
   "skills": {
+    "caveman": {
+      "source": "juliusbrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/caveman/SKILL.md",
+      "computedHash": "b0e7741886c0c32270cedc1a2fc21c2879d90964d3ce00f24952de7064613404"
+    },
     "shadcn": {
       "source": "shadcn/ui",
       "sourceType": "github",
       "skillPath": "skills/shadcn/SKILL.md",
-      "computedHash": "f0fdd03f4755cbb3b57e20fe6fd4a97c00d34e6780187b6559316986e8d848db"
+      "computedHash": "4f78ff7cd3a4f637b6fe30dbbab4a80a19dd63fa62d9352bed461ccfdbcbbf43"
+    },
+    "tanstack-hotkeys": {
+      "source": "fellipeutaka/leon",
+      "sourceType": "github",
+      "skillPath": "skills/tanstack-hotkeys/SKILL.md",
+      "computedHash": "f5a074962248280ad0f345196aedbb2d56d7b02d521998593d6753b6e7e90ffc"
     }
   }
 }

@@ -140,4 +140,9 @@ public class Skus
         _atributos.Clear();
         _atributos.AddRange(atributos);
     }
+
+    public void AtualizarProduto(Produtos produto)
+    {
+        Produto = produto ?? throw new DomainException("Produto é obrigatório.");
+    }
 }

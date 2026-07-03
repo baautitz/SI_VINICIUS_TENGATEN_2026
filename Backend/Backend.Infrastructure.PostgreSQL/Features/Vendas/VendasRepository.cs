@@ -26,12 +26,12 @@ public class VendasRepository : IVendasRepository
 
         const string querySql = @"
             SELECT v.id AS Id, v.data_venda, v.valor_total, v.observacao,
-                   e.id AS EmitenteId, e.nome_razaosocial, e.cpf_cnpj, e.ativo,
-                   c.id AS ClienteId, c.nome_razaosocial, c.cpf_cnpj, c.ativo
+                   e.id AS Id, e.nome_razaosocial, e.cpf_cnpj, e.ativo,
+                   c.id AS Id, c.nome_razaosocial, c.cpf_cnpj, c.ativo
             FROM vendas v
             JOIN emitentes e ON e.id = v.emitente_id
             JOIN clientes c ON c.id = v.cliente_id
-            ORDER BY v.data_venda DESC
+            ORDER BY v.data_venda DESC, v.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(
@@ -48,7 +48,7 @@ public class VendasRepository : IVendasRepository
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "EmitenteId,ClienteId")).ToList();
+            splitOn: "Id,Id")).ToList();
 
         if (vendas.Count > 0)
         {
@@ -56,23 +56,31 @@ public class VendasRepository : IVendasRepository
 
             const string itensSql = @"
                 SELECT vi.id, vi.venda_id, vi.quantidade, vi.valor_unitario, vi.valor_desconto, vi.valor_total,
-                       s.sku, s.gtin_ean, s.preco, s.estoque, s.ativo
+                       s.sku, s.gtin_ean, s.preco, s.estoque, s.ativo,
+                       p.id, p.produto,
+                       u.id, u.sigla, u.permite_decimais
                 FROM vendas_itens vi
                 JOIN skus s ON s.sku = vi.sku
+                JOIN produtos p ON p.id = s.produto_id
+                JOIN unidades_medida u ON u.id = p.unidade_medida_id
                 WHERE vi.venda_id = ANY(@Ids)
                 ORDER BY vi.venda_id, vi.id;";
 
-            var itens = (await _session.Connection.QueryAsync<VendaItens, Skus, VendaItens>(
+            var itens = (await _session.Connection.QueryAsync<VendaItens, Skus, Produtos, UnidadesMedida, VendaItens>(
                 itensSql,
-                (item, sku) =>
+                (item, sku, produto, unidadeMedida) =>
                 {
-                    sku.DefinirAtributos(new List<SkuAtributosValores>());
+                    produto.DefinirUnidadeMedida(unidadeMedida);
+                    sku.AtualizarProduto(produto);
                     item.AtualizarSku(sku);
                     return item;
                 },
                 new { Ids = ids },
                 transaction: _session.Transaction,
-                splitOn: "sku")).ToList();
+                splitOn: "sku,id,id")).ToList();
+
+            var skusList = itens.Select(i => i.Sku).Distinct().ToList();
+            await HidratarAtributosSkus(skusList);
 
             var itensPorVenda = itens
                 .GroupBy(i => i.VendaId)
@@ -92,10 +100,10 @@ public class VendasRepository : IVendasRepository
     {
         const string vendaSql = @"
             SELECT v.id AS Id, v.data_venda, v.valor_total, v.observacao,
-                   e.id AS EmitenteId, e.nome_razaosocial, e.cpf_cnpj, e.apelido_nomefantasia,
+                   e.id AS Id, e.nome_razaosocial, e.cpf_cnpj, e.apelido_nomefantasia,
                    e.endereco, e.telefone, e.email, e.rg_ie, e.inscricao_municipal,
                    e.regime_tributario, e.ativo, e.criado_em, e.observacao,
-                   c.id AS ClienteId, c.nome_razaosocial, c.cpf_cnpj, c.rg_ie, c.apelido_nomefantasia,
+                   c.id AS Id, c.nome_razaosocial, c.cpf_cnpj, c.rg_ie, c.apelido_nomefantasia,
                    c.endereco, c.telefone, c.email, c.limite_credito, c.ativo, c.criado_em,
                    c.observacao
             FROM vendas v
@@ -105,9 +113,13 @@ public class VendasRepository : IVendasRepository
 
         const string itensSql = @"
             SELECT vi.id, vi.quantidade, vi.valor_unitario, vi.valor_desconto, vi.valor_total,
-                   s.sku, s.gtin_ean, s.preco, s.estoque, s.ativo
+                   s.sku, s.gtin_ean, s.preco, s.estoque, s.ativo,
+                   p.id, p.produto,
+                   u.id, u.sigla, u.permite_decimais
             FROM vendas_itens vi
             JOIN skus s ON s.sku = vi.sku
+            JOIN produtos p ON p.id = s.produto_id
+            JOIN unidades_medida u ON u.id = p.unidade_medida_id
             WHERE vi.venda_id = @Id
             ORDER BY vi.id;";
 
@@ -122,21 +134,25 @@ public class VendasRepository : IVendasRepository
             },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "EmitenteId,ClienteId")).SingleOrDefault();
+            splitOn: "Id,Id")).SingleOrDefault();
 
         if (venda is null) return null;
 
-        var vendaItens = await _session.Connection.QueryAsync<VendaItens, Skus, VendaItens>(
+        var vendaItens = await _session.Connection.QueryAsync<VendaItens, Skus, Produtos, UnidadesMedida, VendaItens>(
             itensSql,
-            (item, sku) =>
+            (item, sku, produto, unidadeMedida) =>
             {
-                sku.DefinirAtributos(new List<SkuAtributosValores>());
+                produto.DefinirUnidadeMedida(unidadeMedida);
+                sku.AtualizarProduto(produto);
                 item.AtualizarSku(sku);
                 return item;
             },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "sku");
+            splitOn: "sku,id,id");
+
+        var skusList = vendaItens.Select(i => i.Sku).Distinct().ToList();
+        await HidratarAtributosSkus(skusList);
 
         venda.DefinirItens(vendaItens.ToList());
         return venda;
@@ -214,10 +230,13 @@ public class VendasRepository : IVendasRepository
         const string sql = @"
             SELECT COUNT(*) FROM vendas;
 
-            SELECT v.id, v.data_venda, c.nome_razaosocial AS cliente_nome, v.valor_total
+            SELECT v.id, v.data_venda AS DataVenda, c.nome_razaosocial AS ClienteNome, e.nome_razaosocial AS EmitenteNome,
+                   (SELECT COUNT(*) FROM vendas_itens WHERE venda_id = v.id)::int AS QuantidadeItens,
+                   v.valor_total AS ValorTotal
             FROM vendas v
             JOIN clientes c ON c.id = v.cliente_id
-            ORDER BY v.data_venda DESC
+            JOIN emitentes e ON e.id = v.emitente_id
+            ORDER BY v.data_venda DESC, v.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(
@@ -237,13 +256,17 @@ public class VendasRepository : IVendasRepository
         const string sql = @"
             SELECT COUNT(*) FROM vendas v
             JOIN clientes c ON c.id = v.cliente_id
-            WHERE c.nome_razaosocial ILIKE @Termo OR v.observacao ILIKE @Termo;
+            JOIN emitentes e ON e.id = v.emitente_id
+            WHERE c.nome_razaosocial ILIKE @Termo OR v.observacao ILIKE @Termo OR e.nome_razaosocial ILIKE @Termo;
 
-            SELECT v.id, v.data_venda, c.nome_razaosocial AS cliente_nome, v.valor_total
+            SELECT v.id, v.data_venda AS DataVenda, c.nome_razaosocial AS ClienteNome, e.nome_razaosocial AS EmitenteNome,
+                   (SELECT COUNT(*) FROM vendas_itens WHERE venda_id = v.id)::int AS QuantidadeItens,
+                   v.valor_total AS ValorTotal
             FROM vendas v
             JOIN clientes c ON c.id = v.cliente_id
-            WHERE c.nome_razaosocial ILIKE @Termo OR v.observacao ILIKE @Termo
-            ORDER BY v.data_venda DESC
+            JOIN emitentes e ON e.id = v.emitente_id
+            WHERE c.nome_razaosocial ILIKE @Termo OR v.observacao ILIKE @Termo OR e.nome_razaosocial ILIKE @Termo
+            ORDER BY v.data_venda DESC, v.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(
@@ -285,4 +308,39 @@ public class VendasRepository : IVendasRepository
 
         await InserirItens(vendaId, itens);
     }
+
+    private async Task HidratarAtributosSkus(IEnumerable<Skus> skus)
+    {
+        var skuCodigos = skus.Select(s => s.Sku).Distinct().ToList();
+        if (!skuCodigos.Any()) return;
+
+        const string sql = @"
+            SELECT savr.sku AS Sku, sav.chave_id AS ChaveId, sav.valor AS Valor,
+                   sav.id AS Id, sak.chave AS Chave
+            FROM skus_atributos_valores_relacionamento savr
+            JOIN sku_atributos_valores sav ON sav.id = savr.valor_id
+            JOIN sku_atributos_chaves sak ON sak.id = sav.chave_id
+            WHERE savr.sku = ANY(@Skus);";
+
+        var rows = (await _session.Connection.QueryAsync<AtributoRow>(
+            sql,
+            new { Skus = skuCodigos },
+            transaction: _session.Transaction)).ToList();
+
+        var atributosPorSku = rows
+            .GroupBy(r => r.Sku)
+            .ToDictionary(g => g.Key, g => g.AsEnumerable());
+
+        foreach (var sku in skus)
+        {
+            sku.DefinirAtributos(new List<SkuAtributosValores>());
+            if (atributosPorSku.TryGetValue(sku.Sku, out var list))
+            {
+                var attrs = list.Select(r => new SkuAtributosValores(r.Id, r.ChaveId, r.Valor)).ToList();
+                sku.DefinirAtributos(attrs);
+            }
+        }
+    }
+
+    private sealed record AtributoRow(string Sku, int ChaveId, string Valor, int Id, string Chave);
 }

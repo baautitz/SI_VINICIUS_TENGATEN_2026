@@ -13,6 +13,7 @@ using Backend.Core.Features.Catalogo.Services;
 using Backend.Core.Features.Estoque.Services;
 using Backend.Core.Features.NFe.Repositories;
 using Backend.Core.Features.Vendas.Repositories;
+using Backend.Core.Features.Vendas.Services;
 using Backend.Infrastructure.PostgreSQL.Common;
 using Backend.Infrastructure.PostgreSQL.Features.Acesso;
 using Backend.Infrastructure.PostgreSQL.Features.Catalogo;
@@ -87,6 +88,7 @@ public static class DependencyInjection
         services.AddScoped<FornecedoresService>();
 
         services.AddScoped<IVendasRepository, VendasRepository>();
+        services.AddScoped<VendasService>();
 
         services.AddScoped<ITransportadorasRepository, TransportadorasRepository>();
         services.AddScoped<TransportadorasService>();
