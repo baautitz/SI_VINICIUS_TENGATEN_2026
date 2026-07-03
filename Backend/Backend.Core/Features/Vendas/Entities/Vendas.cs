@@ -12,6 +12,8 @@ public class Venda
     public DateTime DataVenda { get; private set; }
     public decimal ValorTotal { get; private set; }
     public string? Observacao { get; private set; }
+    public DateTime? DataCancelamento { get; private set; }
+    public string? MotivoCancelamento { get; private set; }
 
     public Emitentes Emitente { get; private set; } = null!;
     public Clientes Cliente { get; private set; } = null!;
@@ -101,5 +103,18 @@ public class Venda
 
         if (ValorTotal < 0)
             throw new DomainException("Valor total da venda não pode ser negativo.");
+    }
+
+    public void Cancelar(string motivo)
+    {
+        if (DataCancelamento != null)
+            throw new DomainException("Venda já está cancelada.");
+        if (string.IsNullOrWhiteSpace(motivo))
+            throw new DomainException("Motivo do cancelamento é obrigatório.");
+        if (motivo.Length < 5)
+            throw new DomainException("Motivo do cancelamento deve ter pelo menos 5 caracteres.");
+
+        DataCancelamento = DateTime.UtcNow;
+        MotivoCancelamento = motivo.Trim();
     }
 }

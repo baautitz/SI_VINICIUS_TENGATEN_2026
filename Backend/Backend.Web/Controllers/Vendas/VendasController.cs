@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Backend.Core.Common.Results;
 using Backend.Core.Features.Vendas.Commands;
-using Backend.Core.Features.Vendas.DTOs;
 using Backend.Core.Features.Vendas.Entities;
 using Backend.Core.Features.Vendas.Services;
 using Microsoft.AspNetCore.Http;
@@ -23,7 +22,7 @@ public class VendasController : ControllerBase
     }
 
     [HttpGet]
-    public Task<ResultadoPaginado<VendasResumo>> GetVendas([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public Task<ResultadoPaginado<Venda>> GetVendas([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         => _vendasService.PesquisarVendas(search ?? string.Empty, page, pageSize);
 
     [HttpGet("{id:int}")]
@@ -47,10 +46,10 @@ public class VendasController : ControllerBase
         return CreatedAtAction(nameof(GetVenda), new { id = result.Data!.Id }, result);
     }
 
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> DeleteVenda(int id)
+    [HttpPost("{id:int}/cancelar")]
+    public async Task<IActionResult> CancelarVenda(int id, [FromBody] CancelarVendaCommand command)
     {
-        var deleted = await _vendasService.DeletarVenda(id);
-        return deleted ? NoContent() : NotFound();
+        var canceled = await _vendasService.CancelarVenda(id, command);
+        return canceled ? NoContent() : NotFound();
     }
 }

@@ -1,7 +1,6 @@
 using Backend.Core.Common.Results;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Parceiros.Entities;
-using Backend.Core.Features.Vendas.DTOs;
 using Backend.Core.Features.Vendas.Entities;
 using Backend.Core.Features.Vendas.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;
@@ -26,6 +25,7 @@ public class VendasRepository : IVendasRepository
 
         const string querySql = @"
             SELECT v.id AS Id, v.data_venda, v.valor_total, v.observacao,
+                   v.data_cancelamento, v.motivo_cancelamento,
                    e.id AS Id, e.nome_razaosocial, e.cpf_cnpj, e.ativo,
                    c.id AS Id, c.nome_razaosocial, c.cpf_cnpj, c.ativo
             FROM vendas v
@@ -100,6 +100,7 @@ public class VendasRepository : IVendasRepository
     {
         const string vendaSql = @"
             SELECT v.id AS Id, v.data_venda, v.valor_total, v.observacao,
+                   v.data_cancelamento, v.motivo_cancelamento,
                    e.id AS Id, e.nome_razaosocial, e.cpf_cnpj, e.apelido_nomefantasia,
                    e.endereco, e.telefone, e.email, e.rg_ie, e.inscricao_municipal,
                    e.regime_tributario, e.ativo, e.criado_em, e.observacao,
@@ -223,61 +224,99 @@ public class VendasRepository : IVendasRepository
         return linhasAfetadas > 0;
     }
 
-    public async Task<ResultadoPaginado<VendasResumo>> ObterVendasResumo(int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<bool> CancelarVenda(int id, string motivo, DateTime dataCancelamento)
     {
-        var offset = (pagina - 1) * tamanhoDaPagina;
-
-        const string sql = @"
-            SELECT COUNT(*) FROM vendas;
-
-            SELECT v.id, v.data_venda AS DataVenda, c.nome_razaosocial AS ClienteNome, e.nome_razaosocial AS EmitenteNome,
-                   (SELECT COUNT(*) FROM vendas_itens WHERE venda_id = v.id)::int AS QuantidadeItens,
-                   v.valor_total AS ValorTotal
-            FROM vendas v
-            JOIN clientes c ON c.id = v.cliente_id
-            JOIN emitentes e ON e.id = v.emitente_id
-            ORDER BY v.data_venda DESC, v.id DESC
-            LIMIT @TamanhoDaPagina OFFSET @Offset;";
-
-        using var multi = await _session.Connection.QueryMultipleAsync(
-            sql, new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
+        var linhasAfetadas = await _session.Connection.ExecuteAsync(
+            @"UPDATE vendas 
+              SET data_cancelamento = @DataCancelamento, motivo_cancelamento = @MotivoCancelamento 
+              WHERE id = @Id;",
+            new { Id = id, DataCancelamento = dataCancelamento, MotivoCancelamento = motivo },
             transaction: _session.Transaction);
-
-        var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<VendasResumo>();
-
-        return new ResultadoPaginado<VendasResumo>(itens, total, pagina, tamanhoDaPagina);
+        return linhasAfetadas > 0;
     }
 
-    public async Task<ResultadoPaginado<VendasResumo>> PesquisarVendas(string termo, int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<Venda>> PesquisarVendas(string termo, int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
-        const string sql = @"
+        const string countSql = @"
             SELECT COUNT(*) FROM vendas v
             JOIN clientes c ON c.id = v.cliente_id
             JOIN emitentes e ON e.id = v.emitente_id
-            WHERE c.nome_razaosocial ILIKE @Termo OR v.observacao ILIKE @Termo OR e.nome_razaosocial ILIKE @Termo;
+            WHERE c.nome_razaosocial ILIKE @Termo OR v.observacao ILIKE @Termo OR e.nome_razaosocial ILIKE @Termo;";
 
-            SELECT v.id, v.data_venda AS DataVenda, c.nome_razaosocial AS ClienteNome, e.nome_razaosocial AS EmitenteNome,
-                   (SELECT COUNT(*) FROM vendas_itens WHERE venda_id = v.id)::int AS QuantidadeItens,
-                   v.valor_total AS ValorTotal
+        const string querySql = @"
+            SELECT v.id AS Id, v.data_venda, v.valor_total, v.observacao,
+                   v.data_cancelamento, v.motivo_cancelamento,
+                   e.id AS Id, e.nome_razaosocial, e.cpf_cnpj, e.ativo,
+                   c.id AS Id, c.nome_razaosocial, c.cpf_cnpj, c.ativo
             FROM vendas v
-            JOIN clientes c ON c.id = v.cliente_id
             JOIN emitentes e ON e.id = v.emitente_id
+            JOIN clientes c ON c.id = v.cliente_id
             WHERE c.nome_razaosocial ILIKE @Termo OR v.observacao ILIKE @Termo OR e.nome_razaosocial ILIKE @Termo
             ORDER BY v.data_venda DESC, v.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
-        using var multi = await _session.Connection.QueryMultipleAsync(
-            sql,
+        var total = await _session.Connection.ExecuteScalarAsync<int>(
+            countSql, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
+
+        var vendas = (await _session.Connection.QueryAsync<Venda, Emitentes, Clientes, Venda>(
+            querySql,
+            (venda, emitente, cliente) =>
+            {
+                venda.AtualizarEmitente(emitente);
+                venda.AtualizarCliente(cliente);
+                venda.DefinirItens(new List<VendaItens>());
+                return venda;
+            },
             new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
-            transaction: _session.Transaction);
+            transaction: _session.Transaction,
+            splitOn: "Id,Id")).ToList();
 
-        var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<VendasResumo>();
+        if (vendas.Count > 0)
+        {
+            var ids = vendas.Select(v => v.Id).ToArray();
 
-        return new ResultadoPaginado<VendasResumo>(itens, total, pagina, tamanhoDaPagina);
+            const string itensSql = @"
+                SELECT vi.id, vi.venda_id, vi.quantidade, vi.valor_unitario, vi.valor_desconto, vi.valor_total,
+                       s.sku, s.gtin_ean, s.preco, s.estoque, s.ativo,
+                       p.id, p.produto,
+                       u.id, u.sigla, u.permite_decimais
+                FROM vendas_itens vi
+                JOIN skus s ON s.sku = vi.sku
+                JOIN produtos p ON p.id = s.produto_id
+                JOIN unidades_medida u ON u.id = p.unidade_medida_id
+                WHERE vi.venda_id = ANY(@Ids)
+                ORDER BY vi.venda_id, vi.id;";
+
+            var itens = (await _session.Connection.QueryAsync<VendaItens, Skus, Produtos, UnidadesMedida, VendaItens>(
+                itensSql,
+                (item, sku, produto, unidadeMedida) =>
+                {
+                    produto.DefinirUnidadeMedida(unidadeMedida);
+                    sku.AtualizarProduto(produto);
+                    item.AtualizarSku(sku);
+                    return item;
+                },
+                new { Ids = ids },
+                transaction: _session.Transaction,
+                splitOn: "sku,id,id")).ToList();
+
+            var skusList = itens.Select(i => i.Sku).Distinct().ToList();
+            await HidratarAtributosSkus(skusList);
+
+            var itensPorVenda = itens
+                .GroupBy(i => i.VendaId)
+                .ToDictionary(g => g.Key, g => g.AsEnumerable());
+
+            foreach (var venda in vendas)
+            {
+                if (itensPorVenda.TryGetValue(venda.Id, out var sub))
+                    venda.DefinirItens(sub.ToList());
+            }
+        }
+
+        return new ResultadoPaginado<Venda>(vendas, total, pagina, tamanhoDaPagina);
     }
 
     private async Task InserirItens(int vendaId, IEnumerable<VendaItens> itens)

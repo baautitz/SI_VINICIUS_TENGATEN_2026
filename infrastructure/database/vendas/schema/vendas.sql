@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS vendas (
   data_venda TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   valor_total NUMERIC(14, 2) NOT NULL DEFAULT 0,
   observacao TEXT,
+  data_cancelamento TIMESTAMP WITH TIME ZONE,
+  motivo_cancelamento VARCHAR(500),
   CONSTRAINT vendas_emitente_fk
     FOREIGN KEY (emitente_id)
     REFERENCES emitentes (id)

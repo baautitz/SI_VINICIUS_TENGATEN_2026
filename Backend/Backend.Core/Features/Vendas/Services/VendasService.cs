@@ -59,10 +59,10 @@ public sealed class VendasService : BaseService
     public Task<Venda?> ObterVendaPorId(int id)
         => _vendasRepository.ObterVendaPorId(id);
 
-    public Task<ResultadoPaginado<DTOs.VendasResumo>> PesquisarVendas(string termo, int pagina = 1, int tamanhoDaPagina = 20)
+    public Task<ResultadoPaginado<Venda>> PesquisarVendas(string termo, int pagina = 1, int tamanhoDaPagina = 20)
     {
         if (string.IsNullOrWhiteSpace(termo))
-            return _vendasRepository.ObterVendasResumo(pagina, tamanhoDaPagina);
+            return _vendasRepository.ObterVendas(pagina, tamanhoDaPagina);
 
         return _vendasRepository.PesquisarVendas(termo, pagina, tamanhoDaPagina);
     }
@@ -238,6 +238,70 @@ public sealed class VendasService : BaseService
             var deleted = await _vendasRepository.DeletarVenda(id);
             _unitOfWork.Commit();
             return deleted;
+        }
+        catch (Exception)
+        {
+            _unitOfWork.Rollback();
+            throw;
+        }
+    }
+
+    public async Task<bool> CancelarVenda(int id, CancelarVendaCommand command)
+    {
+        var validator = new CancelarVendaCommandValidator();
+        var validationResult = await validator.ValidateAsync(command);
+        if (!validationResult.IsValid)
+            throw new DomainException(string.Join(" ", validationResult.Errors.Select(e => e.ErrorMessage)));
+
+        try
+        {
+            _unitOfWork.BeginTransaction();
+
+            // Reverse Stock Movements related to this Venda
+            var movimentacoes = await _movimentacoesRepository.ObterMovimentacoes(1, 100);
+            var movVenda = movimentacoes.Itens.FirstOrDefault(m => m.VendaId == id && m.Status == StatusMovimentacaoEstoque.CONFIRMADA);
+            if (movVenda != null)
+            {
+                foreach (var item in movVenda.MovimentacoesEstoquesItens)
+                {
+                    var sku = await _skusRepository.ObterSkuPorSku(item.Sku.Sku);
+                    if (sku != null)
+                    {
+                        // Return the items to physical stock
+                        sku.AjustarEstoque(item.Quantidade);
+                        await _skusRepository.AtualizarSku(sku.Sku, sku);
+                    }
+                }
+                movVenda.Cancelar();
+                await _movimentacoesRepository.AtualizarMovimentacao(movVenda.Id, movVenda);
+            }
+
+            // Cancel Accounts Receivable related to this Venda
+            var contas = await _contasRepository.ObterContasReceber(1, 100);
+            var contaVenda = contas.Itens.FirstOrDefault(c => c.VendaId == id);
+            if (contaVenda != null)
+            {
+                // Check if any installments were already paid
+                var temPagas = contaVenda.ContasReceberParcelas.Any(p => p.Status == StatusTituloFinanceiro.PAGO || p.Status == StatusTituloFinanceiro.PARCIAL || p.ValorRecebido > 0);
+                if (temPagas)
+                    throw new DomainException("Não é possível cancelar uma venda com parcelas financeiras já pagas ou parciais.");
+
+                // Delete or cancel the title
+                await _contasRepository.DeletarContaReceber(contaVenda.Id);
+            }
+
+            var venda = await _vendasRepository.ObterVendaPorId(id);
+            if (venda == null)
+            {
+                _unitOfWork.Rollback();
+                return false;
+            }
+
+            venda.Cancelar(command.Motivo);
+            var canceled = await _vendasRepository.CancelarVenda(id, venda.MotivoCancelamento!, venda.DataCancelamento!.Value);
+
+            _unitOfWork.Commit();
+            return canceled;
         }
         catch (Exception)
         {
