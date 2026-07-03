@@ -20,20 +20,13 @@ export interface VendaItem {
   estoqueAtual: number;
 }
 
-export interface VendasResumo {
-  id: number;
-  dataVenda: string;
-  valorTotal: number;
-  clienteNome: string;
-  emitenteNome: string;
-  quantidadeItens: number;
-}
-
 export interface Venda {
   id: number;
   dataVenda: string;
   valorTotal: number;
   observacao?: string | null;
+  dataCancelamento?: string | null;
+  motivoCancelamento?: string | null;
   emitente: Emitente;
   cliente: Cliente;
   vencimentos?: string;

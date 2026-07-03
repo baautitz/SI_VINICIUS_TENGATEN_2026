@@ -3,30 +3,41 @@
 import React from "react";
 import { VendasList } from "./list";
 import { VendasUpsertForm } from "./upsert";
-import type { VendasResumo } from "./types";
-import { DeleteDialog } from "@/components/ui/delete-dialog";
+import type { Venda } from "./types";
 import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
 import { vendasApi } from "@/api/vendas";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { cn } from "@/lib/utils";
 
 export * from "./types";
 
 export function VendasFeature() {
+  const [cancelOpen, setCancelOpen] = React.useState(false);
+  const [vendaToCancel, setVendaToCancel] = React.useState<Venda | null>(null);
+  const [motivo, setMotivo] = React.useState("");
+  const [motivoError, setMotivoError] = React.useState("");
+  const [canceling, setCanceling] = React.useState(false);
+
   const {
     listProps,
     upsertProps,
-    deleteDialogProps,
     featureList: list,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } = useFeatureOrchestrator<any>({
+  } = useFeatureOrchestrator<Venda>({
     queryKey: "vendas",
     initialSearchTerm: "",
     fetchPage: async (searchTerm, page, pageSize) => {
-      const res = await vendasApi.list(
-        searchTerm || undefined,
-        page,
-        pageSize
-      );
+      const res = await vendasApi.list(searchTerm || undefined, page, pageSize);
       if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
 
       return {
@@ -38,9 +49,7 @@ export function VendasFeature() {
     fetchById: async (id) => {
       return await vendasApi.getById(id as number);
     },
-    deleteItem: async (item) => {
-      await vendasApi.delete(item.id);
-    },
+    deleteItem: async () => {},
     additionalKeysToInvalidate: [
       ["skus"],
       ["produtos"],
@@ -53,8 +62,32 @@ export function VendasFeature() {
     listProps.onAdd();
   };
 
-  const handleViewWrapper = (item: VendasResumo) => {
+  const handleViewWrapper = (item: Venda) => {
     listProps.onView(item);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!vendaToCancel) return;
+    if (!motivo.trim()) {
+      setMotivoError("Motivo do cancelamento é obrigatório.");
+      return;
+    }
+    if (motivo.trim().length < 5) {
+      setMotivoError("O motivo deve ter pelo menos 5 caracteres.");
+      return;
+    }
+
+    try {
+      setCanceling(true);
+      await vendasApi.cancel(vendaToCancel.id, motivo);
+      toast.success("Venda cancelada com sucesso!");
+      setCancelOpen(false);
+      setVendaToCancel(null);
+      upsertProps.onSuccess();
+    } catch {
+    } finally {
+      setCanceling(false);
+    }
   };
 
   return (
@@ -63,6 +96,12 @@ export function VendasFeature() {
         {...listProps}
         onAdd={handleAddWrapper}
         onView={handleViewWrapper}
+        onDelete={(item) => {
+          setVendaToCancel(item);
+          setMotivo("");
+          setMotivoError("");
+          setCancelOpen(true);
+        }}
       />
 
       {list.isUpsertOpen && (
@@ -77,29 +116,82 @@ export function VendasFeature() {
             toast.success(
               list.editingItem
                 ? "Venda consultada com sucesso!"
-                : "Venda registrada com sucesso!"
+                : "Venda registrada com sucesso!",
             );
           }}
           readOnly={list.readOnly}
         />
       )}
 
-      <DeleteDialog
-        {...deleteDialogProps}
-        title="Cancelar / Excluir Venda"
-        description={
-          <div className="flex flex-col gap-2">
-            <p>
-              Deseja realmente cancelar/excluir a venda{" "}
-              <strong>#{list.itemToDelete?.id}</strong>?
+      <Dialog
+        open={cancelOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCancelOpen(false);
+            setVendaToCancel(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cancelar Venda</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja cancelar a venda{" "}
+              <strong>#{vendaToCancel?.id}</strong>?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-3 py-3">
+            <p className="text-destructive text-xs font-semibold">
+              Esta ação reverterá as movimentações de estoque físicas dos itens
+              e excluirá a conta a receber gerada.
             </p>
-            <p className="text-xs text-red-500 font-semibold">
-              Esta ação irá reverter a movimentação de estoque física dos produtos e
-              excluir a conta a receber financeira gerada, caso nenhuma parcela tenha sido baixada.
-            </p>
+            <Field data-invalid={!!motivoError}>
+              <FieldLabel htmlFor="motivo-cancelamento">
+                Motivo do Cancelamento
+              </FieldLabel>
+              <Textarea
+                id="motivo-cancelamento"
+                value={motivo}
+                onChange={(e) => {
+                  setMotivo(e.target.value);
+                  if (e.target.value.trim().length >= 5) setMotivoError("");
+                }}
+                placeholder="Informe o motivo (mínimo de 5 caracteres)..."
+                rows={3}
+                maxLength={500}
+                className={cn(
+                  motivoError &&
+                    "border-destructive focus-visible:ring-destructive",
+                )}
+              />
+              {motivoError && <FieldError>{motivoError}</FieldError>}
+            </Field>
           </div>
-        }
-      />
+
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setCancelOpen(false);
+                setVendaToCancel(null);
+              }}
+              disabled={canceling}
+            >
+              Ceancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleConfirmCancel}
+              disabled={canceling}
+            >
+              {canceling ? "Cancelando..." : "Confirmar Cancelamento"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

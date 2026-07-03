@@ -8,12 +8,14 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { FeatureLayout } from "@/components/ui/feature-layout";
-import type { VendasResumo } from "./types";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import type { Venda } from "./types";
 import type { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 import { formatToLocal } from "@/utils/date-utils";
 
-interface VendasListProps extends FeatureListProps<VendasResumo> {
-  onView: (item: VendasResumo) => void;
+interface VendasListProps extends FeatureListProps<Venda> {
+  onView: (item: Venda) => void;
 }
 
 export function VendasList({
@@ -32,7 +34,7 @@ export function VendasList({
   const listRef = React.useRef<HTMLDivElement>(null);
   useFeatureHotkeys({ onAdd, listRef });
 
-  const columns: ColumnDef<VendasResumo>[] = [
+  const columns: ColumnDef<Venda>[] = [
     {
       accessorKey: "id",
       header: "Código",
@@ -49,24 +51,24 @@ export function VendasList({
       ),
     },
     {
-      accessorKey: "clienteNome",
+      accessorKey: "cliente.nomeRazaoSocial",
       header: "Cliente",
       cell: ({ row }) => (
-        <span className="font-medium">{row.getValue("clienteNome")}</span>
+        <span className="font-medium">{row.original.cliente?.nomeRazaoSocial}</span>
       ),
     },
     {
-      accessorKey: "emitenteNome",
+      accessorKey: "emitente.nomeRazaoSocial",
       header: "Emitente",
       cell: ({ row }) => (
-        <span className="text-muted-foreground">{row.getValue("emitenteNome")}</span>
+        <span className="text-muted-foreground">{row.original.emitente?.nomeRazaoSocial}</span>
       ),
     },
     {
-      accessorKey: "quantidadeItens",
+      id: "quantidadeItens",
       header: () => <div className="text-right">Itens</div>,
       cell: ({ row }) => (
-        <div className="text-right font-mono text-xs">{row.getValue("quantidadeItens")}</div>
+        <div className="text-right text-xs font-medium">{row.original.itens?.length ?? 0}</div>
       ),
     },
     {
@@ -75,7 +77,10 @@ export function VendasList({
       cell: ({ row }) => {
         const total = Number(row.getValue("valorTotal"));
         return (
-          <div className="text-right font-semibold text-emerald-600 dark:text-emerald-400">
+          <div className={cn(
+            "text-right font-semibold text-emerald-600 dark:text-emerald-400",
+            row.original.dataCancelamento && "line-through text-muted-foreground/60 dark:text-muted-foreground/50"
+          )}>
             {new Intl.NumberFormat("pt-BR", {
               style: "currency",
               currency: "BRL",
@@ -85,10 +90,24 @@ export function VendasList({
       },
     },
     {
+      accessorKey: "dataCancelamento",
+      header: "Status",
+      size: 100,
+      cell: ({ row }) => {
+        const isCanceled = !!row.original.dataCancelamento;
+        return (
+          <Badge variant={isCanceled ? "destructive" : "outline"}>
+            {isCanceled ? "Cancelada" : "Confirmada"}
+          </Badge>
+        );
+      },
+    },
+    {
       id: "actions",
       header: () => <div className="px-4 text-right">Ações</div>,
       cell: ({ row }) => {
         const item = row.original;
+        const isCanceled = !!item.dataCancelamento;
         return (
           <div className="flex justify-end gap-2 px-4">
             <Button
@@ -99,14 +118,16 @@ export function VendasList({
             >
               <Eye className="h-4 w-4" />
             </Button>
-            <Button
-              size="icon-sm"
-              variant="destructive"
-              title="Cancelar Venda"
-              onClick={() => onDelete(item)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {!isCanceled && (
+              <Button
+                size="icon-sm"
+                variant="destructive"
+                title="Cancelar Venda"
+                onClick={() => onDelete(item)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         );
       },
