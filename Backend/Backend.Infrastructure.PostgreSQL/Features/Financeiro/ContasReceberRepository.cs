@@ -45,7 +45,7 @@ public class ContasReceberRepository : IContasReceberRepository
             JOIN paises p ON p.id = c.nacionalidade_id
             LEFT JOIN condicoes_pagamentos con ON con.id = cr.condicao_pagamento_id
             LEFT JOIN metodos_pagamento mp ON mp.codigo = con.metodo_pagamento_codigo
-            ORDER BY cr.data_vencimento
+            ORDER BY cr.criado_em DESC, cr.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(
@@ -363,7 +363,7 @@ public class ContasReceberRepository : IContasReceberRepository
             LEFT JOIN condicoes_pagamentos con ON con.id = cr.condicao_pagamento_id
             LEFT JOIN metodos_pagamento mp ON mp.codigo = con.metodo_pagamento_codigo
             WHERE cr.descricao ILIKE @Termo OR c.nome_razaosocial ILIKE @Termo
-            ORDER BY cr.data_vencimento
+            ORDER BY cr.criado_em DESC, cr.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(

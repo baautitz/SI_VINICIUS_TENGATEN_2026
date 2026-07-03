@@ -26,7 +26,7 @@ public class CategoriasRepository : ICategoriasRepository
 
             SELECT id, categoria, descricao, ativo
             FROM categorias
-            ORDER BY categoria
+            ORDER BY id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(
@@ -134,7 +134,7 @@ public class CategoriasRepository : ICategoriasRepository
             FROM categorias
             WHERE unaccent(categoria::text) ILIKE unaccent(@Termo::text) 
                OR unaccent(descricao::text) ILIKE unaccent(@Termo::text)
-            ORDER BY categoria
+            ORDER BY id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(

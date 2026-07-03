@@ -44,7 +44,7 @@ public class ContasPagarRepository : IContasPagarRepository
             JOIN paises p ON p.id = f.nacionalidade_id
             LEFT JOIN condicoes_pagamentos con ON con.id = cp.condicao_pagamento_id
             LEFT JOIN metodos_pagamento mp ON mp.codigo = con.metodo_pagamento_codigo
-            ORDER BY cp.data_vencimento
+            ORDER BY cp.criado_em DESC, cp.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(
@@ -332,7 +332,7 @@ public class ContasPagarRepository : IContasPagarRepository
             LEFT JOIN condicoes_pagamentos con ON con.id = cp.condicao_pagamento_id
             LEFT JOIN metodos_pagamento mp ON mp.codigo = con.metodo_pagamento_codigo
             WHERE cp.descricao ILIKE @Termo OR f.nome_razaosocial ILIKE @Termo
-            ORDER BY cp.data_vencimento
+            ORDER BY cp.criado_em DESC, cp.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(

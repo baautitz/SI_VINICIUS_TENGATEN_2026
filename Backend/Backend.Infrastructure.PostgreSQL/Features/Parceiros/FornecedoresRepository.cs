@@ -37,7 +37,7 @@ public class FornecedoresRepository : IFornecedoresRepository
             LEFT JOIN cidades ci ON ci.id = b.cidade_id
             LEFT JOIN estados e ON e.id = ci.estado_id
             LEFT JOIN paises pe ON pe.id = e.pais_id
-            ORDER BY f.nome_razaosocial
+            ORDER BY f.criado_em DESC, f.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
@@ -214,7 +214,7 @@ public class FornecedoresRepository : IFornecedoresRepository
             LEFT JOIN paises pe ON pe.id = e.pais_id
             WHERE f.nome_razaosocial ILIKE @Termo OR f.cpf_cnpj ILIKE @Termo
                OR f.apelido_nomefantasia ILIKE @Termo OR f.email ILIKE @Termo
-            ORDER BY f.nome_razaosocial
+            ORDER BY f.criado_em DESC, f.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);

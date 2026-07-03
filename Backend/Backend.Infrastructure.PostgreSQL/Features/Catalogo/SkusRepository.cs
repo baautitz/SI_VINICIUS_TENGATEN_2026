@@ -36,7 +36,7 @@ public class SkusRepository : ISkusRepository
             JOIN categorias c ON c.id = p.categoria_id
             JOIN marcas m ON m.id = p.marca_id
             JOIN unidades_medida u ON u.id = p.unidade_medida_id
-            ORDER BY s.sku
+            ORDER BY s.sku DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
@@ -284,7 +284,7 @@ public class SkusRepository : ISkusRepository
             JOIN marcas m ON m.id = p.marca_id
             JOIN unidades_medida u ON u.id = p.unidade_medida_id
             WHERE s.sku ILIKE @Termo OR s.gtin_ean ILIKE @Termo OR p.produto ILIKE @Termo
-            ORDER BY s.sku
+            ORDER BY s.sku DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);

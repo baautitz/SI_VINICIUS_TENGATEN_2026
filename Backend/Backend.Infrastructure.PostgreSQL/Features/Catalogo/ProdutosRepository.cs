@@ -32,7 +32,7 @@ public class ProdutosRepository : IProdutosRepository
             JOIN categorias c ON c.id = p.categoria_id
             JOIN marcas m ON m.id = p.marca_id
             JOIN unidades_medida u ON u.id = p.unidade_medida_id
-            ORDER BY p.produto
+            ORDER BY p.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(
@@ -277,7 +277,7 @@ public class ProdutosRepository : IProdutosRepository
             JOIN marcas m ON m.id = p.marca_id
             JOIN unidades_medida u ON u.id = p.unidade_medida_id
             WHERE p.produto ILIKE @Termo OR p.descricao ILIKE @Termo
-            ORDER BY p.produto
+            ORDER BY p.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(

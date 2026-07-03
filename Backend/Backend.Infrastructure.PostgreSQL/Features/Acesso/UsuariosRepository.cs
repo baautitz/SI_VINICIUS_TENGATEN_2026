@@ -26,7 +26,7 @@ public class UsuariosRepository : IUsuariosRepository
 
             SELECT id, nome, cpf_cnpj, email, telefone, usuario, senha, ativo
             FROM usuarios
-            ORDER BY nome
+            ORDER BY id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(
@@ -140,7 +140,7 @@ public class UsuariosRepository : IUsuariosRepository
 
             SELECT id, nome, cpf_cnpj, email, usuario
             FROM usuarios
-            ORDER BY nome
+            ORDER BY id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(
@@ -167,7 +167,7 @@ public class UsuariosRepository : IUsuariosRepository
             SELECT id, nome, cpf_cnpj, email, usuario
             FROM usuarios
             WHERE nome ILIKE @Termo OR email ILIKE @Termo OR usuario ILIKE @Termo
-            ORDER BY nome
+            ORDER BY id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(

@@ -25,7 +25,7 @@ public class UnidadesMedidaRepository : IUnidadesMedidaRepository
             SELECT COUNT(*) FROM unidades_medida;
             SELECT id, sigla, descricao, categoria, permite_decimais AS PermiteDecimais, ativo
             FROM unidades_medida
-            ORDER BY descricao
+            ORDER BY id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(sql, new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset }, transaction: _session.Transaction);
@@ -118,7 +118,7 @@ public class UnidadesMedidaRepository : IUnidadesMedidaRepository
             WHERE unaccent(sigla::text) ILIKE unaccent(@Termo::text)
                OR unaccent(descricao::text) ILIKE unaccent(@Termo::text)
                OR unaccent(categoria::text) ILIKE unaccent(@Termo::text)
-            ORDER BY descricao
+            ORDER BY id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(

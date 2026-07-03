@@ -27,7 +27,7 @@ public class MetodosPagamentosRepository : IMetodosPagamentosRepository
         const string sqlData = @"
             SELECT codigo, descricao, ativo
             FROM metodos_pagamento
-            ORDER BY codigo
+            ORDER BY codigo DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
@@ -114,7 +114,7 @@ public class MetodosPagamentosRepository : IMetodosPagamentosRepository
             SELECT codigo, descricao, ativo
             FROM metodos_pagamento
             WHERE codigo ILIKE @Termo OR descricao ILIKE @Termo
-            ORDER BY codigo
+            ORDER BY codigo DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = queryTermo }, transaction: _session.Transaction);

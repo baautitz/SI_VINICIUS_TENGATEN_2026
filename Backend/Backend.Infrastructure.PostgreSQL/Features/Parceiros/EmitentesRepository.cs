@@ -37,7 +37,7 @@ public class EmitentesRepository : IEmitentesRepository
             LEFT JOIN cidades c ON c.id = b.cidade_id
             LEFT JOIN estados st ON st.id = c.estado_id
             LEFT JOIN paises pe ON pe.id = st.pais_id
-            ORDER BY e.nome_razaosocial
+            ORDER BY e.criado_em DESC, e.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
@@ -214,7 +214,7 @@ public class EmitentesRepository : IEmitentesRepository
             LEFT JOIN paises pe ON pe.id = st.pais_id
             WHERE e.nome_razaosocial ILIKE @Termo OR e.cpf_cnpj ILIKE @Termo
                OR e.apelido_nomefantasia ILIKE @Termo OR e.email ILIKE @Termo
-            ORDER BY e.nome_razaosocial
+            ORDER BY e.criado_em DESC, e.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);

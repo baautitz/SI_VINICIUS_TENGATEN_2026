@@ -32,7 +32,7 @@ public class VeiculosRepository : IVeiculosRepository
             LEFT JOIN transportadoras t ON t.id = v.transportadora_id
             LEFT JOIN estados e ON e.id = v.estado_id
             LEFT JOIN paises p ON p.id = e.pais_id
-            ORDER BY v.placa
+            ORDER BY v.criado_em DESC, v.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
@@ -200,7 +200,7 @@ public class VeiculosRepository : IVeiculosRepository
             LEFT JOIN estados e ON e.id = v.estado_id
             LEFT JOIN paises p ON p.id = e.pais_id
             WHERE v.placa ILIKE @Termo OR v.marca_modelo ILIKE @Termo OR t.nome_razaosocial ILIKE @Termo OR e.uf ILIKE @Termo
-            ORDER BY v.placa
+            ORDER BY v.criado_em DESC, v.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(

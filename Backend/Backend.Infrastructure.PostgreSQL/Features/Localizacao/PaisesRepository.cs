@@ -23,7 +23,7 @@ public class PaisesRepository : IPaisesRepository
         const string sqlData = @"
             SELECT id, pais, codigo_iso_pais AS CodigoIsoPais, ddi, codigo_iso_moeda AS CodigoIsoMoeda, simbolo_moeda AS SimboloMoeda
             FROM paises
-            ORDER BY pais
+            ORDER BY id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
@@ -63,7 +63,7 @@ public class PaisesRepository : IPaisesRepository
             SELECT id, pais, codigo_iso_pais AS CodigoIsoPais, ddi, codigo_iso_moeda AS CodigoIsoMoeda, simbolo_moeda AS SimboloMoeda
             FROM paises
             WHERE pais ILIKE @Termo OR codigo_iso_pais ILIKE @Termo
-            ORDER BY pais
+            ORDER BY id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);

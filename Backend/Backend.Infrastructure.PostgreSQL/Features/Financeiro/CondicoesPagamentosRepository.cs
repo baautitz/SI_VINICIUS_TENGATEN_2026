@@ -32,7 +32,7 @@ public class CondicoesPagamentosRepository : ICondicoesPagamentosRepository
                    mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo
             FROM condicoes_pagamentos cp
             INNER JOIN metodos_pagamento mp ON mp.codigo = cp.metodo_pagamento_codigo
-            ORDER BY cp.descricao
+            ORDER BY cp.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
@@ -257,7 +257,7 @@ public class CondicoesPagamentosRepository : ICondicoesPagamentosRepository
             FROM condicoes_pagamentos cp
             INNER JOIN metodos_pagamento mp ON mp.codigo = cp.metodo_pagamento_codigo
             WHERE cp.descricao ILIKE @Termo OR mp.descricao ILIKE @Termo
-            ORDER BY cp.descricao
+            ORDER BY cp.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = queryTermo }, transaction: _session.Transaction);

@@ -27,7 +27,7 @@ public class SkuAtributosChavesRepository : ISkuAtributosChavesRepository
             SELECT COUNT(*) FROM sku_atributos_chaves;
 
             SELECT id, chave FROM sku_atributos_chaves
-            ORDER BY chave
+            ORDER BY id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(
@@ -189,7 +189,7 @@ public class SkuAtributosChavesRepository : ISkuAtributosChavesRepository
 
             SELECT id, chave FROM sku_atributos_chaves
             WHERE unaccent(chave::text) ILIKE unaccent(@Termo::text)
-            ORDER BY chave
+            ORDER BY id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(

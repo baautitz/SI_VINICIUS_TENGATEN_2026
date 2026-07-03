@@ -22,7 +22,7 @@ public class CidadesRepository : ICidadesRepository
             FROM cidades ci
             INNER JOIN estados st ON st.id = ci.estado_id
             INNER JOIN paises p ON p.id = st.pais_id
-            ORDER BY ci.cidade
+            ORDER BY ci.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
@@ -85,7 +85,7 @@ public class CidadesRepository : ICidadesRepository
             INNER JOIN estados st ON st.id = ci.estado_id
             INNER JOIN paises p ON p.id = st.pais_id
             WHERE ci.cidade ILIKE @Termo OR ci.ddd ILIKE @Termo
-            ORDER BY ci.cidade
+            ORDER BY ci.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
