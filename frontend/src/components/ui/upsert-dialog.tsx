@@ -19,8 +19,12 @@ interface UpsertDialogProps {
   children?: React.ReactNode;
   footer?: React.ReactNode;
   loading?: boolean;
-  onPointerDownOutside?: React.ComponentProps<typeof DialogContent>["onPointerDownOutside"];
-  onEscapeKeyDown?: React.ComponentProps<typeof DialogContent>["onEscapeKeyDown"];
+  onPointerDownOutside?: React.ComponentProps<
+    typeof DialogContent
+  >["onPointerDownOutside"];
+  onEscapeKeyDown?: React.ComponentProps<
+    typeof DialogContent
+  >["onEscapeKeyDown"];
   disableHotkey?: boolean;
   isEdit?: boolean;
 }
@@ -32,100 +36,100 @@ export function UpsertDialog({
   children,
   footer,
   loading = false,
-  onPointerDownOutside,
-  onEscapeKeyDown,
   disableHotkey = false,
-  isEdit = false,
 }: UpsertDialogProps) {
   const [confirmCloseOpen, setConfirmCloseOpen] = React.useState(false);
-  const contentRef = React.useRef<HTMLDivElement>(null);
+
+  const formDialogRef = React.useRef<HTMLDivElement>(null);
+  const confirmDialogRef = React.useRef<HTMLDivElement>(null);
 
   const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen && isEdit) {
-      setConfirmCloseOpen(true);
-    } else {
-      onOpenChange(newOpen);
+    if (newOpen) {
+      onOpenChange(true);
+      return;
     }
+
+    setConfirmCloseOpen(true);
   };
 
-  useHotkeys([
-    {
-      hotkey: "Alt+Enter",
-      callback: (e) => {
-        if (typeof document !== 'undefined' && contentRef.current) {
-          const dialogs = document.querySelectorAll('[role="dialog"]');
-          const topDialog = dialogs.length > 0 ? dialogs[dialogs.length - 1] : null;
-          const myDialog = contentRef.current.closest('[role="dialog"]') || contentRef.current;
-          if (dialogs.length > 0 && myDialog !== topDialog) return;
-        }
+  useHotkeys(
+    [
+      {
+        hotkey: "Alt+Enter",
+        callback: (e) => {
+          const activeRef = confirmCloseOpen ? confirmDialogRef : formDialogRef;
 
-        e.preventDefault();
-        e.stopPropagation();
-        if (contentRef.current) {
-          const submitBtn = contentRef.current.querySelector(
-            'button[type="submit"]'
-          ) as HTMLButtonElement | null;
-          if (submitBtn && !submitBtn.disabled) {
-            submitBtn.click();
-          } else {
-            const formEl = contentRef.current.querySelector("form");
-            if (formEl) {
-              formEl.requestSubmit();
+          if (typeof document !== "undefined" && activeRef.current) {
+            const dialogs = document.querySelectorAll('[role="dialog"]');
+            const topDialog =
+              dialogs.length > 0 ? dialogs[dialogs.length - 1] : null;
+
+            const myDialog =
+              activeRef.current.closest('[role="dialog"]') ?? activeRef.current;
+
+            if (dialogs.length > 0 && myDialog !== topDialog) {
+              return;
             }
           }
-        }
+
+          e.preventDefault();
+          e.stopPropagation();
+
+          if (confirmCloseOpen) {
+            setConfirmCloseOpen(false);
+            onOpenChange(false);
+            return;
+          }
+
+          if (formDialogRef.current) {
+            const submitBtn = formDialogRef.current.querySelector(
+              'button[type="submit"]',
+            ) as HTMLButtonElement | null;
+
+            if (submitBtn && !submitBtn.disabled) {
+              submitBtn.click();
+            } else {
+              const formEl = formDialogRef.current.querySelector("form");
+
+              if (formEl) {
+                formEl.requestSubmit();
+              }
+            }
+          }
+        },
+        options: {
+          enabled: open && !loading && !disableHotkey,
+          ignoreInputs: false,
+        },
       },
-      options: {
-        enabled: open && !loading && !disableHotkey && !confirmCloseOpen,
-        ignoreInputs: false,
-      },
-    },
-    {
-      hotkey: "Alt+Enter",
-      callback: (e) => {
-        e.preventDefault();
-        setConfirmCloseOpen(false);
-        onOpenChange(false);
-      },
-      options: {
-        enabled: confirmCloseOpen,
-        ignoreInputs: false,
-      },
-    },
-  ], { conflictBehavior: "allow" });
+    ],
+    { conflictBehavior: "allow" },
+  );
 
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent
-          ref={contentRef}
-          className="flex flex-col gap-0 p-0 overflow-hidden"
+          ref={formDialogRef}
+          className="flex flex-col gap-0 overflow-hidden p-0"
           style={{ width: "98vw", maxWidth: "98vw", height: "95vh" }}
           aria-describedby={undefined}
           onPointerDownOutside={(e) => {
-            if (isEdit) {
-              e.preventDefault();
-              setConfirmCloseOpen(true);
-            } else if (onPointerDownOutside) {
-              onPointerDownOutside(e);
-            }
+            e.preventDefault();
+            setConfirmCloseOpen(true);
           }}
           onEscapeKeyDown={(e) => {
-            if (isEdit) {
-              e.preventDefault();
-              setConfirmCloseOpen(true);
-            } else if (onEscapeKeyDown) {
-              onEscapeKeyDown(e);
-            }
+            e.preventDefault();
+            setConfirmCloseOpen(true);
           }}
         >
-          <DialogHeader className="p-4 border-b bg-background shrink-0">
+          <DialogHeader className="bg-background shrink-0 border-b p-4">
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto p-4 flex flex-col justify-start relative">
+          <div className="relative flex flex-1 flex-col justify-start overflow-y-auto p-4">
             {loading ? (
-              <div className="flex flex-col items-center justify-center h-full gap-4 py-20">
+              <div className="flex h-full flex-col items-center justify-center gap-4 py-20">
                 <Spinner className="size-6" />
                 <p className="text-muted-foreground font-medium">
                   Carregando dados...
@@ -137,15 +141,22 @@ export function UpsertDialog({
           </div>
 
           {!loading && footer && (
-            <DialogFooter className="m-0 p-4 mt-auto shrink-0 border-t bg-muted/50">
+            <DialogFooter className="bg-muted/50 m-0 mt-auto shrink-0 border-t p-4">
               {footer}
             </DialogFooter>
           )}
         </DialogContent>
       </Dialog>
 
-      <Dialog open={confirmCloseOpen} onOpenChange={setConfirmCloseOpen}>
-        <DialogContent className="max-w-md">
+      <Dialog
+        open={confirmCloseOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setConfirmCloseOpen(false);
+          }
+        }}
+      >
+        <DialogContent ref={confirmDialogRef} className="max-w-md">
           <DialogHeader>
             <DialogTitle>Sair do Formulário?</DialogTitle>
             <DialogDescription>
@@ -162,6 +173,7 @@ export function UpsertDialog({
             >
               Permanecer <Kbd>Esc</Kbd>
             </Button>
+
             <Button
               type="button"
               variant="destructive"
