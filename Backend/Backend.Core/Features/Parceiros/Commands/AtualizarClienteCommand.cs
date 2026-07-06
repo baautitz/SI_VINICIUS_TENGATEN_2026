@@ -16,6 +16,8 @@ public record AtualizarClienteCommand(
     string? Email,
     decimal LimiteCredito,
     string? Observacao,
-    bool Ativo
+    bool Ativo,
+    string? Sexo = null,
+    DateTime? DataNascimento = null
 );
 

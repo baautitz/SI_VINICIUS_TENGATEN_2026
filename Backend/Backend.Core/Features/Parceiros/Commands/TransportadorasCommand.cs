@@ -16,7 +16,9 @@ public record CriarTransportadoraCommand(
     string? Email = null,
     string? Rntrc = null,
     string? Observacao = null,
-    bool Ativo = true
+    bool Ativo = true,
+    string? Sexo = null,
+    DateTime? DataNascimento = null
 );
 
 public record AtualizarTransportadoraCommand(
@@ -33,5 +35,7 @@ public record AtualizarTransportadoraCommand(
     string? Email = null,
     string? Rntrc = null,
     string? Observacao = null,
-    bool Ativo = true
+    bool Ativo = true,
+    string? Sexo = null,
+    DateTime? DataNascimento = null
 );

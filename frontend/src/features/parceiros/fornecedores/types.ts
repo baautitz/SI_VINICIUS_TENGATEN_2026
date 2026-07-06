@@ -17,6 +17,8 @@ export interface Fornecedor {
   telefone?: string
   email?: string
   ativo: boolean
+  sexo?: string
+  dataNascimento?: string
   observacao?: string
 }
 
@@ -28,6 +30,8 @@ export const fornecedorSchema = z.object({
   apelidoNomefantasia: z.string().optional(),
   logradouro: z.string().optional(),
   numero: z.string().optional(),
+  sexo: z.string().optional(),
+  dataNascimento: z.string().optional(),
   bairroId: z.number().nullable().optional(),
   nacionalidadeId: z.number({ required_error: "Nacionalidade é obrigatória." }).min(1, "Nacionalidade é obrigatória."),
   telefone: z.string().optional(),

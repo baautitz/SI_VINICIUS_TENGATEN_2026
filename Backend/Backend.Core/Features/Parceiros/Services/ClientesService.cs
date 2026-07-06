@@ -90,7 +90,9 @@ public sealed class ClientesService : BaseService
                 command.Email,
                 command.LimiteCredito,
                 command.Observacao,
-                command.Ativo
+                command.Ativo,
+                command.Sexo,
+                command.DataNascimento
             );
 
             var criado = await _clientesRepository.CriarCliente(cliente);
@@ -161,7 +163,9 @@ public sealed class ClientesService : BaseService
                 command.Telefone,
                 command.Email,
                 command.LimiteCredito,
-                command.Observacao
+                command.Observacao,
+                command.Sexo,
+                command.DataNascimento
             );
 
 

@@ -25,6 +25,8 @@ public class Transportadoras
     public Documento? Rntrc { get; private set; }
     public bool Ativo { get; private set; }
     public DateTime CriadoEm { get; private set; }
+    public string? Sexo { get; private set; }
+    public DateTime? DataNascimento { get; private set; }
     public string? Observacao { get; private set; }
 
     public IReadOnlyCollection<Veiculos> Veiculos => _veiculos.AsReadOnly();
@@ -49,7 +51,9 @@ public class Transportadoras
         string? telefone = null,
         string? email = null,
         Documento? rntrc = null,
-        string? observacao = null)
+        string? observacao = null,
+        string? sexo = null,
+        DateTime? dataNascimento = null)
     {
         nomeRazaosocial = TextNormalization.Normalize(nomeRazaosocial);
 
@@ -61,6 +65,12 @@ public class Transportadoras
 
         if (nacionalidade == null)
             throw new DomainException("Nacionalidade é obrigatória.");
+
+        if (tipoPessoa == TipoPessoa.JURIDICA && !string.IsNullOrWhiteSpace(sexo))
+            throw new DomainException("Sexo só pode ser informado para pessoa física.");
+
+        if (!string.IsNullOrWhiteSpace(sexo) && sexo != "M" && sexo != "F" && sexo != "O")
+            throw new DomainException("Sexo inválido.");
 
         TipoPessoa = tipoPessoa;
         NomeRazaosocial = nomeRazaosocial;
@@ -77,6 +87,8 @@ public class Transportadoras
         Observacao = TextNormalization.NormalizeOrNull(observacao);
         Ativo = true;
         CriadoEm = DateTime.UtcNow;
+        Sexo = tipoPessoa == TipoPessoa.FISICA ? TextNormalization.NormalizeOrNull(sexo)?.ToUpper() : null;
+        DataNascimento = dataNascimento;
     }
 
     public void AdicionarVeiculo(Veiculos veiculo)
@@ -111,7 +123,9 @@ public class Transportadoras
         string? telefone = null,
         string? email = null,
         Documento? rntrc = null,
-        string? observacao = null)
+        string? observacao = null,
+        string? sexo = null,
+        DateTime? dataNascimento = null)
     {
         nomeRazaosocial = TextNormalization.Normalize(nomeRazaosocial);
 
@@ -123,6 +137,12 @@ public class Transportadoras
 
         if (nacionalidade == null)
             throw new DomainException("Nacionalidade é obrigatória.");
+
+        if (tipoPessoa == TipoPessoa.JURIDICA && !string.IsNullOrWhiteSpace(sexo))
+            throw new DomainException("Sexo só pode ser informado para pessoa física.");
+
+        if (!string.IsNullOrWhiteSpace(sexo) && sexo != "M" && sexo != "F" && sexo != "O")
+            throw new DomainException("Sexo inválido.");
 
         TipoPessoa = tipoPessoa;
         NomeRazaosocial = nomeRazaosocial;
@@ -137,6 +157,8 @@ public class Transportadoras
         Email = TextNormalization.NormalizeOrNull(email);
         Rntrc = rntrc;
         Observacao = TextNormalization.NormalizeOrNull(observacao);
+        Sexo = tipoPessoa == TipoPessoa.FISICA ? TextNormalization.NormalizeOrNull(sexo)?.ToUpper() : null;
+        DataNascimento = dataNascimento;
     }
 
 

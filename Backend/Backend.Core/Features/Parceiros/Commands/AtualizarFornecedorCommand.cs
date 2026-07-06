@@ -15,6 +15,8 @@ public record AtualizarFornecedorCommand(
     string? Telefone,
     string? Email,
     string? Observacao,
-    bool Ativo
+    bool Ativo,
+    string? Sexo = null,
+    DateTime? DataNascimento = null
 );
 

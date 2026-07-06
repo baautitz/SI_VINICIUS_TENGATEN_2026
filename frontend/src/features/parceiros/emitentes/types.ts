@@ -20,6 +20,8 @@ export interface Emitente {
   regimeTributario?: string
   observacao?: string
   ativo: boolean
+  sexo?: string
+  dataNascimento?: string
 }
 
 export const emitenteSchema = z.object({
@@ -29,6 +31,8 @@ export const emitenteSchema = z.object({
   apelidoNomeFantasia: z.string().optional(),
   logradouro: z.string().optional(),
   numero: z.string().optional(),
+  sexo: z.string().optional(),
+  dataNascimento: z.string().optional(),
   bairroId: z.number().nullable().optional(),
   nacionalidadeId: z.number({ required_error: "Nacionalidade é obrigatória." }).min(1, "Nacionalidade é obrigatória."),
   telefone: z.string().optional(),

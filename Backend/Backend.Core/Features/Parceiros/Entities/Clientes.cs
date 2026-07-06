@@ -23,6 +23,8 @@ public class Clientes
     public decimal LimiteCredito { get; private set; }
     public bool Ativo { get; private set; }
     public DateTime CriadoEm { get; private set; }
+    public string? Sexo { get; private set; }
+    public DateTime? DataNascimento { get; private set; }
     public string? Observacao { get; private set; }
 
 
@@ -47,7 +49,9 @@ public class Clientes
         string? email = null,
         decimal limiteCredito = 0m,
         string? observacao = null,
-        bool ativo = true)
+        bool ativo = true,
+        string? sexo = null,
+        DateTime? dataNascimento = null)
     {
         nomeRazaoSocial = TextNormalization.Normalize(nomeRazaoSocial);
 
@@ -62,6 +66,12 @@ public class Clientes
 
         if (limiteCredito < 0)
             throw new DomainException("Limite de crédito não pode ser negativo.");
+
+        if (tipoPessoa == TipoPessoa.JURIDICA && !string.IsNullOrWhiteSpace(sexo))
+            throw new DomainException("Sexo só pode ser informado para pessoa física.");
+
+        if (!string.IsNullOrWhiteSpace(sexo) && sexo != "M" && sexo != "F" && sexo != "O")
+            throw new DomainException("Sexo inválido.");
 
         TipoPessoa = tipoPessoa;
         NomeRazaoSocial = nomeRazaoSocial;
@@ -78,6 +88,8 @@ public class Clientes
         Ativo = ativo;
         CriadoEm = DateTime.UtcNow;
         Observacao = TextNormalization.NormalizeOrNull(observacao);
+        Sexo = tipoPessoa == TipoPessoa.FISICA ? TextNormalization.NormalizeOrNull(sexo)?.ToUpper() : null;
+        DataNascimento = dataNascimento;
     }
 
     public Clientes(int id,
@@ -95,8 +107,10 @@ public class Clientes
         decimal limiteCredito = 0m,
         string? observacao = null,
         bool ativo = true,
+        string? sexo = null,
+        DateTime? dataNascimento = null,
         DateTime? criadoEm = null)
-        : this(tipoPessoa, nomeRazaoSocial, cpfCnpj, nacionalidade, rgIe, apelidoNomeFantasia, logradouro, numero, bairro, telefone, email, limiteCredito, observacao, ativo)
+        : this(tipoPessoa, nomeRazaoSocial, cpfCnpj, nacionalidade, rgIe, apelidoNomeFantasia, logradouro, numero, bairro, telefone, email, limiteCredito, observacao, ativo, sexo, dataNascimento)
     {
         Id = id;
         CriadoEm = criadoEm ?? DateTime.UtcNow;
@@ -115,7 +129,9 @@ public class Clientes
         string? telefone = null,
         string? email = null,
         decimal limiteCredito = 0m,
-        string? observacao = null)
+        string? observacao = null,
+        string? sexo = null,
+        DateTime? dataNascimento = null)
     {
         nomeRazaoSocial = TextNormalization.Normalize(nomeRazaoSocial);
 
@@ -131,6 +147,12 @@ public class Clientes
         if (limiteCredito < 0)
             throw new DomainException("Limite de crédito não pode ser negativo.");
 
+        if (tipoPessoa == TipoPessoa.JURIDICA && !string.IsNullOrWhiteSpace(sexo))
+            throw new DomainException("Sexo só pode ser informado para pessoa física.");
+
+        if (!string.IsNullOrWhiteSpace(sexo) && sexo != "M" && sexo != "F" && sexo != "O")
+            throw new DomainException("Sexo inválido.");
+
         TipoPessoa = tipoPessoa;
         NomeRazaoSocial = nomeRazaoSocial;
         CpfCnpj = cpfCnpj;
@@ -144,6 +166,8 @@ public class Clientes
         Email = TextNormalization.NormalizeOrNull(email);
         LimiteCredito = limiteCredito;
         Observacao = TextNormalization.NormalizeOrNull(observacao);
+        Sexo = tipoPessoa == TipoPessoa.FISICA ? TextNormalization.NormalizeOrNull(sexo)?.ToUpper() : null;
+        DataNascimento = dataNascimento;
     }
 
     public void DefinirBairro(Bairros? bairro)

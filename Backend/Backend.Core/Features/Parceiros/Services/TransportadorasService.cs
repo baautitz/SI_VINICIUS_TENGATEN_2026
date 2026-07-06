@@ -90,7 +90,9 @@ public sealed class TransportadorasService : BaseService
                 command.Telefone,
                 command.Email,
                 rntrc,
-                command.Observacao
+                command.Observacao,
+                command.Sexo,
+                command.DataNascimento
             );
 
             if (!command.Ativo) transportadora.Desativar();
@@ -164,7 +166,9 @@ public sealed class TransportadorasService : BaseService
                 command.Telefone,
                 command.Email,
                 rntrc,
-                command.Observacao
+                command.Observacao,
+                command.Sexo,
+                command.DataNascimento
             );
 
             if (command.Ativo) existente.Ativar();

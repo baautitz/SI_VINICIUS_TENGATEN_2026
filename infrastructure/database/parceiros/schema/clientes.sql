@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS clientes (
   apelido_nomefantasia VARCHAR(100),
   logradouro VARCHAR(150),
   numero VARCHAR(20),
+  sexo CHAR(1),
+  data_nascimento DATE,
   bairro_id INTEGER,
   nacionalidade_id INTEGER NOT NULL,
   telefone VARCHAR(20),
@@ -24,5 +26,7 @@ CREATE TABLE IF NOT EXISTS clientes (
   CONSTRAINT clientes_cpf_cnpj_not_empty CHECK (LENGTH(TRIM(cpf_cnpj)) > 0),
   CONSTRAINT clientes_cpf_cnpj_unique UNIQUE (cpf_cnpj),
   CONSTRAINT clientes_limite_credito_ck
-    CHECK (limite_credito >= 0)
+    CHECK (limite_credito >= 0),
+  CONSTRAINT clientes_sexo_ck
+    CHECK (sexo IS NULL OR (tipo_pessoa = 'FISICA' AND sexo IN ('M', 'F', 'O')))
 );

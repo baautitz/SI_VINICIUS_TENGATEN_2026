@@ -24,6 +24,8 @@ public class Emitentes
     public string? RegimeTributario { get; private set; }
     public bool Ativo { get; private set; }
     public DateTime CriadoEm { get; private set; }
+    public string? Sexo { get; private set; }
+    public DateTime? DataNascimento { get; private set; }
     public string? Observacao { get; private set; }
 
 
@@ -49,7 +51,9 @@ public class Emitentes
         string? inscricaoMunicipal = null,
         string? regimeTributario = null,
         string? observacao = null,
-        bool ativo = true)
+        bool ativo = true,
+        string? sexo = null,
+        DateTime? dataNascimento = null)
     {
         nomeRazaoSocial = TextNormalization.Normalize(nomeRazaoSocial);
 
@@ -61,6 +65,12 @@ public class Emitentes
 
         if (nacionalidade == null)
             throw new DomainException("Nacionalidade do emitente é obrigatória.");
+
+        if (tipoPessoa == TipoPessoa.JURIDICA && !string.IsNullOrWhiteSpace(sexo))
+            throw new DomainException("Sexo só pode ser informado para pessoa física.");
+
+        if (!string.IsNullOrWhiteSpace(sexo) && sexo != "M" && sexo != "F" && sexo != "O")
+            throw new DomainException("Sexo inválido.");
 
         TipoPessoa = tipoPessoa;
         NomeRazaoSocial = nomeRazaoSocial;
@@ -78,6 +88,8 @@ public class Emitentes
         Observacao = TextNormalization.NormalizeOrNull(observacao);
         Ativo = ativo;
         CriadoEm = DateTime.UtcNow;
+        Sexo = tipoPessoa == TipoPessoa.FISICA ? TextNormalization.NormalizeOrNull(sexo)?.ToUpper() : null;
+        DataNascimento = dataNascimento;
     }
 
     public Emitentes(int id,
@@ -96,8 +108,10 @@ public class Emitentes
         string? regimeTributario = null,
         string? observacao = null,
         bool ativo = true,
+        string? sexo = null,
+        DateTime? dataNascimento = null,
         DateTime? criadoEm = null)
-        : this(tipoPessoa, nomeRazaoSocial, cpfCnpj, nacionalidade, apelidoNomeFantasia, logradouro, numero, bairro, telefone, email, rgIe, inscricaoMunicipal, regimeTributario, observacao, ativo)
+        : this(tipoPessoa, nomeRazaoSocial, cpfCnpj, nacionalidade, apelidoNomeFantasia, logradouro, numero, bairro, telefone, email, rgIe, inscricaoMunicipal, regimeTributario, observacao, ativo, sexo, dataNascimento)
     {
         Id = id;
         CriadoEm = criadoEm ?? DateTime.UtcNow;
@@ -117,7 +131,9 @@ public class Emitentes
         Documento? rgIe = null,
         string? inscricaoMunicipal = null,
         string? regimeTributario = null,
-        string? observacao = null)
+        string? observacao = null,
+        string? sexo = null,
+        DateTime? dataNascimento = null)
     {
         nomeRazaoSocial = TextNormalization.Normalize(nomeRazaoSocial);
 
@@ -129,6 +145,12 @@ public class Emitentes
 
         if (nacionalidade == null)
             throw new DomainException("Nacionalidade do emitente é obrigatória.");
+
+        if (tipoPessoa == TipoPessoa.JURIDICA && !string.IsNullOrWhiteSpace(sexo))
+            throw new DomainException("Sexo só pode ser informado para pessoa física.");
+
+        if (!string.IsNullOrWhiteSpace(sexo) && sexo != "M" && sexo != "F" && sexo != "O")
+            throw new DomainException("Sexo inválido.");
 
         TipoPessoa = tipoPessoa;
         NomeRazaoSocial = nomeRazaoSocial;
@@ -144,6 +166,8 @@ public class Emitentes
         InscricaoMunicipal = TextNormalization.NormalizeOrNull(inscricaoMunicipal);
         RegimeTributario = TextNormalization.NormalizeOrNull(regimeTributario);
         Observacao = TextNormalization.NormalizeOrNull(observacao);
+        Sexo = tipoPessoa == TipoPessoa.FISICA ? TextNormalization.NormalizeOrNull(sexo)?.ToUpper() : null;
+        DataNascimento = dataNascimento;
     }
 
     public void DefinirBairro(Bairros? bairro)

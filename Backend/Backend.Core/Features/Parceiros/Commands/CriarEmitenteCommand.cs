@@ -17,6 +17,8 @@ public record CriarEmitenteCommand(
     string? InscricaoMunicipal,
     string? RegimeTributario,
     string? Observacao,
-    bool Ativo
+    bool Ativo,
+    string? Sexo = null,
+    DateTime? DataNascimento = null
 );
 

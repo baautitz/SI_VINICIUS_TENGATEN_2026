@@ -91,7 +91,9 @@ public sealed class EmitentesService : BaseService
                 command.InscricaoMunicipal,
                 command.RegimeTributario,
                 command.Observacao,
-                command.Ativo
+                command.Ativo,
+                command.Sexo,
+                command.DataNascimento
             );
 
             var criado = await _emitentesRepository.CriarEmitente(emitente);
@@ -163,7 +165,9 @@ public sealed class EmitentesService : BaseService
                 rgIe,
                 command.InscricaoMunicipal,
                 command.RegimeTributario,
-                command.Observacao
+                command.Observacao,
+                command.Sexo,
+                command.DataNascimento
             );
 
             if (command.Ativo) existente.Ativar();

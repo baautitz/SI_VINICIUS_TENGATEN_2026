@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS emitentes (
   apelido_nomefantasia VARCHAR(100),
   logradouro VARCHAR(150),
   numero VARCHAR(20),
+  sexo CHAR(1),
+  data_nascimento DATE,
   bairro_id INTEGER,
   nacionalidade_id INTEGER NOT NULL,
   telefone VARCHAR(20),
@@ -23,5 +25,7 @@ CREATE TABLE IF NOT EXISTS emitentes (
   CONSTRAINT emitentes_nacionalidade_fk FOREIGN KEY (nacionalidade_id) REFERENCES paises (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT emitentes_nome_not_empty CHECK (LENGTH(TRIM(nome_razaosocial)) > 0),
   CONSTRAINT emitentes_cpf_cnpj_not_empty CHECK (LENGTH(TRIM(cpf_cnpj)) > 0),
-  CONSTRAINT emitentes_cpf_cnpj_unique UNIQUE (cpf_cnpj)
+  CONSTRAINT emitentes_cpf_cnpj_unique UNIQUE (cpf_cnpj),
+  CONSTRAINT emitentes_sexo_ck
+    CHECK (sexo IS NULL OR (tipo_pessoa = 'FISICA' AND sexo IN ('M', 'F', 'O')))
 );

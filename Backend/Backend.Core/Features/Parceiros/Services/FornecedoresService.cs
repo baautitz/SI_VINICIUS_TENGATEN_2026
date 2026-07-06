@@ -71,7 +71,9 @@ public sealed class FornecedoresService : BaseService
                 bairro,
                 command.Telefone,
                 command.Email,
-                command.Observacao
+                command.Observacao,
+                command.Sexo,
+                command.DataNascimento
             );
 
             if (command.Ativo) fornecedor.Ativar();
@@ -126,7 +128,9 @@ public sealed class FornecedoresService : BaseService
                 bairro,
                 command.Telefone,
                 command.Email,
-                command.Observacao
+                command.Observacao,
+                command.Sexo,
+                command.DataNascimento
             );
 
             if (command.Ativo) existente.Ativar();

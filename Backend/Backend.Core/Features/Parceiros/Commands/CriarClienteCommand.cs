@@ -16,6 +16,8 @@ public record CriarClienteCommand(
     string? Email,
     decimal LimiteCredito,
     string? Observacao,
-    bool Ativo
+    bool Ativo,
+    string? Sexo = null,
+    DateTime? DataNascimento = null
 );
 

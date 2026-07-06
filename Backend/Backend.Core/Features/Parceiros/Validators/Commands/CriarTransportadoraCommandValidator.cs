@@ -1,5 +1,6 @@
 using Backend.Core.Common.ValueObjects;
 using Backend.Core.Features.Parceiros.Commands;
+using Backend.Core.Features.Parceiros.Enums;
 using FluentValidation;
 
 namespace Backend.Core.Features.Parceiros.Validators.Commands;
@@ -44,6 +45,14 @@ public class CriarTransportadoraCommandValidator : AbstractValidator<CriarTransp
 
         RuleFor(x => x.Observacao)
             .MaximumLength(500).WithMessage("Observação deve ter no máximo 500 caracteres.");
+
+        RuleFor(x => x.Sexo)
+            .Must(s => string.IsNullOrEmpty(s) || s == "M" || s == "F" || s == "O")
+            .WithMessage("Sexo inválido. Escolha entre M, F ou O.");
+
+        RuleFor(x => x.Sexo)
+            .Empty().When(x => x.TipoPessoa == TipoPessoa.JURIDICA)
+            .WithMessage("Sexo só pode ser informado para pessoa física.");
     }
 
     private bool BeValidDocument(string doc)

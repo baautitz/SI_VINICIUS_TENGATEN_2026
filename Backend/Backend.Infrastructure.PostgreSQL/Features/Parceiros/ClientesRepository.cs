@@ -24,7 +24,7 @@ public class ClientesRepository : IClientesRepository
         const string sqlCount = "SELECT COUNT(*) FROM clientes;";
         const string sqlData = @"
             SELECT c.id AS Id, c.tipo_pessoa AS TipoPessoa, c.nome_razaosocial AS NomeRazaoSocial, c.cpf_cnpj AS CpfCnpj, c.rg_ie AS RgIe, c.apelido_nomefantasia AS ApelidoNomeFantasia,
-                   c.logradouro AS Logradouro, c.numero AS Numero, c.telefone AS Telefone, c.email AS Email, c.limite_credito AS LimiteCredito, c.ativo AS Ativo, c.criado_em AS CriadoEm,
+                   c.logradouro AS Logradouro, c.numero AS Numero, c.sexo AS Sexo, c.data_nascimento AS DataNascimento, c.telefone AS Telefone, c.email AS Email, c.limite_credito AS LimiteCredito, c.ativo AS Ativo, c.criado_em AS CriadoEm,
                    c.observacao AS Observacao,
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
@@ -50,7 +50,7 @@ public class ClientesRepository : IClientesRepository
                 if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
                 if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
 
-                cliente.AtualizarDados(cliente.TipoPessoa, cliente.NomeRazaoSocial, cliente.CpfCnpj, pais!, cliente.RgIe, cliente.ApelidoNomeFantasia, cliente.Logradouro, cliente.Numero, bairro, cliente.Telefone, cliente.Email, cliente.LimiteCredito, cliente.Observacao);
+                cliente.AtualizarDados(cliente.TipoPessoa, cliente.NomeRazaoSocial, cliente.CpfCnpj, pais!, cliente.RgIe, cliente.ApelidoNomeFantasia, cliente.Logradouro, cliente.Numero, bairro, cliente.Telefone, cliente.Email, cliente.LimiteCredito, cliente.Observacao, cliente.Sexo, cliente.DataNascimento);
                 return cliente;
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
@@ -65,7 +65,7 @@ public class ClientesRepository : IClientesRepository
     {
         const string sql = @"
             SELECT c.id AS Id, c.tipo_pessoa AS TipoPessoa, c.nome_razaosocial AS NomeRazaoSocial, c.cpf_cnpj AS CpfCnpj, c.rg_ie AS RgIe, c.apelido_nomefantasia AS ApelidoNomeFantasia,
-                   c.logradouro AS Logradouro, c.numero AS Numero, c.telefone AS Telefone, c.email AS Email, c.limite_credito AS LimiteCredito, c.ativo AS Ativo, c.criado_em AS CriadoEm,
+                   c.logradouro AS Logradouro, c.numero AS Numero, c.sexo AS Sexo, c.data_nascimento AS DataNascimento, c.telefone AS Telefone, c.email AS Email, c.limite_credito AS LimiteCredito, c.ativo AS Ativo, c.criado_em AS CriadoEm,
                    c.observacao AS Observacao,
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
@@ -88,7 +88,7 @@ public class ClientesRepository : IClientesRepository
                 if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
                 if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
 
-                cliente.AtualizarDados(cliente.TipoPessoa, cliente.NomeRazaoSocial, cliente.CpfCnpj, pais!, cliente.RgIe, cliente.ApelidoNomeFantasia, cliente.Logradouro, cliente.Numero, bairro, cliente.Telefone, cliente.Email, cliente.LimiteCredito, cliente.Observacao);
+                cliente.AtualizarDados(cliente.TipoPessoa, cliente.NomeRazaoSocial, cliente.CpfCnpj, pais!, cliente.RgIe, cliente.ApelidoNomeFantasia, cliente.Logradouro, cliente.Numero, bairro, cliente.Telefone, cliente.Email, cliente.LimiteCredito, cliente.Observacao, cliente.Sexo, cliente.DataNascimento);
 
                 return cliente;
             },
@@ -104,10 +104,10 @@ public class ClientesRepository : IClientesRepository
     {
         const string sql = @"
             INSERT INTO clientes (tipo_pessoa, nome_razaosocial, cpf_cnpj, rg_ie, apelido_nomefantasia,
-                                  logradouro, numero, bairro_id, nacionalidade_id, telefone, email, limite_credito,
+                                  logradouro, numero, sexo, data_nascimento, bairro_id, nacionalidade_id, telefone, email, limite_credito,
                                   ativo, criado_em, observacao)
             VALUES (@TipoPessoa::tipo_pessoa, @NomeRazaoSocial, @CpfCnpj, @RgIe, @ApelidoNomeFantasia,
-                    @Logradouro, @Numero, @BairroId, @NacionalidadeId, @Telefone, @Email, @LimiteCredito,
+                    @Logradouro, @Numero, @Sexo, @DataNascimento, @BairroId, @NacionalidadeId, @Telefone, @Email, @LimiteCredito,
                     @Ativo, @CriadoEm, @Observacao)
             RETURNING id;";
 
@@ -122,6 +122,8 @@ public class ClientesRepository : IClientesRepository
                 cliente.ApelidoNomeFantasia,
                 cliente.Logradouro,
                 cliente.Numero,
+                cliente.Sexo,
+                cliente.DataNascimento,
                 BairroId = cliente.Bairro?.Id,
                 NacionalidadeId = cliente.Nacionalidade.Id,
                 cliente.Telefone,
@@ -144,7 +146,7 @@ public class ClientesRepository : IClientesRepository
             UPDATE clientes
             SET tipo_pessoa = @TipoPessoa::tipo_pessoa, nome_razaosocial = @NomeRazaoSocial, cpf_cnpj = @CpfCnpj,
                 rg_ie = @RgIe, apelido_nomefantasia = @ApelidoNomeFantasia,
-                logradouro = @Logradouro, numero = @Numero, bairro_id = @BairroId, nacionalidade_id = @NacionalidadeId,
+                logradouro = @Logradouro, numero = @Numero, sexo = @Sexo, data_nascimento = @DataNascimento, bairro_id = @BairroId, nacionalidade_id = @NacionalidadeId,
                 telefone = @Telefone, email = @Email, limite_credito = @LimiteCredito, 
                 ativo = @Ativo, atualizado_em = @AtualizadoEm, observacao = @Observacao
             WHERE id = @Id;";
@@ -161,6 +163,8 @@ public class ClientesRepository : IClientesRepository
                 cliente.ApelidoNomeFantasia,
                 cliente.Logradouro,
                 cliente.Numero,
+                cliente.Sexo,
+                cliente.DataNascimento,
                 BairroId = cliente.Bairro?.Id,
                 NacionalidadeId = cliente.Nacionalidade.Id,
                 cliente.Telefone,
@@ -201,7 +205,7 @@ public class ClientesRepository : IClientesRepository
 
         const string sqlData = @"
             SELECT c.id AS Id, c.tipo_pessoa AS TipoPessoa, c.nome_razaosocial AS NomeRazaoSocial, c.cpf_cnpj AS CpfCnpj, c.rg_ie AS RgIe, c.apelido_nomefantasia AS ApelidoNomeFantasia,
-                   c.logradouro AS Logradouro, c.numero AS Numero, c.telefone AS Telefone, c.email AS Email, c.limite_credito AS LimiteCredito, c.ativo AS Ativo, c.criado_em AS CriadoEm,
+                   c.logradouro AS Logradouro, c.numero AS Numero, c.sexo AS Sexo, c.data_nascimento AS DataNascimento, c.telefone AS Telefone, c.email AS Email, c.limite_credito AS LimiteCredito, c.ativo AS Ativo, c.criado_em AS CriadoEm,
                    c.observacao AS Observacao,
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
@@ -229,7 +233,7 @@ public class ClientesRepository : IClientesRepository
                 if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
                 if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
 
-                cliente.AtualizarDados(cliente.TipoPessoa, cliente.NomeRazaoSocial, cliente.CpfCnpj, pais!, cliente.RgIe, cliente.ApelidoNomeFantasia, cliente.Logradouro, cliente.Numero, bairro, cliente.Telefone, cliente.Email, cliente.LimiteCredito, cliente.Observacao);
+                cliente.AtualizarDados(cliente.TipoPessoa, cliente.NomeRazaoSocial, cliente.CpfCnpj, pais!, cliente.RgIe, cliente.ApelidoNomeFantasia, cliente.Logradouro, cliente.Numero, bairro, cliente.Telefone, cliente.Email, cliente.LimiteCredito, cliente.Observacao, cliente.Sexo, cliente.DataNascimento);
                 return cliente;
             },
             new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },

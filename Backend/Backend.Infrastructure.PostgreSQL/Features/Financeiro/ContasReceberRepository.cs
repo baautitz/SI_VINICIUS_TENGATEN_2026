@@ -80,6 +80,8 @@ public class ContasReceberRepository : IContasReceberRepository
                     cliente.LimiteCredito,
                     cliente.Observacao,
                     cliente.Ativo,
+                    cliente.Sexo,
+                    cliente.DataNascimento,
                     cliente.CriadoEm
                 );
 
@@ -201,6 +203,8 @@ public class ContasReceberRepository : IContasReceberRepository
                     cliente.LimiteCredito,
                     cliente.Observacao,
                     cliente.Ativo,
+                    cliente.Sexo,
+                    cliente.DataNascimento,
                     cliente.CriadoEm
                 );
 
@@ -402,6 +406,8 @@ public class ContasReceberRepository : IContasReceberRepository
                     cliente.LimiteCredito,
                     cliente.Observacao,
                     cliente.Ativo,
+                    cliente.Sexo,
+                    cliente.DataNascimento,
                     cliente.CriadoEm
                 );
 

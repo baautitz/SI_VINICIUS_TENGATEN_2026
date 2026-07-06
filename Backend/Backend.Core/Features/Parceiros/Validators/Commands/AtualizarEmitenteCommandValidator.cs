@@ -1,4 +1,5 @@
 using Backend.Core.Features.Parceiros.Commands;
+using Backend.Core.Features.Parceiros.Enums;
 using FluentValidation;
 
 namespace Backend.Core.Features.Parceiros.Validators.Commands;
@@ -20,5 +21,13 @@ public class AtualizarEmitenteCommandValidator : AbstractValidator<AtualizarEmit
 
         RuleFor(x => x.NacionalidadeId)
             .GreaterThan(0).WithMessage("Nacionalidade é obrigatória.");
+
+        RuleFor(x => x.Sexo)
+            .Must(s => string.IsNullOrEmpty(s) || s == "M" || s == "F" || s == "O")
+            .WithMessage("Sexo inválido. Escolha entre M, F ou O.");
+
+        RuleFor(x => x.Sexo)
+            .Empty().When(x => x.TipoPessoa == TipoPessoa.JURIDICA)
+            .WithMessage("Sexo só pode ser informado para pessoa física.");
     }
 }

@@ -22,6 +22,8 @@ public class Fornecedores
     public string? Email { get; private set; }
     public bool Ativo { get; private set; }
     public DateTime CriadoEm { get; private set; }
+    public string? Sexo { get; private set; }
+    public DateTime? DataNascimento { get; private set; }
     public string? Observacao { get; private set; }
 
 
@@ -44,7 +46,9 @@ public class Fornecedores
         Bairros? bairro = null,
         string? telefone = null,
         string? email = null,
-        string? observacao = null)
+        string? observacao = null,
+        string? sexo = null,
+        DateTime? dataNascimento = null)
     {
         nomeRazaosocial = TextNormalization.Normalize(nomeRazaosocial);
 
@@ -56,6 +60,12 @@ public class Fornecedores
 
         if (nacionalidade == null)
             throw new DomainException("Nacionalidade é obrigatória.");
+
+        if (tipoPessoa == TipoPessoa.JURIDICA && !string.IsNullOrWhiteSpace(sexo))
+            throw new DomainException("Sexo só pode ser informado para pessoa física.");
+
+        if (!string.IsNullOrWhiteSpace(sexo) && sexo != "M" && sexo != "F" && sexo != "O")
+            throw new DomainException("Sexo inválido.");
 
         TipoPessoa = tipoPessoa;
         NomeRazaosocial = nomeRazaosocial;
@@ -71,17 +81,19 @@ public class Fornecedores
         Observacao = TextNormalization.NormalizeOrNull(observacao);
         Ativo = true;
         CriadoEm = DateTime.UtcNow;
+        Sexo = tipoPessoa == TipoPessoa.FISICA ? TextNormalization.NormalizeOrNull(sexo)?.ToUpper() : null;
+        DataNascimento = dataNascimento;
     }
 
-    public Fornecedores(int id, TipoPessoa tipoPessoa, string nomeRazaosocial, Documento cpfCnpj, Paises nacionalidade, Documento? rgIe = null, string? apelidoNomefantasia = null, string? logradouro = null, string? numero = null, Bairros? bairro = null, string? telefone = null, string? email = null, string? observacao = null, bool ativo = true, DateTime? criadoEm = null)
-        : this(tipoPessoa, nomeRazaosocial, cpfCnpj, nacionalidade, rgIe, apelidoNomefantasia, logradouro, numero, bairro, telefone, email, observacao)
+    public Fornecedores(int id, TipoPessoa tipoPessoa, string nomeRazaosocial, Documento cpfCnpj, Paises nacionalidade, Documento? rgIe = null, string? apelidoNomefantasia = null, string? logradouro = null, string? numero = null, Bairros? bairro = null, string? telefone = null, string? email = null, string? observacao = null, bool ativo = true, DateTime? criadoEm = null, string? sexo = null, DateTime? dataNascimento = null)
+        : this(tipoPessoa, nomeRazaosocial, cpfCnpj, nacionalidade, rgIe, apelidoNomefantasia, logradouro, numero, bairro, telefone, email, observacao, sexo, dataNascimento)
     {
         Id = id;
         Ativo = ativo;
         CriadoEm = criadoEm ?? DateTime.UtcNow;
     }
 
-    public void Atualizar(TipoPessoa tipoPessoa, string nomeRazaosocial, Documento cpfCnpj, Paises nacionalidade, Documento? rgIe = null, string? apelidoNomefantasia = null, string? logradouro = null, string? numero = null, Bairros? bairro = null, string? telefone = null, string? email = null, string? observacao = null)
+    public void Atualizar(TipoPessoa tipoPessoa, string nomeRazaosocial, Documento cpfCnpj, Paises nacionalidade, Documento? rgIe = null, string? apelidoNomefantasia = null, string? logradouro = null, string? numero = null, Bairros? bairro = null, string? telefone = null, string? email = null, string? observacao = null, string? sexo = null, DateTime? dataNascimento = null)
     {
         nomeRazaosocial = TextNormalization.Normalize(nomeRazaosocial);
 
@@ -93,6 +105,12 @@ public class Fornecedores
 
         if (nacionalidade == null)
             throw new DomainException("Nacionalidade é obrigatória.");
+
+        if (tipoPessoa == TipoPessoa.JURIDICA && !string.IsNullOrWhiteSpace(sexo))
+            throw new DomainException("Sexo só pode ser informado para pessoa física.");
+
+        if (!string.IsNullOrWhiteSpace(sexo) && sexo != "M" && sexo != "F" && sexo != "O")
+            throw new DomainException("Sexo inválido.");
 
         TipoPessoa = tipoPessoa;
         NomeRazaosocial = nomeRazaosocial;
@@ -106,6 +124,8 @@ public class Fornecedores
         Telefone = TextNormalization.NormalizeOrNull(telefone);
         Email = TextNormalization.NormalizeOrNull(email);
         Observacao = TextNormalization.NormalizeOrNull(observacao);
+        Sexo = tipoPessoa == TipoPessoa.FISICA ? TextNormalization.NormalizeOrNull(sexo)?.ToUpper() : null;
+        DataNascimento = dataNascimento;
     }
 
     public void Ativar() => Ativo = true;

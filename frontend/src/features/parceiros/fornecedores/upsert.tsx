@@ -9,6 +9,7 @@ import { FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FormFieldUI } from "@/components/ui/form-field-ui";
+import { SexoSelect } from "@/components/sexo-select";
 import { BairroInput } from "@/components/entity-inputs/bairro-input";
 import { PaisInput } from "@/components/entity-inputs/pais-input";
 import { TipoPessoaSelect } from "@/components/tipo-pessoa-select";
@@ -110,6 +111,8 @@ function FornecedoresUpsertForm({
       telefone: editingItem?.telefone ?? "",
       email: editingItem?.email ?? "",
       rgIe: editingItem?.rgIe ?? "",
+      sexo: editingItem?.sexo ?? "",
+      dataNascimento: editingItem?.dataNascimento ? editingItem.dataNascimento.split("T")[0] : "",
       observacao: editingItem?.observacao ?? "",
       ativo: editingItem?.ativo ?? true,
     } as FornecedorFormValues,
@@ -119,6 +122,8 @@ function FornecedoresUpsertForm({
         ...value,
         bairroId: value.bairroId || null,
         rgIe: isBrasil ? value.rgIe : "",
+        sexo: value.tipoPessoa === TipoPessoa.FISICA ? value.sexo : "",
+        dataNascimento: value.dataNascimento || null,
       };
       mutation.mutate(payload as FornecedorFormValues);
     },
@@ -349,6 +354,45 @@ function FornecedoresUpsertForm({
                     label="E-mail"
                     getFieldError={getFieldError}
                     inputSize="full"
+                  />
+                )}
+              </form.Field>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-start gap-4">
+            {tipoPessoa === TipoPessoa.FISICA && (
+              <div className="w-fit">
+                <form.Field
+                  name="sexo"
+                  validators={{ onChange: fornecedorSchema.shape.sexo }}
+                >
+                  {(field) => (
+                    <SexoSelect
+                      name={field.name}
+                      error={getFieldError(field.name, field.state.meta.errors)}
+                      value={field.state.value ?? ""}
+                      onChange={(val) => field.handleChange(val)}
+                      inputSize="medium"
+                      disabled={readOnly}
+                    />
+                  )}
+                </form.Field>
+              </div>
+            )}
+            <div className="w-fit">
+              <form.Field
+                name="dataNascimento"
+                validators={{ onChange: fornecedorSchema.shape.dataNascimento }}
+              >
+                {(field) => (
+                  <FormFieldUI
+                    field={field}
+                    label={tipoPessoa === TipoPessoa.FISICA ? "Data de Nascimento" : "Data de Fundação"}
+                    type="date"
+                    getFieldError={getFieldError}
+                    inputSize="medium"
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
