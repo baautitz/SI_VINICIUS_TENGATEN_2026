@@ -129,6 +129,18 @@ export const condicaoPagamentoSchema = condicaoPagamentoBaseSchema.superRefine(
         message: "Não pode haver parcelas com números repetidos.",
       });
     }
+
+    for (let i = 1; i < data.parcelas.length; i++) {
+      const atual = data.parcelas[i];
+      const anterior = data.parcelas[i - 1];
+      if (atual.prazoDias <= anterior.prazoDias) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["parcelas", i, "prazoDias"],
+          message: `Prazo deve ser maior que ${anterior.prazoDias} dias (parcela #${anterior.numeroParcela}).`,
+        });
+      }
+    }
   },
 );
 

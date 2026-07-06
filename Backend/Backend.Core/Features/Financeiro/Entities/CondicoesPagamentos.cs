@@ -226,5 +226,14 @@ public class CondicoesPagamentos
 
         if (_parcelas.GroupBy(p => p.NumeroParcela).Any(g => g.Count() > 1))
             throw new DomainException("Não pode haver parcelas com números repetidos.");
+
+        var parcelasOrdenadas = _parcelas.OrderBy(p => p.NumeroParcela).ToList();
+        for (var i = 1; i < parcelasOrdenadas.Count; i++)
+        {
+            if (parcelasOrdenadas[i].PrazoDias <= parcelasOrdenadas[i - 1].PrazoDias)
+                throw new DomainException(
+                    $"O prazo da parcela #{parcelasOrdenadas[i].NumeroParcela} ({parcelasOrdenadas[i].PrazoDias} dias) " +
+                    $"deve ser maior que o prazo da parcela #{parcelasOrdenadas[i - 1].NumeroParcela} ({parcelasOrdenadas[i - 1].PrazoDias} dias).");
+        }
     }
 }
