@@ -114,7 +114,7 @@ public class Nfes
         EmitenteCpfCnpj = emitente.CpfCnpj;
         EmitenteRgIe = emitente.RgIe;
         EmitenteApelidoNomefantasia = TextNormalization.NormalizeOrNull(emitente.ApelidoNomeFantasia);
-        EmitenteEndereco = TextNormalization.NormalizeOrNull(emitente.Endereco);
+        EmitenteEndereco = TextNormalization.NormalizeOrNull(emitente.Logradouro + (string.IsNullOrWhiteSpace(emitente.Numero) ? "" : $", {emitente.Numero}"));
         EmitenteBairro = emitente.Bairro;
         EmitenteTelefone = TextNormalization.NormalizeOrNull(emitente.Telefone);
         EmitenteEmail = TextNormalization.NormalizeOrNull(emitente.Email);
@@ -122,7 +122,7 @@ public class Nfes
         ClienteCpfCnpj = cliente.CpfCnpj;
         ClienteRgIe = cliente.RgIe;
         ClienteApelidoNomefantasia = TextNormalization.NormalizeOrNull(cliente.ApelidoNomeFantasia);
-        ClienteEndereco = TextNormalization.NormalizeOrNull(cliente.Endereco);
+        ClienteEndereco = TextNormalization.NormalizeOrNull(cliente.Logradouro + (string.IsNullOrWhiteSpace(cliente.Numero) ? "" : $", {cliente.Numero}"));
         ClienteBairro = cliente.Bairro;
         ClienteTelefone = TextNormalization.NormalizeOrNull(cliente.Telefone);
         ClienteEmail = TextNormalization.NormalizeOrNull(cliente.Email);

@@ -77,6 +77,7 @@ function TransportadorasUpsertForm({
   editingItem,
   onClose,
   onSuccess,
+  readOnly = false,
 }: TransportadorasUpsertFormProps) {
   const [selectedPais, setSelectedPais] = useState<Pais | null>(
     editingItem?.nacionalidade ?? null,
@@ -106,7 +107,8 @@ function TransportadorasUpsertForm({
       nomeRazaosocial: editingItem?.nomeRazaosocial ?? "",
       cpfCnpj: editingItem?.cpfCnpj ?? "",
       apelidoNomefantasia: editingItem?.apelidoNomefantasia ?? "",
-      endereco: editingItem?.endereco ?? "",
+      logradouro: editingItem?.logradouro ?? "",
+      numero: editingItem?.numero ?? "",
       bairroId: editingItem?.bairro?.id ?? null,
       nacionalidadeId: editingItem?.nacionalidade?.id ?? 0,
       telefone: editingItem?.telefone ?? "",
@@ -374,17 +376,34 @@ function TransportadorasUpsertForm({
           </div>
 
           <div className="flex flex-wrap items-start gap-4">
-            <div className="flex-2">
+            <div className="flex-2 min-w-50">
               <form.Field
-                name="endereco"
-                validators={{ onChange: transportadoraSchema.shape.endereco }}
+                name="logradouro"
+                validators={{ onChange: transportadoraSchema.shape.logradouro }}
               >
                 {(field) => (
                   <FormFieldUI
                     field={field}
-                    label="Endereço (Rua, Número, Complemento)"
+                    label="Logradouro"
                     getFieldError={getFieldError}
                     inputSize="full"
+                    disabled={readOnly}
+                  />
+                )}
+              </form.Field>
+            </div>
+            <div className="w-32 shrink-0">
+              <form.Field
+                name="numero"
+                validators={{ onChange: transportadoraSchema.shape.numero }}
+              >
+                {(field) => (
+                  <FormFieldUI
+                    field={field}
+                    label="Número"
+                    getFieldError={getFieldError}
+                    inputSize="full"
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>

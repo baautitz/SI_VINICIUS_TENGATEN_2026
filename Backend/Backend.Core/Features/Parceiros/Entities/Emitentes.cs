@@ -13,7 +13,8 @@ public class Emitentes
     public string NomeRazaoSocial { get; private set; }
     public Documento CpfCnpj { get; private set; }
     public string? ApelidoNomeFantasia { get; private set; }
-    public string? Endereco { get; private set; }
+    public string? Logradouro { get; private set; }
+    public string? Numero { get; private set; }
     public Bairros? Bairro { get; private set; }
     public Paises Nacionalidade { get; private set; }
     public string? Telefone { get; private set; }
@@ -39,7 +40,8 @@ public class Emitentes
         Documento cpfCnpj,
         Paises nacionalidade,
         string? apelidoNomeFantasia = null,
-        string? endereco = null,
+        string? logradouro = null,
+        string? numero = null,
         Bairros? bairro = null,
         string? telefone = null,
         string? email = null,
@@ -65,7 +67,8 @@ public class Emitentes
         CpfCnpj = cpfCnpj;
         Nacionalidade = nacionalidade;
         ApelidoNomeFantasia = TextNormalization.NormalizeOrNull(apelidoNomeFantasia);
-        Endereco = TextNormalization.NormalizeOrNull(endereco);
+        Logradouro = TextNormalization.NormalizeOrNull(logradouro);
+        Numero = TextNormalization.NormalizeOrNull(numero);
         Bairro = bairro;
         Telefone = TextNormalization.NormalizeOrNull(telefone);
         Email = TextNormalization.NormalizeOrNull(email);
@@ -83,7 +86,8 @@ public class Emitentes
         Documento cpfCnpj,
         Paises nacionalidade,
         string? apelidoNomeFantasia = null,
-        string? endereco = null,
+        string? logradouro = null,
+        string? numero = null,
         Bairros? bairro = null,
         string? telefone = null,
         string? email = null,
@@ -93,7 +97,7 @@ public class Emitentes
         string? observacao = null,
         bool ativo = true,
         DateTime? criadoEm = null)
-        : this(tipoPessoa, nomeRazaoSocial, cpfCnpj, nacionalidade, apelidoNomeFantasia, endereco, bairro, telefone, email, rgIe, inscricaoMunicipal, regimeTributario, observacao, ativo)
+        : this(tipoPessoa, nomeRazaoSocial, cpfCnpj, nacionalidade, apelidoNomeFantasia, logradouro, numero, bairro, telefone, email, rgIe, inscricaoMunicipal, regimeTributario, observacao, ativo)
     {
         Id = id;
         CriadoEm = criadoEm ?? DateTime.UtcNow;
@@ -105,7 +109,8 @@ public class Emitentes
         Documento cpfCnpj,
         Paises nacionalidade,
         string? apelidoNomeFantasia = null,
-        string? endereco = null,
+        string? logradouro = null,
+        string? numero = null,
         Bairros? bairro = null,
         string? telefone = null,
         string? email = null,
@@ -130,7 +135,8 @@ public class Emitentes
         CpfCnpj = cpfCnpj;
         Nacionalidade = nacionalidade;
         ApelidoNomeFantasia = TextNormalization.NormalizeOrNull(apelidoNomeFantasia);
-        Endereco = TextNormalization.NormalizeOrNull(endereco);
+        Logradouro = TextNormalization.NormalizeOrNull(logradouro);
+        Numero = TextNormalization.NormalizeOrNull(numero);
         Bairro = bairro;
         Telefone = TextNormalization.NormalizeOrNull(telefone);
         Email = TextNormalization.NormalizeOrNull(email);

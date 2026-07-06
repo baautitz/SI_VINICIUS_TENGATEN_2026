@@ -23,7 +23,7 @@ public class TransportadorasRepository : ITransportadorasRepository
         const string sqlCount = "SELECT COUNT(*) FROM transportadoras;";
         const string sqlData = @"
             SELECT t.id AS Id, t.tipo_pessoa AS TipoPessoa, t.nome_razaosocial AS NomeRazaoSocial, t.cpf_cnpj AS CpfCnpj, t.rg_ie AS RgIe, t.apelido_nomefantasia AS ApelidoNomefantasia,
-                   t.endereco AS Endereco, t.telefone AS Telefone, t.email AS Email, t.rntrc AS Rntrc, t.ativo AS Ativo, t.criado_em AS CriadoEm,
+                   t.logradouro AS Logradouro, t.numero AS Numero, t.telefone AS Telefone, t.email AS Email, t.rntrc AS Rntrc, t.ativo AS Ativo, t.criado_em AS CriadoEm,
                    t.observacao AS Observacao,
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
@@ -49,7 +49,7 @@ public class TransportadorasRepository : ITransportadorasRepository
                 if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
                 if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
 
-                transportadora.Atualizar(transportadora.TipoPessoa, transportadora.NomeRazaosocial, transportadora.CpfCnpj, pais!, transportadora.RgIe, transportadora.ApelidoNomefantasia, transportadora.Endereco, bairro, transportadora.Telefone, transportadora.Email, transportadora.Rntrc, transportadora.Observacao);
+                transportadora.Atualizar(transportadora.TipoPessoa, transportadora.NomeRazaosocial, transportadora.CpfCnpj, pais!, transportadora.RgIe, transportadora.ApelidoNomefantasia, transportadora.Logradouro, transportadora.Numero, bairro, transportadora.Telefone, transportadora.Email, transportadora.Rntrc, transportadora.Observacao);
                 return transportadora;
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
@@ -64,7 +64,7 @@ public class TransportadorasRepository : ITransportadorasRepository
     {
         const string sql = @"
             SELECT t.id AS Id, t.tipo_pessoa AS TipoPessoa, t.nome_razaosocial AS NomeRazaoSocial, t.cpf_cnpj AS CpfCnpj, t.rg_ie AS RgIe, t.apelido_nomefantasia AS ApelidoNomefantasia,
-                   t.endereco AS Endereco, t.telefone AS Telefone, t.email AS Email, t.rntrc AS Rntrc, t.ativo AS Ativo, t.criado_em AS CriadoEm,
+                   t.logradouro AS Logradouro, t.numero AS Numero, t.telefone AS Telefone, t.email AS Email, t.rntrc AS Rntrc, t.ativo AS Ativo, t.criado_em AS CriadoEm,
                    t.observacao AS Observacao,
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
@@ -110,7 +110,7 @@ public class TransportadorasRepository : ITransportadorasRepository
                     if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
                     if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
 
-                    transportadoraEntry.Atualizar(transportadoraEntry.TipoPessoa, transportadoraEntry.NomeRazaosocial, transportadoraEntry.CpfCnpj, pais!, transportadoraEntry.RgIe, transportadoraEntry.ApelidoNomefantasia, transportadoraEntry.Endereco, bairro, transportadoraEntry.Telefone, transportadoraEntry.Email, transportadoraEntry.Rntrc, transportadoraEntry.Observacao);
+                    transportadoraEntry.Atualizar(transportadoraEntry.TipoPessoa, transportadoraEntry.NomeRazaosocial, transportadoraEntry.CpfCnpj, pais!, transportadoraEntry.RgIe, transportadoraEntry.ApelidoNomefantasia, transportadoraEntry.Logradouro, transportadoraEntry.Numero, bairro, transportadoraEntry.Telefone, transportadoraEntry.Email, transportadoraEntry.Rntrc, transportadoraEntry.Observacao);
 
                     transportadoraDict.Add(transportadoraEntry.Id, transportadoraEntry);
                 }
@@ -136,10 +136,10 @@ public class TransportadorasRepository : ITransportadorasRepository
     {
         const string sql = @"
             INSERT INTO transportadoras (tipo_pessoa, nome_razaosocial, cpf_cnpj, rg_ie, apelido_nomefantasia,
-                                        endereco, bairro_id, nacionalidade_id, telefone, email, rntrc,
+                                        logradouro, numero, bairro_id, nacionalidade_id, telefone, email, rntrc,
                                         ativo, criado_em, observacao)
             VALUES (@TipoPessoa::tipo_pessoa, @NomeRazaosocial, @CpfCnpj, @RgIe, @ApelidoNomefantasia,
-                    @Endereco, @BairroId, @NacionalidadeId, @Telefone, @Email, @Rntrc,
+                    @Logradouro, @Numero, @BairroId, @NacionalidadeId, @Telefone, @Email, @Rntrc,
                     @Ativo, @CriadoEm, @Observacao)
             RETURNING id;";
 
@@ -152,7 +152,8 @@ public class TransportadorasRepository : ITransportadorasRepository
                 transportadora.CpfCnpj,
                 transportadora.RgIe,
                 transportadora.ApelidoNomefantasia,
-                transportadora.Endereco,
+                transportadora.Logradouro,
+                transportadora.Numero,
                 BairroId = transportadora.Bairro?.Id,
                 NacionalidadeId = transportadora.Nacionalidade.Id,
                 transportadora.Telefone,
@@ -175,7 +176,7 @@ public class TransportadorasRepository : ITransportadorasRepository
             UPDATE transportadoras
             SET tipo_pessoa = @TipoPessoa::tipo_pessoa, nome_razaosocial = @NomeRazaosocial, cpf_cnpj = @CpfCnpj,
                 rg_ie = @RgIe, apelido_nomefantasia = @ApelidoNomefantasia,
-                endereco = @Endereco, bairro_id = @BairroId, nacionalidade_id = @NacionalidadeId,
+                logradouro = @Logradouro, numero = @Numero, bairro_id = @BairroId, nacionalidade_id = @NacionalidadeId,
                 telefone = @Telefone, email = @Email, rntrc = @Rntrc, ativo = @Ativo,
                 atualizado_em = @AtualizadoEm, observacao = @Observacao
             WHERE id = @Id;";
@@ -190,7 +191,8 @@ public class TransportadorasRepository : ITransportadorasRepository
                 transportadora.CpfCnpj,
                 transportadora.RgIe,
                 transportadora.ApelidoNomefantasia,
-                transportadora.Endereco,
+                transportadora.Logradouro,
+                transportadora.Numero,
                 BairroId = transportadora.Bairro?.Id,
                 NacionalidadeId = transportadora.Nacionalidade.Id,
                 transportadora.Telefone,
@@ -228,7 +230,7 @@ public class TransportadorasRepository : ITransportadorasRepository
 
         const string sqlData = @"
             SELECT t.id AS Id, t.tipo_pessoa AS TipoPessoa, t.nome_razaosocial AS NomeRazaoSocial, t.cpf_cnpj AS CpfCnpj, t.rg_ie AS RgIe, t.apelido_nomefantasia AS ApelidoNomefantasia,
-                   t.endereco AS Endereco, t.telefone AS Telefone, t.email AS Email, t.rntrc AS Rntrc, t.ativo AS Ativo, t.criado_em AS CriadoEm,
+                   t.logradouro AS Logradouro, t.numero AS Numero, t.telefone AS Telefone, t.email AS Email, t.rntrc AS Rntrc, t.ativo AS Ativo, t.criado_em AS CriadoEm,
                    t.observacao AS Observacao,
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
@@ -257,7 +259,7 @@ public class TransportadorasRepository : ITransportadorasRepository
                 if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
                 if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
 
-                transportadora.Atualizar(transportadora.TipoPessoa, transportadora.NomeRazaosocial, transportadora.CpfCnpj, pais!, transportadora.RgIe, transportadora.ApelidoNomefantasia, transportadora.Endereco, bairro, transportadora.Telefone, transportadora.Email, transportadora.Rntrc, transportadora.Observacao);
+                transportadora.Atualizar(transportadora.TipoPessoa, transportadora.NomeRazaosocial, transportadora.CpfCnpj, pais!, transportadora.RgIe, transportadora.ApelidoNomefantasia, transportadora.Logradouro, transportadora.Numero, bairro, transportadora.Telefone, transportadora.Email, transportadora.Rntrc, transportadora.Observacao);
                 return transportadora;
             },
             new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },

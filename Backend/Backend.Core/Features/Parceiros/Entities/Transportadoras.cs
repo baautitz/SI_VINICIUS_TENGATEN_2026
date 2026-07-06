@@ -16,7 +16,8 @@ public class Transportadoras
     public Documento CpfCnpj { get; private set; }
     public Documento? RgIe { get; private set; }
     public string? ApelidoNomefantasia { get; private set; }
-    public string? Endereco { get; private set; }
+    public string? Logradouro { get; private set; }
+    public string? Numero { get; private set; }
     public Bairros? Bairro { get; private set; }
     public Paises Nacionalidade { get; private set; }
     public string? Telefone { get; private set; }
@@ -42,7 +43,8 @@ public class Transportadoras
         Paises nacionalidade,
         Documento? rgIe = null,
         string? apelidoNomefantasia = null,
-        string? endereco = null,
+        string? logradouro = null,
+        string? numero = null,
         Bairros? bairro = null,
         string? telefone = null,
         string? email = null,
@@ -66,7 +68,8 @@ public class Transportadoras
         Nacionalidade = nacionalidade;
         RgIe = rgIe;
         ApelidoNomefantasia = TextNormalization.NormalizeOrNull(apelidoNomefantasia);
-        Endereco = TextNormalization.NormalizeOrNull(endereco);
+        Logradouro = TextNormalization.NormalizeOrNull(logradouro);
+        Numero = TextNormalization.NormalizeOrNull(numero);
         Bairro = bairro;
         Telefone = TextNormalization.NormalizeOrNull(telefone);
         Email = TextNormalization.NormalizeOrNull(email);
@@ -102,7 +105,8 @@ public class Transportadoras
         Paises nacionalidade,
         Documento? rgIe = null,
         string? apelidoNomefantasia = null,
-        string? endereco = null,
+        string? logradouro = null,
+        string? numero = null,
         Bairros? bairro = null,
         string? telefone = null,
         string? email = null,
@@ -126,7 +130,8 @@ public class Transportadoras
         Nacionalidade = nacionalidade;
         RgIe = rgIe;
         ApelidoNomefantasia = TextNormalization.NormalizeOrNull(apelidoNomefantasia);
-        Endereco = TextNormalization.NormalizeOrNull(endereco);
+        Logradouro = TextNormalization.NormalizeOrNull(logradouro);
+        Numero = TextNormalization.NormalizeOrNull(numero);
         Bairro = bairro;
         Telefone = TextNormalization.NormalizeOrNull(telefone);
         Email = TextNormalization.NormalizeOrNull(email);

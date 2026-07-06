@@ -133,12 +133,12 @@ public class NfesRepository : INfesRepository
                    n.tipo_operacao, n.status_nfe,
                    n.valor_produtos, n.valor_desconto, n.valor_frete, n.valor_seguro,
                    n.valor_outras_despesas, n.valor_total,
-                   e.id AS EmitenteId, e.nome_razaosocial, e.cpf_cnpj, e.apelido_nomefantasia, e.endereco,
-                   e.telefone, e.email, e.rg_ie, e.inscricao_municipal, e.regime_tributario,
-                   e.ativo, e.criado_em, e.observacao,
-                   c.id AS ClienteId, c.nome_razaosocial, c.cpf_cnpj, c.rg_ie, c.apelido_nomefantasia,
-                   c.endereco, c.telefone, c.email, c.limite_credito, c.ativo, c.criado_em,
-                   c.observacao
+                    e.id AS EmitenteId, e.nome_razaosocial, e.cpf_cnpj, e.apelido_nomefantasia, e.logradouro, e.numero,
+                    e.telefone, e.email, e.rg_ie, e.inscricao_municipal, e.regime_tributario,
+                    e.ativo, e.criado_em, e.observacao,
+                    c.id AS ClienteId, c.nome_razaosocial, c.cpf_cnpj, c.rg_ie, c.apelido_nomefantasia,
+                    c.logradouro, c.numero, c.telefone, c.email, c.limite_credito, c.ativo, c.criado_em,
+                    c.observacao
             FROM nfes n
             JOIN emitentes e ON e.id = n.emitente_id
             JOIN clientes c ON c.id = n.cliente_id

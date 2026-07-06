@@ -14,7 +14,8 @@ public class Clientes
     public Documento CpfCnpj { get; private set; }
     public Documento? RgIe { get; private set; }
     public string? ApelidoNomeFantasia { get; private set; }
-    public string? Endereco { get; private set; }
+    public string? Logradouro { get; private set; }
+    public string? Numero { get; private set; }
     public Bairros? Bairro { get; private set; }
     public Paises Nacionalidade { get; private set; }
     public string? Telefone { get; private set; }
@@ -39,7 +40,8 @@ public class Clientes
         Paises nacionalidade,
         Documento? rgIe = null,
         string? apelidoNomeFantasia = null,
-        string? endereco = null,
+        string? logradouro = null,
+        string? numero = null,
         Bairros? bairro = null,
         string? telefone = null,
         string? email = null,
@@ -67,7 +69,8 @@ public class Clientes
         Nacionalidade = nacionalidade;
         RgIe = rgIe;
         ApelidoNomeFantasia = TextNormalization.NormalizeOrNull(apelidoNomeFantasia);
-        Endereco = TextNormalization.NormalizeOrNull(endereco);
+        Logradouro = TextNormalization.NormalizeOrNull(logradouro);
+        Numero = TextNormalization.NormalizeOrNull(numero);
         Bairro = bairro;
         Telefone = TextNormalization.NormalizeOrNull(telefone);
         Email = TextNormalization.NormalizeOrNull(email);
@@ -84,7 +87,8 @@ public class Clientes
         Paises nacionalidade,
         Documento? rgIe = null,
         string? apelidoNomeFantasia = null,
-        string? endereco = null,
+        string? logradouro = null,
+        string? numero = null,
         Bairros? bairro = null,
         string? telefone = null,
         string? email = null,
@@ -92,7 +96,7 @@ public class Clientes
         string? observacao = null,
         bool ativo = true,
         DateTime? criadoEm = null)
-        : this(tipoPessoa, nomeRazaoSocial, cpfCnpj, nacionalidade, rgIe, apelidoNomeFantasia, endereco, bairro, telefone, email, limiteCredito, observacao, ativo)
+        : this(tipoPessoa, nomeRazaoSocial, cpfCnpj, nacionalidade, rgIe, apelidoNomeFantasia, logradouro, numero, bairro, telefone, email, limiteCredito, observacao, ativo)
     {
         Id = id;
         CriadoEm = criadoEm ?? DateTime.UtcNow;
@@ -105,7 +109,8 @@ public class Clientes
         Paises nacionalidade,
         Documento? rgIe = null,
         string? apelidoNomeFantasia = null,
-        string? endereco = null,
+        string? logradouro = null,
+        string? numero = null,
         Bairros? bairro = null,
         string? telefone = null,
         string? email = null,
@@ -132,7 +137,8 @@ public class Clientes
         Nacionalidade = nacionalidade;
         RgIe = rgIe;
         ApelidoNomeFantasia = TextNormalization.NormalizeOrNull(apelidoNomeFantasia);
-        Endereco = TextNormalization.NormalizeOrNull(endereco);
+        Logradouro = TextNormalization.NormalizeOrNull(logradouro);
+        Numero = TextNormalization.NormalizeOrNull(numero);
         Bairro = bairro;
         Telefone = TextNormalization.NormalizeOrNull(telefone);
         Email = TextNormalization.NormalizeOrNull(email);

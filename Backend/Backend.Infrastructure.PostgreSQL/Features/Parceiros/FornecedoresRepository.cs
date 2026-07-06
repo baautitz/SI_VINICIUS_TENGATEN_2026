@@ -24,7 +24,7 @@ public class FornecedoresRepository : IFornecedoresRepository
         const string sqlCount = "SELECT COUNT(*) FROM fornecedores;";
         const string sqlData = @"
             SELECT f.id AS Id, f.tipo_pessoa AS TipoPessoa, f.nome_razaosocial AS NomeRazaosocial, f.cpf_cnpj AS CpfCnpj, f.rg_ie AS RgIe, f.apelido_nomefantasia AS ApelidoNomefantasia,
-                   f.endereco AS Endereco, f.telefone AS Telefone, f.email AS Email, f.ativo AS Ativo, f.criado_em AS CriadoEm,
+                   f.logradouro AS Logradouro, f.numero AS Numero, f.telefone AS Telefone, f.email AS Email, f.ativo AS Ativo, f.criado_em AS CriadoEm,
                    f.observacao AS Observacao,
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
@@ -50,7 +50,7 @@ public class FornecedoresRepository : IFornecedoresRepository
                 if (state is not null && city is not null) city.AtualizarResultado(city.Cidade, city.Ddd, state);
                 if (city is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, city);
 
-                fornecedor.Atualizar(fornecedor.TipoPessoa, fornecedor.NomeRazaosocial, fornecedor.CpfCnpj, country!, fornecedor.RgIe, fornecedor.ApelidoNomefantasia, fornecedor.Endereco, bairro, fornecedor.Telefone, fornecedor.Email, fornecedor.Observacao);
+                fornecedor.Atualizar(fornecedor.TipoPessoa, fornecedor.NomeRazaosocial, fornecedor.CpfCnpj, country!, fornecedor.RgIe, fornecedor.ApelidoNomefantasia, fornecedor.Logradouro, fornecedor.Numero, bairro, fornecedor.Telefone, fornecedor.Email, fornecedor.Observacao);
                 return fornecedor;
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
@@ -65,7 +65,7 @@ public class FornecedoresRepository : IFornecedoresRepository
     {
         const string sql = @"
             SELECT f.id AS Id, f.tipo_pessoa AS TipoPessoa, f.nome_razaosocial AS NomeRazaosocial, f.cpf_cnpj AS CpfCnpj, f.rg_ie AS RgIe, f.apelido_nomefantasia AS ApelidoNomefantasia,
-                   f.endereco AS Endereco, f.telefone AS Telefone, f.email AS Email, f.ativo AS Ativo, f.criado_em AS CriadoEm,
+                   f.logradouro AS Logradouro, f.numero AS Numero, f.telefone AS Telefone, f.email AS Email, f.ativo AS Ativo, f.criado_em AS CriadoEm,
                    f.observacao AS Observacao,
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
@@ -88,7 +88,7 @@ public class FornecedoresRepository : IFornecedoresRepository
                 if (state is not null && city is not null) city.AtualizarResultado(city.Cidade, city.Ddd, state);
                 if (city is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, city);
 
-                fornecedor.Atualizar(fornecedor.TipoPessoa, fornecedor.NomeRazaosocial, fornecedor.CpfCnpj, country!, fornecedor.RgIe, fornecedor.ApelidoNomefantasia, fornecedor.Endereco, bairro, fornecedor.Telefone, fornecedor.Email, fornecedor.Observacao);
+                fornecedor.Atualizar(fornecedor.TipoPessoa, fornecedor.NomeRazaosocial, fornecedor.CpfCnpj, country!, fornecedor.RgIe, fornecedor.ApelidoNomefantasia, fornecedor.Logradouro, fornecedor.Numero, bairro, fornecedor.Telefone, fornecedor.Email, fornecedor.Observacao);
 
                 return fornecedor;
             },
@@ -104,10 +104,10 @@ public class FornecedoresRepository : IFornecedoresRepository
     {
         const string sql = @"
             INSERT INTO fornecedores (tipo_pessoa, nome_razaosocial, cpf_cnpj, rg_ie, apelido_nomefantasia,
-                                      endereco, bairro_id, nacionalidade_id, telefone, email,
+                                      logradouro, numero, bairro_id, nacionalidade_id, telefone, email,
                                       ativo, criado_em, observacao)
             VALUES (@TipoPessoa::tipo_pessoa, @NomeRazaosocial, @CpfCnpj, @RgIe, @ApelidoNomefantasia,
-                    @Endereco, @BairroId, @NacionalidadeId, @Telefone, @Email,
+                    @Logradouro, @Numero, @BairroId, @NacionalidadeId, @Telefone, @Email,
                     @Ativo, @CriadoEm, @Observacao)
             RETURNING id;";
 
@@ -120,7 +120,8 @@ public class FornecedoresRepository : IFornecedoresRepository
                 fornecedor.CpfCnpj,
                 fornecedor.RgIe,
                 fornecedor.ApelidoNomefantasia,
-                fornecedor.Endereco,
+                fornecedor.Logradouro,
+                fornecedor.Numero,
                 BairroId = fornecedor.Bairro?.Id,
                 NacionalidadeId = fornecedor.Nacionalidade.Id,
                 fornecedor.Telefone,
@@ -143,7 +144,7 @@ public class FornecedoresRepository : IFornecedoresRepository
             UPDATE fornecedores
             SET tipo_pessoa = @TipoPessoa::tipo_pessoa, nome_razaosocial = @NomeRazaosocial, cpf_cnpj = @CpfCnpj,
                 rg_ie = @RgIe, apelido_nomefantasia = @ApelidoNomefantasia,
-                endereco = @Endereco, bairro_id = @BairroId, nacionalidade_id = @NacionalidadeId,
+                logradouro = @Logradouro, numero = @Numero, bairro_id = @BairroId, nacionalidade_id = @NacionalidadeId,
                 telefone = @Telefone, email = @Email, ativo = @Ativo,
                 atualizado_em = @AtualizadoEm, observacao = @Observacao
             WHERE id = @Id;";
@@ -158,7 +159,8 @@ public class FornecedoresRepository : IFornecedoresRepository
                 fornecedor.CpfCnpj,
                 fornecedor.RgIe,
                 fornecedor.ApelidoNomefantasia,
-                fornecedor.Endereco,
+                fornecedor.Logradouro,
+                fornecedor.Numero,
                 BairroId = fornecedor.Bairro?.Id,
                 NacionalidadeId = fornecedor.Nacionalidade.Id,
                 fornecedor.Telefone,
@@ -199,7 +201,7 @@ public class FornecedoresRepository : IFornecedoresRepository
 
         const string sqlData = @"
             SELECT f.id AS Id, f.tipo_pessoa AS TipoPessoa, f.nome_razaosocial AS NomeRazaosocial, f.cpf_cnpj AS CpfCnpj, f.rg_ie AS RgIe, f.apelido_nomefantasia AS ApelidoNomefantasia,
-                   f.endereco AS Endereco, f.telefone AS Telefone, f.email AS Email, f.ativo AS Ativo, f.criado_em AS CriadoEm,
+                   f.logradouro AS Logradouro, f.numero AS Numero, f.telefone AS Telefone, f.email AS Email, f.ativo AS Ativo, f.criado_em AS CriadoEm,
                    f.observacao AS Observacao,
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
@@ -227,7 +229,7 @@ public class FornecedoresRepository : IFornecedoresRepository
                 if (state is not null && city is not null) city.AtualizarResultado(city.Cidade, city.Ddd, state);
                 if (city is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, city);
 
-                fornecedor.Atualizar(fornecedor.TipoPessoa, fornecedor.NomeRazaosocial, fornecedor.CpfCnpj, country!, fornecedor.RgIe, fornecedor.ApelidoNomefantasia, fornecedor.Endereco, bairro, fornecedor.Telefone, fornecedor.Email, fornecedor.Observacao);
+                fornecedor.Atualizar(fornecedor.TipoPessoa, fornecedor.NomeRazaosocial, fornecedor.CpfCnpj, country!, fornecedor.RgIe, fornecedor.ApelidoNomefantasia, fornecedor.Logradouro, fornecedor.Numero, bairro, fornecedor.Telefone, fornecedor.Email, fornecedor.Observacao);
                 return fornecedor;
             },
             new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },

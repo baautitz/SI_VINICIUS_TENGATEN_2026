@@ -102,10 +102,10 @@ public class VendasRepository : IVendasRepository
             SELECT v.id AS Id, v.data_venda, v.valor_total, v.observacao,
                    v.data_cancelamento, v.motivo_cancelamento,
                    e.id AS Id, e.nome_razaosocial, e.cpf_cnpj, e.apelido_nomefantasia,
-                   e.endereco, e.telefone, e.email, e.rg_ie, e.inscricao_municipal,
+                   e.logradouro, e.numero, e.telefone, e.email, e.rg_ie, e.inscricao_municipal,
                    e.regime_tributario, e.ativo, e.criado_em, e.observacao,
                    c.id AS Id, c.nome_razaosocial, c.cpf_cnpj, c.rg_ie, c.apelido_nomefantasia,
-                   c.endereco, c.telefone, c.email, c.limite_credito, c.ativo, c.criado_em,
+                   c.logradouro, c.numero, c.telefone, c.email, c.limite_credito, c.ativo, c.criado_em,
                    c.observacao
             FROM vendas v
             JOIN emitentes e ON e.id = v.emitente_id

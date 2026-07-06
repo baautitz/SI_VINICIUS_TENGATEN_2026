@@ -14,7 +14,8 @@ public class Fornecedores
     public Documento CpfCnpj { get; private set; }
     public Documento? RgIe { get; private set; }
     public string? ApelidoNomefantasia { get; private set; }
-    public string? Endereco { get; private set; }
+    public string? Logradouro { get; private set; }
+    public string? Numero { get; private set; }
     public Bairros? Bairro { get; private set; }
     public Paises Nacionalidade { get; private set; }
     public string? Telefone { get; private set; }
@@ -38,7 +39,8 @@ public class Fornecedores
         Paises nacionalidade,
         Documento? rgIe = null,
         string? apelidoNomefantasia = null,
-        string? endereco = null,
+        string? logradouro = null,
+        string? numero = null,
         Bairros? bairro = null,
         string? telefone = null,
         string? email = null,
@@ -61,7 +63,8 @@ public class Fornecedores
         Nacionalidade = nacionalidade;
         RgIe = rgIe;
         ApelidoNomefantasia = TextNormalization.NormalizeOrNull(apelidoNomefantasia);
-        Endereco = TextNormalization.NormalizeOrNull(endereco);
+        Logradouro = TextNormalization.NormalizeOrNull(logradouro);
+        Numero = TextNormalization.NormalizeOrNull(numero);
         Bairro = bairro;
         Telefone = TextNormalization.NormalizeOrNull(telefone);
         Email = TextNormalization.NormalizeOrNull(email);
@@ -70,15 +73,15 @@ public class Fornecedores
         CriadoEm = DateTime.UtcNow;
     }
 
-    public Fornecedores(int id, TipoPessoa tipoPessoa, string nomeRazaosocial, Documento cpfCnpj, Paises nacionalidade, Documento? rgIe = null, string? apelidoNomefantasia = null, string? endereco = null, Bairros? bairro = null, string? telefone = null, string? email = null, string? observacao = null, bool ativo = true, DateTime? criadoEm = null)
-        : this(tipoPessoa, nomeRazaosocial, cpfCnpj, nacionalidade, rgIe, apelidoNomefantasia, endereco, bairro, telefone, email, observacao)
+    public Fornecedores(int id, TipoPessoa tipoPessoa, string nomeRazaosocial, Documento cpfCnpj, Paises nacionalidade, Documento? rgIe = null, string? apelidoNomefantasia = null, string? logradouro = null, string? numero = null, Bairros? bairro = null, string? telefone = null, string? email = null, string? observacao = null, bool ativo = true, DateTime? criadoEm = null)
+        : this(tipoPessoa, nomeRazaosocial, cpfCnpj, nacionalidade, rgIe, apelidoNomefantasia, logradouro, numero, bairro, telefone, email, observacao)
     {
         Id = id;
         Ativo = ativo;
         CriadoEm = criadoEm ?? DateTime.UtcNow;
     }
 
-    public void Atualizar(TipoPessoa tipoPessoa, string nomeRazaosocial, Documento cpfCnpj, Paises nacionalidade, Documento? rgIe = null, string? apelidoNomefantasia = null, string? endereco = null, Bairros? bairro = null, string? telefone = null, string? email = null, string? observacao = null)
+    public void Atualizar(TipoPessoa tipoPessoa, string nomeRazaosocial, Documento cpfCnpj, Paises nacionalidade, Documento? rgIe = null, string? apelidoNomefantasia = null, string? logradouro = null, string? numero = null, Bairros? bairro = null, string? telefone = null, string? email = null, string? observacao = null)
     {
         nomeRazaosocial = TextNormalization.Normalize(nomeRazaosocial);
 
@@ -97,7 +100,8 @@ public class Fornecedores
         Nacionalidade = nacionalidade;
         RgIe = rgIe;
         ApelidoNomefantasia = TextNormalization.NormalizeOrNull(apelidoNomefantasia);
-        Endereco = TextNormalization.NormalizeOrNull(endereco);
+        Logradouro = TextNormalization.NormalizeOrNull(logradouro);
+        Numero = TextNormalization.NormalizeOrNull(numero);
         Bairro = bairro;
         Telefone = TextNormalization.NormalizeOrNull(telefone);
         Email = TextNormalization.NormalizeOrNull(email);

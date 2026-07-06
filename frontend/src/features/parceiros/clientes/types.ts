@@ -10,7 +10,8 @@ export interface Cliente {
   cpfCnpj: string
   rgIe?: string
   apelidoNomeFantasia?: string
-  endereco?: string
+  logradouro?: string
+  numero?: string
   bairro?: Bairro
   nacionalidade: Pais
   telefone?: string
@@ -26,7 +27,8 @@ export const clienteSchema = z.object({
   cpfCnpj: z.string().min(1, "CPF/CNPJ é obrigatório."),
   rgIe: z.string().optional(),
   apelidoNomeFantasia: z.string().optional(),
-  endereco: z.string().optional(),
+  logradouro: z.string().optional(),
+  numero: z.string().optional(),
   bairroId: z.number().nullable().optional(),
   nacionalidadeId: z.number({ required_error: "Nacionalidade é obrigatória." }).min(1, "Nacionalidade é obrigatória."),
   telefone: z.string().optional(),

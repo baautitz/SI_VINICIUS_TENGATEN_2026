@@ -73,6 +73,7 @@ function EmitentesUpsertForm({
   editingItem,
   onClose,
   onSuccess,
+  readOnly = false,
 }: EmitentesUpsertFormProps) {
   const [selectedPais, setSelectedPais] = useState<Pais | null>(
     editingItem?.nacionalidade ?? null,
@@ -102,7 +103,8 @@ function EmitentesUpsertForm({
       nomeRazaoSocial: editingItem?.nomeRazaoSocial ?? "",
       cpfCnpj: editingItem?.cpfCnpj ?? "",
       apelidoNomeFantasia: editingItem?.apelidoNomeFantasia ?? "",
-      endereco: editingItem?.endereco ?? "",
+      logradouro: editingItem?.logradouro ?? "",
+      numero: editingItem?.numero ?? "",
       bairroId: editingItem?.bairro?.id ?? null,
       nacionalidadeId: editingItem?.nacionalidade?.id ?? 0,
       telefone: editingItem?.telefone ?? "",
@@ -384,17 +386,34 @@ function EmitentesUpsertForm({
           </div>
 
           <div className="flex flex-wrap items-start gap-4">
-            <div className="flex-2">
+            <div className="flex-2 min-w-50">
               <form.Field
-                name="endereco"
-                validators={{ onChange: emitenteSchema.shape.endereco }}
+                name="logradouro"
+                validators={{ onChange: emitenteSchema.shape.logradouro }}
               >
                 {(field) => (
                   <FormFieldUI
                     field={field}
-                    label="Endereço (Rua, Número, Complemento)"
+                    label="Logradouro"
                     getFieldError={getFieldError}
                     inputSize="full"
+                    disabled={readOnly}
+                  />
+                )}
+              </form.Field>
+            </div>
+            <div className="w-32 shrink-0">
+              <form.Field
+                name="numero"
+                validators={{ onChange: emitenteSchema.shape.numero }}
+              >
+                {(field) => (
+                  <FormFieldUI
+                    field={field}
+                    label="Número"
+                    getFieldError={getFieldError}
+                    inputSize="full"
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>

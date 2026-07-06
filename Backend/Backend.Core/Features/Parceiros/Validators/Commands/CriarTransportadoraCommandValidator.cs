@@ -25,8 +25,11 @@ public class CriarTransportadoraCommandValidator : AbstractValidator<CriarTransp
         RuleFor(x => x.ApelidoNomefantasia)
             .MaximumLength(150).WithMessage("Apelido ou Nome Fantasia deve ter no máximo 150 caracteres.");
 
-        RuleFor(x => x.Endereco)
-            .MaximumLength(255).WithMessage("Endereço deve ter no máximo 255 caracteres.");
+        RuleFor(x => x.Logradouro)
+            .MaximumLength(150).WithMessage("Logradouro deve ter no máximo 150 caracteres.");
+
+        RuleFor(x => x.Numero)
+            .MaximumLength(20).WithMessage("Número deve ter no máximo 20 caracteres.");
 
         RuleFor(x => x.Telefone)
             .MaximumLength(20).WithMessage("Telefone deve ter no máximo 20 caracteres.");

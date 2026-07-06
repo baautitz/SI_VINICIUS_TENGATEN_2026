@@ -23,7 +23,7 @@ public class EmitentesRepository : IEmitentesRepository
 
         const string sqlCount = "SELECT COUNT(*) FROM emitentes;";
         const string sqlData = @"
-            SELECT e.id AS Id, e.tipo_pessoa AS TipoPessoa, e.nome_razaosocial AS NomeRazaoSocial, e.cpf_cnpj AS CpfCnpj, e.apelido_nomefantasia AS ApelidoNomeFantasia, e.endereco AS Endereco,
+            SELECT e.id AS Id, e.tipo_pessoa AS TipoPessoa, e.nome_razaosocial AS NomeRazaoSocial, e.cpf_cnpj AS CpfCnpj, e.apelido_nomefantasia AS ApelidoNomeFantasia, e.logradouro AS Logradouro, e.numero AS Numero,
                    e.telefone AS Telefone, e.email AS Email, e.rg_ie AS RgIe, e.inscricao_municipal AS InscricaoMunicipal, e.regime_tributario AS RegimeTributario,
                    e.ativo AS Ativo, e.criado_em AS CriadoEm, e.observacao AS Observacao,
                    b.id AS BairroId, b.id AS Id, b.bairro,
@@ -50,7 +50,7 @@ public class EmitentesRepository : IEmitentesRepository
                 if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
                 if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
 
-                emitente.AtualizarDados(emitente.TipoPessoa, emitente.NomeRazaoSocial, emitente.CpfCnpj, pais!, emitente.ApelidoNomeFantasia, emitente.Endereco, bairro, emitente.Telefone, emitente.Email, emitente.RgIe, emitente.InscricaoMunicipal, emitente.RegimeTributario, emitente.Observacao);
+                emitente.AtualizarDados(emitente.TipoPessoa, emitente.NomeRazaoSocial, emitente.CpfCnpj, pais!, emitente.ApelidoNomeFantasia, emitente.Logradouro, emitente.Numero, bairro, emitente.Telefone, emitente.Email, emitente.RgIe, emitente.InscricaoMunicipal, emitente.RegimeTributario, emitente.Observacao);
                 return emitente;
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
@@ -65,7 +65,7 @@ public class EmitentesRepository : IEmitentesRepository
     {
         const string sql = @"
             SELECT e.id AS Id, e.tipo_pessoa AS TipoPessoa, e.nome_razaosocial AS NomeRazaoSocial, e.cpf_cnpj AS CpfCnpj, e.apelido_nomefantasia AS ApelidoNomeFantasia,
-                   e.endereco AS Endereco, e.telefone AS Telefone, e.email AS Email, e.rg_ie AS RgIe, e.inscricao_municipal AS InscricaoMunicipal,
+                   e.logradouro AS Logradouro, e.numero AS Numero, e.telefone AS Telefone, e.email AS Email, e.rg_ie AS RgIe, e.inscricao_municipal AS InscricaoMunicipal,
                    e.regime_tributario AS RegimeTributario, e.ativo AS Ativo, e.criado_em AS CriadoEm, e.observacao AS Observacao,
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    c.id AS CidadeId, c.id AS Id, c.cidade, c.ddd,
@@ -88,7 +88,7 @@ public class EmitentesRepository : IEmitentesRepository
                 if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
                 if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
 
-                emitente.AtualizarDados(emitente.TipoPessoa, emitente.NomeRazaoSocial, emitente.CpfCnpj, pais!, emitente.ApelidoNomeFantasia, emitente.Endereco, bairro, emitente.Telefone, emitente.Email, emitente.RgIe, emitente.InscricaoMunicipal, emitente.RegimeTributario, emitente.Observacao);
+                emitente.AtualizarDados(emitente.TipoPessoa, emitente.NomeRazaoSocial, emitente.CpfCnpj, pais!, emitente.ApelidoNomeFantasia, emitente.Logradouro, emitente.Numero, bairro, emitente.Telefone, emitente.Email, emitente.RgIe, emitente.InscricaoMunicipal, emitente.RegimeTributario, emitente.Observacao);
 
                 return emitente;
             },
@@ -103,10 +103,10 @@ public class EmitentesRepository : IEmitentesRepository
     public async Task<Emitentes> CriarEmitente(Emitentes emitente)
     {
         const string sql = @"
-            INSERT INTO emitentes (tipo_pessoa, nome_razaosocial, cpf_cnpj, apelido_nomefantasia, endereco,
+            INSERT INTO emitentes (tipo_pessoa, nome_razaosocial, cpf_cnpj, apelido_nomefantasia, logradouro, numero,
                                    bairro_id, nacionalidade_id, telefone, email, rg_ie, inscricao_municipal,
                                    regime_tributario, ativo, criado_em, observacao)
-            VALUES (@TipoPessoa::tipo_pessoa, @NomeRazaoSocial, @CpfCnpj, @ApelidoNomeFantasia, @Endereco,
+            VALUES (@TipoPessoa::tipo_pessoa, @NomeRazaoSocial, @CpfCnpj, @ApelidoNomeFantasia, @Logradouro, @Numero,
                     @BairroId, @NacionalidadeId, @Telefone, @Email, @RgIe, @InscricaoMunicipal,
                     @RegimeTributario, @Ativo, @CriadoEm, @Observacao)
             RETURNING id;";
@@ -119,7 +119,8 @@ public class EmitentesRepository : IEmitentesRepository
                 emitente.NomeRazaoSocial,
                 emitente.CpfCnpj,
                 emitente.ApelidoNomeFantasia,
-                emitente.Endereco,
+                emitente.Logradouro,
+                emitente.Numero,
                 BairroId = emitente.Bairro?.Id,
                 NacionalidadeId = emitente.Nacionalidade.Id,
                 emitente.Telefone,
@@ -143,7 +144,7 @@ public class EmitentesRepository : IEmitentesRepository
         const string sql = @"
             UPDATE emitentes
             SET tipo_pessoa = @TipoPessoa::tipo_pessoa, nome_razaosocial = @NomeRazaoSocial, cpf_cnpj = @CpfCnpj,
-                apelido_nomefantasia = @ApelidoNomeFantasia, endereco = @Endereco,
+                apelido_nomefantasia = @ApelidoNomeFantasia, logradouro = @Logradouro, numero = @Numero,
                 bairro_id = @BairroId, nacionalidade_id = @NacionalidadeId, telefone = @Telefone, email = @Email,
                 rg_ie = @RgIe, inscricao_municipal = @InscricaoMunicipal,
                 regime_tributario = @RegimeTributario, ativo = @Ativo,
@@ -159,7 +160,8 @@ public class EmitentesRepository : IEmitentesRepository
                 emitente.NomeRazaoSocial,
                 emitente.CpfCnpj,
                 emitente.ApelidoNomeFantasia,
-                emitente.Endereco,
+                emitente.Logradouro,
+                emitente.Numero,
                 BairroId = emitente.Bairro?.Id,
                 NacionalidadeId = emitente.Nacionalidade.Id,
                 emitente.Telefone,
@@ -198,7 +200,7 @@ public class EmitentesRepository : IEmitentesRepository
                OR apelido_nomefantasia ILIKE @Termo OR email ILIKE @Termo;";
 
         const string sqlData = @"
-            SELECT e.id AS Id, e.tipo_pessoa AS TipoPessoa, e.nome_razaosocial AS NomeRazaoSocial, e.cpf_cnpj AS CpfCnpj, e.apelido_nomefantasia AS ApelidoNomeFantasia, e.endereco AS Endereco,
+            SELECT e.id AS Id, e.tipo_pessoa AS TipoPessoa, e.nome_razaosocial AS NomeRazaoSocial, e.cpf_cnpj AS CpfCnpj, e.apelido_nomefantasia AS ApelidoNomeFantasia, e.logradouro AS Logradouro, e.numero AS Numero,
                    e.telefone AS Telefone, e.email AS Email, e.rg_ie AS RgIe, e.inscricao_municipal AS InscricaoMunicipal, e.regime_tributario AS RegimeTributario,
                    e.ativo AS Ativo, e.criado_em AS CriadoEm, e.observacao AS Observacao,
                    b.id AS BairroId, b.id AS Id, b.bairro,
@@ -227,7 +229,7 @@ public class EmitentesRepository : IEmitentesRepository
                 if (estado is not null && cidade is not null) cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado);
                 if (cidade is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, cidade);
 
-                emitente.AtualizarDados(emitente.TipoPessoa, emitente.NomeRazaoSocial, emitente.CpfCnpj, pais!, emitente.ApelidoNomeFantasia, emitente.Endereco, bairro, emitente.Telefone, emitente.Email, emitente.RgIe, emitente.InscricaoMunicipal, emitente.RegimeTributario, emitente.Observacao);
+                emitente.AtualizarDados(emitente.TipoPessoa, emitente.NomeRazaoSocial, emitente.CpfCnpj, pais!, emitente.ApelidoNomeFantasia, emitente.Logradouro, emitente.Numero, bairro, emitente.Telefone, emitente.Email, emitente.RgIe, emitente.InscricaoMunicipal, emitente.RegimeTributario, emitente.Observacao);
                 return emitente;
             },
             new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
