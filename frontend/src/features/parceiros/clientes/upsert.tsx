@@ -5,11 +5,13 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { UpsertDialog } from "@/components/ui/upsert-dialog";
 import { DialogClose } from "@/components/ui/dialog";
-import { FieldLabel } from "@/components/ui/field";
+import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FormFieldUI } from "@/components/ui/form-field-ui";
 import { SexoSelect } from "@/components/sexo-select";
+import { DatePicker } from "@/components/ui/date-picker";
+import { cn } from "@/lib/utils";
 import { BairroInput } from "@/components/entity-inputs/bairro-input";
 import { PaisInput } from "@/components/entity-inputs/pais-input";
 import { TipoPessoaSelect } from "@/components/tipo-pessoa-select";
@@ -399,16 +401,26 @@ function ClientesUpsertForm({
                 name="dataNascimento"
                 validators={{ onChange: clienteSchema.shape.dataNascimento }}
               >
-                {(field) => (
-                  <FormFieldUI
-                    field={field}
-                    label={tipoPessoa === TipoPessoa.FISICA ? "Data de Nascimento" : "Data de Fundação"}
-                    type="date"
-                    getFieldError={getFieldError}
-                    inputSize="medium"
-                    disabled={readOnly}
-                  />
-                )}
+                {(field) => {
+                  const error = getFieldError(field.name, field.state.meta.errors);
+                  return (
+                    <Field data-invalid={!!error} className="w-48">
+                      <FieldLabel htmlFor={field.name}>
+                        {tipoPessoa === TipoPessoa.FISICA ? "Data de Nascimento" : "Data de Fundação"}
+                      </FieldLabel>
+                      <DatePicker
+                        id={field.name}
+                        name={field.name}
+                        onBlur={field.handleBlur}
+                        value={field.state.value}
+                        onChange={(val) => field.handleChange(val || "")}
+                        disabled={readOnly}
+                        className={cn("h-8", error && "border-destructive")}
+                      />
+                      {error && <FieldError>{error}</FieldError>}
+                    </Field>
+                  );
+                }}
               </form.Field>
             </div>
           </div>
