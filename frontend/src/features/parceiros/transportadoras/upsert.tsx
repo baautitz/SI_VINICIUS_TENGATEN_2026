@@ -56,6 +56,7 @@ export function TransportadorasUpsert(props: TransportadorasUpsertProps) {
   if (isEditMode && isLoading) {
     return (
       <UpsertDialog
+      isEdit={!!editingItem && !readOnly}
         open={open}
         onOpenChange={(o) => {
           if (!o) onClose();
@@ -142,6 +143,7 @@ function TransportadorasUpsertForm({
 
   return (
     <UpsertDialog
+      isEdit={!!editingItem && !readOnly}
       open={open}
       onOpenChange={(o) => {
         if (!o) onClose();

@@ -37,6 +37,7 @@ export function CategoriasUpsert(props: CategoriasUpsertProps) {
   if (isEditMode && isLoading) {
     return (
       <UpsertDialog
+      isEdit={!!editingItem}
         open={open}
         onOpenChange={(o) => {
           if (!o) onClose();
@@ -88,6 +89,7 @@ function CategoriasUpsertForm({
 
   return (
     <UpsertDialog
+      isEdit={!!editingItem}
       open={open}
       onOpenChange={(o) => {
         if (!o) onClose();

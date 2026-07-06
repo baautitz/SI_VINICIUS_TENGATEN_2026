@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { NumberInput } from "@/components/ui/number-input";
@@ -100,7 +101,6 @@ export function MovimentacoesUpsertForm({
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
-  const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
   const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
   const [itemToRemoveIndex, setItemToRemoveIndex] = useState<number | null>(
     null,
@@ -134,18 +134,6 @@ export function MovimentacoesUpsertForm({
         },
         options: {
           enabled: itemToRemoveIndex !== null,
-          ignoreInputs: false,
-        },
-      },
-      {
-        hotkey: "Alt+Enter",
-        callback: (e) => {
-          e.preventDefault();
-          setConfirmCloseOpen(false);
-          onClose();
-        },
-        options: {
-          enabled: confirmCloseOpen,
           ignoreInputs: false,
         },
       },
@@ -274,15 +262,6 @@ export function MovimentacoesUpsertForm({
     return sum + itemTotal;
   }, 0);
 
-  const isDirty = form.state.isDirty || itens.length > 0;
-
-  const handleCloseAttempt = () => {
-    if (isDirty && !readOnly) {
-      setConfirmCloseOpen(true);
-    } else {
-      onClose();
-    }
-  };
 
   const removeItemRow = (index: number) => {
     const itemToRemove = itens[index];
@@ -407,32 +386,22 @@ export function MovimentacoesUpsertForm({
       <UpsertDialog
         open={open}
         onOpenChange={(openState) => {
-          if (!openState) handleCloseAttempt();
+          if (!openState) onClose();
         }}
-        onEscapeKeyDown={(e) => {
-          if (isDirty && !readOnly) {
-            e.preventDefault();
-            setConfirmCloseOpen(true);
-          }
-        }}
-        onPointerDownOutside={(e) => {
-          if (isDirty && !readOnly) {
-            e.preventDefault();
-            setConfirmCloseOpen(true);
-          }
-        }}
+        isEdit={isEditMode && !readOnly}
         title={title}
         footer={
           <>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCloseAttempt}
-            >
-              <span className="flex items-center gap-2">
-                {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
-              </span>
-            </Button>
+            <DialogClose asChild>
+              <Button
+                type="button"
+                variant="outline"
+              >
+                <span className="flex items-center gap-2">
+                  {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
+                </span>
+              </Button>
+            </DialogClose>
             {!readOnly && (
               <form.Subscribe
                 selector={(state) => [state.canSubmit, state.isSubmitting]}
@@ -927,42 +896,6 @@ export function MovimentacoesUpsertForm({
               onClick={confirmRemoveItem}
             >
               Remover Item
-              <KbdGroup className="ml-2">
-                <Kbd>Alt</Kbd>
-                <Kbd>Enter</Kbd>
-              </KbdGroup>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={confirmCloseOpen} onOpenChange={setConfirmCloseOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Sair do Formulário?</DialogTitle>
-            <DialogDescription>
-              Você possui alterações não salvas. Se fechar o formulário agora,
-              todos os dados digitados serão perdidos.
-            </DialogDescription>
-          </DialogHeader>
-
-          <DialogFooter className="mt-4 flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setConfirmCloseOpen(false)}
-            >
-              Permanecer <Kbd>Esc</Kbd>
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={() => {
-                setConfirmCloseOpen(false);
-                onClose();
-              }}
-            >
-              Sair e Descartar
               <KbdGroup className="ml-2">
                 <Kbd>Alt</Kbd>
                 <Kbd>Enter</Kbd>

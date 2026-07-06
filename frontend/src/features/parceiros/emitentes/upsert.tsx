@@ -52,6 +52,7 @@ export function EmitentesUpsert(props: EmitentesUpsertProps) {
   if (isEditMode && isLoading) {
     return (
       <UpsertDialog
+      isEdit={!!editingItem && !readOnly}
         open={open}
         onOpenChange={(o) => {
           if (!o) onClose();
@@ -139,6 +140,7 @@ function EmitentesUpsertForm({
 
   return (
     <UpsertDialog
+      isEdit={!!editingItem && !readOnly}
       open={open}
       onOpenChange={(o) => {
         if (!o) onClose();

@@ -99,6 +99,7 @@ export function ContasReceberUpsertForm({
 
   return (
     <UpsertDialog
+      isEdit={!!editingItem && !readOnly}
       open={open}
       onOpenChange={(o) => {
         if (!o) onClose();

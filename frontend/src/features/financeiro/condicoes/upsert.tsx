@@ -66,6 +66,7 @@ export function CondicoesUpsert(props: CondicoesUpsertProps) {
   if (isEditMode && isLoading) {
     return (
       <UpsertDialog
+      isEdit={!!editingItem && !readOnly}
         open={open}
         onOpenChange={(o) => {
           if (!o) onClose();
@@ -297,6 +298,7 @@ function CondicoesUpsertForm({
 
   return (
     <UpsertDialog
+      isEdit={!!editingItem && !readOnly}
       open={open}
       onOpenChange={(o) => {
         if (!o) onClose();

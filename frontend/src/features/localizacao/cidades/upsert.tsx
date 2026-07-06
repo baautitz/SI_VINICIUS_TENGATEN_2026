@@ -44,6 +44,7 @@ export function CidadesUpsert(props: CidadesUpsertProps) {
   if (isEditMode && isLoading) {
     return (
       <UpsertDialog
+      isEdit={!!editingItem}
         open={open}
         onOpenChange={(o) => {
           if (!o) onClose();
@@ -100,6 +101,7 @@ function CidadesUpsertForm({
 
   return (
     <UpsertDialog
+      isEdit={!!editingItem}
       open={open}
       onOpenChange={(o) => {
         if (!o) onClose();

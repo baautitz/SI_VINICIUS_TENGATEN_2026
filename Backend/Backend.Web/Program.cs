@@ -78,15 +78,12 @@ public class Program
 
         app.UseCors();
 
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseOpenApi();
+        app.UseOpenApi();
 
-            app.UseSwaggerUi(config =>
-            {
-                config.Path = string.Empty;
-            });
-        }
+        app.UseSwaggerUi(config =>
+        {
+            config.Path = string.Empty;
+        });
 
         app.UseAuthorization();
 

@@ -37,6 +37,7 @@ export function MarcasUpsert(props: MarcasUpsertProps) {
   if (isEditMode && isLoading) {
     return (
       <UpsertDialog
+      isEdit={!!editingItem}
         open={open}
         onOpenChange={(o) => {
           if (!o) onClose();
@@ -88,6 +89,7 @@ function MarcasUpsertForm({
 
   return (
     <UpsertDialog
+      isEdit={!!editingItem}
       open={open}
       onOpenChange={(o) => {
         if (!o) onClose();

@@ -36,6 +36,7 @@ export function PaisesUpsert(props: PaisesUpsertProps) {
   if (isEditMode && isLoading) {
     return (
       <UpsertDialog
+      isEdit={!!editingItem}
         open={open}
         onOpenChange={(o) => {
           if (!o) onClose();
@@ -95,6 +96,7 @@ function PaisesUpsertForm({
 
   return (
     <UpsertDialog
+      isEdit={!!editingItem}
       open={open}
       onOpenChange={(o) => {
         if (!o) onClose();

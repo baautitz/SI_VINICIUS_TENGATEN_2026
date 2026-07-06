@@ -52,6 +52,7 @@ export function ClientesUpsert(props: ClientesUpsertProps) {
   if (isEditMode && isLoading) {
     return (
       <UpsertDialog
+      isEdit={!!editingItem && !readOnly}
         open={open}
         onOpenChange={(o) => {
           if (!o) onClose();
@@ -138,6 +139,7 @@ function ClientesUpsertForm({
 
   return (
     <UpsertDialog
+      isEdit={!!editingItem && !readOnly}
       open={open}
       onOpenChange={(o) => {
         if (!o) onClose();

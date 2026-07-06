@@ -57,6 +57,7 @@ export function AtributosUpsert(props: AtributosUpsertProps) {
   if (isEditMode && isLoading) {
     return (
       <UpsertDialog
+      isEdit={!!editingItem}
         open={open}
         onOpenChange={(o) => {
           if (!o) onClose();
@@ -125,6 +126,7 @@ function AtributosUpsertForm({
 
   return (
     <UpsertDialog
+      isEdit={!!editingItem}
       open={open}
       onOpenChange={(o) => {
         if (!o) onClose();

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { useForm } from "@tanstack/react-form";
 import { useHotkeys } from "@tanstack/react-hotkeys";
 import { cn } from "@/lib/utils";
@@ -29,6 +29,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ClienteInput } from "@/components/entity-inputs/cliente-input";
@@ -115,7 +116,9 @@ export function VendasUpsertForm({
       >
         <DialogContent className="flex h-[70vh] max-w-4xl flex-col items-center justify-center">
           <DialogTitle className="sr-only">Carregando Venda</DialogTitle>
-          <DialogDescription className="sr-only">Carregando formulário de venda. Aguarde por favor.</DialogDescription>
+          <DialogDescription className="sr-only">
+            Carregando formulário de venda. Aguarde por favor.
+          </DialogDescription>
           <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
         </DialogContent>
       </Dialog>
@@ -210,7 +213,6 @@ function VendasFormBody({
   const [itemToRemoveIndex, setItemToRemoveIndex] = useState<number | null>(
     null,
   );
-  const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
 
   const [dataVenda, setDataVenda] = useState(() =>
     editingItem?.dataVenda
@@ -405,18 +407,6 @@ function VendasFormBody({
         hotkey: "Alt+Enter",
         callback: (e) => {
           e.preventDefault();
-          setConfirmCloseOpen(false);
-          onClose();
-        },
-        options: {
-          enabled: confirmCloseOpen,
-          ignoreInputs: false,
-        },
-      },
-      {
-        hotkey: "Alt+Enter",
-        callback: (e) => {
-          e.preventDefault();
           handleFinalSubmit();
         },
         options: {
@@ -577,19 +567,6 @@ function VendasFormBody({
     }
   }, [isCheckoutOpen]);
 
-  const isDirty =
-    form.state.isDirty ||
-    JSON.stringify(itens) !== JSON.stringify(editingItem?.itens ?? []) ||
-    cliente?.id !== editingItem?.cliente?.id ||
-    emitente?.id !== editingItem?.emitente?.id;
-
-  const handleCloseAttempt = () => {
-    if (isDirty && !readOnly) {
-      setConfirmCloseOpen(true);
-    } else {
-      onClose();
-    }
-  };
 
   const isEditMode = !!editingItem;
 
@@ -597,14 +574,17 @@ function VendasFormBody({
     <UpsertDialog
       open={open}
       onOpenChange={(o) => {
-        if (!o) handleCloseAttempt();
+        if (!o) onClose();
       }}
+      isEdit={isEditMode}
       title={isEditMode ? "Detalhes da Venda" : "Nova venda"}
       footer={
         <>
-          <Button type="button" variant="outline" onClick={handleCloseAttempt}>
-            Cancelar <Kbd>Esc</Kbd>
-          </Button>
+          <DialogClose asChild>
+            <Button type="button" variant="outline">
+              Cancelar <Kbd>Esc</Kbd>
+            </Button>
+          </DialogClose>
           {!readOnly && (
             <Button
               type="submit"
@@ -1190,42 +1170,6 @@ function VendasFormBody({
                 onClick={confirmRemoveItem}
               >
                 Remover Item
-                <KbdGroup className="ml-2">
-                  <Kbd>Alt</Kbd>
-                  <Kbd>Enter</Kbd>
-                </KbdGroup>
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={confirmCloseOpen} onOpenChange={setConfirmCloseOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Sair do Formulário?</DialogTitle>
-              <DialogDescription>
-                Você possui alterações não salvas. Se fechar o formulário agora,
-                todos os dados digitados serão perdidos.
-              </DialogDescription>
-            </DialogHeader>
-
-            <DialogFooter className="mt-4 flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setConfirmCloseOpen(false)}
-              >
-                Permanecer <Kbd>Esc</Kbd>
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() => {
-                  setConfirmCloseOpen(false);
-                  onClose();
-                }}
-              >
-                Sair e Descartar
                 <KbdGroup className="ml-2">
                   <Kbd>Alt</Kbd>
                   <Kbd>Enter</Kbd>
