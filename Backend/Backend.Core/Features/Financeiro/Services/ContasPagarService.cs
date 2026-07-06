@@ -145,7 +145,7 @@ public sealed class ContasPagarService : BaseService
             {
                 _unitOfWork.BeginTransaction();
 
-                var parcelas = command.Parcelas.Select(p => 
+                var parcelas = command.Parcelas.Select(p =>
                     new ContasPagarParcelas(0, id, p.NumeroParcela, p.DataVencimento, p.ValorParcela, p.ValorPago, p.Status));
 
                 existente.Atualizar(
@@ -239,10 +239,10 @@ public sealed class ContasPagarService : BaseService
         if (existente is null) return false;
 
         if (existente.NfeId.HasValue)
-            throw new Backend.Core.Common.Exceptions.DomainException("Não é possível excluir uma conta a pagar gerada por Notas Fiscais.");
+            throw new Common.Exceptions.DomainException("Não é possível excluir uma conta a pagar gerada por Notas Fiscais.");
 
         if (existente.ValorSaldo < existente.ValorOriginal || existente.ContasPagarParcelas.Any(p => p.Status != StatusTituloFinanceiro.ABERTO))
-            throw new Backend.Core.Common.Exceptions.DomainException("Não é possível excluir uma conta a pagar que já possui parcelas pagas ou alteradas.");
+            throw new Common.Exceptions.DomainException("Não é possível excluir uma conta a pagar que já possui parcelas pagas ou alteradas.");
 
         return await _contasRepository.DeletarContaPagar(id);
     }

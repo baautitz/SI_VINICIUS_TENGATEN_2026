@@ -118,8 +118,8 @@ public class SkusRepository : ISkusRepository
             countSql, new { ProdutoId = produtoId }, transaction: _session.Transaction);
 
         var rows = (await _session.Connection.QueryAsync<SkuFullDbRow>(
-            skusSql, 
-            new { ProdutoId = produtoId }, 
+            skusSql,
+            new { ProdutoId = produtoId },
             transaction: _session.Transaction)).ToList();
 
         var skus = rows.Select(BuildSkuFromFullDbRow).ToList();
@@ -176,10 +176,10 @@ public class SkusRepository : ISkusRepository
             WHERE savr.sku = @Sku;";
 
         var row = await _session.Connection.QueryFirstOrDefaultAsync<SkuFullDbRow>(
-            skuSql, 
-            new { Sku = sku }, 
+            skuSql,
+            new { Sku = sku },
             transaction: _session.Transaction);
-            
+
         if (row is null) return null;
 
         var skuEntity = BuildSkuFromFullDbRow(row);
@@ -255,7 +255,7 @@ public class SkusRepository : ISkusRepository
 
             return linhasAfetadas > 0;
         }
-        catch (Npgsql.PostgresException ex)
+        catch (PostgresException ex)
         {
             throw DbExceptionTranslator.Translate(ex);
         }
@@ -288,7 +288,7 @@ public class SkusRepository : ISkusRepository
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
-        
+
         var rows = (await _session.Connection.QueryAsync<SkuFullDbRow>(
             sqlData,
             new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },

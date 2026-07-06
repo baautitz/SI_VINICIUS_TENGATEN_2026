@@ -88,7 +88,7 @@ public class TransportadorasRepository : ITransportadorasRepository
         var transportadoraDict = new Dictionary<int, Transportadoras>();
         var types = new[] { typeof(Transportadoras), typeof(Bairros), typeof(Cidades), typeof(Estados), typeof(Paises), typeof(Paises), typeof(Veiculos), typeof(Estados), typeof(Paises) };
 
-        await _session.Connection.QueryAsync<Transportadoras>(
+        await _session.Connection.QueryAsync(
             sql,
             types,
             (objs) =>

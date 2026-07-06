@@ -167,7 +167,7 @@ public sealed class ContasReceberService : BaseService
             {
                 _unitOfWork.BeginTransaction();
 
-                var parcelas = command.Parcelas.Select(p => 
+                var parcelas = command.Parcelas.Select(p =>
                     new ContasReceberParcelas(0, id, p.NumeroParcela, p.DataVencimento, p.ValorParcela, p.ValorRecebido, p.Status));
 
                 existente.Atualizar(
@@ -262,10 +262,10 @@ public sealed class ContasReceberService : BaseService
         if (existente is null) return false;
 
         if (existente.NfeId.HasValue || existente.VendaId.HasValue)
-            throw new Backend.Core.Common.Exceptions.DomainException("Não é possível excluir uma conta a receber gerada por Vendas ou Notas Fiscais.");
+            throw new Common.Exceptions.DomainException("Não é possível excluir uma conta a receber gerada por Vendas ou Notas Fiscais.");
 
         if (existente.ValorSaldo < existente.ValorOriginal || existente.ContasReceberParcelas.Any(p => p.Status != StatusTituloFinanceiro.ABERTO))
-            throw new Backend.Core.Common.Exceptions.DomainException("Não é possível excluir uma conta a receber que já possui parcelas baixadas ou alteradas.");
+            throw new Common.Exceptions.DomainException("Não é possível excluir uma conta a receber que já possui parcelas baixadas ou alteradas.");
 
         return await _contasRepository.DeletarContaReceber(id);
     }

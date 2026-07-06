@@ -53,7 +53,7 @@ public class ContasReceberRepository : IContasReceberRepository
 
         var types = new[] { typeof(ContasReceber), typeof(Clientes), typeof(Paises), typeof(CondicoesPagamentos), typeof(MetodosPagamentos) };
 
-        var rawContas = await _session.Connection.QueryAsync<ContasReceber>(
+        var rawContas = await _session.Connection.QueryAsync(
             querySql,
             types,
             obj =>
@@ -176,7 +176,7 @@ public class ContasReceberRepository : IContasReceberRepository
 
         var types = new[] { typeof(ContasReceber), typeof(Clientes), typeof(Paises), typeof(CondicoesPagamentos), typeof(MetodosPagamentos) };
 
-        var rawConta = await _session.Connection.QueryAsync<ContasReceber>(
+        var rawConta = await _session.Connection.QueryAsync(
             contaSql,
             types,
             obj =>
@@ -379,7 +379,7 @@ public class ContasReceberRepository : IContasReceberRepository
 
         var types = new[] { typeof(ContasReceber), typeof(Clientes), typeof(Paises), typeof(CondicoesPagamentos), typeof(MetodosPagamentos) };
 
-        var rawContas = await _session.Connection.QueryAsync<ContasReceber>(
+        var rawContas = await _session.Connection.QueryAsync(
             querySql,
             types,
             obj =>

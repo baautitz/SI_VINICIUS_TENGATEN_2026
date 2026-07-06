@@ -23,12 +23,12 @@ public class Program
             {
                 options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
                 options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
-                options.JsonSerializerOptions.Converters.Add(new Backend.Web.Common.DddJsonConverter());
-                options.JsonSerializerOptions.Converters.Add(new Backend.Web.Common.DdiJsonConverter());
-                options.JsonSerializerOptions.Converters.Add(new Backend.Web.Common.DocumentoJsonConverter());
-                options.JsonSerializerOptions.Converters.Add(new Backend.Web.Common.CpfJsonConverter());
-                options.JsonSerializerOptions.Converters.Add(new Backend.Web.Common.CnpjJsonConverter());
-                options.JsonSerializerOptions.Converters.Add(new Backend.Web.Common.DocumentoGenericoJsonConverter());
+                options.JsonSerializerOptions.Converters.Add(new Web.Common.DddJsonConverter());
+                options.JsonSerializerOptions.Converters.Add(new Web.Common.DdiJsonConverter());
+                options.JsonSerializerOptions.Converters.Add(new Web.Common.DocumentoJsonConverter());
+                options.JsonSerializerOptions.Converters.Add(new Web.Common.CpfJsonConverter());
+                options.JsonSerializerOptions.Converters.Add(new Web.Common.CnpjJsonConverter());
+                options.JsonSerializerOptions.Converters.Add(new Web.Common.DocumentoGenericoJsonConverter());
             });
 
         builder.Services.Configure<Microsoft.AspNetCore.Mvc.ApiBehaviorOptions>(options =>
@@ -43,7 +43,7 @@ public class Program
                             ? e.ErrorMessage
                             : (e.Exception?.Message ?? "Erro de validação de modelo.");
 
-                        return new Backend.Core.Common.Results.ResultadoErro(
+                        return new Common.Results.ResultadoErro(
                             "VALIDATION_ERROR",
                             errorMessage,
                             string.IsNullOrEmpty(kvp.Key) ? null : kvp.Key
@@ -58,13 +58,14 @@ public class Program
 
         builder.Services.AddOpenApiDocument(options =>
         {
-            options.DocumentProcessors.Add(new Backend.Web.Controllers.Catalogo.CircularReferenceDocumentProcessor());
-            options.SchemaSettings.TypeMappers.Add(new NJsonSchema.Generation.TypeMappers.PrimitiveTypeMapper(typeof(Backend.Core.Common.ValueObjects.Ddd), schema => schema.Type = NJsonSchema.JsonObjectType.String));
-            options.SchemaSettings.TypeMappers.Add(new NJsonSchema.Generation.TypeMappers.PrimitiveTypeMapper(typeof(Backend.Core.Common.ValueObjects.Ddi), schema => schema.Type = NJsonSchema.JsonObjectType.String));
-            options.SchemaSettings.TypeMappers.Add(new NJsonSchema.Generation.TypeMappers.PrimitiveTypeMapper(typeof(Backend.Core.Common.ValueObjects.Documento), schema => schema.Type = NJsonSchema.JsonObjectType.String));
-            options.SchemaSettings.TypeMappers.Add(new NJsonSchema.Generation.TypeMappers.PrimitiveTypeMapper(typeof(Backend.Core.Common.ValueObjects.Cpf), schema => schema.Type = NJsonSchema.JsonObjectType.String));
-            options.SchemaSettings.TypeMappers.Add(new NJsonSchema.Generation.TypeMappers.PrimitiveTypeMapper(typeof(Backend.Core.Common.ValueObjects.Cnpj), schema => schema.Type = NJsonSchema.JsonObjectType.String));
-            options.SchemaSettings.TypeMappers.Add(new NJsonSchema.Generation.TypeMappers.PrimitiveTypeMapper(typeof(Backend.Core.Common.ValueObjects.DocumentoGenerico), schema => schema.Type = NJsonSchema.JsonObjectType.String));
+            options.Title = "Projeto Sistemas";
+            options.DocumentProcessors.Add(new Web.Controllers.Catalogo.CircularReferenceDocumentProcessor());
+            options.SchemaSettings.TypeMappers.Add(new NJsonSchema.Generation.TypeMappers.PrimitiveTypeMapper(typeof(Common.ValueObjects.Ddd), schema => schema.Type = NJsonSchema.JsonObjectType.String));
+            options.SchemaSettings.TypeMappers.Add(new NJsonSchema.Generation.TypeMappers.PrimitiveTypeMapper(typeof(Common.ValueObjects.Ddi), schema => schema.Type = NJsonSchema.JsonObjectType.String));
+            options.SchemaSettings.TypeMappers.Add(new NJsonSchema.Generation.TypeMappers.PrimitiveTypeMapper(typeof(Common.ValueObjects.Documento), schema => schema.Type = NJsonSchema.JsonObjectType.String));
+            options.SchemaSettings.TypeMappers.Add(new NJsonSchema.Generation.TypeMappers.PrimitiveTypeMapper(typeof(Common.ValueObjects.Cpf), schema => schema.Type = NJsonSchema.JsonObjectType.String));
+            options.SchemaSettings.TypeMappers.Add(new NJsonSchema.Generation.TypeMappers.PrimitiveTypeMapper(typeof(Common.ValueObjects.Cnpj), schema => schema.Type = NJsonSchema.JsonObjectType.String));
+            options.SchemaSettings.TypeMappers.Add(new NJsonSchema.Generation.TypeMappers.PrimitiveTypeMapper(typeof(Common.ValueObjects.DocumentoGenerico), schema => schema.Type = NJsonSchema.JsonObjectType.String));
         });
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
@@ -74,7 +75,7 @@ public class Program
 
         var app = builder.Build();
 
-        app.UseMiddleware<Backend.Web.Middlewares.GlobalExceptionMiddleware>();
+        app.UseMiddleware<Web.Middlewares.GlobalExceptionMiddleware>();
 
         app.UseCors();
 
