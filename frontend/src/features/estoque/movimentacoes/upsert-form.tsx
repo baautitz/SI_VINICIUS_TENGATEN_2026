@@ -628,8 +628,8 @@ export function MovimentacoesUpsertForm({
                     </Alert>
                   )}
 
-                  <div className="bg-card overflow-hidden rounded-lg border">
-                    <Table>
+                  <div className="bg-card overflow-x-auto rounded-lg border">
+                    <Table className="w-full">
                       <TableHeader className="bg-muted border-b">
                         <TableRow className="border-b hover:bg-transparent">
                           <TableHead className="w-24 px-4 py-2 text-left">
@@ -638,38 +638,24 @@ export function MovimentacoesUpsertForm({
                           <TableHead className="w-full px-4 py-2 text-left">
                             Produto
                           </TableHead>
-                          <TableHead className="w-16 px-4 py-2 text-center">
-                            UM
+                          <TableHead className="w-36 px-4 py-2 text-right">
+                            Estoque
                           </TableHead>
-                          <TableHead className="w-32 px-4 py-2 text-right">
-                            {readOnly ? "Estoque Ant." : "Estoque"}
-                          </TableHead>
-                          <TableHead className="w-32 px-4 py-2 text-right">
-                            {readOnly ? "Estoque Final" : "Após"}
-                          </TableHead>
-                          <TableHead className="w-44 px-4 py-2 text-right">
+                          <TableHead className="min-w-32 px-4 py-2 text-right">
                             Qtde
                           </TableHead>
-                          <TableHead className="w-40 px-4 py-2 text-right">
-                            Preço Venda
-                          </TableHead>
                           {comCusto && (
-                            <TableHead className="w-40 px-4 py-2 text-right">
-                              Custo Médio
-                            </TableHead>
-                          )}
-                          {comCusto && (
-                            <TableHead className="w-48 px-4 py-2 text-right">
+                            <TableHead className="w-44 px-4 py-2 text-right">
                               Custo Unit.
                             </TableHead>
                           )}
                           {comCusto && (
-                            <TableHead className="w-40 px-4 py-2 text-right">
+                            <TableHead className="w-36 px-4 py-2 text-right">
                               Total
                             </TableHead>
                           )}
                           {!readOnly && (
-                            <TableHead className="w-16 px-4 py-2 text-center">
+                            <TableHead className="w-14 px-4 py-2 text-center">
                               Ação
                             </TableHead>
                           )}
@@ -679,7 +665,7 @@ export function MovimentacoesUpsertForm({
                         {itens.length === 0 ? (
                           <TableRow>
                             <TableCell
-                              colSpan={comCusto ? 11 : 8}
+                              colSpan={comCusto ? 7 : 5}
                               className="text-muted-foreground px-4 py-8 text-center"
                             >
                               Nenhum item adicionado ainda.
@@ -735,46 +721,47 @@ export function MovimentacoesUpsertForm({
                                     {item.sku}
                                   </span>
                                   {skuErr && (
-                                    <p className="mt-0.5 text-[10px] text-red-500">
+                                    <p className="mt-0.5 text-xs text-red-500">
                                       {skuErr}
                                     </p>
                                   )}
                                 </TableCell>
 
                                 <TableCell className="px-4 py-2.5 align-middle">
-                                  <span className="text-foreground/90 text-sm font-medium">
-                                    {item.produtoNome}
-                                  </span>
-                                </TableCell>
-
-                                <TableCell className="px-4 py-2.5 text-center align-middle">
-                                  <span className="text-muted-foreground text-xs font-bold uppercase">
-                                    {item.unidadeMedidaSigla || "-"}
-                                  </span>
-                                </TableCell>
-
-                                <TableCell className="text-muted-foreground px-4 py-2.5 text-right align-middle text-sm font-medium">
-                                  {item.estoqueAtual?.toLocaleString("pt-BR", {
-                                    minimumFractionDigits: item.permiteDecimais
-                                      ? 4
-                                      : 0,
-                                  }) ?? "-"}
+                                  <div className="flex items-baseline gap-1.5">
+                                    <span className="text-foreground/90 text-sm font-medium">
+                                      {item.produtoNome}
+                                    </span>
+                                    {item.unidadeMedidaSigla && (
+                                      <span className="text-muted-foreground font-mono text-[10px] font-semibold uppercase">
+                                        {item.unidadeMedidaSigla}
+                                      </span>
+                                    )}
+                                  </div>
                                 </TableCell>
 
                                 <TableCell className="px-4 py-2.5 text-right align-middle">
-                                  <span
-                                    className={cn(
-                                      "text-sm font-bold",
-                                      estoqueApos < 0
-                                        ? "text-destructive"
-                                        : "text-foreground",
-                                    )}
-                                  >
-                                    {estoqueApos.toLocaleString("pt-BR", {
-                                      minimumFractionDigits:
-                                        item.permiteDecimais ? 4 : 0,
-                                    })}
-                                  </span>
+                                  <div className="flex items-baseline justify-end gap-1">
+                                    <span className="text-muted-foreground text-sm">
+                                      {item.estoqueAtual?.toLocaleString("pt-BR", {
+                                        minimumFractionDigits: item.permiteDecimais ? 4 : 0,
+                                      }) ?? "-"}
+                                    </span>
+                                    <span className="text-muted-foreground/60 text-xs">→</span>
+                                    <span
+                                      className={cn(
+                                        "text-sm font-bold",
+                                        estoqueApos < 0
+                                          ? "text-destructive"
+                                          : "text-foreground",
+                                      )}
+                                    >
+                                      {estoqueApos.toLocaleString("pt-BR", {
+                                        minimumFractionDigits:
+                                          item.permiteDecimais ? 4 : 0,
+                                      })}
+                                    </span>
+                                  </div>
                                 </TableCell>
 
                                 <TableCell className="w-44 px-4 py-2.5 text-right align-middle">
@@ -783,7 +770,11 @@ export function MovimentacoesUpsertForm({
                                       inputSize="full"
                                       value={item.quantidade}
                                       decimals={item.permiteDecimais ? 4 : 0}
-                                      inputMode={item.permiteDecimais ? "decimal" : "numeric"}
+                                      inputMode={
+                                        item.permiteDecimais
+                                          ? "decimal"
+                                          : "numeric"
+                                      }
                                       aria-invalid={!!qtdErr}
                                       disabled={readOnly}
                                       onNumberChange={(num) => {
@@ -803,26 +794,7 @@ export function MovimentacoesUpsertForm({
                                   </div>
                                 </TableCell>
 
-                                <TableCell className="text-muted-foreground px-4 py-2.5 text-right align-middle text-sm">
-                                  {item.precoSugerido?.toLocaleString("pt-BR", {
-                                    style: "currency",
-                                    currency: "BRL",
-                                  }) ?? "-"}
-                                </TableCell>
 
-                                {comCusto && (
-                                  <TableCell className="text-muted-foreground px-4 py-2.5 text-right align-middle text-sm font-medium">
-                                    <span className="min-w-30">
-                                      {item.custoMedio?.toLocaleString(
-                                        "pt-BR",
-                                        {
-                                          style: "currency",
-                                          currency: "BRL",
-                                        },
-                                      ) ?? "-"}
-                                    </span>
-                                  </TableCell>
-                                )}
 
                                 {comCusto && (
                                   <TableCell className="w-48 px-4 py-2.5 text-right align-middle">
@@ -852,7 +824,7 @@ export function MovimentacoesUpsertForm({
                                         )}
                                       />
                                       {custoErr && (
-                                        <p className="text-right text-[10px] text-red-500">
+                                        <p className="text-right text-xs text-red-500">
                                           {custoErr}
                                         </p>
                                       )}
@@ -891,12 +863,12 @@ export function MovimentacoesUpsertForm({
                         <TableFooter className="bg-muted/30 border-t font-semibold">
                           <TableRow>
                             <TableCell
-                              colSpan={readOnly ? 9 : 10}
+                              colSpan={readOnly ? 4 : 5}
                               className="px-4 py-3 text-left text-sm font-bold uppercase"
                             >
                               Total Geral
                             </TableCell>
-                            <TableCell className="text-primary px-4 py-3 text-right text-base font-black">
+                            <TableCell className="text-primary px-4 py-3 text-right text-base font-bold">
                               {totalGeral.toLocaleString("pt-BR", {
                                 style: "currency",
                                 currency: "BRL",

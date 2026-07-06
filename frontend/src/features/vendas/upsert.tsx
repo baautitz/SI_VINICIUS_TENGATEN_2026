@@ -114,6 +114,8 @@ export function VendasUpsertForm({
         }}
       >
         <DialogContent className="flex h-[70vh] max-w-4xl flex-col items-center justify-center">
+          <DialogTitle className="sr-only">Carregando Venda</DialogTitle>
+          <DialogDescription className="sr-only">Carregando formulário de venda. Aguarde por favor.</DialogDescription>
           <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
         </DialogContent>
       </Dialog>
@@ -742,7 +744,7 @@ function VendasFormBody({
             <Card className="flex h-full flex-1 flex-col p-0 shadow-sm">
               <CardContent className="flex h-full flex-1 flex-col p-0">
                 <ScrollArea className="h-full w-full">
-                  <Table>
+                  <Table className="min-w-250">
                     <TableHeader className="bg-muted border-b">
                       <TableRow className="border-b hover:bg-transparent">
                         <TableHead className="w-28 px-4 text-left">
