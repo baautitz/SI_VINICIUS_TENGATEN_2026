@@ -1,6 +1,6 @@
 "use client"
 import React from "react"
-import { EntityInput } from "@/components/ui/entity-input"
+import { EntityInput } from "@/ui/composites"
 import { MarcasFeature, Marca } from "@/features/catalogo/marcas"
 import { marcasApi } from "@/api/catalogo"
 
@@ -8,6 +8,7 @@ interface MarcaInputProps {
   name: string
   label?: string
   error?: string
+  disabled?: boolean
   initialItem?: Marca | null
   onSelectId: (id: number | null) => void
   onSelectItem?: (item: Marca | null) => void
@@ -17,6 +18,7 @@ export function MarcaInput({
   name,
   label = "Marca",
   error,
+  disabled = false,
   initialItem,
   onSelectId,
   onSelectItem,
@@ -26,6 +28,7 @@ export function MarcaInput({
       name={name}
       label={label}
       error={error}
+      disabled={disabled}
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}

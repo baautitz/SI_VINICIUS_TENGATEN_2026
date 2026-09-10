@@ -1,6 +1,6 @@
 "use client"
 import React from "react"
-import { EntityInput } from "@/components/ui/entity-input"
+import { EntityInput } from "@/ui/composites"
 import { UnidadesMedidaFeature, UnidadeMedida } from "@/features/catalogo/unidades-medida"
 import { unidadesMedidaApi } from "@/api/catalogo"
 
@@ -8,6 +8,7 @@ interface UnidadeMedidaInputProps {
   name: string
   label?: string
   error?: string
+  disabled?: boolean
   initialItem?: UnidadeMedida | null
   onSelectId: (id: number | null) => void
   onSelectItem?: (item: UnidadeMedida | null) => void
@@ -17,6 +18,7 @@ export function UnidadeMedidaInput({
   name,
   label = "Unidade de Medida",
   error,
+  disabled = false,
   initialItem,
   onSelectId,
   onSelectItem,
@@ -26,6 +28,7 @@ export function UnidadeMedidaInput({
       name={name}
       label={label}
       error={error}
+      disabled={disabled}
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}

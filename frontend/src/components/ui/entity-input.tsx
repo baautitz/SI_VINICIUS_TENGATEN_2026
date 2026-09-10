@@ -2,10 +2,10 @@
 
 import React, { useState, useRef } from "react";
 import { Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ListDialog } from "@/components/ui/list-dialog";
-import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { Button } from "@/ui/primitives";
+import { Input } from "@/ui/primitives";
+import { Field, FieldLabel, FieldError } from "@/ui/primitives";
+import { useWindow, useUi } from "@/ui/imperative";
 
 interface EntityInputProps<T, TResumo = T, TId extends string | number = number> {
   name: string;
@@ -25,11 +25,37 @@ interface EntityInputProps<T, TResumo = T, TId extends string | number = number>
   getId: (item: T | TResumo) => TId;
 
   modalTitle: string;
+  /** Ícone compartilhado pela listagem quando ela é página e quando é seleção modal. */
+  icon?: React.ReactNode;
   renderFeature: (props: {
     selectionMode: boolean;
     onSelect: (item: TResumo) => void;
     initialSearchTerm: string;
+    icon?: React.ReactNode;
   }) => React.ReactNode;
+}
+
+type EntitySelectionWindowProps<T, TResumo> = Pick<
+  EntityInputProps<T, TResumo>,
+  "renderFeature"
+> & {
+  initialSearchTerm: string;
+  icon?: React.ReactNode;
+};
+
+function EntitySelectionWindow<T, TResumo>({
+  renderFeature,
+  initialSearchTerm,
+  icon,
+}: EntitySelectionWindowProps<T, TResumo>) {
+  const activeWindow = useWindow<TResumo>();
+
+  return renderFeature({
+    selectionMode: true,
+    onSelect: (item) => activeWindow.resolve(item),
+    initialSearchTerm,
+    icon,
+  });
 }
 
 export function EntityInput<T, TResumo = T, TId extends string | number = number>({
@@ -47,9 +73,10 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
   getSearchTerm,
   getId,
   modalTitle,
+  icon,
   renderFeature,
 }: EntityInputProps<T, TResumo, TId>) {
-  const [isOpen, setIsOpen] = useState(false);
+  const ui = useUi();
   const [selectedItem, setSelectedItem] = useState<TResumo | null>(
     (initialItem as TResumo | null) ?? null,
   );
@@ -64,6 +91,37 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
   const [selectedLabel, setSelectedLabel] = useState(initialLabel ?? "");
   const [prevInitialItem, setPrevInitialItem] = useState(initialItem);
   const inputRef = useRef<HTMLInputElement>(null);
+  const openingSelectorRef = useRef(false);
+  const searchInFlightRef = useRef(false);
+
+  const openSelection = async () => {
+    // Enter, blur and the search button can converge while the lookup request
+    // is still pending. Only the first caller may create a selector window;
+    // later callers are ignored until that interaction finishes.
+    if (disabled || openingSelectorRef.current) return;
+    openingSelectorRef.current = true;
+
+    try {
+      const result = await ui.windows.open<TResumo, EntitySelectionWindowProps<T, TResumo>>({
+        component: EntitySelectionWindow<T, TResumo>,
+        props: {
+          renderFeature,
+          icon,
+          initialSearchTerm: selectedItem
+            ? getSearchTerm(selectedItem)
+            : searchText,
+        },
+        title: modalTitle,
+        icon,
+      });
+
+      if (result.status === "confirmed") {
+        await applySelection(result.value);
+      }
+    } finally {
+      openingSelectorRef.current = false;
+    }
+  };
 
   if (initialItem !== prevInitialItem) {
     setPrevInitialItem(initialItem);
@@ -74,52 +132,68 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
   }
 
   const handleSearch = async (text: string, isBlur = false) => {
-    if (!text.trim()) {
-      onSelectId(null);
-      onSelectItem?.(null);
-      setSelectedItem(null);
-      setSearchText("");
-      setSelectedLabel("");
-      if (!isBlur) {
-        setIsOpen(true);
-      }
-      return;
-    }
-    if (isBlur && selectedLabel === text) return;
+    // Enter and blur may invoke this function concurrently. Serialize the
+    // complete lookup/selection flow so a second request cannot open another
+    // selector or apply a stale result.
+    if (searchInFlightRef.current) return;
+    searchInFlightRef.current = true;
 
     try {
-      const textTrimmed = text.trim();
-      const numericId = parseInt(textTrimmed, 10);
-      if (!isNaN(numericId) && /^\d+$/.test(textTrimmed)) {
-        try {
-          const matched = await fetchById(numericId as TId);
-          if (matched) {
-            applySelection(matched, isBlur);
-            return;
-          }
-        } catch {}
-      }
-
-      const listRes = await fetchList(text);
-      if (listRes?.itens && listRes.itens.length === 1) {
-        const matched = await fetchById(getId(listRes.itens[0]));
-        if (matched) {
-          applySelection(listRes.itens[0], isBlur);
+      if (!text.trim()) {
+        if (!isBlur) {
+          // Enter (or the search button) opens the selector. It must not clear
+          // the field first: clearing here sends `null` to the parent form and
+          // runs its required-field validator before the user has selected
+          // anything. An explicit clear is still handled on blur below.
+          await openSelection();
           return;
         }
-      }
 
-      if (isBlur) {
-        setSearchText(selectedLabel);
-      } else {
-        setIsOpen(true);
+        onSelectId(null);
+        onSelectItem?.(null);
+        setSelectedItem(null);
+        setSearchText("");
+        setSelectedLabel("");
+        return;
       }
-    } catch {
-      if (isBlur) {
-        setSearchText(selectedLabel);
-      } else {
-        setIsOpen(true);
+      if (isBlur && selectedLabel === text) return;
+
+      try {
+        const textTrimmed = text.trim();
+        const numericId = parseInt(textTrimmed, 10);
+        if (!isNaN(numericId) && /^\d+$/.test(textTrimmed)) {
+          try {
+            const matched = await fetchById(numericId as TId);
+            if (matched) {
+              await applySelection(matched, isBlur);
+              return;
+            }
+          } catch {}
+        }
+
+        const listRes = await fetchList(text);
+        if (listRes?.itens && listRes.itens.length === 1) {
+          const matched = await fetchById(getId(listRes.itens[0]));
+          if (matched) {
+            await applySelection(listRes.itens[0], isBlur);
+            return;
+          }
+        }
+
+        if (isBlur) {
+          setSearchText(selectedLabel);
+        } else {
+          await openSelection();
+        }
+      } catch {
+        if (isBlur) {
+          setSearchText(selectedLabel);
+        } else {
+          await openSelection();
+        }
       }
+    } finally {
+      searchInFlightRef.current = false;
     }
   };
 
@@ -134,12 +208,7 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
       setSearchText(newLabel);
       setSelectedLabel(newLabel);
     }
-    setIsOpen(false);
-    if (!isBlur) {
-      setTimeout(() => {
-        document.getElementById(name)?.focus();
-      }, 100);
-    }
+    if (!isBlur) inputRef.current?.focus();
   };
 
   return (
@@ -158,15 +227,18 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
               if (disabled) return;
               if (e.key === "Enter") {
                 e.preventDefault();
-                handleSearch(searchText);
+                void handleSearch(searchText);
               }
               if (e.altKey && (e.key === "q" || e.key === "Q")) {
                 e.preventDefault();
                 e.stopPropagation();
-                setIsOpen(true);
+                void openSelection();
               }
             }}
             onBlur={() => {
+              // Opening a selector moves focus to its own surface. Do not
+              // interpret that deliberate blur as an explicit field clear.
+              if (openingSelectorRef.current) return;
               if (!disabled && searchText !== selectedLabel) {
                 handleSearch(searchText, true);
               }
@@ -181,7 +253,8 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
             tabIndex={-1}
             disabled={disabled}
             className="text-muted-foreground hover:text-foreground absolute top-1 right-1 h-6 w-6"
-            onClick={() => !disabled && setIsOpen(true)}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => void openSelection()}
           >
             <Search className="size-4" />
           </Button>
@@ -189,26 +262,6 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
         {error && <FieldError>{error}</FieldError>}
       </Field>
 
-      <ListDialog
-        open={isOpen}
-        onOpenChange={(o) => {
-          setIsOpen(o);
-          if (!o) {
-            setTimeout(() => {
-              document.getElementById(name)?.focus();
-            }, 100);
-          }
-        }}
-        title={modalTitle}
-      >
-        {renderFeature({
-          selectionMode: true,
-          onSelect: applySelection,
-          initialSearchTerm: selectedItem
-            ? getSearchTerm(selectedItem)
-            : searchText,
-        })}
-      </ListDialog>
     </>
   );
 }

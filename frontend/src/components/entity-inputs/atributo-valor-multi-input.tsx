@@ -1,28 +1,31 @@
 "use client";
 
-import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { atributosApi } from "@/api/catalogo";
+import { useUi } from "@/ui/imperative";
 import {
   MultiEntityInput,
   MultiEntityItem,
-} from "@/components/ui/multi-entity-input";
+} from "@/ui/composites";
 import { AtributosUpsert } from "@/features/catalogo/atributos/upsert";
+import type { AtributosUpsertProps } from "@/features/catalogo/atributos/upsert";
 import type { SkuAtributoChave } from "@/features/catalogo/atributos/types";
 
 interface AtributoValorMultiInputProps {
   chaveId: number;
   selectedValues: Array<{ id: number; valor: string }>;
   onChange: (newVals: Array<{ id: number; valor: string }>) => void;
+  disabled?: boolean;
 }
 
 export function AtributoValorMultiInput({
   chaveId,
   selectedValues,
   onChange,
+  disabled = false,
 }: AtributoValorMultiInputProps) {
+  const ui = useUi();
   const queryClient = useQueryClient();
-  const [upsertOpen, setUpsertOpen] = useState(false);
 
   const { data: detail, isLoading } = useQuery({
     queryKey: ["atributos", "multi-input-detail", chaveId],
@@ -61,10 +64,7 @@ export function AtributoValorMultiInput({
 
     const payload = {
       chave: detail.chave,
-      valores: [
-        ...detail.skuAtributosValores.map((v) => v.valor),
-        trimmed,
-      ],
+      valores: [...detail.skuAtributosValores.map((v) => v.valor), trimmed],
     };
 
     try {
@@ -101,37 +101,68 @@ export function AtributoValorMultiInput({
       }
     : null;
 
-  return (
-    <>
-      <MultiEntityInput
-        name={`atributo-valores-${chaveId}`}
-        label="Valores Selecionados"
-        placeholder="Buscar valor..."
-        selectedItems={selectedItems}
-        availableItems={availableItems}
-        onChange={handleChange}
-        onCreateOption={handleCreateValue}
-        loading={isLoading}
-        onEditEntity={() => setUpsertOpen(true)}
-        editLabel="Editar Atributo"
-      />
+  const handleEditEntity = async () => {
+    if (!editingResumo) return;
 
-      {upsertOpen && (
-        <AtributosUpsert
-          open={upsertOpen}
-          editingItem={editingResumo}
-          onClose={() => setUpsertOpen(false)}
-          onSuccess={() => {
-            queryClient.invalidateQueries({
-              queryKey: ["atributos", "multi-input-detail", chaveId],
-            });
-            queryClient.invalidateQueries({
-              queryKey: ["atributos", "selector-detail", chaveId],
-            });
-            setUpsertOpen(false);
-          }}
-        />
-      )}
-    </>
+    const result = await ui.windows.open<true, AtributosUpsertProps>({
+      component: AtributosUpsert,
+      props: { editingItem: editingResumo },
+      title: "Editar Atributo",
+    });
+
+    if (result.status !== "confirmed") return;
+
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: ["atributos", "multi-input-detail", chaveId],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ["atributos", "selector-detail", chaveId],
+      }),
+    ]);
+
+    const refreshedDetail = queryClient.getQueryData<SkuAtributoChave>([
+      "atributos",
+      "multi-input-detail",
+      chaveId,
+    ]);
+    if (!refreshedDetail) return;
+
+    const valuesById = new Map(
+      refreshedDetail.skuAtributosValores.map((value) => [value.id, value]),
+    );
+    const refreshedSelection = selectedValues.flatMap((value) => {
+      const refreshedValue = valuesById.get(value.id);
+      return refreshedValue
+        ? [{ id: refreshedValue.id, valor: refreshedValue.valor }]
+        : [];
+    });
+
+    if (
+      refreshedSelection.length !== selectedValues.length ||
+      refreshedSelection.some(
+        (value, index) =>
+          value.id !== selectedValues[index]?.id ||
+          value.valor !== selectedValues[index]?.valor,
+      )
+    ) {
+      onChange(refreshedSelection);
+    }
+  };
+
+  return (
+    <MultiEntityInput
+      name={`atributo-valores-${chaveId}`}
+      label="Valores Selecionados"
+      placeholder="Buscar valor..."
+      selectedItems={selectedItems}
+      availableItems={availableItems}
+      onChange={handleChange}
+      onCreateOption={handleCreateValue}
+      loading={isLoading}
+      onEditEntity={() => void handleEditEntity()}
+      editLabel="Editar Atributo"
+      disabled={disabled}
+    />
   );
 }

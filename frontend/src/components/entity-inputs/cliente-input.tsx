@@ -1,9 +1,10 @@
 "use client";
 import React from "react";
-import { EntityInput } from "@/components/ui/entity-input";
+import { EntityInput } from "@/ui/composites";
 import { ClientesFeature } from "@/features/parceiros/clientes";
 import { Cliente } from "@/features/parceiros/clientes/types";
 import { clientesApi } from "@/api/parceiros";
+import { Users } from "lucide-react";
 
 interface ClienteInputProps {
   name: string;
@@ -33,6 +34,7 @@ export function ClienteInput({
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
       modalTitle="Selecionar Cliente"
+      icon={<Users />}
       getDisplayLabel={(item) => item?.nomeRazaoSocial ?? ""}
       getSearchTerm={(item) => item.nomeRazaoSocial}
       getId={(item) => item.id}

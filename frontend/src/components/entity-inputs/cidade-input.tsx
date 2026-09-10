@@ -1,6 +1,6 @@
 "use client"
 import React from "react"
-import { EntityInput } from "@/components/ui/entity-input"
+import { EntityInput } from "@/ui/composites"
 import {
   CidadesFeature,
   Cidade,
@@ -11,6 +11,7 @@ interface CidadeInputProps {
   name: string
   label?: string
   error?: string
+  disabled?: boolean
   initialItem?: Cidade | null
   onSelectId: (id: number | null) => void
   onSelectItem?: (item: Cidade | null) => void
@@ -20,6 +21,7 @@ export function CidadeInput({
   name,
   label = "Cidade",
   error,
+  disabled = false,
   initialItem,
   onSelectId,
   onSelectItem,
@@ -29,6 +31,7 @@ export function CidadeInput({
       name={name}
       label={label}
       error={error}
+      disabled={disabled}
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}

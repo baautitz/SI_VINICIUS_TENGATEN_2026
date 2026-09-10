@@ -1,6 +1,6 @@
 "use client";
 
-import { EntityInput } from "@/components/ui/entity-input";
+import { EntityInput } from "@/ui/composites";
 import { MetodosFeature } from "@/features/financeiro/metodos";
 import { metodosApi } from "@/api/financeiro";
 import { MetodoPagamento } from "@/features/financeiro/metodos/types";

@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { EntityInput } from "@/components/ui/entity-input";
+import { EntityInput } from "@/ui/composites";
 import { FornecedoresFeature } from "@/features/parceiros/fornecedores";
 import { Fornecedor } from "@/features/parceiros/fornecedores/types";
 import { fornecedoresApi } from "@/api/parceiros";

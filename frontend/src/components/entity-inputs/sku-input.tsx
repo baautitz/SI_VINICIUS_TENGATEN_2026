@@ -1,26 +1,20 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ListDialog } from "@/components/ui/list-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { Button } from "@/ui/primitives";
+import { Input } from "@/ui/primitives";
+import { Field, FieldLabel, FieldError } from "@/ui/primitives";
 import { skusApi } from "@/api/catalogo";
-import { toast } from "sonner";
 import { SkusFeature } from "@/features/catalogo/skus";
 import { Sku } from "@/features/catalogo/skus/types";
-import { NumberInput } from "@/components/ui/number-input";
-
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { NumberInput } from "@/ui/composites";
+import { Kbd, KbdGroup } from "@/ui/primitives";
+import {
+  useWindow,
+  useWindowCommands,
+  useUi,
+} from "@/ui/imperative";
 
 interface SkuInputProps {
   name: string;
@@ -29,6 +23,118 @@ interface SkuInputProps {
   initialSku?: string | null;
   onSelectSku: (sku: Sku | null, quantidade?: number) => void;
   disabled?: boolean;
+}
+
+interface SkuSelectionWindowProps {
+  initialSearchTerm?: string;
+}
+
+interface QuantityWindowProps {
+  sku: Sku;
+}
+
+/** Janela imperativa de seleção: a seleção resolve a Promise da receita chamadora. */
+function SkuSelectionWindow({
+  initialSearchTerm = "",
+}: SkuSelectionWindowProps) {
+  const activeWindow = useWindow<Sku>();
+  const ui = useUi();
+
+  const handleSelect = async (sku: Sku) => {
+    if (!sku.ativo) {
+      ui.feedback.notify({
+        type: "error",
+        title: "Este SKU está inativo.",
+      });
+      return;
+    }
+
+    activeWindow.resolve(sku);
+  };
+
+  return (
+    <div className="flex h-full min-h-0 flex-col p-4">
+      <SkusFeature
+        selectionMode
+        onSelect={handleSelect}
+        initialSearchTerm={initialSearchTerm}
+      />
+    </div>
+  );
+}
+
+/** Janela imperativa para informar a quantidade de um SKU selecionado. */
+function QuantityWindow({ sku }: QuantityWindowProps) {
+  const activeWindow = useWindow<number>();
+  const ui = useUi();
+  const [quantity, setQuantity] = useState(1);
+  const allowsDecimals = sku.produto?.unidadeMedida?.permiteDecimais ?? false;
+
+  useEffect(() => {
+    activeWindow.setDirty(quantity !== 1);
+  }, [activeWindow, quantity]);
+
+  const confirm = async () => {
+    if (Number.isNaN(quantity) || quantity <= 0) {
+      ui.feedback.notify({
+        type: "error",
+        title: "Quantidade deve ser maior que zero.",
+      });
+      return;
+    }
+
+    activeWindow.resolve(quantity);
+  };
+
+  const cancel = async () => {
+    activeWindow.dismiss("cancel");
+  };
+
+  useWindowCommands([
+    {
+      id: "sku.quantity.confirm",
+      hotkey: "Alt+Enter",
+      label: "Confirmar quantidade",
+      run: confirm,
+    },
+  ]);
+
+  const handleQuantityKeyDown = async (
+    event: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (event.key === "Enter" && !event.altKey) {
+      event.preventDefault();
+      await confirm();
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="py-2">
+        <FieldLabel htmlFor="qty-input">Quantidade a adicionar</FieldLabel>
+        <NumberInput
+          id="qty-input"
+          autoFocus
+          className="mt-1.5"
+          value={quantity}
+          decimals={allowsDecimals ? 4 : 0}
+          onNumberChange={setQuantity}
+          onKeyDown={handleQuantityKeyDown}
+        />
+      </div>
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" type="button" onClick={cancel}>
+          Cancelar <Kbd>Esc</Kbd>
+        </Button>
+        <Button type="button" onClick={confirm}>
+          Confirmar
+          <KbdGroup className="ml-2">
+            <Kbd>Enter</Kbd>
+          </KbdGroup>
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 export const SkuInput = ({
@@ -40,41 +146,26 @@ export const SkuInput = ({
   disabled = false,
   ref,
 }: SkuInputProps & { ref?: React.Ref<HTMLInputElement> }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const ui = useUi();
   const [skuText, setSkuText] = useState(initialSku ?? "");
   const [selectedSku, setSelectedSku] = useState<string | null>(initialSku);
-  const [initialSearchTerm, setInitialSearchTerm] = useState("");
   const internalRef = useRef<HTMLInputElement>(null);
+  const interactionInFlightRef = useRef(false);
+  const selectorOpeningRef = useRef(false);
 
   const setRefs = React.useCallback(
-    (el: HTMLInputElement | null) => {
-      internalRef.current = el;
+    (element: HTMLInputElement | null) => {
+      internalRef.current = element;
       if (ref) {
         if (typeof ref === "function") {
-          ref(el);
+          ref(element);
         } else {
-          (ref as React.RefObject<HTMLInputElement | null>).current = el;
+          (ref as React.RefObject<HTMLInputElement | null>).current = element;
         }
       }
     },
     [ref],
   );
-
-  const [quantityModalItem, setQuantityModalItem] = useState<Sku | null>(
-    null,
-  );
-  const [quantityInput, setQuantityInput] = useState<number>(1);
-
-  const wasOpen = useRef(isOpen);
-
-  React.useEffect(() => {
-    if (wasOpen.current && !isOpen) {
-      setTimeout(() => {
-        internalRef.current?.focus();
-      }, 100);
-    }
-    wasOpen.current = isOpen;
-  }, [isOpen]);
 
   const [prevInitialSku, setPrevInitialSku] = useState(initialSku);
   if (initialSku !== prevInitialSku) {
@@ -83,225 +174,237 @@ export const SkuInput = ({
     setSkuText(initialSku ?? "");
   }
 
-  const handleLookup = async (
-    code: string,
-    qtde: number = 1,
-    refocusAfter = false,
-  ) => {
-    const trimmedCode = code.trim();
-    if (!trimmedCode) {
-      onSelectSku(null);
-      setSelectedSku(null);
-      setSkuText("");
-      return;
-    }
+  const focusInput = () => {
+    internalRef.current?.focus();
+  };
+
+  const openSelector = async (initialSearchTerm = "") => {
+    // A lookup started by Enter can finish at the same time as the blur
+    // lookup. Both paths may ask for the selector, but only one window may be
+    // opened for this input.
+    if (disabled || selectorOpeningRef.current) return null;
+    selectorOpeningRef.current = true;
 
     try {
-      const match = await skusApi.getBySku(trimmedCode);
-      if (match) {
-        if (!match.ativo) {
-          toast.error(`O SKU "${trimmedCode}" está inativo.`);
-          onSelectSku(null);
-          setSelectedSku(null);
-          setSkuText("");
-          if (refocusAfter) {
-            setTimeout(() => {
-              internalRef.current?.focus();
-            }, 50);
-          }
-          return;
-        }
-        onSelectSku(match, qtde);
-        setSelectedSku(match.sku);
-        setSkuText("");
-        if (refocusAfter) {
-          setTimeout(() => {
-            internalRef.current?.focus();
-          }, 50);
-        }
-      } else {
-        onSelectSku(null);
-        setSelectedSku(null);
-        setInitialSearchTerm(trimmedCode);
-        setIsOpen(true);
-      }
-    } catch {
-      onSelectSku(null);
-      setSelectedSku(null);
-      setInitialSearchTerm(trimmedCode);
-      setIsOpen(true);
+      const result = await ui.windows.open<Sku, SkuSelectionWindowProps>({
+        component: SkuSelectionWindow,
+        props: { initialSearchTerm },
+        title: "Selecionar Produto (SKU)",
+        size: "full",
+        chrome: "plain",
+      });
+
+      return result.status === "confirmed" ? result.value : null;
+    } finally {
+      selectorOpeningRef.current = false;
     }
   };
 
-  const selectItemFromList = (item: Sku) => {
-    if (!item.ativo) {
-      toast.error("Este SKU está inativo.");
+  const openQuantity = async (sku: Sku) => {
+    const result = await ui.windows.open<number, QuantityWindowProps>({
+      component: QuantityWindow,
+      props: { sku },
+      title: "Informe a Quantidade",
+      description: `SKU selecionado: ${sku.sku}`,
+      size: "small",
+    });
+
+    return result.status === "confirmed" ? result.value : null;
+  };
+
+  const selectSku = async (sku: Sku) => {
+    if (!sku.ativo) {
+      ui.feedback.notify({
+        type: "error",
+        title: `O SKU "${sku.sku}" está inativo.`,
+      });
       return;
     }
-    setQuantityModalItem(item);
-    setQuantityInput(1);
+
+    const quantity = await openQuantity(sku);
+    if (quantity === null) return;
+
+    onSelectSku(sku, quantity);
+    setSelectedSku(sku.sku);
+    setSkuText("");
+    focusInput();
   };
 
-  const confirmQuantity = () => {
-    if (quantityModalItem) {
-      const qtde = quantityInput;
-      if (!isNaN(qtde) && qtde > 0) {
-        onSelectSku(quantityModalItem, qtde);
-        setSelectedSku(quantityModalItem.sku);
+  const handleLookup = async (
+    code: string,
+    quantity = 1,
+    refocusAfter = false,
+  ) => {
+    // Enter and blur can start the same lookup concurrently. Keep the whole
+    // interaction locked through selector and quantity confirmation so the
+    // blur caused by opening the next window cannot restart it.
+    if (interactionInFlightRef.current) return;
+    interactionInFlightRef.current = true;
+    try {
+      const trimmedCode = code.trim();
+      if (!trimmedCode) {
+        onSelectSku(null);
+        setSelectedSku(null);
         setSkuText("");
-        setIsOpen(false);
-        setQuantityModalItem(null);
-        setTimeout(() => {
-          internalRef.current?.focus();
-        }, 150);
-      } else {
-        toast.error("Quantidade deve ser maior que zero.");
+        return;
       }
+
+      try {
+        const match = await skusApi.getBySku(trimmedCode);
+        if (match) {
+          if (!match.ativo) {
+            ui.feedback.notify({
+              type: "error",
+              title: `O SKU "${trimmedCode}" está inativo.`,
+            });
+            onSelectSku(null);
+            setSelectedSku(null);
+            setSkuText("");
+            if (refocusAfter) focusInput();
+            return;
+          }
+
+          onSelectSku(match, quantity);
+          setSelectedSku(match.sku);
+          setSkuText("");
+          if (refocusAfter) focusInput();
+          return;
+        }
+      } catch (error) {
+        console.error("Erro ao buscar SKU", error);
+      }
+
+      // Opening the selector is not a selection change. Keep the current form
+      // value until the user confirms a SKU, otherwise an Enter used only to
+      // search would write `null` and trigger the parent form validator.
+      const selected = await openSelector(trimmedCode);
+      if (selected) await selectSku(selected);
+    } finally {
+      interactionInFlightRef.current = false;
     }
   };
 
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSkuText(event.target.value);
+  };
+
+  const handleInputKeyDown = async (
+    event: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (event.key !== "Enter" || event.altKey) return;
+    event.preventDefault();
+
+    const text = skuText.trim();
+    if (!text) {
+      if (interactionInFlightRef.current) return;
+      interactionInFlightRef.current = true;
+      try {
+        const selected = await openSelector();
+        if (selected) await selectSku(selected);
+      } finally {
+        interactionInFlightRef.current = false;
+      }
+      return;
+    }
+
+    let quantity = 1;
+    let codeToSearch = text;
+    if (text.includes("*")) {
+      const parts = text.split("*");
+      const parsedQuantity = Number.parseFloat(parts[0]);
+      if (!Number.isNaN(parsedQuantity)) {
+        if (parsedQuantity <= 0) {
+          ui.feedback.notify({
+            type: "error",
+            title: "Quantidade deve ser maior que zero.",
+          });
+          return;
+        }
+        quantity = parsedQuantity;
+        codeToSearch = parts.slice(1).join("*").trim();
+      }
+    }
+
+    await handleLookup(codeToSearch, quantity, true);
+  };
+
+  const handleInputBlur = async () => {
+    if (
+      skuText !== selectedSku &&
+      skuText.trim() &&
+      !skuText.includes("*")
+    ) {
+      await handleLookup(skuText);
+    }
+  };
+
+  const handleSearchClick = async () => {
+    if (interactionInFlightRef.current) return;
+    interactionInFlightRef.current = true;
+    try {
+      const selected = await openSelector();
+      if (selected) await selectSku(selected);
+    } finally {
+      interactionInFlightRef.current = false;
+    }
+  };
+
+  const handleSearchHotkey = async () => {
+    if (document.activeElement !== internalRef.current) return;
+    await handleSearchClick();
+  };
+
+  useWindowCommands([
+    {
+      id: `sku-input.${name}.open-selector`,
+      hotkey: "Alt+K",
+      label: "Abrir seleção de SKU",
+      enabled: !disabled,
+      run: handleSearchHotkey,
+    },
+  ], {
+    scope: `sku-input.${name}`,
+    target: internalRef,
+  });
+
   return (
-    <>
-      <Field data-invalid={!!error}>
-        {label && (
-          <FieldLabel htmlFor={name}>
-            <div className="flex items-center gap-2">
-              {label}
-              <KbdGroup>
-                <Kbd>Alt</Kbd>
-                <Kbd>K</Kbd>
-              </KbdGroup>
-            </div>
-          </FieldLabel>
-        )}
-        <div className="relative w-full">
-          <Input
-            ref={setRefs}
-            id={name}
-            value={skuText}
-            disabled={disabled}
-            onChange={(e) => setSkuText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.altKey) {
-                e.preventDefault();
-                const text = skuText.trim();
-                if (!text) {
-                  setInitialSearchTerm("");
-                  setIsOpen(true);
-                } else {
-                  let qtde = 1;
-                  let codeToSearch = text;
-                  if (text.includes("*")) {
-                    const parts = text.split("*");
-                    const parsedQtde = parseFloat(parts[0]);
-                    if (!isNaN(parsedQtde)) {
-                      if (parsedQtde === 0) {
-                        toast.error("Quantidade deve ser maior que zero.");
-                        return;
-                      }
-                      qtde = parsedQtde;
-                      codeToSearch = parts.slice(1).join("*").trim();
-                    }
-                  }
-                  handleLookup(codeToSearch, qtde, true);
-                }
-              }
-              if (e.altKey && (e.key === "q" || e.key === "Q")) {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsOpen(true);
-              }
-            }}
-            onBlur={() => {
-              if (
-                skuText !== selectedSku &&
-                skuText.trim() &&
-                !skuText.includes("*")
-              ) {
-                handleLookup(skuText);
-              }
-            }}
-            className="pr-10 h-8 text-xs"
-            placeholder="Digite o código SKU e pressione Enter..."
-          />
-          <Button
-            size="icon-xs"
-            variant="ghost"
-            type="button"
-            disabled={disabled}
-            tabIndex={-1}
-            className="absolute right-1 top-1 h-6 w-6 text-muted-foreground hover:text-foreground"
-            onClick={() => {
-              setInitialSearchTerm("");
-              setIsOpen(true);
-            }}
-          >
-            <Search className="size-4" />
-          </Button>
-        </div>
-        {error && <FieldError>{error}</FieldError>}
-      </Field>
-
-      <ListDialog
-        open={isOpen}
-        onOpenChange={(o) => {
-          setIsOpen(o);
-        }}
-        title="Selecionar Produto (SKU)"
-      >
-        <SkusFeature
-          selectionMode
-          onSelect={selectItemFromList}
-          initialSearchTerm={initialSearchTerm}
-        />
-      </ListDialog>
-
-      <Dialog
-        open={!!quantityModalItem}
-        onOpenChange={(o) => {
-          if (!o) setQuantityModalItem(null);
-        }}
-      >
-        <DialogContent className="max-w-[320px]">
-          <DialogHeader>
-            <DialogTitle>Informe a Quantidade</DialogTitle>
-            <DialogDescription>
-              SKU selecionado: <strong>{quantityModalItem?.sku}</strong>
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <FieldLabel htmlFor="qty-input">Quantidade a adicionar</FieldLabel>
-            <NumberInput
-              id="qty-input"
-              autoFocus
-              className="mt-1.5"
-              value={quantityInput}
-              decimals={quantityModalItem?.produto?.unidadeMedida?.permiteDecimais ? 4 : 0}
-              onNumberChange={(num) => setQuantityInput(num)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.altKey) {
-                  e.preventDefault();
-                  confirmQuantity();
-                }
-              }}
-            />
+    <Field data-invalid={!!error}>
+      {label && (
+        <FieldLabel htmlFor={name}>
+          <div className="flex items-center gap-2">
+            {label}
+            <KbdGroup>
+              <Kbd>Alt</Kbd>
+              <Kbd>K</Kbd>
+            </KbdGroup>
           </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setQuantityModalItem(null)}
-            >
-              Cancelar <Kbd>Esc</Kbd>
-            </Button>
-            <Button onClick={confirmQuantity}>
-              Confirmar
-              <KbdGroup className="ml-2">
-                <Kbd>Enter</Kbd>
-              </KbdGroup>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+        </FieldLabel>
+      )}
+      <div className="relative w-full">
+        <Input
+          ref={setRefs}
+          id={name}
+          value={skuText}
+          disabled={disabled}
+          onChange={handleInputChange}
+          onKeyDown={handleInputKeyDown}
+          onBlur={handleInputBlur}
+          className="h-8 pr-10 text-xs"
+          placeholder="Digite o código SKU e pressione Enter..."
+        />
+        <Button
+          size="icon-xs"
+          variant="ghost"
+          type="button"
+          disabled={disabled}
+          tabIndex={-1}
+          className="absolute right-1 top-1 h-6 w-6 text-muted-foreground hover:text-foreground"
+          onClick={handleSearchClick}
+        >
+          <Search className="size-4" />
+        </Button>
+      </div>
+      {error && <FieldError>{error}</FieldError>}
+    </Field>
   );
 };

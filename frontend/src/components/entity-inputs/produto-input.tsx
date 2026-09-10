@@ -1,6 +1,6 @@
 "use client"
 import React from "react"
-import { EntityInput } from "@/components/ui/entity-input"
+import { EntityInput } from "@/ui/composites"
 import { ProdutosFeature, Produto } from "@/features/catalogo/produtos"
 import { produtosApi } from "@/api/catalogo"
 

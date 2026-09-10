@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { EntityInput } from "@/components/ui/entity-input";
+import { EntityInput } from "@/ui/composites";
 import { CondicoesFeature } from "@/features/financeiro/condicoes";
 import { CondicaoPagamento } from "@/features/financeiro/condicoes/types";
 import { condicoesApi } from "@/api/financeiro";
