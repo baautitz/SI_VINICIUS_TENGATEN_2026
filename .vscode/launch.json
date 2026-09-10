@@ -11,7 +11,10 @@
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/Backend/Backend.Web/bin/Debug/net10.0/Backend.Web.dll",
-            "args": [],
+            "args": [
+                "--urls",
+                "http://localhost:8080"
+            ],
             "cwd": "${workspaceFolder}/Backend/Backend.Web",
             "stopAtEntry": false,
             // Enable launching a web browser when ASP.NET Core starts. For more information: https://aka.ms/VSCode-CS-LaunchJson-WebBrowser

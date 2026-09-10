@@ -31,10 +31,16 @@
             "type": "process",
             "args": [
                 "watch",
-                "run",
                 "--project",
-                "${workspaceFolder}/Backend/Backend.Web/Backend.Web.csproj"
+                "${workspaceFolder}/Backend/Backend.Web/Backend.Web.csproj",
+                "--urls",
+                "http://localhost:8080"
             ],
+            "options": {
+                "env": {
+                    "DOTNET_USE_POLLING_FILE_WATCHER": "1"
+                }
+            },
             "problemMatcher": "$msCompile"
         }
     ]
