@@ -1,111 +1,128 @@
 # Projeto Acadêmico
 
-Este repositório contém um projeto acadêmico desenvolvido com o objetivo de praticar conceitos de arquitetura fullstack, integração entre backend e frontend, persistência de dados e orquestração de serviços com Docker.
+Aplicação acadêmica de gestão com backend em .NET, frontend em Next.js e banco de dados PostgreSQL.
 
-A aplicação é composta por:
+## Componentes
 
-- Backend em C# (.NET)
+- Backend em C#/.NET 10
 - Frontend em Next.js
-- Banco de dados PostgreSQL
+- PostgreSQL 17
+- Docker Compose para a stack completa e para o banco usado no desenvolvimento local
 
-Tudo seguindo uma estrutura moderna e organizada, pensada para facilitar o desenvolvimento e a execução local.
+O backend está organizado em três projetos:
 
----
+- `Backend.Core`: regras de negócio, entidades, comandos e validações
+- `Backend.Infrastructure.PostgreSQL`: persistência com Dapper e Npgsql
+- `Backend.Web`: API HTTP e documentação Swagger
 
-## Visão Geral
+## Configuração
 
-O projeto foi idealizado para fins de estudo e experimentação, simulando uma aplicação real com separação clara de responsabilidades entre as camadas.
-
-### Componentes:
-
-- Backend em C# com .NET
-- Frontend em Next.js
-- Banco de dados PostgreSQL
-- Ambiente conteinerizado com Docker
-
----
-
-## Estrutura do Projeto
-
-O sistema segue uma arquitetura desacoplada:
-
-- **Backend**: responsável pela lógica de negócio e exposição da API
-- **Frontend**: responsável pela interface e consumo da API
-- **Banco de Dados**: responsável pela persistência dos dados
-- **Docker**: responsável pela orquestração dos serviços
-
----
-
-## Como Executar o Projeto
-
-### 1. Criar o arquivo de variáveis de ambiente
-
-Na raiz do projeto, crie um arquivo `.env` com base no `.env.example`:
+Crie o arquivo de ambiente na raiz:
 
 ```bash
 cp .env.example .env
 ```
 
-Ajuste as variáveis conforme necessário.
+Ajuste os valores se necessário. `POSTGRES_PORT` define a porta publicada localmente para o PostgreSQL.
 
----
+## Executar a stack completa com Docker
 
-### 2. Subir os serviços
-
-Com o arquivo `.env` configurado, execute:
+O projeto possui um único Compose, em `infrastructure/docker-compose.yaml`:
 
 ```bash
-docker compose --env-file .env -f infrastructure/docker-compose.yaml up
+node infra.js up
 ```
 
-Esse comando irá iniciar:
+Esse comando inicia o PostgreSQL, o backend e o frontend, construindo as imagens quando necessário.
 
-- PostgreSQL
-- Scripts de inicialização do banco
-- Backend
-- Frontend
+Para consultar os serviços e os logs:
 
----
-
-### 3. Acessar a aplicação
-
-Após os containers estarem ativos:
-
-- A aplicação estará disponível nas portas definidas no `.env`
-
----
-
-## Inicialização do Banco de Dados
-
-O banco é provisionado automaticamente durante a inicialização.
-
-Os scripts estão localizados em:
-
-```
-infrastructure/database
+```bash
+node infra.js ps
+node infra.js logs
 ```
 
-Esses scripts são aplicados automaticamente ao subir os containers, sem necessidade de configuração manual.
+Para parar a stack sem remover o volume de dados:
 
----
+```bash
+node infra.js down
+```
 
-## Objetivos Acadêmicos
+Também é possível executar diretamente:
 
-Este projeto foi desenvolvido com foco em aprendizado prático, abordando:
+```bash
+docker compose --env-file .env -f infrastructure/docker-compose.yaml up -d --build
+```
 
-- Estruturação de aplicações modernas
-- Separação de responsabilidades (frontend/backend)
-- Desenvolvimento de APIs com C# e .NET
-- Integração com PostgreSQL
-- Uso de Docker para automação de ambiente
-- Organização baseada em boas práticas
+Após a inicialização:
 
----
+- Frontend: `http://localhost:3000`
+- Backend/Swagger: `http://localhost:8080`
+- PostgreSQL: `localhost:${POSTGRES_PORT}` (por padrão, `localhost:5432`)
 
-## Tecnologias Utilizadas
+Os scripts SQL de `infrastructure/database` são executados automaticamente na primeira inicialização de um volume PostgreSQL vazio.
 
-- C# / .NET
+## Desenvolvimento local
+
+O Compose de desenvolvimento sobe somente o PostgreSQL. Backend e frontend são executados localmente em modo de desenvolvimento pelo `infra.js`.
+
+Para iniciar o banco, o backend com `dotnet watch` e o frontend com `npm run dev`:
+
+```bash
+node infra.js dev:up
+```
+
+O comando usa `infrastructure/docker-compose.dev.yaml`, não constrói as imagens das aplicações e exibe os logs prefixados de `[Backend]` e `[Frontend]`.
+
+O backend usa o watcher por polling no ambiente dev para evitar problemas com o limite de observadores de arquivos do Linux, mantendo o hot reload ativo.
+
+Para encerrar os processos e o banco, use `Ctrl+C` no terminal do `dev:up`. Para parar somente o PostgreSQL:
+
+```bash
+node infra.js dev:down
+```
+
+Também é possível iniciar os serviços manualmente:
+
+```bash
+node infra.js db:up
+```
+
+Em um terminal:
+
+```bash
+dotnet watch \
+  --project Backend/Backend.Web/Backend.Web.csproj \
+  run \
+  --urls http://localhost:8080
+```
+
+Em outro terminal:
+
+```bash
+cd frontend
+PORT=3000 NEXT_PUBLIC_API_URL=http://localhost:8080 npm run dev
+```
+
+No Windows PowerShell, configure as variáveis do frontend antes de executar `npm run dev`:
+
+```powershell
+$env:PORT = "3000"
+$env:NEXT_PUBLIC_API_URL = "http://localhost:8080"
+npm run dev
+```
+
+O `appsettings.Development.json` usa os valores padrão do `.env.example`. Se os valores do `.env` forem alterados, sobrescreva `ConnectionStrings__DefaultConnection` no ambiente do backend.
+
+## Comandos auxiliares
+
+Os aliases `prod:up`, `prod:down` e `prod:<comando>` continuam disponíveis para compatibilidade com o fluxo anterior e usam o Compose principal.
+
+## Tecnologias
+
+- C# / .NET 10
+- ASP.NET Core
 - Next.js
+- React
 - PostgreSQL
-- Docker
-- Docker Compose
+- Docker / Docker Compose
