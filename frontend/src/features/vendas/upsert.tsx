@@ -1,19 +1,18 @@
 "use client";
 
-import { useState, useRef, useMemo, useEffect } from "react";
-import { useForm } from "@tanstack/react-form";
-import { useHotkeys } from "@tanstack/react-hotkeys";
+import { useState, useRef, useMemo, useEffect, useCallback } from "react";
+import { useForm, useStore } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
-import { UpsertDialog } from "@/components/ui/upsert-dialog";
-import { Field, FieldLabel, FieldError } from "@/components/ui/field";
-import { NumberInput } from "@/components/ui/number-input";
-import { DatePicker } from "@/components/ui/date-picker";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/ui/primitives";
+import { Kbd, KbdGroup } from "@/ui/primitives";
+import { Field, FieldLabel, FieldError } from "@/ui/primitives";
+import { NumberInput } from "@/ui/composites";
+import { DatePicker } from "@/ui/composites";
+import { Textarea } from "@/ui/primitives";
+import { Card, CardContent } from "@/ui/primitives";
+import { Separator } from "@/ui/primitives";
+import { Alert, AlertDescription } from "@/ui/primitives";
 import {
   Table,
   TableHeader,
@@ -21,17 +20,8 @@ import {
   TableRow,
   TableHead,
   TableCell,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "@/ui/primitives";
+import { ScrollArea } from "@/ui/primitives";
 import { ClienteInput } from "@/components/entity-inputs/cliente-input";
 import { EmitenteInput } from "@/components/entity-inputs/emitente-input";
 import { CondicaoPagamentoInput } from "@/components/entity-inputs/condicao-pagamento-input";
@@ -40,7 +30,6 @@ import {
   useUpsertMutation,
   type BackendResult,
 } from "@/hooks/use-upsert-mutation";
-import { type UseMutationResult } from "@tanstack/react-query";
 import { vendasApi } from "@/api/vendas";
 import { getFullSkuName, Sku } from "@/features/catalogo/skus/types";
 import { Cliente } from "@/features/parceiros/clientes/types";
@@ -52,26 +41,135 @@ import {
   type VendaItem,
   type VendaFormValues,
 } from "./types";
-import { Trash2, Landmark, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
+import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
+import { Spinner } from "@/ui/primitives";
 
-interface VendasUpsertProps {
-  open: boolean;
+export interface VendasUpsertProps {
   editingItem: Venda | null;
-  loading?: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
   readOnly?: boolean;
 }
 
 export function VendasUpsertForm({
-  open,
   editingItem,
-  loading = false,
-  onClose,
-  onSuccess,
   readOnly = false,
 }: VendasUpsertProps) {
+  const { data: fullItem, isLoading } = useQuery({
+    queryKey: ["vendas", "detail", editingItem?.id],
+    queryFn: () => vendasApi.getById(editingItem!.id),
+    enabled: !!editingItem,
+  });
+
+  if (editingItem && isLoading) {
+    return <div className="flex min-h-48 items-center justify-center"><Spinner className="size-6" /></div>;
+  }
+
+  return <VendasFormBody editingItem={fullItem ?? editingItem} readOnly={readOnly} />;
+}
+
+interface VendasFormBodyProps {
+  editingItem: Venda | null;
+  readOnly: boolean;
+}
+
+export interface VendasCheckoutProps {
+  totalItensCount: number;
+  subtotalGross: number;
+  totalDiscount: number;
+  totalNet: number;
+  initialCondicao: CondicaoPagamento | null;
+  initialObservacao: string;
+}
+
+export interface VendasCheckoutResult {
+  condicao: CondicaoPagamento;
+  observacao: string;
+}
+
+function VendasCheckout({
+  totalItensCount,
+  subtotalGross,
+  totalDiscount,
+  totalNet,
+  initialCondicao,
+  initialObservacao,
+}: VendasCheckoutProps) {
+  const activeWindow = useWindow<VendasCheckoutResult>();
+  const [condicao, setCondicao] = useState<CondicaoPagamento | null>(initialCondicao);
+  const [observacao, setObservacao] = useState(initialObservacao);
+
+  const finish = useCallback(() => {
+    if (!condicao) return;
+    activeWindow.resolve({ condicao, observacao });
+  }, [activeWindow, condicao, observacao]);
+
+  useWindowCommands(
+    useMemo(
+      () => [{
+        id: "vendas.checkout.confirm",
+        hotkey: "Alt+Enter" as const,
+        label: "Finalizar venda",
+        enabled: !!condicao,
+        run: (event: KeyboardEvent) => {
+          event.preventDefault();
+          finish();
+        },
+      }],
+      [condicao, finish],
+    ),
+  );
+
+  useEffect(() => {
+    activeWindow.setDirty(!!condicao || observacao.length > 0);
+    return () => activeWindow.setDirty(false);
+  }, [activeWindow, condicao, observacao]);
+
+  return (
+    <div className="flex flex-col gap-5 py-2">
+      <div className="flex flex-col gap-2.5 rounded-lg border p-4">
+        <div className="flex items-center justify-between"><span className="text-muted-foreground font-medium">Itens no Carrinho:</span><span className="font-semibold">{totalItensCount}</span></div>
+        <div className="flex items-center justify-between"><span className="text-muted-foreground font-medium">Subtotal</span><span className="font-semibold">{formatCurrency(subtotalGross)}</span></div>
+        <div className="flex items-center justify-between text-red-500"><span className="font-medium">Descontos:</span><span className="font-bold">-{formatCurrency(totalDiscount)}</span></div>
+        <Separator />
+        <div className="flex items-center justify-between font-bold text-emerald-600"><span>Total:</span><span className="text-lg">{formatCurrency(totalNet)}</span></div>
+      </div>
+      <div className="w-full">
+        <CondicaoPagamentoInput
+          name="checkoutCondicaoId"
+          label="Método de Pagamento"
+          initialItem={condicao}
+          onSelectItem={setCondicao}
+          onSelectId={() => {}}
+          error={!condicao ? "Selecione o método/condição de pagamento." : undefined}
+        />
+      </div>
+      <div className="w-full">
+        <Field>
+          <FieldLabel htmlFor="venda-checkout-observacao">Observação da Venda</FieldLabel>
+          <Textarea
+            id="venda-checkout-observacao"
+            value={observacao}
+            onChange={(event) => setObservacao(event.target.value)}
+            placeholder="Informações adicionais da venda..."
+            rows={2}
+          />
+        </Field>
+      </div>
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>Voltar <Kbd>Esc</Kbd></Button>
+        <Button type="button" onClick={finish} disabled={!condicao}>Concluir <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup></Button>
+      </div>
+    </div>
+  );
+}
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+}
+
+function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
+  const activeWindow = useWindow<true>();
+  const ui = useUi();
   const {
     mutation,
     globalError,
@@ -102,61 +200,8 @@ export function VendasUpsertForm({
       return await vendasApi.create(payload);
     },
     queryKey: ["vendas"],
-    onSuccessCallback: onSuccess,
-    onClose: onClose,
+    onSuccessCallback: () => activeWindow.resolve(true),
   });
-
-  if (loading) {
-    return (
-      <Dialog
-        open={open}
-        onOpenChange={(o) => {
-          if (!o) onClose();
-        }}
-      >
-        <DialogContent className="flex h-[70vh] max-w-4xl flex-col items-center justify-center">
-          <DialogTitle className="sr-only">Carregando Venda</DialogTitle>
-          <DialogDescription className="sr-only">
-            Carregando formulário de venda. Aguarde por favor.
-          </DialogDescription>
-          <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  return (
-    <VendasFormBody
-      open={open}
-      editingItem={editingItem}
-      readOnly={readOnly}
-      mutation={mutation}
-      globalError={globalError}
-      originalGetFieldError={originalGetFieldError}
-      resetErrors={resetErrors}
-      onClose={onClose}
-    />
-  );
-}
-
-interface VendasFormBodyProps {
-  open: boolean;
-  editingItem: Venda | null;
-  readOnly: boolean;
-  mutation: UseMutationResult<
-    BackendResult<Venda>,
-    unknown,
-    VendaFormValues,
-    unknown
-  >;
-  globalError: string | null;
-  originalGetFieldError: (
-    name: string,
-    errors: unknown[],
-  ) => string | undefined;
-  resetErrors: () => void;
-  onClose: () => void;
-}
 
 interface ParcelaPreview {
   numeroParcela: number;
@@ -164,16 +209,6 @@ interface ParcelaPreview {
   valorParcela: number;
 }
 
-function VendasFormBody({
-  open,
-  editingItem,
-  readOnly,
-  mutation,
-  globalError,
-  originalGetFieldError,
-  resetErrors,
-  onClose,
-}: VendasFormBodyProps) {
   const [itens, setItens] = useState<VendaItem[]>(() => {
     if (!editingItem || !editingItem.itens) return [];
     return editingItem.itens.map((i) => {
@@ -206,13 +241,8 @@ function VendasFormBody({
   const [emitente, setEmitente] = useState<Emitente | null>(
     editingItem?.emitente ?? null,
   );
-  const [condicao, setCondicao] = useState<CondicaoPagamento | null>(null);
   const [localErrors, setLocalErrors] = useState<Record<string, string>>({});
   const [skuInputKey, setSkuInputKey] = useState(0);
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [itemToRemoveIndex, setItemToRemoveIndex] = useState<number | null>(
-    null,
-  );
 
   const [dataVenda, setDataVenda] = useState(() =>
     editingItem?.dataVenda
@@ -220,8 +250,7 @@ function VendasFormBody({
       : new Date().toISOString().split("T")[0],
   );
 
-  const skuContainerRef = useRef<HTMLDivElement>(null);
-  const condicaoContainerRef = useRef<HTMLDivElement>(null);
+  const skuInputRef = useRef<HTMLInputElement>(null);
 
   const totalItensCount = itens.reduce((sum, i) => sum + i.quantidade, 0);
   const subtotalGross = itens.reduce(
@@ -232,57 +261,6 @@ function VendasFormBody({
   const totalNet = Math.max(0, subtotalGross - totalDiscount);
 
   const activeEmitente = emitente;
-
-  const parcelas = useMemo<ParcelaPreview[]>(() => {
-    if (!condicao || totalNet <= 0) {
-      return [];
-    }
-
-    const baseDate = dataVenda ? new Date(dataVenda + "T12:00:00") : new Date();
-    const sugeridas: ParcelaPreview[] = [];
-    let count = 1;
-
-    const entradaPercent = condicao.entradaMinimaPercentual ?? 0;
-    if (entradaPercent > 0) {
-      const valEntrada = parseFloat(
-        (totalNet * (entradaPercent / 100)).toFixed(2),
-      );
-      sugeridas.push({
-        numeroParcela: count++,
-        dataVencimento: baseDate.toISOString().split("T")[0],
-        valorParcela: valEntrada,
-      });
-    }
-
-    const items = condicao.condicoesPagamentosParcelas || [];
-    items.forEach((it) => {
-      const venc = new Date(baseDate);
-      venc.setDate(baseDate.getDate() + it.prazoDias);
-      const valParcela = parseFloat(
-        (totalNet * (it.percentual / 100)).toFixed(2),
-      );
-      sugeridas.push({
-        numeroParcela: count++,
-        dataVencimento: venc.toISOString().split("T")[0],
-        valorParcela: valParcela,
-      });
-    });
-
-    if (sugeridas.length > 0) {
-      const totalSugerido = sugeridas.reduce(
-        (sum, p) => sum + p.valorParcela,
-        0,
-      );
-      const diff = totalNet - totalSugerido;
-      if (Math.abs(diff) > 0.001) {
-        sugeridas[sugeridas.length - 1].valorParcela = parseFloat(
-          (sugeridas[sugeridas.length - 1].valorParcela + diff).toFixed(2),
-        );
-      }
-    }
-
-    return sugeridas;
-  }, [condicao, totalNet, dataVenda]);
 
   const form = useForm({
     defaultValues: {
@@ -308,7 +286,7 @@ function VendasFormBody({
         return;
       }
       if (itens.length === 0) {
-        toast.error("A venda deve conter ao menos um item.");
+        ui.feedback.notify({ type: "error", title: "A venda deve conter ao menos um item." });
         return;
       }
 
@@ -316,9 +294,7 @@ function VendasFormBody({
       itens.forEach((item) => {
         if (item.quantidade <= 0) {
           hasInvalidQty = true;
-          toast.error(
-            `Quantidade do SKU "${item.sku}" deve ser maior que zero.`,
-          );
+          ui.feedback.notify({ type: "error", title: `Quantidade do SKU "${item.sku}" deve ser maior que zero.` });
         }
       });
       if (hasInvalidQty) return;
@@ -327,30 +303,38 @@ function VendasFormBody({
       itens.forEach((item) => {
         if (item.quantidade > item.estoqueAtual) {
           hasStockShortage = true;
-          toast.error(`Estoque insuficiente para o SKU "${item.sku}".`);
+          ui.feedback.notify({ type: "error", title: `Estoque insuficiente para o SKU "${item.sku}".` });
         }
       });
       if (hasStockShortage) return;
 
-      setIsCheckoutOpen(true);
+      const checkout = await ui.windows.open<VendasCheckoutResult, VendasCheckoutProps>({
+        component: VendasCheckout,
+        props: {
+          totalItensCount,
+          subtotalGross,
+          totalDiscount,
+          totalNet,
+          initialCondicao: null,
+          initialObservacao: form.getFieldValue("observacao") || "",
+        },
+        title: "Finalizar Venda",
+        size: "medium",
+      });
+      if (checkout.status === "confirmed") await handleFinalSubmit(checkout.value);
     },
   });
 
-  const handleFinalSubmit = () => {
+  const handleFinalSubmit = async (checkout: VendasCheckoutResult) => {
     resetErrors();
     setLocalErrors({});
-
-    if (!condicao) {
-      toast.error("Selecione o método/condição de pagamento para finalizar.");
-      return;
-    }
 
     const payload = {
       dataVenda: dataVenda,
       clienteId: cliente?.id ?? 0,
       emitenteId: activeEmitente?.id ?? 0,
       observacao: form.getFieldValue("observacao") || "",
-      condicaoPagamentoId: condicao.id,
+      condicaoPagamentoId: checkout.condicao.id,
       itens: itens.map((i) => ({
         sku: i.sku,
         quantidade: i.quantidade,
@@ -363,60 +347,52 @@ function VendasFormBody({
         permiteDecimais: i.permiteDecimais,
         estoqueAtual: i.estoqueAtual,
       })),
-      parcelas: parcelas,
+      parcelas: buildParcelas(checkout.condicao),
     };
 
     const validationResult = vendaSchema.safeParse(payload);
     if (!validationResult.success) {
       validationResult.error.errors.forEach((err) => {
-        toast.error(err.message);
+        ui.feedback.notify({ type: "error", title: err.message });
       });
       return;
     }
 
-    mutation.mutate(payload as VendaFormValues, {
-      onSuccess: () => {
-        setIsCheckoutOpen(false);
-        onClose();
-      },
+    await mutation.mutateAsync({
+      ...(payload as VendaFormValues),
+      observacao: checkout.observacao,
     });
   };
 
-  useHotkeys(
-    [
+  const commands = [
       {
-        hotkey: "Alt+K",
-        callback: (e) => {
-          e.preventDefault();
-          skuContainerRef.current?.querySelector("input")?.focus();
-        },
-        options: { enabled: !readOnly, ignoreInputs: false },
-      },
-      {
-        hotkey: "Alt+Enter",
-        callback: (e) => {
-          e.preventDefault();
-          confirmRemoveItem();
-        },
-        options: {
-          enabled: itemToRemoveIndex !== null,
-          ignoreInputs: false,
+        id: "vendas.focus-sku",
+        hotkey: "Alt+K" as const,
+        label: "Adicionar SKU",
+        enabled: !readOnly,
+        run: (event: KeyboardEvent) => {
+          event.preventDefault();
+          skuInputRef.current?.focus();
         },
       },
       {
-        hotkey: "Alt+Enter",
-        callback: (e) => {
-          e.preventDefault();
-          handleFinalSubmit();
-        },
-        options: {
-          enabled: isCheckoutOpen && !mutation.isPending && !!condicao,
-          ignoreInputs: false,
+        id: "vendas.submit",
+        hotkey: "Alt+Enter" as const,
+        label: "Avançar para finalização",
+        enabled: !readOnly && !mutation.isPending,
+        run: (event: KeyboardEvent) => {
+          event.preventDefault();
+          void form.handleSubmit();
         },
       },
-    ],
-    { conflictBehavior: "allow" },
-  );
+  ];
+  useWindowCommands(commands);
+
+  const isDirty = useStore(form.store, (state) => state.isDirty);
+  useEffect(() => {
+    activeWindow.setDirty(isDirty || itens.length > 0);
+    return () => activeWindow.setDirty(false);
+  }, [activeWindow, isDirty, itens.length]);
 
   const getFieldError = (name: string, formErrors: unknown[]) => {
     return localErrors[name] || originalGetFieldError(name, formErrors);
@@ -429,7 +405,7 @@ function VendasFormBody({
 
     if (existingIndex === -1) {
       if (qtdeAdicionada <= 0) {
-        toast.error("Produto não está no carrinho para ser decrementado.");
+        ui.feedback.notify({ type: "error", title: "Produto não está no carrinho para ser decrementado." });
         return;
       }
 
@@ -437,11 +413,7 @@ function VendasFormBody({
       const gross = qtdeAdicionada * priceVal;
 
       if (qtdeAdicionada > skuRes.estoque) {
-        toast.error(
-          `Estoque insuficiente para o SKU "${skuRes.sku}". Disponível: ${skuRes.estoque.toFixed(
-            skuRes.produto?.unidadeMedida?.permiteDecimais ? 4 : 0,
-          )}.`,
-        );
+        ui.feedback.notify({ type: "error", title: `Estoque insuficiente para o SKU "${skuRes.sku}". Disponível: ${skuRes.estoque.toFixed(skuRes.produto?.unidadeMedida?.permiteDecimais ? 4 : 0)}.` });
         return;
       }
 
@@ -461,22 +433,18 @@ function VendasFormBody({
           estoqueAtual: Number(skuRes.estoque),
         },
       ]);
-      toast.success(`SKU "${skuRes.sku}" adicionado com sucesso.`);
+      ui.feedback.notify({ type: "success", title: `SKU "${skuRes.sku}" adicionado com sucesso.` });
     } else {
       const currentQty = itens[existingIndex].quantidade;
       const newQty = currentQty + qtdeAdicionada;
 
       if (newQty <= 0) {
-        setItemToRemoveIndex(existingIndex);
+        void handleRemoveItem(existingIndex);
         return;
       }
 
       if (newQty > skuRes.estoque) {
-        toast.error(
-          `Estoque insuficiente para o SKU "${skuRes.sku}". Disponível: ${skuRes.estoque.toFixed(
-            skuRes.produto?.unidadeMedida?.permiteDecimais ? 4 : 0,
-          )}.`,
-        );
+        ui.feedback.notify({ type: "error", title: `Estoque insuficiente para o SKU "${skuRes.sku}". Disponível: ${skuRes.estoque.toFixed(skuRes.produto?.unidadeMedida?.permiteDecimais ? 4 : 0)}.` });
         return;
       }
 
@@ -489,31 +457,26 @@ function VendasFormBody({
       setItens(updated);
 
       const acao = qtdeAdicionada >= 0 ? "alterada" : "decrementada";
-      toast.success(
-        `Quantidade do SKU "${skuRes.sku}" ${acao} para ${newQty}.`,
-      );
+      ui.feedback.notify({ type: "success", title: `Quantidade do SKU "${skuRes.sku}" ${acao} para ${newQty}.` });
     }
 
     setSkuInputKey((prev) => prev + 1);
-    setTimeout(() => {
-      skuContainerRef.current?.querySelector("input")?.focus();
-    }, 50);
+    skuInputRef.current?.focus();
   };
 
-  const handleRemoveItem = (index: number) => {
+  const handleRemoveItem = async (index: number) => {
     if (readOnly) return;
-    setItemToRemoveIndex(index);
-  };
-
-  const confirmRemoveItem = () => {
-    if (itemToRemoveIndex !== null) {
-      const itemToRemove = itens[itemToRemoveIndex];
-      setItens(itens.filter((_, i) => i !== itemToRemoveIndex));
-      if (itemToRemove) {
-        toast.info(`SKU "${itemToRemove.sku}" removido.`);
-      }
-      setItemToRemoveIndex(null);
-    }
+    const itemToRemove = itens[index];
+    if (!itemToRemove) return;
+    const result = await ui.windows.confirm({
+      title: "Remover Item?",
+      description: `Deseja realmente remover o SKU ${itemToRemove.sku} desta venda?`,
+      confirmLabel: "Remover Item",
+      confirmVariant: "destructive",
+    });
+    if (!result) return;
+    setItens(itens.filter((_, i) => i !== index));
+    ui.feedback.notify({ type: "info", title: `SKU "${itemToRemove.sku}" removido.` });
   };
 
   const updateItemRow = (
@@ -559,54 +522,48 @@ function VendasFormBody({
     setItens(updated);
   };
 
-  useEffect(() => {
-    if (isCheckoutOpen) {
-      setTimeout(() => {
-        condicaoContainerRef.current?.querySelector("input")?.focus();
-      }, 100);
+  const buildParcelas = (payment: CondicaoPagamento): ParcelaPreview[] => {
+    if (totalNet <= 0) return [];
+    const baseDate = dataVenda ? new Date(dataVenda + "T12:00:00") : new Date();
+    const result: ParcelaPreview[] = [];
+    let count = 1;
+    const entradaPercent = payment.entradaMinimaPercentual ?? 0;
+    if (entradaPercent > 0) {
+      result.push({ numeroParcela: count++, dataVencimento: baseDate.toISOString().split("T")[0], valorParcela: parseFloat((totalNet * (entradaPercent / 100)).toFixed(2)) });
     }
-  }, [isCheckoutOpen]);
-
-
-  const isEditMode = !!editingItem;
+    (payment.condicoesPagamentosParcelas || []).forEach((item) => {
+      const venc = new Date(baseDate);
+      venc.setDate(baseDate.getDate() + item.prazoDias);
+      result.push({ numeroParcela: count++, dataVencimento: venc.toISOString().split("T")[0], valorParcela: parseFloat((totalNet * (item.percentual / 100)).toFixed(2)) });
+    });
+    if (result.length) {
+      const difference = totalNet - result.reduce((sum, item) => sum + item.valorParcela, 0);
+      result[result.length - 1].valorParcela = parseFloat((result[result.length - 1].valorParcela + difference).toFixed(2));
+    }
+    return result;
+  };
 
   return (
-    <UpsertDialog
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) onClose();
-      }}
-      isEdit={isEditMode}
-      title={isEditMode ? "Detalhes da Venda" : "Nova venda"}
-      footer={
-        <>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancelar <Kbd>Esc</Kbd>
-            </Button>
-          </DialogClose>
-          {!readOnly && (
-            <Button
-              type="submit"
-              form="upsert-venda"
-              disabled={mutation.isPending}
-            >
-              {mutation.isPending ? (
-                "Salvando..."
-              ) : (
-                <span className="flex items-center gap-2">
-                  Ir para Finalização
-                  <KbdGroup>
-                    <Kbd>Alt</Kbd>
-                    <Kbd>Enter</Kbd>
-                  </KbdGroup>
-                </span>
-              )}
-            </Button>
-          )}
-        </>
-      }
-    >
+    <div className="flex flex-col gap-4">
+      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => activeWindow.dismiss("cancel")}
+        >
+          Cancelar <Kbd>Esc</Kbd>
+        </Button>
+        {!readOnly && (
+          <Button type="submit" form="upsert-venda" disabled={mutation.isPending}>
+            {mutation.isPending ? "Salvando..." : (
+              <span className="flex items-center gap-2">
+                Ir para Finalização
+                <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup>
+              </span>
+            )}
+          </Button>
+        )}
+      </div>
       <form
         id="upsert-venda"
         className="flex h-full flex-col gap-4"
@@ -710,8 +667,9 @@ function VendasFormBody({
           </div>
 
           {!readOnly && (
-            <div className="w-full" ref={skuContainerRef}>
+            <div className="w-full">
               <SkuInput
+                ref={skuInputRef}
                 key={skuInputKey}
                 name="add-sku-pos"
                 label="Inserir Produto"
@@ -989,196 +947,7 @@ function VendasFormBody({
             </div>
           )}
         </div>
-
-        {isCheckoutOpen && (
-          <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Landmark className="size-5 text-emerald-600" />
-                  Finalizar Venda
-                </DialogTitle>
-              </DialogHeader>
-
-              <div className="flex flex-col gap-5 py-2">
-                <div className="flex flex-col gap-2.5 rounded-lg border p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground font-medium">
-                      Itens no Carrinho:
-                    </span>
-                    <span className="font-semibold">{totalItensCount}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground font-medium">
-                      Subtotal
-                    </span>
-                    <span className="font-semibold">
-                      {new Intl.NumberFormat("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
-                      }).format(subtotalGross)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-red-500">
-                    <span className="font-medium">Descontos:</span>
-                    <span className="font-bold">
-                      -
-                      {new Intl.NumberFormat("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
-                      }).format(totalDiscount)}
-                    </span>
-                  </div>
-                  <Separator />
-                  <div className="flex items-center justify-between font-bold text-emerald-600">
-                    <span>Total:</span>
-                    <span className="text-lg">
-                      {new Intl.NumberFormat("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
-                      }).format(totalNet)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="w-full" ref={condicaoContainerRef}>
-                  <CondicaoPagamentoInput
-                    name="checkoutCondicaoId"
-                    label="Método de Pagamento"
-                    initialItem={condicao}
-                    onSelectItem={(c) => setCondicao(c)}
-                    onSelectId={() => {}}
-                    disabled={readOnly}
-                    error={localErrors["condicaoPagamentoId"]}
-                  />
-                </div>
-
-                {parcelas.length > 0 && (
-                  <div className="flex flex-col gap-2">
-                    <span className="tracking-wider">Parcelas</span>
-                    <Separator />
-                    <ScrollArea className="h-40 rounded">
-                      <div className="flex flex-col gap-1">
-                        {parcelas.map((p) => (
-                          <div
-                            key={p.numeroParcela}
-                            className="/40 flex items-center justify-between rounded border bg-white px-3 py-2 text-xs shadow-2xs"
-                          >
-                            <span className="font-bold">
-                              # {p.numeroParcela}
-                            </span>
-                            <span className="font-semibold">
-                              Venc:{" "}
-                              {p.dataVencimento.split("-").reverse().join("/")}
-                            </span>
-                            <span className="font-bold">
-                              {new Intl.NumberFormat("pt-BR", {
-                                style: "currency",
-                                currency: "BRL",
-                              }).format(p.valorParcela)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </div>
-                )}
-
-                <div className="w-full">
-                  <form.Field name="observacao">
-                    {(field) => (
-                      <Field>
-                        <FieldLabel htmlFor={field.name}>
-                          Observação da Venda
-                        </FieldLabel>
-                        <Textarea
-                          id={field.name}
-                          name={field.name}
-                          value={field.state.value ?? ""}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                          placeholder="Informações adicionais da venda..."
-                          rows={2}
-                        />
-                      </Field>
-                    )}
-                  </form.Field>
-                </div>
-              </div>
-
-              <DialogFooter className="gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsCheckoutOpen(false)}
-                >
-                  Voltar <Kbd>Esc</Kbd>
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleFinalSubmit}
-                  disabled={mutation.isPending || !condicao}
-                >
-                  {mutation.isPending ? (
-                    "Processando..."
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      Concluir
-                      <KbdGroup>
-                        <Kbd>Alt</Kbd>
-                        <Kbd>Enter</Kbd>
-                      </KbdGroup>
-                    </span>
-                  )}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
-
-        <Dialog
-          open={itemToRemoveIndex !== null}
-          onOpenChange={(open) => {
-            if (!open) setItemToRemoveIndex(null);
-          }}
-        >
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Remover Item?</DialogTitle>
-              <DialogDescription>
-                Deseja realmente remover o SKU{" "}
-                <strong>
-                  {itemToRemoveIndex !== null
-                    ? itens[itemToRemoveIndex]?.sku
-                    : ""}
-                </strong>{" "}
-                desta venda?
-              </DialogDescription>
-            </DialogHeader>
-
-            <DialogFooter className="mt-4 flex flex-wrap gap-2 sm:justify-between">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setItemToRemoveIndex(null)}
-                className="mr-auto"
-              >
-                Cancelar <Kbd>Esc</Kbd>
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={confirmRemoveItem}
-              >
-                Remover Item
-                <KbdGroup className="ml-2">
-                  <Kbd>Alt</Kbd>
-                  <Kbd>Enter</Kbd>
-                </KbdGroup>
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </form>
-    </UpsertDialog>
+    </div>
   );
 }

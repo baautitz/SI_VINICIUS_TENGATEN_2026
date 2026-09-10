@@ -1,14 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { useFeatureHotkeys } from "@/hooks/use-feature-hotkeys";
-import { FeatureHeader } from "@/components/ui/feature-header";
+import { FeatureHeader } from "@/ui/composites";
 import { ShoppingBag, Eye, Trash2 } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
-import { DataTable } from "@/components/ui/data-table";
-import { FeatureLayout } from "@/components/ui/feature-layout";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/ui/primitives";
+import { DataTable } from "@/ui/composites";
+import { FeatureLayout } from "@/ui/composites";
+import { Badge } from "@/ui/primitives";
 import { cn } from "@/lib/utils";
 import type { Venda } from "./types";
 import type { FeatureListProps } from "@/hooks/use-feature-orchestrator";
@@ -31,9 +30,6 @@ export function VendasList({
   onView,
   onPageChange,
 }: VendasListProps) {
-  const listRef = React.useRef<HTMLDivElement>(null);
-  useFeatureHotkeys({ onAdd, listRef });
-
   const columns: ColumnDef<Venda>[] = [
     {
       accessorKey: "id",
@@ -135,7 +131,7 @@ export function VendasList({
   ];
 
   return (
-    <div ref={listRef} className="flex h-full min-h-0 flex-1 flex-col">
+    <div className="flex h-full min-h-0 flex-1 flex-col">
       <FeatureLayout>
         <FeatureHeader
           title="Vendas"
