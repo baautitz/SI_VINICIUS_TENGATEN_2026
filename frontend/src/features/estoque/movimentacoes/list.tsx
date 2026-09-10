@@ -2,14 +2,13 @@
 
 import * as React from "react";
 
-import { useFeatureHotkeys } from "@/hooks/use-feature-hotkeys";
-import { FeatureHeader } from "@/components/ui/feature-header";
+import { FeatureHeader } from "@/ui/composites";
 import { Check, ClipboardList, Pencil, Trash2, Eye, Ban } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
-import { DataTable } from "@/components/ui/data-table";
-import { FeatureLayout } from "@/components/ui/feature-layout";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/ui/primitives";
+import { DataTable } from "@/ui/composites";
+import { FeatureLayout } from "@/ui/composites";
+import { Badge } from "@/ui/primitives";
 import {
   MovimentacaoEstoque,
   tipoMovimentacaoLabels,
@@ -40,9 +39,6 @@ export function MovimentacoesList({
   onView,
   onPageChange,
 }: MovimentacoesListProps) {
-  const listRef = React.useRef<HTMLDivElement>(null);
-  useFeatureHotkeys({ onAdd, listRef });
-
   const columns: ColumnDef<MovimentacaoEstoque>[] = [
     {
       accessorKey: "id",
@@ -194,7 +190,7 @@ export function MovimentacoesList({
   ];
 
   return (
-    <div ref={listRef} className="flex h-full min-h-0 flex-1 flex-col">
+    <div className="flex h-full min-h-0 flex-1 flex-col">
       <FeatureLayout>
         <FeatureHeader
           title="Movimentações de Estoque"

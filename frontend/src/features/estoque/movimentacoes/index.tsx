@@ -1,241 +1,144 @@
 "use client";
 
-import React, { useState } from "react";
-import { MovimentacoesList } from "./list";
-import { MovimentacoesUpsertForm } from "./upsert-form";
-import { MovimentacaoEstoque } from "./types";
-import { DeleteDialog } from "@/components/ui/delete-dialog";
-import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
+import React from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { estoqueApi } from "@/api/estoque";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { useFeatureList } from "@/hooks/use-feature-list";
+import { useUi } from "@/ui/imperative";
+import { MovimentacoesList } from "./list";
+import { MovimentacoesUpsert } from "./upsert";
+import { MovimentacaoEstoque } from "./types";
 
 export * from "./types";
 
 export function MovimentacoesFeature() {
+  const ui = useUi();
   const queryClient = useQueryClient();
-  const [actionItem, setActionItem] = useState<MovimentacaoEstoque | null>(
-    null,
-  );
-  const [actionType, setActionType] = useState<"CONFIRM" | "CANCEL" | null>(
-    null,
-  );
-
-  const {
-    listProps,
-    upsertProps,
-    deleteDialogProps,
-    featureList: list,
-  } = useFeatureOrchestrator<MovimentacaoEstoque>({
-    queryKey: "movimentacoes",
-    initialSearchTerm: "",
-    fetchPage: async (searchTerm, page, pageSize) => {
+  const list = useFeatureList<MovimentacaoEstoque>();
+  const { data, isLoading } = useQuery({
+    queryKey: ["movimentacoes", list.deferredSearch, list.page],
+    queryFn: async () => {
       const res = await estoqueApi.list(
-        searchTerm || undefined,
-        page,
-        pageSize,
+        list.deferredSearch.trim() || undefined,
+        list.page,
+        50,
       );
-      if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
-
       return {
-        itens: res.itens,
-        totalPages: res.totalDePaginas ?? 1,
-        totalItems: res.totalDeItens ?? 0,
+        itens: res?.itens ?? [],
+        totalPages: res?.totalDePaginas ?? 1,
+        totalItems: res?.totalDeItens ?? 0,
       };
     },
-    fetchById: async (id) => {
-      return await estoqueApi.getById(id as number);
-    },
-    deleteItem: async (item) => {
-      await estoqueApi.delete(item.id);
-    },
   });
 
-  const confirmMutation = useMutation({
-    mutationFn: (id: number) => estoqueApi.confirmar(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["movimentacoes"] });
-      toast.success("Movimentação de estoque efetivada com sucesso!");
-      setActionItem(null);
-      setActionType(null);
-    },
-    onError: () => {
-      setActionItem(null);
-      setActionType(null);
-    },
-  });
-
-  const cancelMutation = useMutation({
-    mutationFn: (id: number) => estoqueApi.cancelar(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["movimentacoes"] });
-      toast.success("Movimentação de estoque estornada com sucesso!");
-      setActionItem(null);
-      setActionType(null);
-    },
-    onError: () => {
-      setActionItem(null);
-      setActionType(null);
-    },
-  });
-
-  const handleConfirmAction = (item: MovimentacaoEstoque) => {
-    setActionItem(item);
-    setActionType("CONFIRM");
+  const invalidate = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["movimentacoes"] }),
+      queryClient.invalidateQueries({ queryKey: ["skus"] }),
+      queryClient.invalidateQueries({ queryKey: ["produtos"] }),
+    ]);
   };
 
-  const handleCancelAction = (item: MovimentacaoEstoque) => {
-    setActionItem(item);
-    setActionType("CANCEL");
-  };
-
-  const handleViewAction = (item: MovimentacaoEstoque) => {
-    listProps.onView(item);
-  };
-
-  const handleAddWrapper = () => {
-    listProps.onAdd();
-  };
-
-  const handleEditWrapper = (item: MovimentacaoEstoque) => {
-    if (item.status === "RASCUNHO") {
-      listProps.onEdit(item);
-    } else {
-      listProps.onView(item);
+  const openCreate = async () => {
+    const result = await ui.windows.open<true, MovimentacoesUpsertProps>({
+      component: MovimentacoesUpsert,
+      props: { editingItem: null },
+      title: "Nova Movimentação de Estoque",
+    });
+    if (result.status === "confirmed") {
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Movimentação salva com sucesso." });
     }
   };
 
+  const openEdit = async (item: MovimentacaoEstoque) => {
+    if (item.status !== "RASCUNHO") return openView(item);
+    const result = await ui.windows.open<true, MovimentacoesUpsertProps>({
+      component: MovimentacoesUpsert,
+      props: { editingItem: item },
+      title: `Editar Movimentação #${item.id}`,
+    });
+    if (result.status === "confirmed") {
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Movimentação atualizada com sucesso." });
+    }
+  };
+
+  const openView = async (item: MovimentacaoEstoque) => {
+    await ui.windows.open<true, MovimentacoesUpsertProps>({
+      component: MovimentacoesUpsert,
+      props: { editingItem: item, readOnly: true },
+      title: `Visualizar Movimentação #${item.id}`,
+    });
+  };
+
+  const deleteItem = async (item: MovimentacaoEstoque) => {
+    const result = await ui.windows.confirm({
+      title: "Excluir Rascunho de Movimentação",
+      description: `Deseja realmente excluir o rascunho de movimentação #${item.id}? Esta ação não poderá ser desfeita.`,
+      confirmLabel: "Excluir",
+      confirmVariant: "destructive",
+    });
+    if (!result) return;
+    await estoqueApi.delete(item.id);
+    await invalidate();
+    ui.feedback.notify({ type: "success", title: "Rascunho excluído com sucesso." });
+  };
+
+  const confirmAction = async (item: MovimentacaoEstoque) => {
+    const result = await ui.windows.confirm({
+      title: "Efetivar Movimentação?",
+      description: `Deseja realmente efetivar a movimentação de estoque #${item.id}? Isso alterará de forma definitiva o saldo físico dos produtos no catálogo.`,
+      confirmLabel: "Efetivar",
+    });
+    if (!result) return;
+    const response = await estoqueApi.confirmar(item.id);
+    if (response.success === false) return;
+    await invalidate();
+    ui.feedback.notify({ type: "success", title: "Movimentação efetivada com sucesso!" });
+  };
+
+  const cancelAction = async (item: MovimentacaoEstoque) => {
+    const result = await ui.windows.confirm({
+      title: "Estornar Movimentação?",
+      description: `Deseja realmente estornar/cancelar a movimentação #${item.id}? Isso reverterá o impacto das quantidades no saldo físico dos produtos.`,
+      confirmLabel: "Confirmar Estorno",
+      confirmVariant: "destructive",
+    });
+    if (!result) return;
+    const response = await estoqueApi.cancelar(item.id);
+    if (response.success === false) return;
+    await invalidate();
+    ui.feedback.notify({ type: "success", title: "Movimentação estornada com sucesso!" });
+  };
+
   return (
-    <>
-      <MovimentacoesList
-        {...listProps}
-        onAdd={handleAddWrapper}
-        onEdit={handleEditWrapper}
-        onConfirm={handleConfirmAction}
-        onCancel={handleCancelAction}
-        onView={handleViewAction}
-      />
-
-      {list.isUpsertOpen && (
-        <MovimentacoesUpsertForm
-          key={list.editingItem?.id ?? "new"}
-          {...upsertProps}
-        />
-      )}
-
-      <DeleteDialog
-        {...deleteDialogProps}
-        title="Excluir Rascunho de Movimentação"
-        description={
-          <p>
-            Deseja realmente excluir o rascunho de movimentação{" "}
-            <strong>#{list.itemToDelete?.id}</strong>? Esta ação não poderá ser
-            desfeita.
-          </p>
-        }
-      />
-
-      <Dialog
-        open={actionType !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setActionItem(null);
-            setActionType(null);
-          }
-        }}
-      >
-        <DialogContent
-          className="max-w-md"
-          onKeyDown={(e) => {
-            if (e.altKey && e.key === "Enter") {
-              e.preventDefault();
-              e.stopPropagation();
-              if (actionItem) {
-                if (actionType === "CONFIRM") {
-                  confirmMutation.mutate(actionItem.id);
-                } else {
-                  cancelMutation.mutate(actionItem.id);
-                }
-              }
-              setActionItem(null);
-              setActionType(null);
-            }
-          }}
-        >
-          <DialogHeader>
-            <DialogTitle>
-              {actionType === "CONFIRM"
-                ? "Efetivar Movimentação?"
-                : "Estornar Movimentação?"}
-            </DialogTitle>
-            <DialogDescription>
-              {actionType === "CONFIRM"
-                ? `Deseja realmente efetivar a movimentação de estoque #${actionItem?.id}? Isso alterará de forma definitiva o saldo físico dos produtos no catálogo.`
-                : `Deseja realmente estornar/cancelar a movimentação #${actionItem?.id}? Isso reverterá o impacto das quantidades no saldo físico dos produtos.`}
-            </DialogDescription>
-          </DialogHeader>
-
-          <DialogFooter className="mt-4 flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={confirmMutation.isPending || cancelMutation.isPending}
-              onClick={() => {
-                setActionItem(null);
-                setActionType(null);
-              }}
-            >
-              Cancelar <Kbd>Esc</Kbd>
-            </Button>
-            <Button
-              type="button"
-              variant={actionType === "CONFIRM" ? "default" : "destructive"}
-              disabled={confirmMutation.isPending || cancelMutation.isPending}
-              onClick={() => {
-                if (actionItem) {
-                  if (actionType === "CONFIRM") {
-                    confirmMutation.mutate(actionItem.id);
-                  } else {
-                    cancelMutation.mutate(actionItem.id);
-                  }
-                }
-                setActionItem(null);
-                setActionType(null);
-              }}
-            >
-              {confirmMutation.isPending || cancelMutation.isPending ? (
-                "Processando..."
-              ) : actionType === "CONFIRM" ? (
-                <span className="flex items-center gap-2">
-                  Efetivar
-                  <KbdGroup>
-                    <Kbd>Alt</Kbd>
-                    <Kbd>Enter</Kbd>
-                  </KbdGroup>
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  Confirmar Estorno
-                  <KbdGroup>
-                    <Kbd>Alt</Kbd>
-                    <Kbd>Enter</Kbd>
-                  </KbdGroup>
-                </span>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+    <MovimentacoesList
+      items={data?.itens ?? []}
+      loading={isLoading}
+      searchTerm={list.searchTerm}
+      page={list.page}
+      totalPages={data?.totalPages ?? 1}
+      totalItems={data?.totalItems ?? 0}
+      onSearchChange={list.handleSearchChange}
+      onAdd={openCreate}
+      onEdit={openEdit}
+      onView={openView}
+      onDelete={deleteItem}
+      onConfirm={confirmAction}
+      onCancel={cancelAction}
+      onPageChange={list.setPage}
+      rowSelection={list.rowSelection}
+      onRowSelectionChange={list.setRowSelection}
+      selectAllAcrossPages={list.selectAllAcrossPages}
+      onSelectAllAcrossPagesChange={list.setSelectAllAcrossPages}
+    />
   );
+}
+
+export interface MovimentacoesUpsertProps {
+  editingItem: MovimentacaoEstoque | null;
+  readOnly?: boolean;
+  initialItems?: import("./upsert").ItemLinha[];
+  fixedTipo?: "ENTRADA" | "SAIDA" | "BALANCO" | "VENDA";
 }

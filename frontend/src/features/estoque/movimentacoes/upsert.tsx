@@ -2,9 +2,9 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { estoqueApi } from "@/api/estoque";
+import { Spinner } from "@/ui/primitives";
 import { MovimentacaoEstoque } from "./types";
 import { MovimentacoesUpsertForm } from "./upsert-form";
-import { UpsertDialog } from "@/components/ui/upsert-dialog";
 
 export interface ItemLinha {
   sku: string;
@@ -19,47 +19,36 @@ export interface ItemLinha {
   permiteDecimais?: boolean;
 }
 
-interface MovimentacoesUpsertProps {
-  open: boolean;
+export interface MovimentacoesUpsertProps {
   editingItem: MovimentacaoEstoque | null;
-  onClose: () => void;
-  onSuccess: () => void;
+  readOnly?: boolean;
   initialItems?: ItemLinha[];
   fixedTipo?: "ENTRADA" | "SAIDA" | "BALANCO" | "VENDA";
 }
 
 export function MovimentacoesUpsert(props: MovimentacoesUpsertProps) {
-  const { open, editingItem, onClose, initialItems, fixedTipo } = props;
+  const { editingItem, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
     queryKey: ["movimentacoes", "detail", editingItem?.id],
     queryFn: () => estoqueApi.getById(editingItem!.id),
-    enabled: isEditMode && open,
+    enabled: isEditMode,
   });
 
   if (isEditMode && isLoading) {
     return (
-      <UpsertDialog
-        open={open}
-        onOpenChange={(o) => {
-          if (!o) onClose();
-        }}
-        title="Carregando Movimentação..."
-        loading={true}
-      />
+      <div className="flex min-h-48 items-center justify-center">
+        <Spinner className="size-6" />
+      </div>
     );
   }
-
-  const resolvedReadOnly = fullItem ? fullItem.status !== "RASCUNHO" : false;
 
   return (
     <MovimentacoesUpsertForm
       {...props}
-      editingItem={isEditMode ? (fullItem ?? null) : null}
-      readOnly={resolvedReadOnly}
-      initialItems={initialItems}
-      fixedTipo={fixedTipo}
+      editingItem={isEditMode ? (fullItem ?? editingItem) : null}
+      readOnly={readOnly}
     />
   );
 }

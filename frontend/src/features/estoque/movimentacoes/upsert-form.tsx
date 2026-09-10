@@ -1,24 +1,13 @@
 "use client";
 
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
-import { useHotkeys } from "@tanstack/react-hotkeys";
-import { useRef, useState } from "react";
+import { Kbd, KbdGroup } from "@/ui/primitives";
+import React, { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { UpsertDialog } from "@/components/ui/upsert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { NumberInput } from "@/components/ui/number-input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FormFieldUI } from "@/components/ui/form-field-ui";
+import { AlertDialogFooter, Button } from "@/ui/primitives";
+import { Field, FieldGroup, FieldLabel } from "@/ui/primitives";
+import { NumberInput } from "@/ui/composites";
+import { Alert, AlertDescription } from "@/ui/primitives";
+import { FormFieldUI } from "@/ui/composites";
 import {
   Table,
   TableBody,
@@ -27,8 +16,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { useForm } from "@tanstack/react-form";
+} from "@/ui/primitives";
+import { useForm, useStore } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import { useQueryClient } from "@tanstack/react-query";
 import { estoqueApi } from "@/api/estoque";
@@ -42,8 +31,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { toast } from "sonner";
+} from "@/ui/primitives";
+import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
 import {
   MovimentacaoEstoque,
   MovimentacaoEstoqueFormValues,
@@ -55,25 +44,27 @@ import {
 import { ItemLinha } from "./upsert";
 
 interface MovimentacoesUpsertFormProps {
-  open: boolean;
   editingItem: MovimentacaoEstoque | null;
-  onClose: () => void;
-  onSuccess: () => void;
   readOnly: boolean;
   initialItems?: ItemLinha[];
   fixedTipo?: "ENTRADA" | "SAIDA" | "BALANCO" | "VENDA";
 }
 
+type SaveAction = "draft" | "effect";
+
+interface SaveConfirmationProps {
+  onSelect?: never;
+}
+
 export function MovimentacoesUpsertForm({
-  open,
   editingItem,
-  onClose,
-  onSuccess,
   readOnly,
   initialItems,
   fixedTipo,
 }: MovimentacoesUpsertFormProps) {
   const isEditMode = !!editingItem;
+  const activeWindow = useWindow<true>();
+  const ui = useUi();
 
   const [itens, setItens] = useState<ItemLinha[]>(() => {
     if (initialItems) return initialItems;
@@ -101,73 +92,11 @@ export function MovimentacoesUpsertForm({
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
-  const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
-  const [itemToRemoveIndex, setItemToRemoveIndex] = useState<number | null>(
-    null,
-  );
-  const [pendingPayload, setPendingPayload] =
-    useState<MovimentacaoEstoqueFormValues | null>(null);
 
   const queryClient = useQueryClient();
 
   const createdIdRef = useRef<number | null>(null);
   const skuInputRef = useRef<HTMLInputElement>(null);
-
-  useHotkeys(
-    [
-      {
-        hotkey: "Alt+K",
-        callback: (e) => {
-          e.preventDefault();
-          skuInputRef.current?.focus();
-        },
-        options: {
-          enabled: open && !readOnly,
-          ignoreInputs: false,
-        },
-      },
-      {
-        hotkey: "Alt+Enter",
-        callback: (e) => {
-          e.preventDefault();
-          confirmRemoveItem();
-        },
-        options: {
-          enabled: itemToRemoveIndex !== null,
-          ignoreInputs: false,
-        },
-      },
-      {
-        hotkey: "Alt+Enter",
-        callback: (e) => {
-          e.preventDefault();
-          if (pendingPayload) {
-            mutation.mutate({ values: pendingPayload, efetivar: true });
-            setSaveConfirmOpen(false);
-          }
-        },
-        options: {
-          enabled: saveConfirmOpen,
-          ignoreInputs: false,
-        },
-      },
-      {
-        hotkey: "Alt+S",
-        callback: (e) => {
-          e.preventDefault();
-          if (pendingPayload) {
-            mutation.mutate({ values: pendingPayload, efetivar: false });
-            setSaveConfirmOpen(false);
-          }
-        },
-        options: {
-          enabled: saveConfirmOpen,
-          ignoreInputs: false,
-        },
-      },
-    ],
-    { conflictBehavior: "allow" },
-  );
 
   const {
     mutation,
@@ -205,11 +134,8 @@ export function MovimentacoesUpsertForm({
     onSuccessCallback: () => {
       queryClient.invalidateQueries({ queryKey: ["skus"] });
       queryClient.invalidateQueries({ queryKey: ["produtos"] });
-      onSuccess();
-    },
-    onClose: () => {
       createdIdRef.current = null;
-      onClose();
+      activeWindow.resolve(true);
     },
   });
 
@@ -239,10 +165,10 @@ export function MovimentacoesUpsertForm({
         itens: cleanItens,
       };
 
-      const result = movimentacaoEstoqueSchema.safeParse(payload);
-      if (!result.success) {
+      const parsed = movimentacaoEstoqueSchema.safeParse(payload);
+      if (!parsed.success) {
         const errors: Record<string, string> = {};
-        result.error.errors.forEach((err) => {
+        parsed.error.errors.forEach((err) => {
           const path = err.path.join(".");
           errors[path] = err.message;
         });
@@ -250,10 +176,88 @@ export function MovimentacoesUpsertForm({
         return;
       }
 
-      setPendingPayload(payload);
-      setSaveConfirmOpen(true);
+      const result = await ui.windows.open<SaveAction, SaveConfirmationProps>({
+        component: SaveConfirmationWindow,
+        props: {},
+        title: "Salvar Movimentação?",
+        description:
+          "Deseja salvar a movimentação como rascunho ou efetivar imediatamente para atualizar o estoque físico?",
+        surface: "confirmation",
+        size: "small",
+      });
+      if (result.status === "confirmed") {
+        await mutation.mutateAsync({
+          values: payload,
+          efetivar: result.value === "effect",
+        });
+      }
     },
   });
+
+  const handleCancel = async () => {
+    activeWindow.dismiss("cancel");
+  };
+
+  const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    await form.handleSubmit();
+  };
+
+  const handleTipoMovimentacaoChange = async (val: string) => {
+    form.setFieldValue(
+      "tipoMovimentacao",
+      val as MovimentacaoEstoqueFormValues["tipoMovimentacao"],
+    );
+    if (!readOnly) {
+      setItens((prev) =>
+        prev.map((item) => {
+          if (val === "SAIDA" || val === "VENDA") {
+            return { ...item, custoUnitario: item.custoMedio ?? 0 };
+          }
+          if (val === "ENTRADA") {
+            return { ...item, custoUnitario: item.custoUltimaCompra ?? 0 };
+          }
+          return item;
+        }),
+      );
+    }
+  };
+
+  const isDirty = useStore(form.store, (state) => state.isDirty);
+
+  React.useEffect(() => {
+    activeWindow.setDirty(!readOnly && (isDirty || itens.length > 0));
+    return () => activeWindow.setDirty(false);
+  }, [activeWindow, isDirty, itens.length, readOnly]);
+
+  useWindowCommands(
+    React.useMemo(
+      () => [
+        {
+          id: "movimentacoes.focus-sku",
+          hotkey: "Alt+K" as const,
+          label: "Buscar SKU",
+          enabled: !readOnly,
+          run: (event: KeyboardEvent) => {
+            event.preventDefault();
+            skuInputRef.current?.focus();
+          },
+        },
+        {
+          id: "movimentacoes.submit",
+          hotkey: "Alt+Enter" as const,
+          label: "Salvar movimentação",
+          enabled: !readOnly && !mutation.isPending,
+          run: async (event: KeyboardEvent) => {
+            event.preventDefault();
+            await form.handleSubmit();
+          },
+        },
+      ],
+      [form, mutation.isPending, readOnly],
+    ),
+  );
 
   const totalGeral = itens.reduce((sum, item) => {
     const itemTotal = Number(
@@ -263,22 +267,18 @@ export function MovimentacoesUpsertForm({
   }, 0);
 
 
-  const removeItemRow = (index: number) => {
+  const removeItemRow = async (index: number) => {
     const itemToRemove = itens[index];
-    if (itemToRemove) {
-      setItemToRemoveIndex(index);
-    }
-  };
-
-  const confirmRemoveItem = () => {
-    if (itemToRemoveIndex !== null) {
-      const itemToRemove = itens[itemToRemoveIndex];
-      setItens(itens.filter((_, i) => i !== itemToRemoveIndex));
-      if (itemToRemove) {
-        toast.info(`SKU "${itemToRemove.sku}" removido.`);
-      }
-      setItemToRemoveIndex(null);
-    }
+    if (!itemToRemove) return;
+    const result = await ui.windows.confirm({
+      title: "Remover Item?",
+      description: `Deseja realmente remover o SKU ${itemToRemove.sku} desta movimentação?`,
+      confirmLabel: "Remover Item",
+      confirmVariant: "destructive",
+    });
+    if (!result) return;
+    setItens((current) => current.filter((_, itemIndex) => itemIndex !== index));
+    ui.feedback.notify({ type: "info", title: `SKU "${itemToRemove.sku}" removido.` });
   };
 
   const handleSkuAdded = (skuRes: Sku | null, qtdeAdicionada: number = 1) => {
@@ -298,7 +298,7 @@ export function MovimentacoesUpsertForm({
       );
 
       if (newQty <= 0) {
-        setItemToRemoveIndex(existingIndex);
+        void removeItemRow(existingIndex);
         return;
       }
 
@@ -309,14 +309,16 @@ export function MovimentacoesUpsertForm({
       const qtyExibicao =
         qtdeAdicionada >= 0 ? `+${qtdeAdicionada}` : qtdeAdicionada.toString();
 
-      toast.success(
-        `Quantidade do SKU "${skuRes.sku}" ${acao} (${qtyExibicao}).`,
-      );
+      ui.feedback.notify({
+        type: "success",
+        title: `Quantidade do SKU "${skuRes.sku}" ${acao} (${qtyExibicao}).`,
+      });
     } else {
       if (qtdeAdicionada <= 0) {
-        toast.warning(
-          "Não é possível adicionar um item com quantidade inicial zero ou negativa.",
-        );
+        ui.feedback.notify({
+          type: "warning",
+          title: "Não é possível adicionar um item com quantidade inicial zero ou negativa.",
+        });
         return;
       }
 
@@ -339,15 +341,14 @@ export function MovimentacoesUpsertForm({
           permiteDecimais: !!skuRes.produto?.unidadeMedida?.permiteDecimais,
         },
       ]);
-      toast.success(
-        `SKU "${skuRes.sku}" adicionado (Qtde: ${qtdeAdicionada}).`,
-      );
+      ui.feedback.notify({
+        type: "success",
+        title: `SKU "${skuRes.sku}" adicionado (Qtde: ${qtdeAdicionada}).`,
+      });
     }
 
     setSkuInputKey((prev) => prev + 1);
-    setTimeout(() => {
-      skuInputRef.current?.focus();
-    }, 50);
+    skuInputRef.current?.focus();
   };
 
   const updateItemRow = (
@@ -382,62 +383,28 @@ export function MovimentacoesUpsertForm({
   }
 
   return (
-    <>
-      <UpsertDialog
-        open={open}
-        onOpenChange={(openState) => {
-          if (!openState) onClose();
-        }}
-        isEdit={isEditMode && !readOnly}
-        title={title}
-        footer={
-          <>
-            <DialogClose asChild>
-              <Button
-                type="button"
-                variant="outline"
-              >
-                <span className="flex items-center gap-2">
-                  {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
-                </span>
+    <div className="flex flex-col gap-4">
+      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+        <Button type="button" variant="outline" onClick={handleCancel}>
+          <span className="flex items-center gap-2">
+            {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
+          </span>
+        </Button>
+        {!readOnly && (
+          <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+            {([canSubmit, isSubmitting]) => (
+              <Button type="submit" form="upsert-movimentacao" disabled={!canSubmit || isSubmitting || mutation.isPending}>
+                {isSubmitting || mutation.isPending ? "Salvando..." : <span className="flex items-center gap-2">Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup></span>}
               </Button>
-            </DialogClose>
-            {!readOnly && (
-              <form.Subscribe
-                selector={(state) => [state.canSubmit, state.isSubmitting]}
-              >
-                {([canSubmit, isSubmitting]) => (
-                  <Button
-                    type="submit"
-                    form="upsert-movimentacao"
-                    disabled={!canSubmit || isSubmitting || mutation.isPending}
-                  >
-                    {isSubmitting || mutation.isPending ? (
-                      "Salvando..."
-                    ) : (
-                      <span className="flex items-center gap-2">
-                        Salvar{" "}
-                        <KbdGroup>
-                          <Kbd>Alt</Kbd>
-                          <Kbd>Enter</Kbd>
-                        </KbdGroup>
-                      </span>
-                    )}
-                  </Button>
-                )}
-              </form.Subscribe>
             )}
-          </>
-        }
-      >
+          </form.Subscribe>
+        )}
+      </div>
+      <div aria-label={title}>
         <form
           id="upsert-movimentacao"
           className="flex flex-col gap-6"
-          onSubmit={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            form.handleSubmit();
-          }}
+          onSubmit={handleFormSubmit}
         >
           <FieldGroup className="flex flex-row flex-wrap items-end gap-4">
             {editingItem && (
@@ -463,30 +430,7 @@ export function MovimentacoesUpsertForm({
                           </FieldLabel>
                           <Select
                             value={field.state.value}
-                            onValueChange={(val) => {
-                              field.handleChange(
-                                val as MovimentacaoEstoqueFormValues["tipoMovimentacao"],
-                              );
-                              if (!readOnly) {
-                                setItens((prev) =>
-                                  prev.map((item) => {
-                                    if (val === "SAIDA" || val === "VENDA") {
-                                      return {
-                                        ...item,
-                                        custoUnitario: item.custoMedio ?? 0,
-                                      };
-                                    } else if (val === "ENTRADA") {
-                                      return {
-                                        ...item,
-                                        custoUnitario:
-                                          item.custoUltimaCompra ?? 0,
-                                      };
-                                    }
-                                    return item;
-                                  }),
-                                );
-                              }
-                            }}
+                            onValueChange={handleTipoMovimentacaoChange}
                             disabled={readOnly || isEditMode || !!fixedTipo}
                           >
                             <SelectTrigger
@@ -859,124 +803,60 @@ export function MovimentacoesUpsertForm({
             </Alert>
           )}
         </form>
-      </UpsertDialog>
+      </div>
+    </div>
+  );
+}
 
-      <Dialog
-        open={itemToRemoveIndex !== null}
-        onOpenChange={(open) => {
-          if (!open) setItemToRemoveIndex(null);
-        }}
+function SaveConfirmationWindow() {
+  const activeWindow = useWindow<SaveAction>();
+  const handleCancel = React.useCallback(async () => {
+    activeWindow.dismiss("cancel");
+  }, [activeWindow]);
+  const handleDraft = React.useCallback(async () => {
+    activeWindow.resolve("draft");
+  }, [activeWindow]);
+  const handleEffect = React.useCallback(async () => {
+    activeWindow.resolve("effect");
+  }, [activeWindow]);
+  const commands = React.useMemo(
+    () => [
+      {
+        id: "movimentacoes.save-draft",
+        hotkey: "Alt+S" as const,
+        label: "Salvar rascunho",
+        run: handleDraft,
+      },
+      {
+        id: "movimentacoes.effect",
+        hotkey: "Alt+Enter" as const,
+        label: "Efetivar movimentação",
+        run: handleEffect,
+      },
+    ],
+    [handleDraft, handleEffect],
+  );
+  useWindowCommands(commands);
+
+  return (
+    <AlertDialogFooter className="flex-row flex-wrap items-center justify-end gap-2">
+      <Button
+        type="button"
+        variant="outline"
+        onClick={handleCancel}
       >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Remover Item?</DialogTitle>
-            <DialogDescription>
-              Deseja realmente remover o SKU{" "}
-              <strong>
-                {itemToRemoveIndex !== null
-                  ? itens[itemToRemoveIndex]?.sku
-                  : ""}
-              </strong>{" "}
-              desta movimentação?
-            </DialogDescription>
-          </DialogHeader>
-
-          <DialogFooter className="mt-4 flex flex-wrap gap-2 sm:justify-between">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setItemToRemoveIndex(null)}
-              className="mr-auto"
-            >
-              Cancelar <Kbd>Esc</Kbd>
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={confirmRemoveItem}
-            >
-              Remover Item
-              <KbdGroup className="ml-2">
-                <Kbd>Alt</Kbd>
-                <Kbd>Enter</Kbd>
-              </KbdGroup>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={saveConfirmOpen}
-        onOpenChange={(open) => {
-          setSaveConfirmOpen(open);
-          if (!open) {
-            setPendingPayload(null);
-          }
-        }}
+        Cancelar <Kbd>Esc</Kbd>
+      </Button>
+      <Button
+        type="button"
+        variant="secondary"
+        onClick={handleDraft}
       >
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Salvar Movimentação?</DialogTitle>
-            <DialogDescription>
-              Deseja salvar a movimentação de estoque como rascunho ou efetivar
-              imediatamente para atualizar o estoque físico?
-            </DialogDescription>
-          </DialogHeader>
-
-          <DialogFooter className="mt-6 flex flex-wrap gap-2 sm:justify-between">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={mutation.isPending}
-              onClick={() => {
-                setSaveConfirmOpen(false);
-                setPendingPayload(null);
-              }}
-              className="mr-auto"
-            >
-              Cancelar <Kbd>Esc</Kbd>
-            </Button>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={mutation.isPending}
-                onClick={() => {
-                  if (pendingPayload) {
-                    mutation.mutate({
-                      values: pendingPayload,
-                      efetivar: false,
-                    });
-                    setSaveConfirmOpen(false);
-                  }
-                }}
-              >
-                Salvar Rascunho{" "}
-                <KbdGroup>
-                  <Kbd>Alt</Kbd>
-                  <Kbd>S</Kbd>
-                </KbdGroup>
-              </Button>
-              <Button
-                type="button"
-                disabled={mutation.isPending}
-                onClick={() => {
-                  if (pendingPayload) {
-                    mutation.mutate({ values: pendingPayload, efetivar: true });
-                    setSaveConfirmOpen(false);
-                  }
-                }}
-              >
-                Efetivar{" "}
-                <KbdGroup>
-                  <Kbd>Alt</Kbd>
-                  <Kbd>Enter</Kbd>
-                </KbdGroup>
-              </Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+        Salvar Rascunho <KbdGroup><Kbd>Alt</Kbd><Kbd>S</Kbd></KbdGroup>
+      </Button>
+      <Button type="button" onClick={handleEffect}>
+        Efetivar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup>
+      </Button>
+    </AlertDialogFooter>
   );
 }
