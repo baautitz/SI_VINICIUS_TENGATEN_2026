@@ -4,9 +4,10 @@ import React from "react";
 import { MarcasList } from "./list";
 import { MarcasUpsert } from "./upsert";
 import { Marca } from "./types";
-import { DeleteDialog } from "@/components/ui/delete-dialog";
-import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
 import { marcasApi } from "@/api/catalogo";
+import { useFeatureList } from "@/hooks/use-feature-list";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useUi } from "@/ui/imperative";
 
 export * from "./types";
 
@@ -21,57 +22,92 @@ export function MarcasFeature({
   onSelect,
   initialSearchTerm = "",
 }: MarcasFeatureProps) {
-  const {
-    listProps,
-    upsertProps,
-    deleteDialogProps,
-    featureList: list,
-  } = useFeatureOrchestrator<Marca>({
-    queryKey: "marcas",
-    initialSearchTerm,
-    fetchPage: async (searchTerm, page, pageSize) => {
-      const res = await marcasApi.list(searchTerm || undefined, page, pageSize);
-      if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
-
+  const ui = useUi();
+  const queryClient = useQueryClient();
+  const list = useFeatureList<Marca>({ initialSearchTerm });
+  const { data, isLoading } = useQuery({
+    queryKey: ["marcas", list.deferredSearch, list.page],
+    queryFn: async () => {
+      const res = await marcasApi.list(list.deferredSearch.trim() || undefined, list.page, 50);
       return {
-        itens: res.itens,
-        totalPages: res.totalDePaginas ?? 1,
-        totalItems: res.totalDeItens ?? 0,
+        itens: res?.itens ?? [],
+        totalPages: res?.totalDePaginas ?? 1,
+        totalItems: res?.totalDeItens ?? 0,
       };
     },
-    fetchById: async (id) => {
-      return await marcasApi.getById(id as number);
-    },
-    deleteItem: async (item) => {
-      await marcasApi.delete(item.id);
-    },
   });
+
+  const invalidate = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["marcas"] }),
+      queryClient.invalidateQueries({ queryKey: ["produtos"] }),
+    ]);
+  };
+
+  const openCreate = async () => {
+    const result = await ui.windows.open<true, MarcasUpsertProps>({
+      component: MarcasUpsert,
+      props: { editingItem: null },
+      title: "Nova Marca",
+    });
+    if (result.status === "confirmed") {
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Marca criada com sucesso." });
+    }
+  };
+
+  const openEdit = async (item: Marca) => {
+    const result = await ui.windows.open<true, MarcasUpsertProps>({
+      component: MarcasUpsert,
+      props: { editingItem: item },
+      title: "Editar Marca",
+    });
+    if (result.status === "confirmed") {
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Marca atualizada com sucesso." });
+    }
+  };
+
+  const deleteMarca = async (item: Marca) => {
+    const result = await ui.windows.confirm({
+      title: "Excluir Marca",
+      description: `Deseja realmente excluir a marca ${item.marca}? Esta ação não poderá ser desfeita.`,
+      confirmLabel: "Excluir",
+      confirmVariant: "destructive",
+    });
+    if (!result) return;
+    await marcasApi.delete(item.id);
+    await invalidate();
+    ui.feedback.notify({ type: "success", title: "Marca excluída com sucesso." });
+  };
 
   return (
     <>
       <MarcasList
-        {...listProps}
+        items={data?.itens ?? []}
+        loading={isLoading}
+        searchTerm={list.searchTerm}
+        page={list.page}
+        totalPages={data?.totalPages ?? 1}
+        totalItems={data?.totalItems ?? 0}
+        onSearchChange={list.handleSearchChange}
+        onAdd={openCreate}
+        onEdit={openEdit}
+        onView={openEdit}
+        onDelete={deleteMarca}
+        onPageChange={list.setPage}
+        rowSelection={list.rowSelection}
+        onRowSelectionChange={list.setRowSelection}
+        selectAllAcrossPages={list.selectAllAcrossPages}
+        onSelectAllAcrossPagesChange={list.setSelectAllAcrossPages}
         selectionMode={selectionMode}
         onSelect={onSelect}
       />
-
-      {list.isUpsertOpen && (
-        <MarcasUpsert 
-          key={list.editingItem?.id ?? "new"} 
-          {...upsertProps} 
-        />
-      )}
-
-      <DeleteDialog
-        {...deleteDialogProps}
-        title="Excluir Marca"
-        description={
-          <p>
-            Deseja realmente excluir a marca{" "}
-            <strong>{list.itemToDelete?.marca}</strong>? Esta ação não poderá ser desfeita.
-          </p>
-        }
-      />
     </>
   );
+}
+
+export interface MarcasUpsertProps {
+  editingItem: Marca | null;
+  readOnly?: boolean;
 }

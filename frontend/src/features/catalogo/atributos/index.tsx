@@ -1,12 +1,14 @@
 "use client";
 
 import React from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { atributosApi } from "@/api/catalogo";
+import { useUi } from "@/ui/imperative";
+import { useFeatureList } from "@/hooks/use-feature-list";
 import { AtributosList } from "./list";
 import { AtributosUpsert } from "./upsert";
+import type { AtributosUpsertProps } from "./upsert";
 import { SkuAtributoChave } from "./types";
-import { DeleteDialog } from "@/components/ui/delete-dialog";
-import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
-import { atributosApi } from "@/api/catalogo";
 
 export * from "./types";
 
@@ -21,57 +23,89 @@ export function AtributosFeature({
   onSelect,
   initialSearchTerm = "",
 }: AtributosFeatureProps) {
-  const {
-    listProps,
-    upsertProps,
-    deleteDialogProps,
-    featureList: list,
-  } = useFeatureOrchestrator<SkuAtributoChave>({
-    queryKey: "atributos",
-    initialSearchTerm,
-    fetchPage: async (searchTerm, page, pageSize) => {
-      const res = await atributosApi.list(searchTerm || undefined, page, pageSize);
-      if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
-
+  const ui = useUi();
+  const queryClient = useQueryClient();
+  const list = useFeatureList<SkuAtributoChave>({ initialSearchTerm });
+  const { data, isLoading } = useQuery({
+    queryKey: ["atributos", list.deferredSearch, list.page],
+    queryFn: async () => {
+      const res = await atributosApi.list(
+        list.deferredSearch.trim() || undefined,
+        list.page,
+        50,
+      );
       return {
-        itens: res.itens,
-        totalPages: res.totalDePaginas ?? 1,
-        totalItems: res.totalDeItens ?? 0,
+        itens: res?.itens ?? [],
+        totalPages: res?.totalDePaginas ?? 1,
+        totalItems: res?.totalDeItens ?? 0,
       };
-    },
-    fetchById: async (id) => {
-      return await atributosApi.getById(id as number);
-    },
-    deleteItem: async (item) => {
-      await atributosApi.delete(item.id);
     },
   });
 
+  const invalidate = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["atributos"] }),
+      queryClient.invalidateQueries({ queryKey: ["produtos"] }),
+    ]);
+  };
+
+  const openCreate = async () => {
+    const result = await ui.windows.open<true, AtributosUpsertProps>({
+      component: AtributosUpsert,
+      props: { editingItem: null },
+      title: "Novo Atributo",
+    });
+    if (result.status === "confirmed") {
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Atributo criado com sucesso." });
+    }
+  };
+
+  const openEdit = async (item: SkuAtributoChave) => {
+    const result = await ui.windows.open<true, AtributosUpsertProps>({
+      component: AtributosUpsert,
+      props: { editingItem: item },
+      title: "Editar Atributo",
+    });
+    if (result.status === "confirmed") {
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Atributo atualizado com sucesso." });
+    }
+  };
+
+  const deleteAtributo = async (item: SkuAtributoChave) => {
+    const result = await ui.windows.confirm({
+      title: "Excluir Atributo",
+      description: `Deseja realmente excluir o atributo ${item.chave}? Esta ação não poderá ser desfeita.`,
+      confirmLabel: "Excluir",
+      confirmVariant: "destructive",
+    });
+    if (!result) return;
+    await atributosApi.delete(item.id);
+    await invalidate();
+    ui.feedback.notify({ type: "success", title: "Atributo excluído com sucesso." });
+  };
+
   return (
-    <>
-      <AtributosList
-        {...listProps}
-        selectionMode={selectionMode}
-        onSelect={onSelect}
-      />
-
-      {list.isUpsertOpen && (
-        <AtributosUpsert 
-          key={list.editingItem?.id ?? "new"} 
-          {...upsertProps} 
-        />
-      )}
-
-      <DeleteDialog
-        {...deleteDialogProps}
-        title="Excluir Atributo"
-        description={
-          <p>
-            Deseja realmente excluir o atributo{" "}
-            <strong>{list.itemToDelete?.chave}</strong>? Esta ação não poderá ser desfeita.
-          </p>
-        }
-      />
-    </>
+    <AtributosList
+      items={data?.itens ?? []}
+      loading={isLoading}
+      searchTerm={list.searchTerm}
+      page={list.page}
+      totalPages={data?.totalPages ?? 1}
+      totalItems={data?.totalItems ?? 0}
+      onSearchChange={list.handleSearchChange}
+      onAdd={openCreate}
+      onEdit={openEdit}
+      onView={openEdit}
+      onDelete={deleteAtributo}
+      onSelect={onSelect}
+      onPageChange={list.setPage}
+      rowSelection={list.rowSelection}
+      onRowSelectionChange={list.setRowSelection}
+      selectAllAcrossPages={list.selectAllAcrossPages}
+      onSelectAllAcrossPagesChange={list.setSelectAllAcrossPages}
+      selectionMode={selectionMode}
+    />
   );
 }

@@ -1,19 +1,17 @@
 "use client";
 
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { Kbd, KbdGroup } from "@/ui/primitives";
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { UpsertDialog } from "@/components/ui/upsert-dialog";
-import { DialogClose } from "@/components/ui/dialog";
+import { Button } from "@/ui/primitives";
 import {
   Field,
   FieldGroup,
   FieldLabel,
   FieldError,
-} from "@/components/ui/field";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FormFieldUI } from "@/components/ui/form-field-ui";
-import { useForm } from "@tanstack/react-form";
+} from "@/ui/primitives";
+import { Alert, AlertDescription } from "@/ui/primitives";
+import { FormFieldUI } from "@/ui/composites";
+import { useForm, useStore } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import {
   skuAtributoChaveSchema,
@@ -23,29 +21,19 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { atributosApi } from "@/api/catalogo";
 import { Plus, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { useHotkeys } from "@tanstack/react-hotkeys";
+import { Input } from "@/ui/primitives";
+import { Badge } from "@/ui/primitives";
+import { Card, CardContent } from "@/ui/primitives";
+import { useWindow, useWindowCommands } from "@/ui/imperative";
+import { Spinner } from "@/ui/primitives";
 
-interface AtributosUpsertProps {
-  open: boolean;
+export interface AtributosUpsertProps {
   editingItem: SkuAtributoChave | null;
-  onClose: () => void;
-  onSuccess: () => void;
-  readOnly?: boolean;
-}
-
-interface AtributosUpsertFormProps {
-  open: boolean;
-  editingItem: SkuAtributoChave | null;
-  onClose: () => void;
-  onSuccess: () => void;
   readOnly?: boolean;
 }
 
 export function AtributosUpsert(props: AtributosUpsertProps) {
-  const { open, editingItem, onClose, readOnly = false } = props;
+  const { editingItem, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -56,15 +44,9 @@ export function AtributosUpsert(props: AtributosUpsertProps) {
 
   if (isEditMode && isLoading) {
     return (
-      <UpsertDialog
-      isEdit={!!editingItem}
-        open={open}
-        onOpenChange={(o) => {
-          if (!o) onClose();
-        }}
-        title="Editar Atributo"
-        loading={true}
-      />
+      <div className="flex min-h-48 items-center justify-center">
+        <Spinner className="size-6" />
+      </div>
     );
   }
 
@@ -78,11 +60,10 @@ export function AtributosUpsert(props: AtributosUpsertProps) {
 }
 
 function AtributosUpsertForm({
-  open,
   editingItem,
-  onClose,
-  onSuccess,
-}: AtributosUpsertFormProps) {
+  readOnly = false,
+}: AtributosUpsertProps) {
+  const activeWindow = useWindow<true>();
   const { mutation, globalError, getFieldError, resetErrors } =
     useUpsertMutation({
       mutationFn: async (value: SkuAtributoChaveFormValues) => {
@@ -91,8 +72,7 @@ function AtributosUpsertForm({
           : await atributosApi.create(value);
       },
       queryKey: [["atributos"], ["produtos"]],
-      onSuccessCallback: onSuccess,
-      onClose: onClose,
+      onSuccessCallback: () => activeWindow.resolve(true),
     });
 
   const form = useForm({
@@ -102,69 +82,71 @@ function AtributosUpsertForm({
     } as SkuAtributoChaveFormValues,
     onSubmit: async ({ value }) => {
       resetErrors();
-      mutation.mutate(value);
+      await mutation.mutateAsync(value);
     },
   });
 
   const [newValue, setNewValue] = React.useState("");
 
-  useHotkeys(
-    [
+  const isDirty = useStore(form.store, (state) => state.isDirty);
+
+  React.useEffect(() => {
+    activeWindow.setDirty(isDirty);
+    return () => activeWindow.setDirty(false);
+  }, [activeWindow, isDirty]);
+
+  const commands = React.useMemo(
+    () => [
       {
-        hotkey: "Alt+Enter",
-        callback: (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log("Alt+Enter pressed, submitting form...");
-          form.handleSubmit();
+        id: "atributos.save",
+        hotkey: "Alt+Enter" as const,
+        label: "Salvar atributo",
+        enabled: !readOnly && !mutation.isPending,
+        run: async (event: KeyboardEvent) => {
+          event.preventDefault();
+          await form.handleSubmit();
         },
-        options: { enabled: open, ignoreInputs: false },
       },
     ],
-    { conflictBehavior: "replace" },
+    [form, mutation.isPending, readOnly],
   );
 
+  useWindowCommands(commands);
+
   return (
-    <UpsertDialog
-      isEdit={!!editingItem}
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) onClose();
-      }}
-      title={editingItem ? "Editar Atributo" : "Novo Atributo"}
-      footer={
-        <>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancelar <Kbd>Esc</Kbd>
+    <div className="flex flex-col gap-4">
+      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => activeWindow.dismiss("cancel")}
+        >
+          Cancelar <Kbd>Esc</Kbd>
+        </Button>
+        <form.Subscribe
+          selector={(state) => [state.canSubmit, state.isSubmitting]}
+        >
+          {([canSubmit, isSubmitting]) => (
+            <Button
+              type="submit"
+              form="upsert-atributos"
+              disabled={readOnly || !canSubmit || isSubmitting}
+            >
+              {isSubmitting ? (
+                "Salvando..."
+              ) : (
+                <span className="flex items-center gap-2">
+                  Salvar{" "}
+                  <KbdGroup>
+                    <Kbd>Alt</Kbd>
+                    <Kbd>Enter</Kbd>
+                  </KbdGroup>
+                </span>
+              )}
             </Button>
-          </DialogClose>
-          <form.Subscribe
-            selector={(state) => [state.canSubmit, state.isSubmitting]}
-          >
-            {([canSubmit, isSubmitting]) => (
-              <Button
-                type="submit"
-                form="upsert-atributos"
-                disabled={!canSubmit || isSubmitting}
-              >
-                {isSubmitting ? (
-                  "Salvando..."
-                ) : (
-                  <span className="flex items-center gap-2">
-                    Salvar{" "}
-                    <KbdGroup>
-                      <Kbd>Alt</Kbd>
-                      <Kbd>Enter</Kbd>
-                    </KbdGroup>
-                  </span>
-                )}
-              </Button>
-            )}
-          </form.Subscribe>
-        </>
-      }
-    >
+          )}
+        </form.Subscribe>
+      </div>
       <form
         id="upsert-atributos"
         className="flex flex-col gap-6"
@@ -200,6 +182,7 @@ function AtributosUpsertForm({
                     label="Atributo"
                     inputSize="full"
                     getFieldError={getFieldError}
+                    disabled={readOnly}
                     maxLength={100}
                     placeholder="Ex: Cor, Voltagem, Tamanho..."
                   />
@@ -252,6 +235,7 @@ function AtributosUpsertForm({
                       inputSize="full"
                       placeholder="Adicionar valor... (ex: Bivolt, Azul, G)"
                       value={newValue}
+                      disabled={readOnly}
                       onChange={(e) => setNewValue(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.altKey) {
@@ -267,6 +251,7 @@ function AtributosUpsertForm({
                       size="icon"
                       variant="secondary"
                       onClick={handleAddValue}
+                      disabled={readOnly}
                     >
                       <Plus className="size-4" />
                     </Button>
@@ -291,6 +276,7 @@ function AtributosUpsertForm({
                               size="icon-xs"
                               className="text-muted-foreground hover:text-foreground hover:bg-muted/80 h-5 w-5 rounded-sm p-0"
                               onClick={() => handleRemoveValue(idx)}
+                              disabled={readOnly}
                             >
                               <X className="size-3" />
                             </Button>
@@ -318,6 +304,6 @@ function AtributosUpsertForm({
           </Alert>
         )}
       </form>
-    </UpsertDialog>
+    </div>
   );
 }

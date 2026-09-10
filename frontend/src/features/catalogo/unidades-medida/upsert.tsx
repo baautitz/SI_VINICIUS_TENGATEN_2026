@@ -1,14 +1,14 @@
 "use client";
 
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
-import { Button } from "@/components/ui/button";
-import { UpsertDialog } from "@/components/ui/upsert-dialog";
-import { DialogClose } from "@/components/ui/dialog";
-import { FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FormFieldUI } from "@/components/ui/form-field-ui";
-import { useForm } from "@tanstack/react-form";
+import React from "react";
+import { Kbd, KbdGroup } from "@/ui/primitives";
+import { Button } from "@/ui/primitives";
+import { FieldLabel } from "@/ui/primitives";
+import { Input } from "@/ui/primitives";
+import { Alert, AlertDescription } from "@/ui/primitives";
+import { Checkbox } from "@/ui/primitives";
+import { FormFieldUI } from "@/ui/composites";
+import { useForm, useStore } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import {
   unidadeMedidaSchema,
@@ -17,44 +17,34 @@ import {
 } from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { unidadesMedidaApi } from "@/api/catalogo";
+import { useWindow, useWindowCommands } from "@/ui/imperative";
+import { Spinner } from "@/ui/primitives";
 
-interface UnidadesMedidaUpsertProps {
-  open: boolean;
+export interface UnidadesMedidaUpsertProps {
   editingItem: UnidadeMedida | null;
-  onClose: () => void;
-  onSuccess: () => void;
   readOnly?: boolean;
 }
 
 interface UnidadesMedidaUpsertFormProps {
-  open: boolean;
   editingItem: UnidadeMedida | null;
-  onClose: () => void;
-  onSuccess: () => void;
   readOnly?: boolean;
 }
 
 export function UnidadesMedidaUpsert(props: UnidadesMedidaUpsertProps) {
-  const { open, editingItem, onClose, readOnly = false } = props;
+  const { editingItem, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
     queryKey: ["unidadesMedida", "detail", editingItem?.id],
     queryFn: () => unidadesMedidaApi.getById(editingItem!.id),
-    enabled: isEditMode && open,
+    enabled: isEditMode,
   });
 
   if (isEditMode && isLoading) {
     return (
-      <UpsertDialog
-      isEdit={!!editingItem}
-        open={open}
-        onOpenChange={(o) => {
-          if (!o) onClose();
-        }}
-        title="Editar Unidade de Medida"
-        loading={true}
-      />
+      <div className="flex min-h-48 items-center justify-center">
+        <Spinner className="size-6" />
+      </div>
     );
   }
 
@@ -68,11 +58,10 @@ export function UnidadesMedidaUpsert(props: UnidadesMedidaUpsertProps) {
 }
 
 function UnidadesMedidaUpsertForm({
-  open,
   editingItem,
-  onClose,
-  onSuccess,
+  readOnly = false,
 }: UnidadesMedidaUpsertFormProps) {
+  const activeWindow = useWindow<true>();
   const { mutation, globalError, getFieldError, resetErrors } =
     useUpsertMutation({
       mutationFn: async (value: UnidadeMedidaFormValues) => {
@@ -81,8 +70,7 @@ function UnidadesMedidaUpsertForm({
           : await unidadesMedidaApi.create(value);
       },
       queryKey: ["unidadesMedida"],
-      onSuccessCallback: onSuccess,
-      onClose: onClose,
+      onSuccessCallback: () => activeWindow.resolve(true),
     });
 
   const form = useForm({
@@ -94,54 +82,69 @@ function UnidadesMedidaUpsertForm({
       ativo: editingItem?.ativo ?? true,
     } as UnidadeMedidaFormValues,
     onSubmit: async ({ value }) => {
+      if (readOnly) return;
       resetErrors();
-      mutation.mutate(value);
+      await mutation.mutateAsync(value);
     },
   });
 
+  const isDirty = useStore(form.store, (state) => state.isDirty);
+  React.useEffect(() => {
+    activeWindow.setDirty(isDirty);
+    return () => activeWindow.setDirty(false);
+  }, [activeWindow, isDirty]);
+  const commands = React.useMemo(
+    () => [
+      {
+        id: "unidades-medida.save",
+        hotkey: "Alt+Enter" as const,
+        label: "Salvar unidade de medida",
+        enabled: !readOnly && !mutation.isPending,
+        run: async (event: KeyboardEvent) => {
+          event.preventDefault();
+          await form.handleSubmit();
+        },
+      },
+    ],
+    [form, mutation.isPending, readOnly],
+  );
+
+  useWindowCommands(commands);
+
   return (
-    <UpsertDialog
-      isEdit={!!editingItem}
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) onClose();
-      }}
-      title={
-        editingItem ? "Editar Unidade de Medida" : "Nova Unidade de Medida"
-      }
-      footer={
-        <>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancelar <Kbd>Esc</Kbd>
+    <div className="flex flex-col gap-4">
+      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => activeWindow.dismiss("cancel")}
+        >
+          Cancelar <Kbd>Esc</Kbd>
+        </Button>
+        <form.Subscribe
+          selector={(state) => [state.canSubmit, state.isSubmitting]}
+        >
+          {([canSubmit, isSubmitting]) => (
+            <Button
+              type="submit"
+              form="upsert-unidades-medida"
+              disabled={readOnly || !canSubmit || isSubmitting}
+            >
+              {isSubmitting ? (
+                "Salvando..."
+              ) : (
+                <span className="flex items-center gap-2">
+                  Salvar{" "}
+                  <KbdGroup>
+                    <Kbd>Alt</Kbd>
+                    <Kbd>Enter</Kbd>
+                  </KbdGroup>
+                </span>
+              )}
             </Button>
-          </DialogClose>
-          <form.Subscribe
-            selector={(state) => [state.canSubmit, state.isSubmitting]}
-          >
-            {([canSubmit, isSubmitting]) => (
-              <Button
-                type="submit"
-                form="upsert-unidades-medida"
-                disabled={!canSubmit || isSubmitting}
-              >
-                {isSubmitting ? (
-                  "Salvando..."
-                ) : (
-                  <span className="flex items-center gap-2">
-                    Salvar{" "}
-                    <KbdGroup>
-                      <Kbd>Alt</Kbd>
-                      <Kbd>Enter</Kbd>
-                    </KbdGroup>
-                  </span>
-                )}
-              </Button>
-            )}
-          </form.Subscribe>
-        </>
-      }
-    >
+          )}
+        </form.Subscribe>
+      </div>
       <form
         id="upsert-unidades-medida"
         className="flex flex-col gap-6"
@@ -176,6 +179,8 @@ function UnidadesMedidaUpsertForm({
                   label="Sigla"
                   getFieldError={getFieldError}
                   inputSize="full"
+                  disabled={readOnly}
+                  maxLength={10}
                 />
               )}
             </form.Field>
@@ -191,6 +196,8 @@ function UnidadesMedidaUpsertForm({
                   label="Descrição"
                   getFieldError={getFieldError}
                   inputSize="full"
+                  disabled={readOnly}
+                  maxLength={100}
                 />
               )}
             </form.Field>
@@ -209,6 +216,8 @@ function UnidadesMedidaUpsertForm({
                   label="Categoria (ex: Peso, Volume)"
                   getFieldError={getFieldError}
                   inputSize="full"
+                  disabled={readOnly}
+                  maxLength={50}
                 />
               )}
             </form.Field>
@@ -218,12 +227,12 @@ function UnidadesMedidaUpsertForm({
         <form.Field name="permiteDecimais">
           {(field) => (
             <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 id={field.name}
+                name={field.name}
                 checked={field.state.value}
-                onChange={(e) => field.handleChange(e.target.checked)}
-                className="h-4 w-4"
+                disabled={readOnly}
+                onCheckedChange={(checked) => field.handleChange(!!checked)}
               />
               <FieldLabel htmlFor={field.name}>
                 Permite casas decimais
@@ -238,6 +247,6 @@ function UnidadesMedidaUpsertForm({
           </Alert>
         )}
       </form>
-    </UpsertDialog>
+    </div>
   );
 }

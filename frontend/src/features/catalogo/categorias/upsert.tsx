@@ -1,31 +1,28 @@
 "use client";
 
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { Kbd, KbdGroup } from "@/ui/primitives";
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { UpsertDialog } from "@/components/ui/upsert-dialog";
-import { DialogClose } from "@/components/ui/dialog";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FormFieldUI } from "@/components/ui/form-field-ui";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useForm } from "@tanstack/react-form";
+import { Button } from "@/ui/primitives";
+import { Field, FieldGroup, FieldLabel } from "@/ui/primitives";
+import { Input } from "@/ui/primitives";
+import { Alert, AlertDescription } from "@/ui/primitives";
+import { FormFieldUI } from "@/ui/composites";
+import { Checkbox } from "@/ui/primitives";
+import { useForm, useStore } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import { categoriaSchema, Categoria, CategoriaFormValues } from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { categoriasApi } from "@/api/catalogo";
+import { useWindow, useWindowCommands } from "@/ui/imperative";
+import { Spinner } from "@/ui/primitives";
 
-interface CategoriasUpsertProps {
-  open: boolean;
+export interface CategoriasUpsertProps {
   editingItem: Categoria | null;
-  onClose: () => void;
-  onSuccess: () => void;
   readOnly?: boolean;
 }
 
 export function CategoriasUpsert(props: CategoriasUpsertProps) {
-  const { open, editingItem, onClose, readOnly = false } = props;
+  const { editingItem, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -36,15 +33,9 @@ export function CategoriasUpsert(props: CategoriasUpsertProps) {
 
   if (isEditMode && isLoading) {
     return (
-      <UpsertDialog
-      isEdit={!!editingItem}
-        open={open}
-        onOpenChange={(o) => {
-          if (!o) onClose();
-        }}
-        title="Editar Categoria"
-        loading={true}
-      />
+      <div className="flex min-h-48 items-center justify-center">
+        <Spinner className="size-6" />
+      </div>
     );
   }
 
@@ -58,11 +49,10 @@ export function CategoriasUpsert(props: CategoriasUpsertProps) {
 }
 
 function CategoriasUpsertForm({
-  open,
   editingItem,
-  onClose,
-  onSuccess,
+  readOnly = false,
 }: CategoriasUpsertProps) {
+  const activeWindow = useWindow<true>();
   const { mutation, globalError, getFieldError, resetErrors } =
     useUpsertMutation({
       mutationFn: async (value: CategoriaFormValues) => {
@@ -71,8 +61,7 @@ function CategoriasUpsertForm({
           : await categoriasApi.create(value);
       },
       queryKey: [["categorias"], ["produtos"]],
-      onSuccessCallback: onSuccess,
-      onClose: onClose,
+      onSuccessCallback: () => activeWindow.resolve(true),
     });
 
   const form = useForm({
@@ -83,51 +72,65 @@ function CategoriasUpsertForm({
     } as CategoriaFormValues,
     onSubmit: async ({ value }) => {
       resetErrors();
-      mutation.mutate(value);
+      await mutation.mutateAsync(value);
     },
   });
 
+  const isDirty = useStore(form.store, (state) => state.isDirty);
+
+  React.useEffect(() => {
+    activeWindow.setDirty(isDirty);
+    return () => activeWindow.setDirty(false);
+  }, [activeWindow, isDirty]);
+
+  const commands = React.useMemo(
+    () => [
+      {
+        id: "categorias.save",
+        hotkey: "Alt+Enter" as const,
+        label: "Salvar categoria",
+        enabled: !readOnly && !mutation.isPending,
+        run: async (event: KeyboardEvent) => {
+          event.preventDefault();
+          await form.handleSubmit();
+        },
+      },
+    ],
+    [form, mutation.isPending, readOnly],
+  );
+
+  useWindowCommands(commands);
+
   return (
-    <UpsertDialog
-      isEdit={!!editingItem}
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) onClose();
-      }}
-      title={editingItem ? "Editar Categoria" : "Nova Categoria"}
-      footer={
-        <>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancelar <Kbd>Esc</Kbd>
+    <div className="flex flex-col gap-4">
+      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => activeWindow.dismiss("cancel")}
+        >
+          Cancelar <Kbd>Esc</Kbd>
+        </Button>
+        <form.Subscribe
+          selector={(state) => [state.canSubmit, state.isSubmitting]}
+        >
+          {([canSubmit, isSubmitting]) => (
+            <Button
+              type="submit"
+              form="upsert-categorias"
+              disabled={readOnly || !canSubmit || isSubmitting}
+            >
+              {isSubmitting ? (
+                "Salvando..."
+              ) : (
+                <span className="flex items-center gap-2">
+                  Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup>
+                </span>
+              )}
             </Button>
-          </DialogClose>
-          <form.Subscribe
-            selector={(state) => [state.canSubmit, state.isSubmitting]}
-          >
-            {([canSubmit, isSubmitting]) => (
-              <Button
-                type="submit"
-                form="upsert-categorias"
-                disabled={!canSubmit || isSubmitting}
-              >
-                {isSubmitting ? (
-                  "Salvando..."
-                ) : (
-                  <span className="flex items-center gap-2">
-                    Salvar{" "}
-                    <KbdGroup>
-                      <Kbd>Alt</Kbd>
-                      <Kbd>Enter</Kbd>
-                    </KbdGroup>
-                  </span>
-                )}
-              </Button>
-            )}
-          </form.Subscribe>
-        </>
-      }
-    >
+          )}
+        </form.Subscribe>
+      </div>
       <form
         id="upsert-categorias"
         className="flex flex-col gap-4"
@@ -163,6 +166,7 @@ function CategoriasUpsertForm({
                     label="Categoria"
                     inputSize="full"
                     getFieldError={getFieldError}
+                    disabled={readOnly}
                     maxLength={100}
                   />
                 )}
@@ -180,6 +184,7 @@ function CategoriasUpsertForm({
                 label="Descrição"
                 inputSize="full"
                 getFieldError={getFieldError}
+                disabled={readOnly}
                 maxLength={255}
               />
             )}
@@ -198,6 +203,7 @@ function CategoriasUpsertForm({
                       id={field.name}
                       name={field.name}
                       checked={field.state.value}
+                      disabled={readOnly}
                       onCheckedChange={(checked) =>
                         field.handleChange(!!checked)
                       }
@@ -216,6 +222,6 @@ function CategoriasUpsertForm({
           </Alert>
         )}
       </form>
-    </UpsertDialog>
+    </div>
   );
 }

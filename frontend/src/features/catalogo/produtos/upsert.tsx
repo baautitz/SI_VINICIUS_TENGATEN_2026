@@ -1,41 +1,30 @@
 "use client";
 
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
-import { useHotkeys } from "@tanstack/react-hotkeys";
-import { useState } from "react";
+import { Kbd, KbdGroup } from "@/ui/primitives";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import type { FormEvent } from "react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { UpsertDialog } from "@/components/ui/upsert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
+import { Button } from "@/ui/primitives";
 import {
   Field,
   FieldGroup,
   FieldLabel,
   FieldError,
-} from "@/components/ui/field";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FormFieldUI } from "@/components/ui/form-field-ui";
-import { Textarea } from "@/components/ui/textarea";
-import { useForm } from "@tanstack/react-form";
+} from "@/ui/primitives";
+import { Alert, AlertDescription } from "@/ui/primitives";
+import { FormFieldUI } from "@/ui/composites";
+import { Textarea } from "@/ui/primitives";
+import { useForm, useStore } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
-import { toast } from "sonner";
 import { UnidadeMedida } from "@/features/catalogo/unidades-medida/types";
 import { Produto, ProdutoFormValues, produtoSchema } from "./types";
 import { SkuFormValues, skuFormSchema } from "./types-sku";
 import { useQuery } from "@tanstack/react-query";
 import { produtosApi, atributosApi } from "@/api/catalogo";
 import { Plus, Trash2 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { NumberInput } from "@/components/ui/number-input";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/ui/primitives";
+import { NumberInput } from "@/ui/composites";
+import { Checkbox } from "@/ui/primitives";
 import {
   Table,
   TableBody,
@@ -43,31 +32,22 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/ui/primitives";
 import { CategoriaInput } from "@/components/entity-inputs/categoria-input";
 import { MarcaInput } from "@/components/entity-inputs/marca-input";
 import { UnidadeMedidaInput } from "@/components/entity-inputs/unidade-medida-input";
 import { AtributoChaveInput } from "@/components/entity-inputs/atributo-chave-input";
 import { AtributoValorMultiInput } from "@/components/entity-inputs/atributo-valor-multi-input";
-import { ItemLinha } from "../../estoque/movimentacoes/upsert";
-import type { Resultado } from "@/api/types";
+import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
 
-interface ProdutosUpsertProps {
-  open: boolean;
+export interface ProdutosUpsertProps {
   editingItem: Produto | null;
-  onClose: () => void;
-  onSuccess: () => void;
   readOnly?: boolean;
-  onSuccessWithAdjustment?: (items: ItemLinha[]) => void;
 }
 
 interface ProdutosUpsertFormProps {
-  open: boolean;
   editingItem: Produto | null;
-  onClose: () => void;
-  onSuccess: () => void;
   readOnly?: boolean;
-  onSuccessWithAdjustment?: (items: ItemLinha[]) => void;
 }
 
 interface VariantOption {
@@ -77,7 +57,7 @@ interface VariantOption {
 }
 
 export function ProdutosUpsert(props: ProdutosUpsertProps) {
-  const { open, editingItem, onClose, readOnly = false } = props;
+  const { editingItem, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -87,39 +67,23 @@ export function ProdutosUpsert(props: ProdutosUpsertProps) {
   });
 
   if (isEditMode && isLoading) {
-    return (
-      <UpsertDialog
-      isEdit={!!editingItem && !readOnly}
-        open={open}
-        onOpenChange={(o) => {
-          if (!o) onClose();
-        }}
-        title={readOnly ? "Visualizar Produto" : "Editar Produto"}
-        loading={true}
-      />
-    );
+    return <div className="text-muted-foreground p-6 text-center">Carregando produto...</div>;
   }
 
   return (
     <ProdutosUpsertForm
-      open={open}
       editingItem={isEditMode ? (fullItem ?? null) : null}
-      onClose={onClose}
       readOnly={readOnly}
-      onSuccess={props.onSuccess}
-      onSuccessWithAdjustment={props.onSuccessWithAdjustment}
     />
   );
 }
 
 function ProdutosUpsertForm({
-  open,
   editingItem,
-  onClose,
-  onSuccess,
   readOnly = false,
-  onSuccessWithAdjustment,
 }: ProdutosUpsertFormProps) {
+  const activeWindow = useWindow<true>();
+  const ui = useUi();
   const isEditMode = !!editingItem;
 
   const getCustoMedio = (skuCode: string) => {
@@ -131,12 +95,8 @@ function ProdutosUpsertForm({
   const [selectedUM, setSelectedUM] = useState<UnidadeMedida | null>(
     editingItem?.unidadeMedida ?? null,
   );
-  const [confirmUomTransitionOpen, setConfirmUomTransitionOpen] =
-    useState(false);
-  const [copyPriceDialogOpen, setCopyPriceDialogOpen] = useState(false);
   const [focusedSkuIndex, setFocusedSkuIndex] = useState<number | null>(null);
-  const [pendingFormValue, setPendingFormValue] =
-    useState<ProdutoFormValues | null>(null);
+  const [hasLocalChanges, setHasLocalChanges] = useState(false);
 
   const { data: atributosList } = useQuery({
     queryKey: ["atributos", "list-all"],
@@ -151,34 +111,9 @@ function ProdutosUpsertForm({
           : await produtosApi.create(value);
       },
       queryKey: [["produtos"], ["skus"]],
-      onSuccessCallback: (res) => {
-        const isTransition =
-          editingItem?.unidadeMedida.permiteDecimais &&
-          selectedUM &&
-          !selectedUM.permiteDecimais;
-
-        const typedRes = res as Resultado<Produto>;
-
-        if (isTransition && onSuccessWithAdjustment && typedRes.data) {
-          const product = typedRes.data;
-          const itemsToAdjust: ItemLinha[] = product.skus.map((s) => ({
-            sku: s.sku,
-            produtoNome: product.produto,
-            quantidade: Math.floor(Number(s.estoque)),
-            custoUnitario: Number(s.custoMedio),
-            estoqueAtual: Number(s.estoque),
-            precoSugerido: Number(s.preco),
-            custoMedio: Number(s.custoMedio),
-            custoUltimaCompra: Number(s.custoUltimaCompra),
-            unidadeMedidaSigla: product.unidadeMedida.sigla,
-            permiteDecimais: false,
-          }));
-          onSuccessWithAdjustment(itemsToAdjust);
-        } else {
-          onSuccess();
-        }
+      onSuccessCallback: () => {
+        activeWindow.resolve(true);
       },
-      onClose: onClose,
     });
 
   const [hasVariants, setHasVariants] = useState<boolean>(() => {
@@ -226,56 +161,6 @@ function ProdutosUpsertForm({
     return [];
   });
 
-  useHotkeys(
-    [
-      {
-        hotkey: "Alt+O",
-        callback: (e: KeyboardEvent) => {
-          e.preventDefault();
-          setHasVariants(true);
-          setOptions((prev) => [
-            ...prev,
-            { keyId: 0, keyName: "", valores: [] },
-          ]);
-        },
-        options: {
-          enabled: open,
-          ignoreInputs: false,
-        },
-      },
-      {
-        hotkey: "Alt+C",
-        callback: (e: KeyboardEvent) => {
-          e.preventDefault();
-          const skus = form.getFieldValue("skus");
-          if (skus && skus.length > 1) {
-            setCopyPriceDialogOpen(true);
-          }
-        },
-        options: {
-          enabled: open && hasVariants && !readOnly,
-          ignoreInputs: false,
-        },
-      },
-    ],
-    { conflictBehavior: "allow" },
-  );
-
-  const handleCopyPrice = () => {
-    const skus = [...form.getFieldValue("skus")];
-    const indexToCopy = focusedSkuIndex ?? 0;
-
-    if (skus.length > 1) {
-      const sourcePrice = skus[indexToCopy].preco;
-      const updatedSkus = skus.map((s) => ({ ...s, preco: sourcePrice }));
-      form.setFieldValue("skus", updatedSkus);
-      toast.success(
-        `Preço (R$ ${sourcePrice.toFixed(2)}) replicado para todas as variações.`,
-      );
-    }
-    setCopyPriceDialogOpen(false);
-  };
-
   const getDisplayKeyName = (option: VariantOption) => {
     const found = atributosList?.itens?.find(
       (item) => item.id === option.keyId,
@@ -317,6 +202,7 @@ function ProdutosUpsertForm({
       skus: getInitialSkus(),
     } as ProdutoFormValues,
     onSubmit: async ({ value }) => {
+      if (readOnly) return;
       resetErrors();
 
       const isChangingToNonDecimal =
@@ -325,9 +211,14 @@ function ProdutosUpsertForm({
         !selectedUM.permiteDecimais;
 
       if (isChangingToNonDecimal) {
-        setPendingFormValue(value);
-        setConfirmUomTransitionOpen(true);
-        return;
+        const confirmation = await ui.windows.confirm({
+          title: "Ajuste de Estoque Necessário",
+          description:
+            "Você está alterando a unidade de medida para uma que não permite quantidades decimais. Isso exige um ajuste de estoque obrigatório para garantir que todos os SKUs tenham quantidades inteiras. Uma movimentação de balanço será gerada automaticamente após salvar.",
+          confirmLabel: "Entendi e Confirmar",
+          cancelLabel: "Cancelar",
+        });
+        if (!confirmation) return;
       }
 
       const submissionValue = { ...value };
@@ -335,21 +226,25 @@ function ProdutosUpsertForm({
         const singleSku = { ...submissionValue.skus[0], atributoValorIds: [] };
         submissionValue.skus = [singleSku];
       }
-      mutation.mutate(submissionValue);
+      await mutation.mutateAsync(submissionValue);
     },
   });
 
-  const confirmUomTransition = () => {
-    if (pendingFormValue) {
-      const submissionValue = { ...pendingFormValue };
-      if (!hasVariants) {
-        const singleSku = { ...submissionValue.skus[0], atributoValorIds: [] };
-        submissionValue.skus = [singleSku];
-      }
-      mutation.mutate(submissionValue);
-      setConfirmUomTransitionOpen(false);
+  const handleCopyPrice = useCallback(() => {
+    const skus = [...form.getFieldValue("skus")];
+    const indexToCopy = focusedSkuIndex ?? 0;
+    const sourceSku = skus[indexToCopy];
+
+    if (skus.length > 1 && sourceSku) {
+      const sourcePrice = sourceSku.preco;
+      const updatedSkus = skus.map((s) => ({ ...s, preco: sourcePrice }));
+      form.setFieldValue("skus", updatedSkus);
+      ui.feedback.notify({
+        type: "success",
+        title: `Preço (R$ ${sourcePrice.toFixed(2)}) replicado para todas as variações.`,
+      });
     }
-  };
+  }, [focusedSkuIndex, form, ui]);
 
   const generateCartesianCombinations = (
     opts: VariantOption[],
@@ -407,12 +302,13 @@ function ProdutosUpsertForm({
   };
 
   const handleUpdateOptions = (newOptions: VariantOption[]) => {
+    setHasLocalChanges(true);
     setOptions(newOptions);
     const newCombinations = generateCartesianCombinations(newOptions);
     form.setFieldValue("skus", newCombinations);
   };
 
-  const getVariationLabel = (valueIds: number[] | undefined) => {
+  const getVariationLabel = useCallback((valueIds: number[] | undefined) => {
     if (!valueIds || valueIds.length === 0) return "";
 
     const labels: string[] = [];
@@ -425,57 +321,129 @@ function ProdutosUpsertForm({
     }
 
     return labels.join(" / ");
+  }, [options]);
+
+  const openCopyPriceConfirmation = useCallback(async () => {
+    const skus = form.getFieldValue("skus");
+    if (readOnly || !hasVariants || skus.length <= 1) return;
+
+    const index = focusedSkuIndex ?? 0;
+    const selectedSku = skus[index];
+    const result = await ui.windows.confirm({
+      title: "Replicar Preço?",
+      description: `Deseja realmente copiar o preço da variação ${getVariationLabel(selectedSku?.atributoValorIds) || "selecionada"} (${selectedSku?.preco.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}) para todas as outras variações deste produto?`,
+      confirmLabel: "Replicar Preço",
+      cancelLabel: "Cancelar",
+    });
+    if (result) handleCopyPrice();
+  }, [focusedSkuIndex, form, getVariationLabel, handleCopyPrice, hasVariants, readOnly, ui]);
+
+  const requestCancel = async () => {
+    activeWindow.dismiss("cancel");
   };
 
+  const addOption = useCallback(async () => {
+    setHasLocalChanges(true);
+    setHasVariants(true);
+    setOptions((prev) => [
+      ...prev,
+      { keyId: 0, keyName: "", valores: [] },
+    ]);
+  }, []);
+
+  const removeOption = async (optionIndex: number) => {
+    const updated = options.filter((_, index) => index !== optionIndex);
+    handleUpdateOptions(updated);
+  };
+
+  const submitForm = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    await form.handleSubmit();
+  };
+
+  const isDirty = useStore(form.store, (state) => state.isDirty);
+  useEffect(() => {
+    activeWindow.setDirty(!readOnly && (isDirty || hasLocalChanges));
+    return () => activeWindow.setDirty(false);
+  }, [activeWindow, hasLocalChanges, isDirty, readOnly]);
+
+  const commands = useMemo(
+    () => [
+      {
+        id: "produtos.add-option",
+        hotkey: "Alt+O" as const,
+        label: "Adicionar opção de produto",
+        enabled: !readOnly,
+        run: async (event: KeyboardEvent) => {
+          event.preventDefault();
+          await addOption();
+        },
+      },
+      {
+        id: "produtos.copy-price",
+        hotkey: "Alt+C" as const,
+        label: "Replicar preço entre variações",
+        enabled: !readOnly && hasVariants,
+        run: async (event: KeyboardEvent) => {
+          event.preventDefault();
+          await openCopyPriceConfirmation();
+        },
+      },
+      {
+        id: "produtos.save",
+        hotkey: "Alt+Enter" as const,
+        label: "Salvar produto",
+        enabled: !readOnly && !mutation.isPending,
+        run: async (event: KeyboardEvent) => {
+          event.preventDefault();
+          await form.handleSubmit();
+        },
+      },
+    ],
+    [addOption, form, hasVariants, mutation.isPending, openCopyPriceConfirmation, readOnly],
+  );
+
+  useWindowCommands(commands);
+
   return (
-    <UpsertDialog
-      isEdit={!!editingItem && !readOnly}
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) onClose();
-      }}
-      title={editingItem ? "Editar Produto" : "Novo Produto"}
-      footer={
-        <>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancelar <Kbd>Esc</Kbd>
+    <div className="flex flex-col gap-4">
+      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={requestCancel}
+        >
+          Cancelar <Kbd>Esc</Kbd>
+        </Button>
+        <form.Subscribe
+          selector={(state) => [state.canSubmit, state.isSubmitting]}
+        >
+          {([canSubmit, isSubmitting]) => (
+            <Button
+              type="submit"
+              form="upsert-produtos"
+              disabled={readOnly || !canSubmit || isSubmitting}
+            >
+              {isSubmitting ? (
+                "Salvando..."
+              ) : (
+                <span className="flex items-center gap-2">
+                  Salvar Produto{" "}
+                  <KbdGroup>
+                    <Kbd>Alt</Kbd>
+                    <Kbd>Enter</Kbd>
+                  </KbdGroup>
+                </span>
+              )}
             </Button>
-          </DialogClose>
-          <form.Subscribe
-            selector={(state) => [state.canSubmit, state.isSubmitting]}
-          >
-            {([canSubmit, isSubmitting]) => (
-              <Button
-                type="submit"
-                form="upsert-produtos"
-                disabled={!canSubmit || isSubmitting}
-              >
-                {isSubmitting ? (
-                  "Salvando..."
-                ) : (
-                  <span className="flex items-center gap-2">
-                    Salvar Produto{" "}
-                    <KbdGroup>
-                      <Kbd>Alt</Kbd>
-                      <Kbd>Enter</Kbd>
-                    </KbdGroup>
-                  </span>
-                )}
-              </Button>
-            )}
-          </form.Subscribe>
-        </>
-      }
-    >
+          )}
+        </form.Subscribe>
+      </div>
       <form
         id="upsert-produtos"
         className="flex flex-col gap-6"
-        onSubmit={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          form.handleSubmit();
-        }}
+        onSubmit={submitForm}
       >
         <FieldGroup className="gap-4">
           <div className="flex w-full flex-wrap items-start gap-4">
@@ -502,6 +470,7 @@ function ProdutosUpsertForm({
                     field={field}
                     label="Nome do Produto"
                     inputSize="full"
+                    disabled={readOnly}
                     getFieldError={getFieldError}
                     maxLength={150}
                     placeholder="Ex: Camiseta"
@@ -525,6 +494,7 @@ function ProdutosUpsertForm({
                     rows={3}
                     value={field.state.value ?? ""}
                     onChange={(e) => field.handleChange(e.target.value)}
+                    disabled={readOnly}
                     placeholder="Descrição do produto..."
                   />
                   {error && <FieldError>{error}</FieldError>}
@@ -553,6 +523,7 @@ function ProdutosUpsertForm({
                     label="Categoria"
                     error={getFieldError(field.name, field.state.meta.errors)}
                     initialItem={editingItem?.categoria}
+                    disabled={readOnly}
                     onSelectId={(id) => field.handleChange(id as number)}
                   />
                 )}
@@ -577,6 +548,7 @@ function ProdutosUpsertForm({
                     label="Marca"
                     error={getFieldError(field.name, field.state.meta.errors)}
                     initialItem={editingItem?.marca}
+                    disabled={readOnly}
                     onSelectId={(id) => field.handleChange(id as number)}
                   />
                 )}
@@ -602,6 +574,7 @@ function ProdutosUpsertForm({
                     label="Unidade de Medida"
                     error={getFieldError(field.name, field.state.meta.errors)}
                     initialItem={editingItem?.unidadeMedida}
+                    disabled={readOnly}
                     onSelectItem={(item) => {
                       setSelectedUM(item);
                       field.handleChange(item?.id as number);
@@ -616,9 +589,10 @@ function ProdutosUpsertForm({
           <form.Field name="ativo">
             {(field) => (
               <Field orientation="horizontal">
-                <Checkbox
+              <Checkbox
                   id={field.name}
                   checked={field.state.value}
+                  disabled={readOnly}
                   onCheckedChange={(checked) => field.handleChange(!!checked)}
                 />
                 <FieldLabel
@@ -634,7 +608,8 @@ function ProdutosUpsertForm({
           <div className="flex items-center gap-2 pt-2">
             <Checkbox
               id="toggle-variantes"
-              checked={hasVariants}
+                checked={hasVariants}
+                disabled={readOnly}
               onCheckedChange={(checked) => {
                 const val = !!checked;
                 setHasVariants(val);
@@ -679,6 +654,7 @@ function ProdutosUpsertForm({
                     label="Código SKU"
                     inputSize="full"
                     getFieldError={getFieldError}
+                    disabled={readOnly}
                     maxLength={50}
                     placeholder="Ex: 104082"
                   />
@@ -697,6 +673,7 @@ function ProdutosUpsertForm({
                     type="number"
                     decimals={2}
                     getFieldError={getFieldError}
+                    disabled={readOnly}
                     placeholder="0,00"
                   />
                 )}
@@ -712,6 +689,7 @@ function ProdutosUpsertForm({
                     label="Código de Barras (EAN)"
                     inputSize="full"
                     getFieldError={getFieldError}
+                    disabled={readOnly}
                     maxLength={14}
                     placeholder="EAN / GTIN"
                   />
@@ -761,13 +739,8 @@ function ProdutosUpsertForm({
                     type="button"
                     variant="outline"
                     className="h-8 gap-2"
-                    onClick={() => {
-                      const newOptions = [
-                        ...options,
-                        { keyId: 0, keyName: "", valores: [] },
-                      ];
-                      setOptions(newOptions);
-                    }}
+                    onClick={addOption}
+                    disabled={readOnly}
                   >
                     <Plus className="size-3.5" /> Adicionar Opção{" "}
                     <KbdGroup>
@@ -792,6 +765,7 @@ function ProdutosUpsertForm({
                           <AtributoChaveInput
                             name={`option-key-${optIdx}`}
                             label={`Opção #${optIdx + 1}`}
+                            disabled={readOnly}
                             initialItem={
                               option.keyId > 0
                                 ? {
@@ -838,6 +812,7 @@ function ProdutosUpsertForm({
                             <AtributoValorMultiInput
                               chaveId={option.keyId}
                               selectedValues={option.valores}
+                              disabled={readOnly}
                               onChange={(newVals) => {
                                 const updated = [...options];
                                 updated[optIdx].valores = newVals;
@@ -853,12 +828,8 @@ function ProdutosUpsertForm({
                             variant="ghost"
                             size="icon"
                             className="text-muted-foreground hover:text-destructive h-8 w-8"
-                            onClick={() => {
-                              const updated = options.filter(
-                                (_, idx) => idx !== optIdx,
-                              );
-                              handleUpdateOptions(updated);
-                            }}
+                            onClick={() => void removeOption(optIdx)}
+                            disabled={readOnly}
                           >
                             <Trash2 className="size-4" />
                           </Button>
@@ -881,7 +852,7 @@ function ProdutosUpsertForm({
                           type="button"
                           variant="outline"
                           size="default"
-                          onClick={() => setCopyPriceDialogOpen(true)}
+                          onClick={openCopyPriceConfirmation}
                         >
                           Replicar Preço Focado
                           <KbdGroup>
@@ -950,6 +921,7 @@ function ProdutosUpsertForm({
                                           onFocus={() =>
                                             setFocusedSkuIndex(index)
                                           }
+                                          disabled={readOnly}
                                           maxLength={50}
                                           placeholder="Ex: 104082"
                                           className={cn(
@@ -993,6 +965,7 @@ function ProdutosUpsertForm({
                                           onFocus={() =>
                                             setFocusedSkuIndex(index)
                                           }
+                                          disabled={readOnly}
                                           onNumberChange={(num) => {
                                             field.handleChange(num);
                                           }}
@@ -1036,6 +1009,7 @@ function ProdutosUpsertForm({
                                           onFocus={() =>
                                             setFocusedSkuIndex(index)
                                           }
+                                          disabled={readOnly}
                                           maxLength={14}
                                           placeholder="EAN"
                                           className={cn(
@@ -1080,6 +1054,7 @@ function ProdutosUpsertForm({
                                   {(field) => (
                                     <Checkbox
                                       checked={field.state.value}
+                                      disabled={readOnly}
                                       onFocus={() => setFocusedSkuIndex(index)}
                                       onCheckedChange={(checked) =>
                                         field.handleChange(!!checked)
@@ -1119,106 +1094,6 @@ function ProdutosUpsertForm({
         )}
       </form>
 
-      <Dialog
-        open={confirmUomTransitionOpen}
-        onOpenChange={setConfirmUomTransitionOpen}
-      >
-        <DialogContent
-          className="max-w-md"
-          onKeyDown={(e) => {
-            if (e.altKey && e.key === "Enter") {
-              e.preventDefault();
-              confirmUomTransition();
-            }
-          }}
-        >
-          <DialogHeader>
-            <DialogTitle>Ajuste de Estoque Necessário</DialogTitle>
-            <DialogDescription>
-              Você está alterando a unidade de medida para uma que{" "}
-              <strong>não permite quantidades decimais</strong> (ex: Unidade).
-              <br />
-              <br />
-              Isso exige um ajuste de estoque obrigatório para garantir que
-              todos os SKUs tenham quantidades inteiras. Uma movimentação de
-              balanço será gerada automaticamente após salvar.
-            </DialogDescription>
-          </DialogHeader>
-
-          <DialogFooter className="mt-4 flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setConfirmUomTransitionOpen(false)}
-            >
-              Cancelar <Kbd>Esc</Kbd>
-            </Button>
-            <Button
-              type="button"
-              variant="default"
-              onClick={confirmUomTransition}
-            >
-              Entendi e Confirmar
-              <KbdGroup className="ml-2">
-                <Kbd>Alt</Kbd>
-                <Kbd>Enter</Kbd>
-              </KbdGroup>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={copyPriceDialogOpen} onOpenChange={setCopyPriceDialogOpen}>
-        <DialogContent
-          className="max-w-md"
-          onKeyDown={(e) => {
-            if (e.altKey && e.key === "Enter") {
-              e.preventDefault();
-              handleCopyPrice();
-            }
-          }}
-        >
-          <DialogHeader>
-            <DialogTitle>Replicar Preço?</DialogTitle>
-            <DialogDescription>
-              Deseja realmente copiar o preço da variação{" "}
-              <strong>
-                {getVariationLabel(
-                  form.getFieldValue("skus")[focusedSkuIndex ?? 0]
-                    ?.atributoValorIds,
-                ) || "selecionada"}
-              </strong>{" "}
-              (
-              <strong>
-                {form
-                  .getFieldValue("skus")
-                  [focusedSkuIndex ?? 0]?.preco.toLocaleString("pt-BR", {
-                    style: "currency",
-                    currency: "BRL",
-                  })}
-              </strong>
-              ) para todas as outras variações deste produto?
-            </DialogDescription>
-          </DialogHeader>
-
-          <DialogFooter className="mt-4 flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setCopyPriceDialogOpen(false)}
-            >
-              Cancelar <Kbd>Esc</Kbd>
-            </Button>
-            <Button type="button" variant="default" onClick={handleCopyPrice}>
-              Replicar Preço
-              <KbdGroup className="ml-2">
-                <Kbd>Alt</Kbd>
-                <Kbd>Enter</Kbd>
-              </KbdGroup>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </UpsertDialog>
+    </div>
   );
 }

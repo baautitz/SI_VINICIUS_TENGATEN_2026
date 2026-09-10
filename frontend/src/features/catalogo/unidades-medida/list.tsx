@@ -1,14 +1,12 @@
 "use client";
 
-import * as React from "react";
 import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
-import { useFeatureHotkeys } from "@/hooks/use-feature-hotkeys";
-import { FeatureHeader } from "@/components/ui/feature-header";
+import { FeatureHeader } from "@/ui/composites";
 import { Scale } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
-import { DataTable } from "@/components/ui/data-table";
-import { FeatureLayout } from "@/components/ui/feature-layout";
-import { Badge } from "@/components/ui/badge";
+import { DataTable } from "@/ui/composites";
+import { FeatureLayout } from "@/ui/composites";
+import { Badge } from "@/ui/primitives";
 import { UnidadeMedida } from "./types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 
@@ -31,9 +29,6 @@ export function UnidadesMedidaList({
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<UnidadeMedida>) {
-  const listRef = React.useRef<HTMLDivElement>(null);
-  useFeatureHotkeys({ onAdd, listRef });
-
   const columns: ColumnDef<UnidadeMedida>[] = [
     getSelectColumn<UnidadeMedida>(),
     {
@@ -74,11 +69,16 @@ export function UnidadesMedidaList({
         );
       },
     },
-    getActionsColumn<UnidadeMedida>({ onEdit, onDelete, selectionMode, onSelect }),
+    getActionsColumn<UnidadeMedida>({
+      onEdit,
+      onDelete,
+      selectionMode,
+      onSelect,
+    }),
   ];
 
   return (
-    <div ref={listRef} className="flex-1 min-h-0 flex flex-col h-full">
+    <div className="flex h-full min-h-0 flex-1 flex-col">
       <FeatureLayout>
         <FeatureHeader
           title="Unidades de Medida"

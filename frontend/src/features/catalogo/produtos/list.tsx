@@ -2,13 +2,12 @@
 
 import * as React from "react";
 import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
-import { useFeatureHotkeys } from "@/hooks/use-feature-hotkeys";
-import { FeatureHeader } from "@/components/ui/feature-header";
+import { FeatureHeader } from "@/ui/composites";
 import { Package } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
-import { DataTable } from "@/components/ui/data-table";
-import { FeatureLayout } from "@/components/ui/feature-layout";
-import { Badge } from "@/components/ui/badge";
+import { DataTable } from "@/ui/composites";
+import { FeatureLayout } from "@/ui/composites";
+import { Badge } from "@/ui/primitives";
 import { Produto } from "./types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 
@@ -23,6 +22,7 @@ export function ProdutosList({
   onSearchChange,
   onAdd,
   onEdit,
+  onView,
   onDelete,
   onSelect,
   onPageChange,
@@ -31,9 +31,6 @@ export function ProdutosList({
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<Produto>) {
-  const listRef = React.useRef<HTMLDivElement>(null);
-  useFeatureHotkeys({ onAdd, listRef });
-
   const columns: ColumnDef<Produto>[] = [
     getSelectColumn<Produto>(),
     {
@@ -81,11 +78,17 @@ export function ProdutosList({
         );
       },
     },
-    getActionsColumn<Produto>({ onEdit, onDelete, selectionMode, onSelect }),
+    getActionsColumn<Produto>({
+      onEdit,
+      onView,
+      onDelete,
+      selectionMode,
+      onSelect,
+    }),
   ];
 
   return (
-    <div ref={listRef} className="flex-1 min-h-0 flex flex-col h-full">
+    <div className="flex-1 min-h-0 flex flex-col h-full">
       <FeatureLayout>
         <FeatureHeader
           title="Produtos"
