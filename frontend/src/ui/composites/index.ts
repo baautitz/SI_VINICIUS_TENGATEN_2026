@@ -1,0 +1,11 @@
+/** Composições de produto sobre as primitivas públicas. */
+export * from "@/components/ui/data-table"
+export * from "@/components/ui/date-picker"
+export * from "@/components/ui/entity-input"
+export * from "@/components/ui/feature-header"
+export * from "@/components/ui/feature-layout"
+export * from "@/components/ui/form-field-ui"
+export * from "@/components/ui/multi-entity-input"
+export * from "@/components/ui/number-input"
+export * from "@/components/ui/overlay-loading"
+export * from "@/components/ui/status-badge"
