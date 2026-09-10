@@ -2,12 +2,12 @@
 
 import React from "react"
 import { Plus, Search } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
+import { Button } from "@/ui/primitives"
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/ui/primitives"
 
 interface FeatureHeaderProps {
   title: string
-  icon: React.ReactNode
+  icon?: React.ReactNode
   searchPlaceholder?: string
   searchTerm: string
   onSearchChange: (value: string) => void

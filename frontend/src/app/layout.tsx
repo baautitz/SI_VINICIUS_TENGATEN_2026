@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/ui/primitives";
 import { AppSidebar } from "@/components/app-sidebar";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/ui/primitives";
 import { Providers } from "@/providers/query-provider";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@/ui/primitives";
+import { WindowManagerHost } from "@/ui/imperative";
+import { WindowManagerProvider } from "@/ui/imperative";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -26,19 +28,22 @@ export default function RootLayout({
       className={cn("font-sans", inter.variable)}
       suppressHydrationWarning
     >
-      <body className="bg-background text-foreground min-h-screen antialiased">
+      <body className="bg-background text-foreground isolate min-h-screen antialiased">
         <Providers>
-          <TooltipProvider>
-            <SidebarProvider>
-              <div className="flex h-screen w-full">
-                <AppSidebar />
-                <main className="flex flex-1 flex-col bg-slate-50/50 p-6 dark:bg-slate-900/10">
-                  {children}
-                </main>
-              </div>
-            </SidebarProvider>
-          </TooltipProvider>
-          <Toaster position="top-right" />
+          <WindowManagerProvider>
+            <TooltipProvider>
+              <SidebarProvider>
+                <div className="flex h-screen w-full">
+                  <AppSidebar />
+                  <main className="flex flex-1 flex-col bg-slate-50/50 p-6 dark:bg-slate-900/10">
+                    {children}
+                  </main>
+                </div>
+              </SidebarProvider>
+            </TooltipProvider>
+            <Toaster position="top-right" />
+            <WindowManagerHost />
+          </WindowManagerProvider>
         </Providers>
       {/* impeccable-live-start */}
 <script src="http://localhost:8400/live.js" async></script>

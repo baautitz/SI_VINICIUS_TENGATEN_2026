@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/ui/primitives";
 import { navigationConfig as systemModules } from "@/config/navigation";
 
 export default function Home() {

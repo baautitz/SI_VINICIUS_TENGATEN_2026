@@ -1,6 +1,5 @@
 import * as React from "react";
-
-import { useHotkeys } from "@tanstack/react-hotkeys";
+import { useWindowCommands } from "@/ui/imperative";
 
 interface UseFeatureHotkeysOptions {
   onAdd?: () => void;
@@ -11,24 +10,18 @@ export function useFeatureHotkeys({
   onAdd,
   listRef,
 }: UseFeatureHotkeysOptions) {
-  useHotkeys(
-    [
-      {
-        hotkey: "Alt+N",
-        callback: (e: KeyboardEvent) => {
-          if (typeof document !== "undefined" && listRef.current) {
-            const anyDialogOpen = document.querySelectorAll('[role="dialog"]').length > 0;
-            const myDialog = listRef.current.closest('[role="dialog"]');
-            if (anyDialogOpen && !myDialog) return;
-          }
-          e.preventDefault();
-          onAdd?.();
-        },
-        options: {
-          ignoreInputs: false,
-        },
+  // A list remains a root-scope command surface. The manager arbitrates
+  // active windows, so background lists cannot steal Alt+N from a dialog.
+  void listRef;
+  useWindowCommands([
+    {
+      id: "feature.list.create",
+      hotkey: "Alt+N",
+      label: "Novo registro",
+      run: (event) => {
+        event.preventDefault();
+        onAdd?.();
       },
-    ],
-    { conflictBehavior: "replace" },
-  );
+    },
+  ]);
 }

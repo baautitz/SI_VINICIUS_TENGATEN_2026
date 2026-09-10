@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useNavigationPathname } from "@/ui/adapters/navigation-next";
 import { ChevronRight, Search } from "lucide-react";
 
 import {
@@ -21,17 +21,17 @@ import {
   SidebarTrigger,
   useSidebar,
   SidebarFooter,
-} from "@/components/ui/sidebar";
+} from "@/ui/primitives";
 
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Kbd } from "@/components/ui/kbd";
-import { useHotkeys } from "@tanstack/react-hotkeys";
-import { InputGroup, InputGroupInput, InputGroupAddon } from "./ui/input-group";
+} from "@/ui/primitives";
+import { Kbd, KbdGroup } from "@/ui/primitives";
+import { InputGroup, InputGroupInput, InputGroupAddon } from "@/ui/primitives";
 import { navigationConfig as groups, homeItem } from "@/config/navigation";
+import { useWindowCommands, useUi } from "@/ui/imperative";
 
 class LocalStorageStore {
   private subscribers = new Set<() => void>();
@@ -108,6 +108,7 @@ function SidebarGroupSection({
 
   const GroupIcon = group.icon;
   const { state, setOpen } = useSidebar();
+  const ui = useUi();
 
   return (
     <SidebarGroup>
@@ -148,7 +149,10 @@ function SidebarGroupSection({
                     return (
                       <SidebarMenuSubItem key={item.title}>
                         <SidebarMenuSubButton asChild isActive={active}>
-                          <Link href={item.url}>
+                          <Link href={item.url} onClick={(event) => {
+                            event.preventDefault();
+                            ui.navigation.go(item.url);
+                          }}>
                             <Icon />
                             <span>{item.title}</span>
                           </Link>
@@ -167,43 +171,40 @@ function SidebarGroupSection({
 }
 
 export function AppSidebar() {
-  const pathname = usePathname();
-  const router = useRouter();
+  const pathname = useNavigationPathname();
+  const ui = useUi();
   const [searchTerm, setSearchTerm] = React.useState("");
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const { state, setOpen } = useSidebar();
 
-  useHotkeys(
-    [
+  const commands = React.useMemo(
+    () => [
       {
-        hotkey: "Alt+S",
-        callback: (e) => {
-          e.preventDefault();
-          if (state === "collapsed") {
-            setOpen(true);
-          }
-          setTimeout(() => {
+        id: "sidebar.search",
+        hotkey: "Alt+S" as const,
+        label: "Buscar no menu",
+        run: (event: KeyboardEvent) => {
+          event.preventDefault();
+          if (state === "collapsed") setOpen(true);
+          window.setTimeout(() => {
             searchInputRef.current?.focus();
             searchInputRef.current?.select();
           }, 50);
         },
-        options: {
-          ignoreInputs: false,
-        },
       },
       {
-        hotkey: "Alt+H",
-        callback: (e) => {
-          e.preventDefault();
-          router.push(homeItem.url);
-        },
-        options: {
-          ignoreInputs: false,
+        id: "sidebar.home",
+        hotkey: "Alt+H" as const,
+        label: "Ir para início",
+        run: (event: KeyboardEvent) => {
+          event.preventDefault();
+          ui.navigation.go(homeItem.url);
         },
       },
     ],
-    { conflictBehavior: "allow" },
+    [setOpen, state, ui],
   );
+  useWindowCommands(commands);
 
   const prevPathnameRef = React.useRef(pathname);
 
@@ -251,10 +252,15 @@ export function AppSidebar() {
     } else if (e.key === "Enter") {
       if (flatItems.length === 1) {
         e.preventDefault();
-        router.push(flatItems[0].url);
+        ui.navigation.go(flatItems[0].url);
         setSearchTerm("");
       }
     }
+  };
+
+  const navigateSearchItem = (url: string) => {
+    setSearchTerm("");
+    ui.navigation.go(url);
   };
 
   return (
@@ -267,9 +273,16 @@ export function AppSidebar() {
               isActive={pathname === homeItem.url}
               tooltip={homeItem.title}
             >
-              <Link href={homeItem.url}>
+              <Link href={homeItem.url} onClick={(event) => {
+                event.preventDefault();
+                ui.navigation.go(homeItem.url);
+              }}>
                 <homeItem.icon />
                 <span>{homeItem.title}</span>
+                <KbdGroup className="ml-auto group-data-[collapsible=icon]:hidden">
+                  <Kbd>Alt</Kbd>
+                  <Kbd>H</Kbd>
+                </KbdGroup>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -310,9 +323,16 @@ export function AppSidebar() {
                         <Link
                           id={`sidebar-search-item-${index}`}
                           href={item.url}
-                          onClick={() => setSearchTerm("")}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            navigateSearchItem(item.url);
+                          }}
                           onKeyDown={(e) => {
-                            if (e.key === "ArrowDown") {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              navigateSearchItem(item.url);
+                            } else if (e.key === "ArrowDown") {
                               e.preventDefault();
                               const nextItem = document.getElementById(
                                 `sidebar-search-item-${index + 1}`,

@@ -1,8 +1,8 @@
 import React from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
-import { Check, Pencil, Trash2 } from "lucide-react";
+import { Checkbox } from "@/ui/primitives";
+import { Button } from "@/ui/primitives";
+import { Check, Eye, Pencil, Trash2 } from "lucide-react";
 
 export function getSelectColumn<T>(): ColumnDef<T> {
   return {
@@ -31,6 +31,7 @@ export function getSelectColumn<T>(): ColumnDef<T> {
 
 interface ActionColumnOptions<T> {
   onEdit?: (item: T) => void;
+  onView?: (item: T) => void;
   onDelete?: (item: T) => void;
   selectionMode?: boolean;
   onSelect?: (item: T) => void;
@@ -38,6 +39,7 @@ interface ActionColumnOptions<T> {
 
 export function getActionsColumn<T>({
   onEdit,
+  onView,
   onDelete,
   selectionMode = false,
   onSelect,
@@ -56,6 +58,16 @@ export function getActionsColumn<T>({
               onClick={() => onEdit(item)}
             >
               <Pencil className="size-4" />
+            </Button>
+          )}
+          {onView && (
+            <Button
+              size="icon-sm"
+              variant="outline"
+              onClick={() => onView(item)}
+              aria-label="Visualizar"
+            >
+              <Eye className="size-4" />
             </Button>
           )}
           {onDelete && (

@@ -1,9 +1,11 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import React from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { useCallback } from "react";
 import { RowSelectionState, OnChangeFn } from "@tanstack/react-table";
 import { useFeatureList } from "./use-feature-list";
 
 export interface FeatureListProps<TDto> {
+  /** Ícone da entidade; a mesma lista pode ser renderizada em uma página ou em uma janela. */
+  icon?: React.ReactNode;
   items: TDto[];
   loading: boolean;
   searchTerm: string;
@@ -11,12 +13,12 @@ export interface FeatureListProps<TDto> {
   totalPages: number;
   totalItems: number;
   selectionMode?: boolean;
-  onSearchChange: (val: string) => void;
-  onAdd: () => void;
-  onEdit: (item: TDto) => void;
-  onView: (item: TDto) => void;
-  onDelete: (item: TDto) => void;
-  onSelect?: (item: TDto) => void;
+  onSearchChange: (value: string) => void;
+  onAdd: () => void | Promise<void>;
+  onEdit: (item: TDto) => void | Promise<void>;
+  onView: (item: TDto) => void | Promise<void>;
+  onDelete: (item: TDto) => void | Promise<void>;
+  onSelect?: (item: TDto) => void | Promise<void>;
   onPageChange: (page: number) => void;
   rowSelection: RowSelectionState;
   onRowSelectionChange: OnChangeFn<RowSelectionState>;
@@ -25,7 +27,7 @@ export interface FeatureListProps<TDto> {
   searchInputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
-interface UseFeatureOrchestratorProps<TDto, TDetail = TDto> {
+interface UseFeatureOrchestratorProps<TDto> {
   queryKey: string;
   initialSearchTerm?: string;
   fetchPage: (
@@ -33,80 +35,46 @@ interface UseFeatureOrchestratorProps<TDto, TDetail = TDto> {
     page: number,
     pageSize: number,
   ) => Promise<{ itens: TDto[]; totalPages: number; totalItems: number }>;
-  fetchById?: (id: string | number, item?: TDto) => Promise<TDetail>;
-  deleteItem?: (item: TDto) => Promise<void>;
+  /** Async recipes supplied by the feature; windows and side effects live there. */
+  recipes?: {
+    create?: () => Promise<void>;
+    edit?: (item: TDto) => Promise<void>;
+    view?: (item: TDto) => Promise<void>;
+    remove?: (item: TDto) => Promise<void>;
+    select?: (item: TDto) => Promise<void>;
+  };
   additionalKeysToInvalidate?: string[][];
-  getReadOnly?: (item: TDetail) => boolean;
 }
 
-export function useFeatureOrchestrator<
-  TDto extends { id?: string | number; sku?: string; codigo?: string },
-  TDetail = TDto,
->({
+/** Shared query/list adapter with no declarative window state. */
+export function useFeatureOrchestrator<TDto>({
   queryKey,
   initialSearchTerm = "",
   fetchPage,
-  fetchById,
-  deleteItem,
+  recipes = {},
   additionalKeysToInvalidate = [],
-  getReadOnly,
-}: UseFeatureOrchestratorProps<TDto, TDetail>) {
+}: UseFeatureOrchestratorProps<TDto>) {
   const list = useFeatureList<TDto>({ initialSearchTerm });
   const queryClient = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: [queryKey, list.deferredSearch, list.page],
+    queryFn: () => fetchPage(list.deferredSearch.trim(), list.page, 50),
+  });
 
-  const allKeysToInvalidate = [[queryKey], ...additionalKeysToInvalidate];
-
-  const invalidateAll = async () => {
+  const invalidate = useCallback(async () => {
     await Promise.all(
-      allKeysToInvalidate.map((key) =>
+      [[queryKey], ...additionalKeysToInvalidate].map((key) =>
         queryClient.invalidateQueries({ queryKey: key }),
       ),
     );
-  };
+  }, [additionalKeysToInvalidate, queryClient, queryKey]);
 
-  const { data, isLoading } = useQuery({
-    queryKey: [queryKey, list.deferredSearch, list.page],
-    queryFn: async () =>
-      await fetchPage(list.deferredSearch.trim(), list.page, 50),
-  });
-
-  const itemId =
-    list.editingItem?.id ?? list.editingItem?.sku ?? list.editingItem?.codigo;
-  const { data: freshItem, isLoading: isLoadingDetail } = useQuery({
-    queryKey: [queryKey, "detail", itemId],
-    queryFn: () => fetchById!(itemId!, list.editingItem ?? undefined),
-    enabled: !!itemId && !!fetchById && list.isUpsertOpen,
-  });
-
-  // Atualiza readOnly automaticamente quando freshItem mudar (ex: após baixa/estorno)
-  // Só aplica quando há um item sendo visualizado/editado (não em criação)
-  React.useEffect(() => {
-    if (freshItem && getReadOnly && list.editingItem) {
-      list.setReadOnly(getReadOnly(freshItem));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [freshItem]);
-
-  const deleteMutation = useMutation({
-    mutationFn: async (item: TDto) => {
-      if (deleteItem) {
-        await deleteItem(item);
-      }
-    },
-    onSuccess: async () => {
-      await invalidateAll();
-      list.setDeleteDialogVisible(false);
-    },
-    onError: () => {
-      // O erro já foi exibido via toast globalmente no interceptor do cliente HTTP (http.ts)
-    },
-  });
-
-  const handleConfirmDelete = () => {
-    if (list.itemToDelete) {
-      deleteMutation.mutate(list.itemToDelete);
-    }
-  };
+  const create = useCallback(async () => recipes.create?.(), [recipes]);
+  const edit = useCallback(async (item: TDto) => recipes.edit?.(item), [recipes]);
+  const view = useCallback(async (item: TDto) => recipes.view?.(item), [recipes]);
+  const remove = useCallback(async (item: TDto) => recipes.remove?.(item), [recipes]);
+  const select = useCallback(async (item: TDto) => recipes.select?.(item), [recipes]);
+  const listRecipe = useCallback(async () => invalidate(), [invalidate]);
 
   return {
     listProps: {
@@ -117,33 +85,18 @@ export function useFeatureOrchestrator<
       totalPages: data?.totalPages ?? 1,
       totalItems: data?.totalItems ?? 0,
       onSearchChange: list.handleSearchChange,
-      onAdd: list.handleCreate,
-      onEdit: list.handleEdit,
-      onView: list.handleView,
-      onDelete: list.handleDeleteClick,
+      onAdd: create,
+      onEdit: edit,
+      onView: view,
+      onDelete: remove,
+      onSelect: recipes.select ? select : undefined,
       onPageChange: list.setPage,
       rowSelection: list.rowSelection,
       onRowSelectionChange: list.setRowSelection,
       selectAllAcrossPages: list.selectAllAcrossPages,
       onSelectAllAcrossPagesChange: list.setSelectAllAcrossPages,
-    },
-    upsertProps: {
-      open: list.isUpsertOpen,
-      editingItem: freshItem || list.editingItem,
-      readOnly: list.readOnly,
-      loading: isLoadingDetail,
-      onClose: () => list.setIsUpsertOpen(false),
-      onSuccess: async () => {
-        await invalidateAll();
-      },
-    },
-    deleteDialogProps: {
-      open: list.deleteDialogOpen,
-      onOpenChange: list.setDeleteDialogVisible,
-      onConfirm: handleConfirmDelete,
-      loading: deleteMutation.isPending,
-      itemToDelete: list.itemToDelete,
-    },
+    } satisfies FeatureListProps<TDto>,
+    recipes: { list: listRecipe, create, edit, view, remove, select },
     featureList: list,
   };
 }
