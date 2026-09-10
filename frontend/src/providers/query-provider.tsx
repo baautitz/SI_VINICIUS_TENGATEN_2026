@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useState, useEffect } from "react"
 import { HotkeysProvider } from "@tanstack/react-hotkeys"
+import "@/lib/zod-config"
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(

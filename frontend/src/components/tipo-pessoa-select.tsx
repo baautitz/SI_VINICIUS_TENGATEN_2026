@@ -2,7 +2,7 @@
 
 import React from "react";
 import { TipoPessoa } from "@/api/types";
-import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { Field, FieldLabel, FieldError } from "@/ui/primitives";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -10,7 +10,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/ui/primitives";
 
 interface TipoPessoaSelectProps {
   name: string;

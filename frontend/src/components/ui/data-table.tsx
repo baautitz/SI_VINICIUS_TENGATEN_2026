@@ -24,11 +24,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
-import { useHotkeys } from "@tanstack/react-hotkeys";
+} from "@/ui/primitives";
+import { Button } from "@/ui/primitives";
+import { Spinner } from "@/ui/primitives";
+import { Kbd, KbdGroup } from "@/ui/primitives";
+import { useWindowCommands } from "@/ui/imperative";
 import { InputGroup, InputGroupInput, InputGroupAddon } from "./input-group";
 
 interface DataTableProps<TData, TValue> {
@@ -98,144 +98,6 @@ export function DataTable<TData, TValue>({
   const internalSearchInputRef = React.useRef<HTMLInputElement>(null);
   const activeSearchInputRef = searchInputRef || internalSearchInputRef;
 
-  useHotkeys(
-    [
-      {
-        hotkey: "Alt+Q",
-        callback: (e: KeyboardEvent) => {
-          const isInsideDialog =
-            !!activeSearchInputRef?.current?.closest('[role="dialog"]');
-          const anyDialogOpen =
-            typeof document !== "undefined" &&
-            !!document.querySelectorAll('[role="dialog"]').length;
-
-          if (anyDialogOpen && !isInsideDialog) {
-            return;
-          }
-
-          e.preventDefault();
-          activeSearchInputRef?.current?.focus();
-          activeSearchInputRef?.current?.select();
-        },
-        options: {
-          ignoreInputs: false,
-        },
-      },
-      {
-        hotkey: "Enter",
-        callback: (e: KeyboardEvent) => {
-          if (focusedRowIndex === null || rows.length === 0) return;
-
-          const activeElement = document.activeElement as HTMLElement;
-          if (
-            activeElement?.tagName === "INPUT" ||
-            activeElement?.tagName === "TEXTAREA" ||
-            activeElement?.tagName === "SELECT" ||
-            activeElement?.tagName === "A" ||
-            activeElement?.tagName === "BUTTON"
-          ) {
-            return;
-          }
-
-          const rowData = rows[focusedRowIndex].original;
-          const dialogs =
-            typeof document !== "undefined"
-              ? document.querySelectorAll('[role="dialog"]')
-              : [];
-          const topDialog =
-            dialogs.length > 0 ? dialogs[dialogs.length - 1] : null;
-
-          if (
-            topDialog &&
-            rowRefs.current[focusedRowIndex]?.closest('[role="dialog"]') !==
-              topDialog
-          ) {
-            return;
-          }
-
-          e.preventDefault();
-          if (onRowSelect) {
-            onRowSelect(rowData);
-          } else if (onEditRow) {
-            onEditRow(rowData);
-          }
-        },
-        options: {
-          enabled: focusedRowIndex !== null,
-          ignoreInputs: true,
-        },
-      },
-      {
-        hotkey: "Alt+E",
-        callback: (e: KeyboardEvent) => {
-          if (focusedRowIndex === null || rows.length === 0 || !onEditRow)
-            return;
-          const rowData = rows[focusedRowIndex].original;
-          e.preventDefault();
-          onEditRow(rowData);
-        },
-        options: {
-          enabled: focusedRowIndex !== null && !!onEditRow,
-          ignoreInputs: false,
-        },
-      },
-      {
-        hotkey: "Delete",
-        callback: (e: KeyboardEvent) => {
-          if (focusedRowIndex === null || rows.length === 0 || !onDeleteRow)
-            return;
-
-          if (
-            document.activeElement?.tagName === "INPUT" ||
-            document.activeElement?.tagName === "TEXTAREA" ||
-            document.activeElement?.tagName === "SELECT"
-          ) {
-            return;
-          }
-
-          const rowData = rows[focusedRowIndex].original;
-          e.preventDefault();
-          onDeleteRow(rowData);
-        },
-        options: {
-          enabled: focusedRowIndex !== null && !!onDeleteRow,
-          ignoreInputs: true,
-        },
-      },
-      {
-        hotkey: "Backspace",
-        callback: (e: KeyboardEvent) => {
-          if (focusedRowIndex === null || rows.length === 0 || !onDeleteRow)
-            return;
-
-          if (
-            document.activeElement?.tagName === "INPUT" ||
-            document.activeElement?.tagName === "TEXTAREA" ||
-            document.activeElement?.tagName === "SELECT"
-          ) {
-            return;
-          }
-
-          const rowData = rows[focusedRowIndex].original;
-          e.preventDefault();
-          onDeleteRow(rowData);
-        },
-        options: {
-          enabled: focusedRowIndex !== null && !!onDeleteRow,
-          ignoreInputs: true,
-        },
-      },
-    ],
-    { conflictBehavior: "allow" },
-  );
-
-  React.useEffect(() => {
-    const timeout = setTimeout(() => {
-      activeSearchInputRef?.current?.focus();
-    }, 100);
-    return () => clearTimeout(timeout);
-  }, [activeSearchInputRef]);
-
   React.useEffect(() => {
     const input = activeSearchInputRef?.current;
     if (!input || !hasKeyboardNav) return;
@@ -276,12 +138,85 @@ export function DataTable<TData, TValue>({
 
   const rows = table.getRowModel().rows;
 
+  const commands = React.useMemo(
+    () => [
+      {
+        id: "table.search",
+        hotkey: "Alt+Q" as const,
+        label: "Focar busca",
+        run: (event: KeyboardEvent) => {
+          event.preventDefault();
+          activeSearchInputRef?.current?.focus();
+          activeSearchInputRef?.current?.select();
+        },
+      },
+      {
+        id: "table.confirm-row",
+        hotkey: "Enter" as const,
+        label: "Selecionar ou editar linha",
+        enabled: focusedRowIndex !== null && rows.length > 0,
+        // Só consome Enter quando uma linha está focada. Se o foco estiver em
+        // um link/botão externo (por exemplo, a busca do menu lateral), a ação
+        // nativa desse controle precisa continuar funcionando.
+        preventDefault: false,
+        stopPropagation: false,
+        run: (event: KeyboardEvent) => {
+          const activeElement = document.activeElement as HTMLElement;
+          if (["INPUT", "TEXTAREA", "SELECT", "A", "BUTTON"].includes(activeElement?.tagName)) return;
+          if (focusedRowIndex === null || !rows[focusedRowIndex]) return;
+          event.preventDefault();
+          const rowData = rows[focusedRowIndex].original;
+          if (onRowSelect) onRowSelect(rowData);
+          else onEditRow?.(rowData);
+        },
+      },
+      {
+        id: "table.edit-row",
+        hotkey: "Alt+E" as const,
+        label: "Editar linha",
+        enabled: focusedRowIndex !== null && rows.length > 0 && !!onEditRow,
+        run: (event: KeyboardEvent) => {
+          if (focusedRowIndex === null || !rows[focusedRowIndex] || !onEditRow) return;
+          event.preventDefault();
+          onEditRow(rows[focusedRowIndex].original);
+        },
+      },
+      ...(["Delete", "Backspace"] as const).map((hotkey) => ({
+        id: `table.delete-row.${hotkey.toLowerCase()}`,
+        hotkey,
+        label: "Excluir linha",
+        enabled: focusedRowIndex !== null && rows.length > 0 && !!onDeleteRow,
+        // O atalho também fica registrado enquanto o filtro está focado. A
+        // decisão de consumir a tecla precisa acontecer no handler, depois de
+        // verificar o elemento ativo, para não quebrar Backspace/Delete em
+        // inputs de busca.
+        preventDefault: false,
+        stopPropagation: false,
+        run: (event: KeyboardEvent) => {
+          if (focusedRowIndex === null || !rows[focusedRowIndex] || !onDeleteRow) return;
+          const eventTarget = event.target as HTMLElement | null;
+          const focusedTag = eventTarget?.tagName ?? document.activeElement?.tagName;
+          if (["INPUT", "TEXTAREA", "SELECT", "BUTTON"].includes(focusedTag ?? "")) return;
+          event.preventDefault();
+          onDeleteRow(rows[focusedRowIndex].original);
+        },
+      })),
+    ],
+    [activeSearchInputRef, focusedRowIndex, onDeleteRow, onEditRow, onRowSelect, rows],
+  );
+
+  useWindowCommands(commands);
+
   const handleRowKeyDown = (
     e: React.KeyboardEvent<HTMLTableRowElement>,
     index: number,
     rowData: TData,
   ) => {
+    const targetTag = (e.target as HTMLElement)?.tagName;
+    const isFormControl = ["INPUT", "TEXTAREA", "SELECT", "BUTTON"].includes(targetTag);
+
     if (e.key === "Enter") {
+      if (isFormControl) return;
       e.preventDefault();
       if (onRowSelect) {
         onRowSelect(rowData);
@@ -294,6 +229,7 @@ export function DataTable<TData, TValue>({
         onEditRow(rowData);
       }
     } else if (e.key === "Delete" || e.key === "Backspace") {
+      if (isFormControl) return;
       e.preventDefault();
       if (onDeleteRow) {
         onDeleteRow(rowData);
@@ -317,47 +253,6 @@ export function DataTable<TData, TValue>({
       }
     }
   };
-
-  React.useEffect(() => {
-    if (typeof document === "undefined") return;
-
-    let dialogCount = document.querySelectorAll('[role="dialog"]').length;
-
-    const observer = new MutationObserver(() => {
-      const currentCount = document.querySelectorAll('[role="dialog"]').length;
-
-      if (currentCount < dialogCount) {
-        const input = activeSearchInputRef?.current;
-        if (!input) return;
-
-        const isTableInsideDialog = !!input.closest('[role="dialog"]');
-
-        const restoreFocus = () => {
-          if (focusedRowIndex !== null && rowRefs.current[focusedRowIndex]) {
-            rowRefs.current[focusedRowIndex]?.focus();
-          } else {
-            input.focus();
-            input.select();
-            setFocusedRowIndex(null);
-          }
-        };
-
-        if (currentCount === 0 && !isTableInsideDialog) {
-          setTimeout(restoreFocus, 100);
-        } else if (currentCount > 0 && isTableInsideDialog) {
-          const dialogs = document.querySelectorAll('[role="dialog"]');
-          const topDialog = dialogs[dialogs.length - 1];
-          if (input.closest('[role="dialog"]') === topDialog) {
-            setTimeout(restoreFocus, 100);
-          }
-        }
-      }
-      dialogCount = currentCount;
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
-    return () => observer.disconnect();
-  }, [activeSearchInputRef, focusedRowIndex]);
 
   return (
     <div

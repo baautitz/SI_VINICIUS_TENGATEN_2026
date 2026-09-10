@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { Field, FieldLabel, FieldError } from "@/ui/primitives";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -9,7 +9,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/ui/primitives";
 
 interface SexoSelectProps {
   name: string;

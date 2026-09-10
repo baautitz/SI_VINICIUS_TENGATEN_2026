@@ -6,7 +6,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@/ui/primitives";
 import { cn } from "@/lib/utils";
 
 interface ComboboxContextType {
@@ -33,6 +33,7 @@ interface ComboboxProps {
   defaultValue?: string[];
   value?: string[];
   onValueChange?: (value: string[]) => void;
+  disabled?: boolean;
   children: React.ReactNode;
 }
 
@@ -42,6 +43,7 @@ export function Combobox({
   defaultValue = [],
   value,
   onValueChange,
+  disabled = false,
   children,
 }: ComboboxProps) {
   const [selectedValuesState, setSelectedValuesState] =
@@ -75,6 +77,7 @@ export function Combobox({
   }, [items, searchText]);
 
   const handleSelect = (val: string) => {
+    if (disabled) return;
     if (multiple) {
       if (selectedValues.includes(val)) {
         setSelectedValues(selectedValues.filter((v) => v !== val));
@@ -97,7 +100,9 @@ export function Combobox({
         searchText,
         setSearchText,
         isOpen,
-        setIsOpen,
+        setIsOpen: (open) => {
+          if (!disabled) setIsOpen(open);
+        },
         items: [...items],
         filteredItems,
         focusedIndex,
@@ -106,7 +111,7 @@ export function Combobox({
         handleSelect,
       }}
     >
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <Popover open={isOpen} onOpenChange={(open) => !disabled && setIsOpen(open)}>
         {children}
       </Popover>
     </ComboboxContext.Provider>

@@ -2,8 +2,8 @@
 
 import React from "react";
 import { Pencil } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { Button } from "@/ui/primitives";
+import { Field, FieldLabel, FieldError } from "@/ui/primitives";
 import {
   Combobox,
   ComboboxChip,
@@ -16,7 +16,7 @@ import {
   ComboboxValue,
   ComboboxCreate,
   useComboboxAnchor,
-} from "@/components/ui/combobox";
+} from "@/ui/primitives";
 
 export interface MultiEntityItem {
   id: number;
@@ -35,6 +35,7 @@ interface MultiEntityInputProps {
   onCreateOption?: (text: string) => void;
   editLabel?: string;
   loading?: boolean;
+  disabled?: boolean;
 }
 
 export function MultiEntityInput({
@@ -49,6 +50,7 @@ export function MultiEntityInput({
   onCreateOption,
   editLabel = "Editar",
   loading = false,
+  disabled = false,
 }: MultiEntityInputProps) {
   const anchor = useComboboxAnchor();
 
@@ -57,7 +59,7 @@ export function MultiEntityInput({
       const item = availableItems.find((i) => String(i.id) === val);
       return item || { id: Number(val), label: val };
     });
-    onChange(newSelected);
+    if (!disabled) onChange(newSelected);
   };
 
   const selectedIds = selectedItems.map((i) => String(i.id));
@@ -73,6 +75,7 @@ export function MultiEntityInput({
             items={availableItems}
             value={selectedIds}
             onValueChange={handleValueChange}
+            disabled={disabled}
           >
             <ComboboxChips ref={anchor} className="w-full">
               <ComboboxValue>
@@ -85,14 +88,16 @@ export function MultiEntityInput({
                         <ComboboxChip
                           key={value}
                           onRemove={() => {
-                            onChange(selectedItems.filter((i) => String(i.id) !== value));
+                            if (!disabled) {
+                              onChange(selectedItems.filter((i) => String(i.id) !== value));
+                            }
                           }}
                         >
                           {displayLabel}
                         </ComboboxChip>
                       );
                     })}
-                    <ComboboxChipsInput id={name} placeholder={selectedItems.length === 0 ? placeholder : ""} disabled={loading} />
+                    <ComboboxChipsInput id={name} placeholder={selectedItems.length === 0 ? placeholder : ""} disabled={disabled || loading} />
                   </React.Fragment>
                 )}
               </ComboboxValue>
@@ -107,7 +112,7 @@ export function MultiEntityInput({
                   </ComboboxItem>
                 )}
               </ComboboxList>
-              {onCreateOption && (
+              {onCreateOption && !disabled && (
                 <ComboboxCreate onClick={onCreateOption}>
                   {(text) => `+ Criar valor "${text}"`}
                 </ComboboxCreate>
@@ -123,6 +128,7 @@ export function MultiEntityInput({
             type="button"
             tabIndex={-1}
             onClick={onEditEntity}
+            disabled={disabled}
             title={editLabel}
             className="shrink-0"
           >

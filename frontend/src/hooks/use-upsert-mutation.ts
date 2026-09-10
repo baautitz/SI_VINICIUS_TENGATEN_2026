@@ -1,6 +1,7 @@
 import React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { extractApiErrors } from "@/utils/api-error";
+import "@/lib/zod-config";
 
 interface UseUpsertMutationOptions<TValue, TResponse> {
   mutationFn: (value: TValue) => Promise<TResponse>;

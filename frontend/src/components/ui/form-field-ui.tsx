@@ -1,7 +1,7 @@
 import React from "react"
-import { Field, FieldLabel, FieldError } from "@/components/ui/field"
-import { Input, type InputProps } from "@/components/ui/input"
-import { NumberInput } from "@/components/ui/number-input"
+import { Field, FieldLabel, FieldError } from "@/ui/primitives"
+import { Input, type InputProps } from "@/ui/primitives"
+import { NumberInput } from "@/ui/composites"
 
 interface FormFieldUIProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
