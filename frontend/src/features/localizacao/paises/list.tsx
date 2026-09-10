@@ -1,16 +1,13 @@
 "use client";
 
-import * as React from "react";
-
 import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
-import { useFeatureHotkeys } from "@/hooks/use-feature-hotkeys";
-import { FeatureHeader } from "@/components/ui/feature-header";
+import { FeatureHeader } from "@/ui/composites";
 import { Globe } from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table";
 
-import { DataTable } from "@/components/ui/data-table";
+import { DataTable } from "@/ui/composites";
 
-import { FeatureLayout } from "@/components/ui/feature-layout";
+import { FeatureLayout } from "@/ui/composites";
 import { Pais } from "./types";
 
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
@@ -26,6 +23,7 @@ export function PaisesList({
   onSearchChange,
   onAdd,
   onEdit,
+  onView,
   onDelete,
   onSelect,
   onPageChange,
@@ -34,9 +32,6 @@ export function PaisesList({
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<Pais>) {
-  const listRef = React.useRef<HTMLDivElement>(null);
-  useFeatureHotkeys({ onAdd, listRef });
-
   const columns: ColumnDef<Pais>[] = [
     getSelectColumn<Pais>(),
     {
@@ -70,11 +65,11 @@ export function PaisesList({
       accessorKey: "simboloMoeda",
       header: "Símbolo",
     },
-    getActionsColumn<Pais>({ onEdit, onDelete, selectionMode, onSelect }),
+    getActionsColumn<Pais>({ onEdit, onView, onDelete, selectionMode, onSelect }),
   ];
 
   return (
-    <div ref={listRef} className="flex-1 min-h-0 flex flex-col h-full">
+    <div className="flex-1 min-h-0 flex flex-col h-full">
       <FeatureLayout>
       <FeatureHeader
         title="Países"

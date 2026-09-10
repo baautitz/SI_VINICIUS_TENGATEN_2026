@@ -1,11 +1,12 @@
 "use client";
 
 import { BairrosList } from "./list";
-import { BairrosUpsert } from "./upsert";
+import { BairrosUpsert, type BairrosUpsertProps } from "./upsert";
 import { Bairro } from "./types";
-import { DeleteDialog } from "@/components/ui/delete-dialog";
-import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
+import { useFeatureList } from "@/hooks/use-feature-list";
 import { bairrosApi } from "@/api/localizacao";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useUi } from "@/ui/imperative";
 
 export * from "./types";
 
@@ -20,57 +21,62 @@ export function BairrosFeature({
   onSelect,
   initialSearchTerm = "",
 }: BairrosFeatureProps) {
-  const {
-    listProps,
-    upsertProps,
-    deleteDialogProps,
-    featureList: list,
-  } = useFeatureOrchestrator<Bairro>({
-    queryKey: "bairros",
-    initialSearchTerm,
-    fetchPage: async (searchTerm, page, pageSize) => {
-      const res = await bairrosApi.list(searchTerm || undefined, page, pageSize);
-      if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
-
-      return {
-        itens: res.itens,
-        totalPages: res.totalDePaginas ?? 1,
-        totalItems: res.totalDeItens ?? 0,
-      };
-    },
-    fetchById: async (id) => {
-      return await bairrosApi.getById(id as number);
-    },
-    deleteItem: async (item) => {
-      await bairrosApi.delete(item.id);
+  const ui = useUi();
+  const queryClient = useQueryClient();
+  const list = useFeatureList<Bairro>({ initialSearchTerm });
+  const { data, isLoading } = useQuery({
+    queryKey: ["bairros", list.deferredSearch, list.page],
+    queryFn: async () => {
+      const res = await bairrosApi.list(list.deferredSearch.trim() || undefined, list.page, 50);
+      return { itens: res?.itens ?? [], totalPages: res?.totalDePaginas ?? 1, totalItems: res?.totalDeItens ?? 0 };
     },
   });
+  const invalidate = async () => queryClient.invalidateQueries({ queryKey: ["bairros"] });
+  const openUpsert = async (editingItem: Bairro | null, readOnly = false) => {
+    const result = await ui.windows.open<true, BairrosUpsertProps>({
+      component: BairrosUpsert,
+      props: { editingItem, readOnly },
+      title: readOnly ? "Visualizar Bairro" : editingItem ? "Editar Bairro" : "Novo Bairro",
+    });
+    if (result.status === "confirmed") {
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: editingItem ? "Bairro atualizado com sucesso." : "Bairro criado com sucesso." });
+    }
+  };
+  const deleteBairro = async (item: Bairro) => {
+    const result = await ui.windows.confirm({
+      title: "Excluir Bairro",
+      description: <>Deseja realmente excluir o bairro <strong>{item.bairro}</strong> de <strong>{item.cidade.cidade}</strong> ({item.cidade.estado.uf})? Esta ação não poderá ser desfeita.</>,
+      confirmLabel: "Excluir",
+      confirmVariant: "destructive",
+    });
+    if (!result) return;
+    await bairrosApi.delete(item.id);
+    await invalidate();
+    ui.feedback.notify({ type: "success", title: "Bairro excluído com sucesso." });
+  };
 
   return (
     <>
       <BairrosList
-        {...listProps}
+        items={data?.itens ?? []}
+        loading={isLoading}
+        searchTerm={list.searchTerm}
+        page={list.page}
+        totalPages={data?.totalPages ?? 1}
+        totalItems={data?.totalItems ?? 0}
+        onSearchChange={list.handleSearchChange}
+        onAdd={() => openUpsert(null)}
+        onEdit={(item) => openUpsert(item)}
+        onView={(item) => openUpsert(item, true)}
+        onDelete={deleteBairro}
+        onPageChange={list.setPage}
+        rowSelection={list.rowSelection}
+        onRowSelectionChange={list.setRowSelection}
+        selectAllAcrossPages={list.selectAllAcrossPages}
+        onSelectAllAcrossPagesChange={list.setSelectAllAcrossPages}
         selectionMode={selectionMode}
         onSelect={onSelect}
-      />
-
-      {list.isUpsertOpen && (
-        <BairrosUpsert key={list.editingItem?.id ?? "new"} {...upsertProps} />
-      )}
-
-      <DeleteDialog
-        {...deleteDialogProps}
-        title="Excluir Bairro"
-        description={
-          <p>
-            Deseja realmente excluir o bairro{" "}
-            <strong>{list.itemToDelete?.bairro}</strong> de{" "}
-            <strong>
-              {list.itemToDelete?.cidade.cidade} ({list.itemToDelete?.cidade.estado.uf})
-            </strong>
-            ? Esta ação não poderá ser desfeita.
-          </p>
-        }
       />
     </>
   );

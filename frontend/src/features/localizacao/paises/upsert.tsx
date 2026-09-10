@@ -1,30 +1,27 @@
 "use client";
 
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { Kbd, KbdGroup } from "@/ui/primitives";
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { UpsertDialog } from "@/components/ui/upsert-dialog";
-import { DialogClose } from "@/components/ui/dialog";
-import { FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FormFieldUI } from "@/components/ui/form-field-ui";
-import { useForm } from "@tanstack/react-form";
+import { Button } from "@/ui/primitives";
+import { FieldGroup, FieldLabel } from "@/ui/primitives";
+import { Input } from "@/ui/primitives";
+import { Alert, AlertDescription } from "@/ui/primitives";
+import { FormFieldUI } from "@/ui/composites";
+import { useForm, useStore } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import { paisSchema, Pais } from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { paisesApi } from "@/api/localizacao";
+import { useWindow, useWindowCommands } from "@/ui/imperative";
+import { Spinner } from "@/ui/primitives";
 
-interface PaisesUpsertProps {
-  open: boolean;
+export interface PaisesUpsertProps {
   editingItem: Pais | null;
-  onClose: () => void;
-  onSuccess: () => void;
   readOnly?: boolean;
 }
 
 export function PaisesUpsert(props: PaisesUpsertProps) {
-  const { open, editingItem, onClose, readOnly = false } = props;
+  const { editingItem, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -35,15 +32,7 @@ export function PaisesUpsert(props: PaisesUpsertProps) {
 
   if (isEditMode && isLoading) {
     return (
-      <UpsertDialog
-      isEdit={!!editingItem}
-        open={open}
-        onOpenChange={(o) => {
-          if (!o) onClose();
-        }}
-        title="Editar País"
-        loading={true}
-      />
+      <div className="flex min-h-48 items-center justify-center"><Spinner className="size-6" /></div>
     );
   }
 
@@ -57,11 +46,10 @@ export function PaisesUpsert(props: PaisesUpsertProps) {
 }
 
 function PaisesUpsertForm({
-  open,
   editingItem,
-  onClose,
-  onSuccess,
+  readOnly = false,
 }: PaisesUpsertProps) {
+  const activeWindow = useWindow<true>();
   const { mutation, globalError, getFieldError, resetErrors } =
     useUpsertMutation({
       mutationFn: async (value: {
@@ -76,8 +64,7 @@ function PaisesUpsertForm({
           : await paisesApi.create(value);
       },
       queryKey: ["paises"],
-      onSuccessCallback: onSuccess,
-      onClose: onClose,
+      onSuccessCallback: () => activeWindow.resolve(true),
     });
 
   const form = useForm({
@@ -90,25 +77,34 @@ function PaisesUpsertForm({
     },
     onSubmit: async ({ value }) => {
       resetErrors();
-      mutation.mutate(value);
+      await mutation.mutateAsync(value);
     },
   });
 
+  const isDirty = useStore(form.store, (state) => state.isDirty);
+  React.useEffect(() => {
+    activeWindow.setDirty(isDirty);
+    return () => activeWindow.setDirty(false);
+  }, [activeWindow, isDirty]);
+  useWindowCommands([
+    {
+      id: "paises.save",
+      hotkey: "Alt+Enter" as const,
+      label: "Salvar país",
+      enabled: !readOnly && !mutation.isPending,
+      run: async (event) => {
+        event.preventDefault();
+        await form.handleSubmit();
+      },
+    },
+  ]);
+
   return (
-    <UpsertDialog
-      isEdit={!!editingItem}
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) onClose();
-      }}
-      title={editingItem ? "Editar País" : "Novo País"}
-      footer={
-        <>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancelar <Kbd>Esc</Kbd>
-            </Button>
-          </DialogClose>
+    <div className="flex flex-col gap-4">
+      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+        <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>
+          Cancelar <Kbd>Esc</Kbd>
+        </Button>
           <form.Subscribe
             selector={(state) => [state.canSubmit, state.isSubmitting]}
           >
@@ -116,7 +112,7 @@ function PaisesUpsertForm({
               <Button
                 type="submit"
                 form="upsert-paises"
-                disabled={!canSubmit || isSubmitting}
+                disabled={readOnly || !canSubmit || isSubmitting}
               >
                 {isSubmitting ? (
                   "Salvando..."
@@ -132,9 +128,7 @@ function PaisesUpsertForm({
               </Button>
             )}
           </form.Subscribe>
-        </>
-      }
-    >
+      </div>
       <form
         id="upsert-paises"
         className="flex flex-col gap-4"
@@ -170,6 +164,7 @@ function PaisesUpsertForm({
                     label="País"
                     inputSize="full"
                     getFieldError={getFieldError}
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -186,6 +181,7 @@ function PaisesUpsertForm({
                 label="Código ISO do país"
                 inputSize="small"
                 getFieldError={getFieldError}
+                disabled={readOnly}
                 maxLength={3}
                 onChangeOverride={(val) => val.toUpperCase()}
               />
@@ -202,6 +198,7 @@ function PaisesUpsertForm({
                 label="DDI"
                 inputSize="small"
                 getFieldError={getFieldError}
+                disabled={readOnly}
               />
             )}
           </form.Field>
@@ -216,6 +213,7 @@ function PaisesUpsertForm({
                 label="Código ISO da moeda"
                 inputSize="medium"
                 getFieldError={getFieldError}
+                disabled={readOnly}
               />
             )}
           </form.Field>
@@ -230,6 +228,7 @@ function PaisesUpsertForm({
                 label="Símbolo da Moeda"
                 inputSize="small"
                 getFieldError={getFieldError}
+                disabled={readOnly}
               />
             )}
           </form.Field>
@@ -241,6 +240,6 @@ function PaisesUpsertForm({
           </Alert>
         )}
       </form>
-    </UpsertDialog>
+    </div>
   );
 }

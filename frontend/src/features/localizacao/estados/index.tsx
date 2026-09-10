@@ -2,11 +2,12 @@
 
 import React from "react";
 import { EstadosList } from "./list";
-import { EstadosUpsert } from "./upsert";
+import { EstadosUpsert, type EstadosUpsertProps } from "./upsert";
 import { Estado } from "./types";
-import { DeleteDialog } from "@/components/ui/delete-dialog";
-import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
+import { useFeatureList } from "@/hooks/use-feature-list";
 import { estadosApi } from "@/api/localizacao";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useUi } from "@/ui/imperative";
 
 export * from "./types";
 
@@ -21,54 +22,62 @@ export function EstadosFeature({
   onSelect,
   initialSearchTerm = "",
 }: EstadosFeatureProps) {
-  const {
-    listProps,
-    upsertProps,
-    deleteDialogProps,
-    featureList: list,
-  } = useFeatureOrchestrator<Estado>({
-    queryKey: "estados",
-    initialSearchTerm,
-    fetchPage: async (searchTerm, page, pageSize) => {
-      const res = await estadosApi.list(searchTerm || undefined, page, pageSize);
-      if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
-
-      return {
-        itens: res.itens,
-        totalPages: res.totalDePaginas ?? 1,
-        totalItems: res.totalDeItens ?? 0,
-      };
-    },
-    fetchById: async (id) => {
-      return await estadosApi.getById(id as number);
-    },
-    deleteItem: async (item) => {
-      await estadosApi.delete(item.id);
+  const ui = useUi();
+  const queryClient = useQueryClient();
+  const list = useFeatureList<Estado>({ initialSearchTerm });
+  const { data, isLoading } = useQuery({
+    queryKey: ["estados", list.deferredSearch, list.page],
+    queryFn: async () => {
+      const res = await estadosApi.list(list.deferredSearch.trim() || undefined, list.page, 50);
+      return { itens: res?.itens ?? [], totalPages: res?.totalDePaginas ?? 1, totalItems: res?.totalDeItens ?? 0 };
     },
   });
+  const invalidate = async () => queryClient.invalidateQueries({ queryKey: ["estados"] });
+  const openUpsert = async (editingItem: Estado | null, readOnly = false) => {
+    const result = await ui.windows.open<true, EstadosUpsertProps>({
+      component: EstadosUpsert,
+      props: { editingItem, readOnly },
+      title: readOnly ? "Visualizar Estado" : editingItem ? "Editar Estado" : "Novo Estado",
+    });
+    if (result.status === "confirmed") {
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: editingItem ? "Estado atualizado com sucesso." : "Estado criado com sucesso." });
+    }
+  };
+  const deleteEstado = async (item: Estado) => {
+    const result = await ui.windows.confirm({
+      title: "Excluir Estado",
+      description: <>Deseja realmente excluir o estado <strong>{item.estado}</strong> ({item.uf})? Esta ação não poderá ser desfeita.</>,
+      confirmLabel: "Excluir",
+      confirmVariant: "destructive",
+    });
+    if (!result) return;
+    await estadosApi.delete(item.id);
+    await invalidate();
+    ui.feedback.notify({ type: "success", title: "Estado excluído com sucesso." });
+  };
 
   return (
     <>
       <EstadosList
-        {...listProps}
+        items={data?.itens ?? []}
+        loading={isLoading}
+        searchTerm={list.searchTerm}
+        page={list.page}
+        totalPages={data?.totalPages ?? 1}
+        totalItems={data?.totalItems ?? 0}
+        onSearchChange={list.handleSearchChange}
+        onAdd={() => openUpsert(null)}
+        onEdit={(item) => openUpsert(item)}
+        onView={(item) => openUpsert(item, true)}
+        onDelete={deleteEstado}
+        onPageChange={list.setPage}
+        rowSelection={list.rowSelection}
+        onRowSelectionChange={list.setRowSelection}
+        selectAllAcrossPages={list.selectAllAcrossPages}
+        onSelectAllAcrossPagesChange={list.setSelectAllAcrossPages}
         selectionMode={selectionMode}
         onSelect={onSelect}
-      />
-
-      {list.isUpsertOpen && (
-        <EstadosUpsert key={list.editingItem?.id ?? "new"} {...upsertProps} />
-      )}
-
-      <DeleteDialog
-        {...deleteDialogProps}
-        title="Excluir Estado"
-        description={
-          <p>
-            Deseja realmente excluir o estado{" "}
-            <strong>{list.itemToDelete?.estado}</strong> (
-            {list.itemToDelete?.uf})? Esta ação não poderá ser desfeita.
-          </p>
-        }
       />
     </>
   );

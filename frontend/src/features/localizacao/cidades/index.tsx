@@ -2,11 +2,12 @@
 
 import React from "react";
 import { CidadesList } from "./list";
-import { CidadesUpsert } from "./upsert";
+import { CidadesUpsert, type CidadesUpsertProps } from "./upsert";
 import { Cidade } from "./types";
-import { DeleteDialog } from "@/components/ui/delete-dialog";
-import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
+import { useFeatureList } from "@/hooks/use-feature-list";
 import { cidadesApi } from "@/api/localizacao";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useUi } from "@/ui/imperative";
 
 export * from "./types";
 
@@ -21,54 +22,62 @@ export function CidadesFeature({
   onSelect,
   initialSearchTerm = "",
 }: CidadesFeatureProps) {
-  const {
-    listProps,
-    upsertProps,
-    deleteDialogProps,
-    featureList: list,
-  } = useFeatureOrchestrator<Cidade>({
-    queryKey: "cidades",
-    initialSearchTerm,
-    fetchPage: async (searchTerm, page, pageSize) => {
-      const res = await cidadesApi.list(searchTerm || undefined, page, pageSize);
-      if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
-
-      return {
-        itens: res.itens,
-        totalPages: res.totalDePaginas ?? 1,
-        totalItems: res.totalDeItens ?? 0,
-      };
-    },
-    fetchById: async (id) => {
-      return await cidadesApi.getById(id as number);
-    },
-    deleteItem: async (item) => {
-      await cidadesApi.delete(item.id);
+  const ui = useUi();
+  const queryClient = useQueryClient();
+  const list = useFeatureList<Cidade>({ initialSearchTerm });
+  const { data, isLoading } = useQuery({
+    queryKey: ["cidades", list.deferredSearch, list.page],
+    queryFn: async () => {
+      const res = await cidadesApi.list(list.deferredSearch.trim() || undefined, list.page, 50);
+      return { itens: res?.itens ?? [], totalPages: res?.totalDePaginas ?? 1, totalItems: res?.totalDeItens ?? 0 };
     },
   });
+  const invalidate = async () => queryClient.invalidateQueries({ queryKey: ["cidades"] });
+  const openUpsert = async (editingItem: Cidade | null, readOnly = false) => {
+    const result = await ui.windows.open<true, CidadesUpsertProps>({
+      component: CidadesUpsert,
+      props: { editingItem, readOnly },
+      title: readOnly ? "Visualizar Cidade" : editingItem ? "Editar Cidade" : "Nova Cidade",
+    });
+    if (result.status === "confirmed") {
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: editingItem ? "Cidade atualizada com sucesso." : "Cidade criada com sucesso." });
+    }
+  };
+  const deleteCidade = async (item: Cidade) => {
+    const result = await ui.windows.confirm({
+      title: "Excluir Cidade",
+      description: <>Deseja realmente excluir a cidade <strong>{item.cidade}</strong> ({item.estado.uf})? Esta ação não poderá ser desfeita.</>,
+      confirmLabel: "Excluir",
+      confirmVariant: "destructive",
+    });
+    if (!result) return;
+    await cidadesApi.delete(item.id);
+    await invalidate();
+    ui.feedback.notify({ type: "success", title: "Cidade excluída com sucesso." });
+  };
 
   return (
     <>
       <CidadesList
-        {...listProps}
+        items={data?.itens ?? []}
+        loading={isLoading}
+        searchTerm={list.searchTerm}
+        page={list.page}
+        totalPages={data?.totalPages ?? 1}
+        totalItems={data?.totalItems ?? 0}
+        onSearchChange={list.handleSearchChange}
+        onAdd={() => openUpsert(null)}
+        onEdit={(item) => openUpsert(item)}
+        onView={(item) => openUpsert(item, true)}
+        onDelete={deleteCidade}
+        onPageChange={list.setPage}
+        rowSelection={list.rowSelection}
+        onRowSelectionChange={list.setRowSelection}
+        selectAllAcrossPages={list.selectAllAcrossPages}
+        onSelectAllAcrossPagesChange={list.setSelectAllAcrossPages}
         selectionMode={selectionMode}
         onSelect={onSelect}
-      />
-
-      {list.isUpsertOpen && (
-        <CidadesUpsert key={list.editingItem?.id ?? "new"} {...upsertProps} />
-      )}
-
-      <DeleteDialog
-        {...deleteDialogProps}
-        title="Excluir Cidade"
-        description={
-          <p>
-            Deseja realmente excluir a cidade{" "}
-            <strong>{list.itemToDelete?.cidade}</strong> (
-            {list.itemToDelete?.estado.uf})? Esta ação não poderá ser desfeita.
-          </p>
-        }
       />
     </>
   );

@@ -1,39 +1,28 @@
 "use client";
 
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { Kbd, KbdGroup } from "@/ui/primitives";
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { UpsertDialog } from "@/components/ui/upsert-dialog";
-import { DialogClose } from "@/components/ui/dialog";
-import { FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FormFieldUI } from "@/components/ui/form-field-ui";
+import { Button } from "@/ui/primitives";
+import { FieldGroup, FieldLabel } from "@/ui/primitives";
+import { Input } from "@/ui/primitives";
+import { Alert, AlertDescription } from "@/ui/primitives";
+import { FormFieldUI } from "@/ui/composites";
 import { CidadeInput } from "@/components/entity-inputs/cidade-input";
-import { useForm } from "@tanstack/react-form";
+import { useForm, useStore } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import { bairroSchema, Bairro, BairroFormValues } from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { bairrosApi } from "@/api/localizacao";
+import { useWindow, useWindowCommands } from "@/ui/imperative";
+import { Spinner } from "@/ui/primitives";
 
-interface BairrosUpsertProps {
-  open: boolean;
+export interface BairrosUpsertProps {
   editingItem: Bairro | null;
-  onClose: () => void;
-  onSuccess: () => void;
-  readOnly?: boolean;
-}
-
-interface BairrosUpsertFormProps {
-  open: boolean;
-  editingItem: Bairro | null;
-  onClose: () => void;
-  onSuccess: () => void;
   readOnly?: boolean;
 }
 
 export function BairrosUpsert(props: BairrosUpsertProps) {
-  const { open, editingItem, onClose, readOnly = false } = props;
+  const { editingItem, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -44,15 +33,7 @@ export function BairrosUpsert(props: BairrosUpsertProps) {
 
   if (isEditMode && isLoading) {
     return (
-      <UpsertDialog
-      isEdit={!!editingItem}
-        open={open}
-        onOpenChange={(o) => {
-          if (!o) onClose();
-        }}
-        title="Editar Bairro"
-        loading={true}
-      />
+      <div className="flex min-h-48 items-center justify-center"><Spinner className="size-6" /></div>
     );
   }
 
@@ -66,11 +47,10 @@ export function BairrosUpsert(props: BairrosUpsertProps) {
 }
 
 function BairrosUpsertForm({
-  open,
   editingItem,
-  onClose,
-  onSuccess,
-}: BairrosUpsertFormProps) {
+  readOnly = false,
+}: BairrosUpsertProps) {
+  const activeWindow = useWindow<true>();
   const { mutation, globalError, getFieldError, resetErrors } =
     useUpsertMutation({
       mutationFn: async (value: BairroFormValues) => {
@@ -79,8 +59,7 @@ function BairrosUpsertForm({
           : await bairrosApi.create(value);
       },
       queryKey: ["bairros"],
-      onSuccessCallback: onSuccess,
-      onClose: onClose,
+      onSuccessCallback: () => activeWindow.resolve(true),
     });
 
   const form = useForm({
@@ -94,25 +73,34 @@ function BairrosUpsertForm({
         ...value,
         cidadeId: value.cidadeId || null,
       };
-      mutation.mutate(payload as BairroFormValues);
+      await mutation.mutateAsync(payload as BairroFormValues);
     },
   });
 
+  const isDirty = useStore(form.store, (state) => state.isDirty);
+  React.useEffect(() => {
+    activeWindow.setDirty(isDirty);
+    return () => activeWindow.setDirty(false);
+  }, [activeWindow, isDirty]);
+  useWindowCommands([
+    {
+      id: "bairros.save",
+      hotkey: "Alt+Enter" as const,
+      label: "Salvar bairro",
+      enabled: !readOnly && !mutation.isPending,
+      run: async (event) => {
+        event.preventDefault();
+        await form.handleSubmit();
+      },
+    },
+  ]);
+
   return (
-    <UpsertDialog
-      isEdit={!!editingItem}
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) onClose();
-      }}
-      title={editingItem ? "Editar Bairro" : "Novo Bairro"}
-      footer={
-        <>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancelar <Kbd>Esc</Kbd>
-            </Button>
-          </DialogClose>
+    <div className="flex flex-col gap-4">
+      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+        <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>
+          Cancelar <Kbd>Esc</Kbd>
+        </Button>
           <form.Subscribe
             selector={(state) => [state.canSubmit, state.isSubmitting]}
           >
@@ -120,7 +108,7 @@ function BairrosUpsertForm({
               <Button
                 type="submit"
                 form="upsert-bairros"
-                disabled={!canSubmit || isSubmitting}
+                disabled={readOnly || !canSubmit || isSubmitting}
               >
                 {isSubmitting ? (
                   "Salvando..."
@@ -136,9 +124,7 @@ function BairrosUpsertForm({
               </Button>
             )}
           </form.Subscribe>
-        </>
-      }
-    >
+      </div>
       <form
         id="upsert-bairros"
         className="flex flex-col gap-4"
@@ -174,6 +160,7 @@ function BairrosUpsertForm({
                     label="Bairro"
                     inputSize="full"
                     getFieldError={getFieldError}
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -196,6 +183,7 @@ function BairrosUpsertForm({
                   name={field.name}
                   error={error}
                   initialItem={editingItem?.cidade}
+                  disabled={readOnly}
                   onSelectId={(id) =>
                     field.handleChange(id ? parseInt(String(id), 10) : null)
                   }
@@ -211,6 +199,6 @@ function BairrosUpsertForm({
           </Alert>
         )}
       </form>
-    </UpsertDialog>
+    </div>
   );
 }

@@ -1,38 +1,28 @@
 "use client";
 
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
-import { Button } from "@/components/ui/button";
-import { UpsertDialog } from "@/components/ui/upsert-dialog";
-import { DialogClose } from "@/components/ui/dialog";
-import { FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FormFieldUI } from "@/components/ui/form-field-ui";
+import React from "react";
+import { Kbd, KbdGroup } from "@/ui/primitives";
+import { Button } from "@/ui/primitives";
+import { FieldGroup, FieldLabel } from "@/ui/primitives";
+import { Input } from "@/ui/primitives";
+import { Alert, AlertDescription } from "@/ui/primitives";
+import { FormFieldUI } from "@/ui/composites";
 import { PaisInput } from "@/components/entity-inputs/pais-input";
-import { useForm } from "@tanstack/react-form";
+import { useForm, useStore } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import { estadoSchema, Estado, EstadoFormValues } from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { estadosApi } from "@/api/localizacao";
+import { useWindow, useWindowCommands } from "@/ui/imperative";
+import { Spinner } from "@/ui/primitives";
 
-interface EstadosUpsertProps {
-  open: boolean;
+export interface EstadosUpsertProps {
   editingItem: Estado | null;
-  onClose: () => void;
-  onSuccess: () => void;
-  readOnly?: boolean;
-}
-
-interface EstadosUpsertFormProps {
-  open: boolean;
-  editingItem: Estado | null;
-  onClose: () => void;
-  onSuccess: () => void;
   readOnly?: boolean;
 }
 
 export function EstadosUpsert(props: EstadosUpsertProps) {
-  const { open, editingItem, onClose, readOnly = false } = props;
+  const { editingItem, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -43,15 +33,7 @@ export function EstadosUpsert(props: EstadosUpsertProps) {
 
   if (isEditMode && isLoading) {
     return (
-      <UpsertDialog
-      isEdit={!!editingItem}
-        open={open}
-        onOpenChange={(o) => {
-          if (!o) onClose();
-        }}
-        title="Editar Estado"
-        loading={true}
-      />
+      <div className="flex min-h-48 items-center justify-center"><Spinner className="size-6" /></div>
     );
   }
 
@@ -65,11 +47,10 @@ export function EstadosUpsert(props: EstadosUpsertProps) {
 }
 
 function EstadosUpsertForm({
-  open,
   editingItem,
-  onClose,
-  onSuccess,
-}: EstadosUpsertFormProps) {
+  readOnly = false,
+}: EstadosUpsertProps) {
+  const activeWindow = useWindow<true>();
   const { mutation, globalError, getFieldError, resetErrors } =
     useUpsertMutation({
       mutationFn: async (value: EstadoFormValues) => {
@@ -78,8 +59,7 @@ function EstadosUpsertForm({
           : await estadosApi.create(value);
       },
       queryKey: ["estados"],
-      onSuccessCallback: onSuccess,
-      onClose: onClose,
+      onSuccessCallback: () => activeWindow.resolve(true),
     });
 
   const form = useForm({
@@ -94,25 +74,34 @@ function EstadosUpsertForm({
         ...value,
         paisId: value.paisId || null,
       };
-      mutation.mutate(payload as EstadoFormValues);
+      await mutation.mutateAsync(payload as EstadoFormValues);
     },
   });
 
+  const isDirty = useStore(form.store, (state) => state.isDirty);
+  React.useEffect(() => {
+    activeWindow.setDirty(isDirty);
+    return () => activeWindow.setDirty(false);
+  }, [activeWindow, isDirty]);
+  useWindowCommands([
+    {
+      id: "estados.save",
+      hotkey: "Alt+Enter" as const,
+      label: "Salvar estado",
+      enabled: !readOnly && !mutation.isPending,
+      run: async (event) => {
+        event.preventDefault();
+        await form.handleSubmit();
+      },
+    },
+  ]);
+
   return (
-    <UpsertDialog
-      isEdit={!!editingItem}
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) onClose();
-      }}
-      title={editingItem ? "Editar Estado" : "Novo Estado"}
-      footer={
-        <>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancelar <Kbd>Esc</Kbd>
-            </Button>
-          </DialogClose>
+    <div className="flex flex-col gap-4">
+      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+        <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>
+          Cancelar <Kbd>Esc</Kbd>
+        </Button>
           <form.Subscribe
             selector={(state) => [state.canSubmit, state.isSubmitting]}
           >
@@ -120,7 +109,7 @@ function EstadosUpsertForm({
               <Button
                 type="submit"
                 form="upsert-estados"
-                disabled={!canSubmit || isSubmitting}
+                disabled={readOnly || !canSubmit || isSubmitting}
               >
                 {isSubmitting ? (
                   "Salvando..."
@@ -136,9 +125,7 @@ function EstadosUpsertForm({
               </Button>
             )}
           </form.Subscribe>
-        </>
-      }
-    >
+      </div>
       <form
         id="upsert-estados"
         className="flex flex-col gap-4"
@@ -174,6 +161,7 @@ function EstadosUpsertForm({
                     label="Estado"
                     inputSize="full"
                     getFieldError={getFieldError}
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -190,6 +178,7 @@ function EstadosUpsertForm({
                 label="UF"
                 inputSize="small"
                 getFieldError={getFieldError}
+                disabled={readOnly}
                 maxLength={2}
                 onChangeOverride={(val) => val.toUpperCase()}
               />
@@ -212,6 +201,7 @@ function EstadosUpsertForm({
                   name={field.name}
                   error={error}
                   initialItem={editingItem?.pais}
+                  disabled={readOnly}
                   onSelectId={(id) =>
                     field.handleChange(id ? parseInt(String(id), 10) : null)
                   }
@@ -227,6 +217,6 @@ function EstadosUpsertForm({
           </Alert>
         )}
       </form>
-    </UpsertDialog>
+    </div>
   );
 }

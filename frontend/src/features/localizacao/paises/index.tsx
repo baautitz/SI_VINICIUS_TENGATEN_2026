@@ -2,11 +2,12 @@
 
 import React from "react";
 import { PaisesList } from "./list";
-import { PaisesUpsert } from "./upsert";
+import { PaisesUpsert, type PaisesUpsertProps } from "./upsert";
 import { Pais } from "./types";
-import { DeleteDialog } from "@/components/ui/delete-dialog";
-import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
+import { useFeatureList } from "@/hooks/use-feature-list";
 import { paisesApi } from "@/api/localizacao";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useUi } from "@/ui/imperative";
 
 export * from "./types";
 
@@ -23,54 +24,63 @@ export function PaisesFeature({
   onSelect,
   initialSearchTerm = "",
 }: PaisesFeatureProps) {
-  const {
-    listProps,
-    upsertProps,
-    deleteDialogProps,
-    featureList: list,
-  } = useFeatureOrchestrator<Pais>({
-    queryKey: "paises",
-    initialSearchTerm,
-    fetchPage: async (searchTerm, page, pageSize) => {
-      const res = await paisesApi.list(searchTerm || undefined, page, pageSize);
-      if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
-
-      return {
-        itens: res.itens,
-        totalPages: res.totalDePaginas ?? 1,
-        totalItems: res.totalDeItens ?? 0,
-      };
-    },
-    fetchById: async (id) => {
-      return await paisesApi.getById(id as number);
-    },
-    deleteItem: async (item) => {
-      await paisesApi.delete(item.id);
+  const ui = useUi();
+  const queryClient = useQueryClient();
+  const list = useFeatureList<Pais>({ initialSearchTerm });
+  const { data, isLoading } = useQuery({
+    queryKey: ["paises", list.deferredSearch, list.page],
+    queryFn: async () => {
+      const res = await paisesApi.list(list.deferredSearch.trim() || undefined, list.page, 50);
+      return { itens: res?.itens ?? [], totalPages: res?.totalDePaginas ?? 1, totalItems: res?.totalDeItens ?? 0 };
     },
   });
+
+  const invalidate = async () => queryClient.invalidateQueries({ queryKey: ["paises"] });
+  const openUpsert = async (editingItem: Pais | null, readOnly = false) => {
+    const result = await ui.windows.open<true, PaisesUpsertProps>({
+      component: PaisesUpsert,
+      props: { editingItem, readOnly },
+      title: readOnly ? "Visualizar País" : editingItem ? "Editar País" : "Novo País",
+    });
+    if (result.status === "confirmed") {
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: editingItem ? "País atualizado com sucesso." : "País criado com sucesso." });
+    }
+  };
+  const deletePais = async (item: Pais) => {
+    const result = await ui.windows.confirm({
+      title: "Excluir País",
+      description: <>Deseja realmente excluir o país <strong>{item.pais}</strong> ({item.codigoIsoPais})? Esta ação não poderá ser desfeita.</>,
+      confirmLabel: "Excluir",
+      confirmVariant: "destructive",
+    });
+    if (!result) return;
+    await paisesApi.delete(item.id);
+    await invalidate();
+    ui.feedback.notify({ type: "success", title: "País excluído com sucesso." });
+  };
 
   return (
     <>
       <PaisesList
-        {...listProps}
+        items={data?.itens ?? []}
+        loading={isLoading}
+        searchTerm={list.searchTerm}
+        page={list.page}
+        totalPages={data?.totalPages ?? 1}
+        totalItems={data?.totalItems ?? 0}
+        onSearchChange={list.handleSearchChange}
+        onAdd={() => openUpsert(null)}
+        onEdit={(item) => openUpsert(item)}
+        onView={(item) => openUpsert(item, true)}
+        onDelete={deletePais}
+        onPageChange={list.setPage}
+        rowSelection={list.rowSelection}
+        onRowSelectionChange={list.setRowSelection}
+        selectAllAcrossPages={list.selectAllAcrossPages}
+        onSelectAllAcrossPagesChange={list.setSelectAllAcrossPages}
         selectionMode={selectionMode}
         onSelect={onSelect}
-      />
-
-      {list.isUpsertOpen && (
-        <PaisesUpsert key={list.editingItem?.id ?? "new"} {...upsertProps} />
-      )}
-
-      <DeleteDialog
-        {...deleteDialogProps}
-        title="Excluir País"
-        description={
-          <p>
-            Deseja realmente excluir o país{" "}
-            <strong>{list.itemToDelete?.pais}</strong> (
-            {list.itemToDelete?.codigoIsoPais})? Esta ação não poderá ser desfeita.
-          </p>
-        }
       />
     </>
   );
