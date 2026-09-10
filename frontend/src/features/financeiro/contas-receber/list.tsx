@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useRef } from "react";
+import React from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
-import { DataTable } from "@/components/ui/data-table";
-import { FeatureLayout } from "@/components/ui/feature-layout";
-import { FeatureHeader } from "@/components/ui/feature-header";
-import { Badge } from "@/components/ui/badge";
-import { useFeatureHotkeys } from "@/hooks/use-feature-hotkeys";
+import { Button } from "@/ui/primitives";
+import { DataTable } from "@/ui/composites";
+import { FeatureLayout } from "@/ui/composites";
+import { FeatureHeader } from "@/ui/composites";
+import { Badge } from "@/ui/primitives";
 import { formatDateToLocal } from "@/utils/date-utils";
 import { Landmark, Pencil, Trash2, Eye, Coins } from "lucide-react";
 import { ContasReceber, ContasReceberParcela } from "./types";
@@ -33,9 +32,6 @@ export function ContasReceberList({
   onPageChange,
   onBaixa,
 }: ContasReceberListProps) {
-  const listRef = useRef<HTMLDivElement>(null);
-  useFeatureHotkeys({ onAdd, listRef });
-
   const columns: ColumnDef<ContasReceber>[] = [
     {
       accessorKey: "id",
@@ -219,7 +215,7 @@ export function ContasReceberList({
   ];
 
   return (
-    <div ref={listRef} className="flex-1 min-h-0 flex flex-col h-full">
+    <div className="flex-1 min-h-0 flex flex-col h-full">
       <FeatureLayout>
         <FeatureHeader
           title="Contas a Receber"

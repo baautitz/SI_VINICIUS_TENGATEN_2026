@@ -1,25 +1,15 @@
 "use client";
 
 import React, { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
-import { useHotkeys } from "@tanstack/react-hotkeys";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Field, FieldLabel, FieldError } from "@/components/ui/field";
-import { NumberInput } from "@/components/ui/number-input";
+import { useMutation } from "@tanstack/react-query";
+import { Button } from "@/ui/primitives";
+import { Kbd, KbdGroup } from "@/ui/primitives";
+import { Field, FieldLabel, FieldError } from "@/ui/primitives";
+import { NumberInput } from "@/ui/composites";
 import { contasPagarApi, contasReceberApi } from "@/api/financeiro";
+import { useWindow, useWindowCommands } from "@/ui/imperative";
 
-interface BaixaParcelaDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+export interface BaixaParcelaWindowProps {
   contaId: number;
   parcela: {
     numeroParcela: number;
@@ -28,21 +18,16 @@ interface BaixaParcelaDialogProps {
     status: string;
   } | null;
   tipo: "PAGAR" | "RECEBER";
-  onSuccess: () => void;
   isEstorno?: boolean;
 }
 
-export function BaixaParcelaDialog({
-  open,
-  onOpenChange,
+export function BaixaParcelaWindow({
   contaId,
   parcela,
   tipo,
-  onSuccess,
   isEstorno = false,
-}: BaixaParcelaDialogProps) {
-  const contentRef = React.useRef<HTMLDivElement>(null);
-  const queryClient = useQueryClient();
+}: BaixaParcelaWindowProps) {
+  const activeWindow = useWindow<true>();
   const saldoRestante = parcela
     ? Math.max(0, parcela.valorParcela - parcela.valorPagoOuRecebido)
     : 0;
@@ -96,16 +81,9 @@ export function BaixaParcelaDialog({
         }
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [tipo === "PAGAR" ? "contas-pagar" : "contas-receber"],
-      });
-      onSuccess();
-      onOpenChange(false);
-    },
   });
 
-  const handleConfirm = () => {
+  const handleConfirm = React.useCallback(async () => {
     setError(null);
     if (valorBaixa <= 0) {
       setError(
@@ -131,35 +109,35 @@ export function BaixaParcelaDialog({
         return;
       }
     }
-    mutation.mutate();
-  };
+    try {
+      await mutation.mutateAsync();
+      activeWindow.resolve(true);
+    } catch {
+      setError(
+        isEstorno
+          ? "Não foi possível estornar o pagamento. Tente novamente."
+          : "Não foi possível registrar a baixa. Tente novamente.",
+      );
+    }
+  }, [activeWindow, isEstorno, mutation, parcela, saldoRestante, valorBaixa]);
 
-  useHotkeys(
-    [
+  const commands = React.useMemo(
+    () => [
       {
-        hotkey: "Alt+Enter",
-        callback: (e) => {
-          if (typeof document !== "undefined" && contentRef.current) {
-            const dialogs = document.querySelectorAll('[role="dialog"]');
-            const topDialog =
-              dialogs.length > 0 ? dialogs[dialogs.length - 1] : null;
-            const myDialog =
-              contentRef.current.closest('[role="dialog"]') ||
-              contentRef.current;
-            if (topDialog && myDialog !== topDialog) return;
-          }
-          e.preventDefault();
-          e.stopPropagation();
-          handleConfirm();
-        },
-        options: {
-          enabled: open && !mutation.isPending,
-          ignoreInputs: false,
+        id: "financeiro.baixa-parcela.confirm",
+        hotkey: "Alt+Enter" as const,
+        label: "Confirmar baixa da parcela",
+        enabled: !mutation.isPending,
+        run: async (event: KeyboardEvent) => {
+          event.preventDefault();
+          await handleConfirm();
         },
       },
     ],
-    { conflictBehavior: "allow" },
+    [handleConfirm, mutation.isPending],
   );
+
+  useWindowCommands(commands);
 
   const getTitle = () => {
     if (isEstorno) {
@@ -180,12 +158,11 @@ export function BaixaParcelaDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent ref={contentRef} className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>{getTitle()}</DialogTitle>
-          <DialogDescription>{getDescription()}</DialogDescription>
-        </DialogHeader>
+    <>
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold">{getTitle()}</h2>
+          <p className="text-muted-foreground text-sm">{getDescription()}</p>
+        </div>
 
         <div className="flex flex-col gap-4 py-4">
           <div className="text-muted-foreground flex items-center justify-between border-b pb-2 text-sm">
@@ -242,19 +219,19 @@ export function BaixaParcelaDialog({
           </Field>
         </div>
 
-        <DialogFooter className="flex justify-end gap-2">
+        <div className="flex justify-end gap-2">
           <Button
             type="button"
             variant="outline"
             disabled={mutation.isPending}
-            onClick={() => onOpenChange(false)}
+            onClick={() => activeWindow.dismiss("cancel")}
           >
             Cancelar <Kbd>Esc</Kbd>
           </Button>
           <Button
             type="button"
             disabled={mutation.isPending}
-            onClick={handleConfirm}
+            onClick={() => void handleConfirm()}
           >
             {mutation.isPending ? (
               "Processando..."
@@ -268,8 +245,7 @@ export function BaixaParcelaDialog({
               </span>
             )}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+    </>
   );
 }

@@ -1,14 +1,12 @@
 "use client";
 
-import * as React from "react";
 import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
-import { useFeatureHotkeys } from "@/hooks/use-feature-hotkeys";
-import { FeatureHeader } from "@/components/ui/feature-header";
+import { FeatureHeader } from "@/ui/composites";
 import { Receipt } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
-import { DataTable } from "@/components/ui/data-table";
-import { FeatureLayout } from "@/components/ui/feature-layout";
-import { Badge } from "@/components/ui/badge";
+import { DataTable } from "@/ui/composites";
+import { FeatureLayout } from "@/ui/composites";
+import { Badge } from "@/ui/primitives";
 import { CondicaoPagamento } from "./types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 
@@ -23,6 +21,7 @@ export function CondicoesList({
   onSearchChange,
   onAdd,
   onEdit,
+  onView,
   onDelete,
   onSelect,
   onPageChange,
@@ -31,9 +30,6 @@ export function CondicoesList({
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<CondicaoPagamento>) {
-  const listRef = React.useRef<HTMLDivElement>(null);
-  useFeatureHotkeys({ onAdd, listRef });
-
   const columns: ColumnDef<CondicaoPagamento>[] = [
     getSelectColumn<CondicaoPagamento>(),
     {
@@ -116,6 +112,7 @@ export function CondicoesList({
     },
     getActionsColumn<CondicaoPagamento>({
       onEdit,
+      onView,
       onDelete,
       selectionMode,
       onSelect,
@@ -123,7 +120,7 @@ export function CondicoesList({
   ];
 
   return (
-    <div ref={listRef} className="flex h-full min-h-0 flex-1 flex-col">
+    <div className="flex h-full min-h-0 flex-1 flex-col">
       <FeatureLayout>
         <FeatureHeader
           title="Condições de Pagamento"

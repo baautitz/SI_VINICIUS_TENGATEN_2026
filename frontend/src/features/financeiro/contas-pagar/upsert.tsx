@@ -3,19 +3,16 @@
 import React, { useState, useEffect } from "react";
 import { useForm } from "@tanstack/react-form";
 import { useSelector } from "@tanstack/react-store";
-import { useHotkeys } from "@tanstack/react-hotkeys";
-import { Button } from "@/components/ui/button";
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
-import { UpsertDialog } from "@/components/ui/upsert-dialog";
-import { DialogClose } from "@/components/ui/dialog";
-import { FieldLabel, FieldError } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { NumberInput } from "@/components/ui/number-input";
-import { DatePicker } from "@/components/ui/date-picker";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/ui/primitives";
+import { Kbd, KbdGroup } from "@/ui/primitives";
+import { FieldLabel, FieldError } from "@/ui/primitives";
+import { Input } from "@/ui/primitives";
+import { NumberInput } from "@/ui/composites";
+import { DatePicker } from "@/ui/composites";
+import { Textarea } from "@/ui/primitives";
+import { Card, CardContent } from "@/ui/primitives";
+import { Separator } from "@/ui/primitives";
+import { Alert, AlertDescription } from "@/ui/primitives";
 import {
   Table,
   TableHeader,
@@ -23,14 +20,14 @@ import {
   TableRow,
   TableHead,
   TableCell,
-} from "@/components/ui/table";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "@/ui/primitives";
+import { ScrollArea } from "@/ui/primitives";
 import {
   Empty,
   EmptyHeader,
   EmptyTitle,
   EmptyDescription,
-} from "@/components/ui/empty";
+} from "@/ui/primitives";
 import { FornecedorInput } from "@/components/entity-inputs/fornecedor-input";
 import { CondicaoPagamentoInput } from "@/components/entity-inputs/condicao-pagamento-input";
 import {
@@ -50,26 +47,22 @@ import {
 } from "./types";
 import { Plus, Trash2, Coins, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useWindow, useWindowCommands } from "@/ui/imperative";
 
-interface ContasPagarUpsertProps {
-  open: boolean;
+export interface ContasPagarUpsertProps {
   editingItem: ContasPagar | null;
-  onClose: () => void;
-  onSuccess: () => void;
   readOnly?: boolean;
   onBaixa?: (contaId: number, parcela: ContasPagarParcela) => void;
   onEstorno?: (contaId: number, parcela: ContasPagarParcela) => void;
 }
 
 export function ContasPagarUpsertForm({
-  open,
   editingItem,
-  onClose,
-  onSuccess,
   readOnly = false,
   onBaixa,
   onEstorno,
 }: ContasPagarUpsertProps) {
+  const activeWindow = useWindow<true>();
   const isEditMode = !!editingItem;
 
   const {
@@ -93,47 +86,21 @@ export function ContasPagarUpsertForm({
         : await contasPagarApi.create(payload);
     },
     queryKey: ["contas-pagar"],
-    onSuccessCallback: onSuccess,
-    onClose: onClose,
+    onSuccessCallback: () => activeWindow.resolve(true),
   });
 
   return (
-    <UpsertDialog
-      isEdit={!!editingItem && !readOnly}
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) onClose();
-      }}
-      title={isEditMode ? "Detalhes da Conta a Pagar" : "Nova Conta a Pagar"}
-      footer={
-        <>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancelar <Kbd>Esc</Kbd>
-            </Button>
-          </DialogClose>
-          {!readOnly && (
-            <Button
-              type="submit"
-              form="upsert-contas-pagar"
-              disabled={mutation.isPending}
-            >
-              {mutation.isPending ? (
-                "Salvando..."
-              ) : (
-                <span className="flex items-center gap-2">
-                  Salvar{" "}
-                  <KbdGroup>
-                    <Kbd>Alt</Kbd>
-                    <Kbd>Enter</Kbd>
-                  </KbdGroup>
-                </span>
-              )}
-            </Button>
-          )}
-        </>
-      }
-    >
+    <div className="flex flex-col gap-4">
+      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+        <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>
+          Cancelar <Kbd>Esc</Kbd>
+        </Button>
+        {!readOnly && (
+          <Button type="submit" form="upsert-contas-pagar" disabled={mutation.isPending}>
+            {mutation.isPending ? "Salvando..." : <span className="flex items-center gap-2">Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup></span>}
+          </Button>
+        )}
+      </div>
       <ContasPagarFormBody
         key={
           editingItem
@@ -149,7 +116,7 @@ export function ContasPagarUpsertForm({
         originalGetFieldError={originalGetFieldError}
         resetErrors={resetErrors}
       />
-    </UpsertDialog>
+    </div>
   );
 }
 
@@ -182,6 +149,7 @@ function ContasPagarFormBody({
   originalGetFieldError,
   resetErrors,
 }: ContasPagarFormBodyProps) {
+  const activeWindow = useWindow<true>();
   const isEditMode = !!editingItem;
 
   const [parcelas, setParcelas] = useState<ContasPagarParcela[]>(
@@ -243,7 +211,7 @@ function ContasPagarFormBody({
         return;
       }
 
-      mutation.mutate(payload as ContasPagarFormValues);
+      await mutation.mutateAsync(payload as ContasPagarFormValues);
     },
   });
 
@@ -308,7 +276,7 @@ function ContasPagarFormBody({
     setParcelas(sugeridas);
   };
 
-  const handleAddParcela = () => {
+  const handleAddParcela = React.useCallback(() => {
     if (readOnly || temParcelaPagaOuParcial) return;
     const nextNum = parcelas.length + 1;
     const valorOriginal = form.getFieldValue("valorOriginal") || 0;
@@ -330,7 +298,7 @@ function ContasPagarFormBody({
         status: "ABERTO",
       },
     ]);
-  };
+  }, [form, parcelas, readOnly, temParcelaPagaOuParcial]);
 
   const handleRemoveParcela = (index: number) => {
     if (readOnly || temParcelaPagaOuParcial) return;
@@ -391,31 +359,49 @@ function ContasPagarFormBody({
     (s) => s.values.valorOriginal,
   );
 
-  useHotkeys(
-    [
+  const commands = React.useMemo(
+    () => [
       {
-        hotkey: "Alt+P",
-        callback: (e) => {
-          e.preventDefault();
-          handleAddParcela();
+        id: "contas-pagar.save",
+        hotkey: "Alt+Enter" as const,
+        label: "Salvar conta a pagar",
+        enabled: !readOnly && !mutation.isPending,
+        run: async (event: KeyboardEvent) => {
+          event.preventDefault();
+          await form.handleSubmit();
         },
-        options: {
-          enabled: !readOnly && !temParcelaPagaOuParcial,
-          ignoreInputs: false,
+      },
+      {
+        id: "contas-pagar.add-parcela",
+        hotkey: "Alt+P" as const,
+        label: "Adicionar parcela",
+        enabled: !readOnly && !temParcelaPagaOuParcial,
+        run: async (event: KeyboardEvent) => {
+          event.preventDefault();
+          handleAddParcela();
         },
       },
     ],
-    { conflictBehavior: "allow" },
+    [form, handleAddParcela, mutation.isPending, readOnly, temParcelaPagaOuParcial],
   );
+
+  useWindowCommands(commands);
+
+  const isDirty = useSelector(form.store, (state) => state.isDirty);
+
+  useEffect(() => {
+    activeWindow.setDirty(isDirty);
+    return () => activeWindow.setDirty(false);
+  }, [activeWindow, isDirty]);
 
   return (
     <form
       id="upsert-contas-pagar"
       className="flex flex-col gap-6"
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
         e.stopPropagation();
-        form.handleSubmit();
+        await form.handleSubmit();
       }}
     >
       <div className="flex w-full flex-col gap-6">
@@ -912,4 +898,3 @@ function ContasPagarFormBody({
     </form>
   );
 }
-

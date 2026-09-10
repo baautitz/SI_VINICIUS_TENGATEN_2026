@@ -1,142 +1,133 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ContasReceberList } from "./list";
-import { ContasReceberUpsertForm } from "./upsert";
+import {
+  ContasReceberUpsertForm,
+  type ContasReceberUpsertProps,
+} from "./upsert";
 import { ContasReceber, ContasReceberParcela } from "./types";
-import { DeleteDialog } from "@/components/ui/delete-dialog";
-import { BaixaParcelaDialog } from "../components/baixa-parcela-dialog";
-import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
+import {
+  BaixaParcelaWindow,
+  type BaixaParcelaWindowProps,
+} from "../components/baixa-parcela-dialog";
+import { useFeatureList } from "@/hooks/use-feature-list";
 import { contasReceberApi } from "@/api/financeiro";
+import { useUi } from "@/ui/imperative";
 
 export * from "./types";
 
 export function ContasReceberFeature() {
-  const [baixaOpen, setBaixaOpen] = useState(false);
-  const [baixaContaId, setBaixaContaId] = useState<number | null>(null);
-  const [baixaIsEstorno, setBaixaIsEstorno] = useState(false);
-  const [baixaParcela, setBaixaParcela] = useState<{
-    numeroParcela: number;
-    valorParcela: number;
-    valorPagoOuRecebido: number;
-    status: string;
-  } | null>(null);
-
-  const {
-    listProps,
-    upsertProps,
-    deleteDialogProps,
-    featureList: list,
-  } = useFeatureOrchestrator<ContasReceber>({
-    queryKey: "contas-receber",
-    initialSearchTerm: "",
-    fetchPage: async (searchTerm, page, pageSize) => {
+  const ui = useUi();
+  const queryClient = useQueryClient();
+  const list = useFeatureList<ContasReceber>();
+  const { data, isLoading } = useQuery({
+    queryKey: ["contas-receber", list.deferredSearch, list.page],
+    queryFn: async () => {
       const res = await contasReceberApi.list(
-        searchTerm || undefined,
-        page,
-        pageSize,
+        list.deferredSearch.trim() || undefined,
+        list.page,
+        50,
       );
-      if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
       return {
-        itens: res.itens,
-        totalPages: res.totalDePaginas ?? 1,
-        totalItems: res.totalDeItens ?? 0,
+        itens: res?.itens ?? [],
+        totalPages: res?.totalDePaginas ?? 1,
+        totalItems: res?.totalDeItens ?? 0,
       };
     },
-    fetchById: async (id) => {
-      return await contasReceberApi.getById(id as number);
-    },
-    deleteItem: async (item) => {
-      await contasReceberApi.delete(item.id);
-    },
-    getReadOnly: (item) =>
-      item.status === "PAGO" || item.status === "CANCELADO",
   });
 
-  const handleBaixa = (contaId: number, parcela: ContasReceberParcela) => {
-    setBaixaContaId(contaId);
-    setBaixaParcela({
-      numeroParcela: parcela.numeroParcela,
-      valorParcela: parcela.valorParcela,
-      valorPagoOuRecebido: parcela.valorRecebido,
-      status: parcela.status,
+  const invalidate = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["contas-receber"] });
+  };
+
+  const openEditor = async (item: ContasReceber | null, readOnly = false) => {
+    const editingItem = item ? await contasReceberApi.getById(item.id) : null;
+    const result = await ui.windows.open<true, ContasReceberUpsertProps>({
+      component: ContasReceberUpsertForm,
+      props: {
+        editingItem,
+        readOnly,
+        onBaixa: (contaId, parcela) => openBaixa(contaId, parcela),
+        onEstorno: (contaId, parcela) => openBaixa(contaId, parcela, true),
+      },
+      title: readOnly
+        ? "Detalhes da Conta a Receber"
+        : editingItem
+          ? "Editar Conta a Receber"
+          : "Nova Conta a Receber",
+      size: "large",
     });
-    setBaixaIsEstorno(false);
-    setBaixaOpen(true);
-  };
-
-  const handleEstorno = (contaId: number, parcela: ContasReceberParcela) => {
-    setBaixaContaId(contaId);
-    setBaixaParcela({
-      numeroParcela: parcela.numeroParcela,
-      valorParcela: parcela.valorParcela,
-      valorPagoOuRecebido: parcela.valorRecebido,
-      status: parcela.status,
-    });
-    setBaixaIsEstorno(true);
-    setBaixaOpen(true);
-  };
-
-  const handleViewAction = (item: ContasReceber) => {
-    listProps.onView(item);
-  };
-
-  const handleEditWrapper = (item: ContasReceber) => {
-    if (item.status === "PAGO" || item.status === "CANCELADO") {
-      listProps.onView(item);
-    } else {
-      listProps.onEdit(item);
+    if (result.status === "confirmed") {
+      await invalidate();
+      ui.feedback.notify({
+        type: "success",
+        title: editingItem
+          ? "Conta atualizada com sucesso."
+          : "Conta criada com sucesso.",
+      });
     }
   };
 
+  const openDelete = async (item: ContasReceber) => {
+    const result = await ui.windows.confirm({
+      title: "Excluir Conta a Receber",
+      description: `Deseja realmente excluir a conta a receber #${item.id} - ${item.descricao}? Esta ação não poderá ser desfeita.`,
+      confirmLabel: "Excluir",
+      confirmVariant: "destructive",
+    });
+    if (!result) return;
+    await contasReceberApi.delete(item.id);
+    await invalidate();
+    ui.feedback.notify({ type: "success", title: "Conta excluída com sucesso." });
+  };
+
+  async function openBaixa(
+    contaId: number,
+    parcela: ContasReceberParcela,
+    isEstorno = false,
+  ) {
+    const result = await ui.windows.open<true, BaixaParcelaWindowProps>({
+      component: BaixaParcelaWindow,
+      props: {
+        contaId,
+        parcela: {
+          numeroParcela: parcela.numeroParcela,
+          valorParcela: parcela.valorParcela,
+          valorPagoOuRecebido: parcela.valorRecebido,
+          status: parcela.status,
+        },
+        tipo: "RECEBER",
+        isEstorno,
+      },
+      title: isEstorno ? "Estornar Recebimento" : "Registrar Recebimento",
+      size: "small",
+    });
+    if (result.status === "confirmed") await invalidate();
+  }
+
   return (
-    <>
-      <ContasReceberList
-        {...listProps}
-        onAdd={listProps.onAdd}
-        onEdit={handleEditWrapper}
-        onView={handleViewAction}
-        onBaixa={handleBaixa}
-      />
-
-      {list.isUpsertOpen && (
-        <ContasReceberUpsertForm
-          key={list.editingItem?.id ?? "new"}
-          {...upsertProps}
-          onBaixa={handleBaixa}
-          onEstorno={handleEstorno}
-        />
-      )}
-
-      <DeleteDialog
-        {...deleteDialogProps}
-        title="Excluir Conta a Receber"
-        description={
-          <p>
-            Deseja realmente excluir a conta a receber{" "}
-            <strong>
-              #{list.itemToDelete?.id} - {list.itemToDelete?.descricao}
-            </strong>
-            ? Esta ação não poderá ser desfeita.
-          </p>
-        }
-      />
-
-      {baixaOpen && baixaContaId && baixaParcela && (
-        <BaixaParcelaDialog
-          key={`${baixaContaId}-${baixaParcela.numeroParcela}-${baixaIsEstorno}`}
-          open={baixaOpen}
-          onOpenChange={setBaixaOpen}
-          contaId={baixaContaId}
-          parcela={baixaParcela}
-          tipo="RECEBER"
-          isEstorno={baixaIsEstorno}
-          onSuccess={() => {
-            // Recarrega listagens e detalhes ativos invalidando queryKey
-          }}
-        />
-      )}
-    </>
+    <ContasReceberList
+      items={data?.itens ?? []}
+      loading={isLoading}
+      searchTerm={list.searchTerm}
+      page={list.page}
+      totalPages={data?.totalPages ?? 1}
+      totalItems={data?.totalItems ?? 0}
+      onSearchChange={list.handleSearchChange}
+      onAdd={() => openEditor(null)}
+      onEdit={(item) => openEditor(item)}
+      onView={(item) => openEditor(item, true)}
+      onDelete={openDelete}
+      onPageChange={list.setPage}
+      rowSelection={list.rowSelection}
+      onRowSelectionChange={list.setRowSelection}
+      selectAllAcrossPages={list.selectAllAcrossPages}
+      onSelectAllAcrossPagesChange={list.setSelectAllAcrossPages}
+      onBaixa={(contaId, parcela) => openBaixa(contaId, parcela)}
+    />
   );
 }
+
 export default ContasReceberFeature;

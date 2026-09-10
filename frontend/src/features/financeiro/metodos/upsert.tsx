@@ -1,34 +1,61 @@
 "use client";
 
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { Kbd, KbdGroup } from "@/ui/primitives";
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { UpsertDialog } from "@/components/ui/upsert-dialog";
-import { DialogClose } from "@/components/ui/dialog";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FormFieldUI } from "@/components/ui/form-field-ui";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useForm } from "@tanstack/react-form";
+import { Button } from "@/ui/primitives";
+import { Field, FieldGroup, FieldLabel } from "@/ui/primitives";
+import { Alert, AlertDescription } from "@/ui/primitives";
+import { FormFieldUI } from "@/ui/composites";
+import { Checkbox } from "@/ui/primitives";
+import { useForm, useStore } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
-import { metodoPagamentoSchema, MetodoPagamento, MetodoPagamentoFormValues } from "./types";
+import {
+  metodoPagamentoSchema,
+  MetodoPagamento,
+  MetodoPagamentoFormValues,
+} from "./types";
 import { metodosApi } from "@/api/financeiro";
+import { useQuery } from "@tanstack/react-query";
+import { useWindow, useWindowCommands } from "@/ui/imperative";
+import { Spinner } from "@/ui/primitives";
 
-interface MetodosUpsertProps {
-  open: boolean;
+export interface MetodosUpsertProps {
   editingItem: MetodoPagamento | null;
-  onClose: () => void;
-  onSuccess: () => void;
   readOnly?: boolean;
 }
 
-export function MetodosUpsert({
-  open,
+export function MetodosUpsert(props: MetodosUpsertProps) {
+  const { editingItem, readOnly = false } = props;
+  const isEditMode = !!editingItem;
+
+  const { data: fullItem, isLoading } = useQuery({
+    queryKey: ["metodosPagamento", "detail", editingItem?.codigo],
+    queryFn: () => metodosApi.getById(editingItem!.codigo),
+    enabled: isEditMode,
+  });
+
+  if (isEditMode && isLoading) {
+    return (
+      <div className="flex min-h-48 items-center justify-center">
+        <Spinner className="size-6" />
+      </div>
+    );
+  }
+
+  return (
+    <MetodosUpsertForm
+      {...props}
+      readOnly={readOnly}
+      editingItem={isEditMode ? (fullItem ?? null) : null}
+    />
+  );
+}
+
+function MetodosUpsertForm({
   editingItem,
-  onClose,
-  onSuccess,
   readOnly = false,
 }: MetodosUpsertProps) {
+  const activeWindow = useWindow<true>();
   const { mutation, globalError, getFieldError, resetErrors } =
     useUpsertMutation({
       mutationFn: async (value: MetodoPagamentoFormValues) => {
@@ -37,9 +64,17 @@ export function MetodosUpsert({
           : await metodosApi.create(value);
       },
       queryKey: ["metodosPagamento"],
-      onSuccessCallback: onSuccess,
-      onClose: onClose,
+      onSuccessCallback: () => activeWindow.resolve(true),
     });
+
+  const submitForm = async ({
+    value,
+  }: {
+    value: MetodoPagamentoFormValues;
+  }) => {
+    resetErrors();
+    await mutation.mutateAsync(value);
+  };
 
   const form = useForm({
     defaultValues: {
@@ -47,59 +82,80 @@ export function MetodosUpsert({
       descricao: editingItem?.descricao ?? "",
       ativo: editingItem?.ativo ?? true,
     } as MetodoPagamentoFormValues,
-    onSubmit: async ({ value }) => {
-      resetErrors();
-      mutation.mutate(value);
-    },
+    onSubmit: submitForm,
   });
 
+  const isDirty = useStore(form.store, (state) => state.isDirty);
+
+  React.useEffect(() => {
+    activeWindow.setDirty(isDirty);
+    return () => activeWindow.setDirty(false);
+  }, [activeWindow, isDirty]);
+
+  const commands = React.useMemo(
+    () => [
+      {
+        id: "metodosPagamento.save",
+        hotkey: "Alt+Enter" as const,
+        label: "Salvar método de pagamento",
+        enabled: !readOnly && !mutation.isPending,
+        run: async (event: KeyboardEvent) => {
+          event.preventDefault();
+          await form.handleSubmit();
+        },
+      },
+    ],
+    [form, mutation.isPending, readOnly],
+  );
+
+  useWindowCommands(commands);
+
+  const cancelForm = async () => {
+    activeWindow.dismiss("cancel");
+  };
+
+  const submitFormEvent = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    await form.handleSubmit();
+  };
+
   return (
-    <UpsertDialog
-      isEdit={!!editingItem && !readOnly}
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) onClose();
-      }}
-      title={editingItem ? "Editar Método de Pagamento" : "Novo Método de Pagamento"}
-      footer={
-        <>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancelar <Kbd>Esc</Kbd>
-            </Button>
-          </DialogClose>
-          {!readOnly && (
-            <form.Subscribe
-              selector={(state) => [state.canSubmit, state.isSubmitting]}
-            >
-              {([canSubmit, isSubmitting]) => (
-                <Button
-                  type="submit"
-                  form="upsert-metodos"
-                  disabled={!canSubmit || isSubmitting}
-                >
-                  {isSubmitting ? (
-                    "Salvando..."
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup>
-                    </span>
-                  )}
-                </Button>
-              )}
-            </form.Subscribe>
-          )}
-        </>
-      }
-    >
+    <div className="flex flex-col gap-4">
+      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={cancelForm}
+        >
+          Cancelar <Kbd>Esc</Kbd>
+        </Button>
+        {!readOnly && (
+          <form.Subscribe
+            selector={(state) => [state.canSubmit, state.isSubmitting]}
+          >
+            {([canSubmit, isSubmitting]) => (
+              <Button
+                type="submit"
+                form="upsert-metodos"
+                disabled={!canSubmit || isSubmitting}
+              >
+                {isSubmitting ? (
+                  "Salvando..."
+                ) : (
+                  <span className="flex items-center gap-2">
+                    Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup>
+                  </span>
+                )}
+              </Button>
+            )}
+          </form.Subscribe>
+        )}
+      </div>
       <form
         id="upsert-metodos"
         className="flex flex-col gap-4"
-        onSubmit={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          form.handleSubmit();
-        }}
+        onSubmit={submitFormEvent}
       >
         <FieldGroup className="gap-4">
           <form.Field
@@ -110,7 +166,11 @@ export function MetodosUpsert({
               <FormFieldUI
                 field={field}
                 label="Código"
-                placeholder={editingItem ? undefined : "Deixe em branco para auto-gerar"}
+                placeholder={
+                  editingItem
+                    ? undefined
+                    : "Deixe em branco para auto-gerar"
+                }
                 inputSize="full"
                 getFieldError={getFieldError}
                 maxLength={10}
@@ -160,7 +220,6 @@ export function MetodosUpsert({
           </Alert>
         )}
       </form>
-    </UpsertDialog>
+    </div>
   );
 }
-

@@ -1,142 +1,130 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ContasPagarList } from "./list";
-import { ContasPagarUpsertForm } from "./upsert";
+import { ContasPagarUpsertForm, type ContasPagarUpsertProps } from "./upsert";
 import { ContasPagar, ContasPagarParcela } from "./types";
-import { DeleteDialog } from "@/components/ui/delete-dialog";
-import { BaixaParcelaDialog } from "../components/baixa-parcela-dialog";
-import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
+import {
+  BaixaParcelaWindow,
+  type BaixaParcelaWindowProps,
+} from "../components/baixa-parcela-dialog";
+import { useFeatureList } from "@/hooks/use-feature-list";
 import { contasPagarApi } from "@/api/financeiro";
+import { useUi } from "@/ui/imperative";
 
 export * from "./types";
 
 export function ContasPagarFeature() {
-  const [baixaOpen, setBaixaOpen] = useState(false);
-  const [baixaContaId, setBaixaContaId] = useState<number | null>(null);
-  const [baixaIsEstorno, setBaixaIsEstorno] = useState(false);
-  const [baixaParcela, setBaixaParcela] = useState<{
-    numeroParcela: number;
-    valorParcela: number;
-    valorPagoOuRecebido: number;
-    status: string;
-  } | null>(null);
-
-  const {
-    listProps,
-    upsertProps,
-    deleteDialogProps,
-    featureList: list,
-  } = useFeatureOrchestrator<ContasPagar>({
-    queryKey: "contas-pagar",
-    initialSearchTerm: "",
-    fetchPage: async (searchTerm, page, pageSize) => {
+  const ui = useUi();
+  const queryClient = useQueryClient();
+  const list = useFeatureList<ContasPagar>();
+  const { data, isLoading } = useQuery({
+    queryKey: ["contas-pagar", list.deferredSearch, list.page],
+    queryFn: async () => {
       const res = await contasPagarApi.list(
-        searchTerm || undefined,
-        page,
-        pageSize,
+        list.deferredSearch.trim() || undefined,
+        list.page,
+        50,
       );
-      if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
       return {
-        itens: res.itens,
-        totalPages: res.totalDePaginas ?? 1,
-        totalItems: res.totalDeItens ?? 0,
+        itens: res?.itens ?? [],
+        totalPages: res?.totalDePaginas ?? 1,
+        totalItems: res?.totalDeItens ?? 0,
       };
     },
-    fetchById: async (id) => {
-      return await contasPagarApi.getById(id as number);
-    },
-    deleteItem: async (item) => {
-      await contasPagarApi.delete(item.id);
-    },
-    getReadOnly: (item) =>
-      item.status === "PAGO" || item.status === "CANCELADO",
   });
 
-  const handleBaixa = (contaId: number, parcela: ContasPagarParcela) => {
-    setBaixaContaId(contaId);
-    setBaixaParcela({
-      numeroParcela: parcela.numeroParcela,
-      valorParcela: parcela.valorParcela,
-      valorPagoOuRecebido: parcela.valorPago,
-      status: parcela.status,
+  const invalidate = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["contas-pagar"] });
+  };
+
+  const openEditor = async (item: ContasPagar | null, readOnly = false) => {
+    const editingItem = item ? await contasPagarApi.getById(item.id) : null;
+    const result = await ui.windows.open<true, ContasPagarUpsertProps>({
+      component: ContasPagarUpsertForm,
+      props: {
+        editingItem,
+        readOnly,
+        onBaixa: (contaId, parcela) => openBaixa(contaId, parcela),
+        onEstorno: (contaId, parcela) => openBaixa(contaId, parcela, true),
+      },
+      title: readOnly
+        ? "Detalhes da Conta a Pagar"
+        : editingItem
+          ? "Editar Conta a Pagar"
+          : "Nova Conta a Pagar",
+      size: "large",
     });
-    setBaixaIsEstorno(false);
-    setBaixaOpen(true);
-  };
-
-  const handleEstorno = (contaId: number, parcela: ContasPagarParcela) => {
-    setBaixaContaId(contaId);
-    setBaixaParcela({
-      numeroParcela: parcela.numeroParcela,
-      valorParcela: parcela.valorParcela,
-      valorPagoOuRecebido: parcela.valorPago,
-      status: parcela.status,
-    });
-    setBaixaIsEstorno(true);
-    setBaixaOpen(true);
-  };
-
-  const handleViewAction = (item: ContasPagar) => {
-    listProps.onView(item);
-  };
-
-  const handleEditWrapper = (item: ContasPagar) => {
-    if (item.status === "PAGO" || item.status === "CANCELADO") {
-      listProps.onView(item);
-    } else {
-      listProps.onEdit(item);
+    if (result.status === "confirmed") {
+      await invalidate();
+      ui.feedback.notify({
+        type: "success",
+        title: editingItem
+          ? "Conta atualizada com sucesso."
+          : "Conta criada com sucesso.",
+      });
     }
   };
 
+  const openDelete = async (item: ContasPagar) => {
+    const result = await ui.windows.confirm({
+      title: "Excluir Conta a Pagar",
+      description: `Deseja realmente excluir a conta a pagar #${item.id} - ${item.descricao}? Esta ação não poderá ser desfeita.`,
+      confirmLabel: "Excluir",
+      confirmVariant: "destructive",
+    });
+    if (!result) return;
+    await contasPagarApi.delete(item.id);
+    await invalidate();
+    ui.feedback.notify({ type: "success", title: "Conta excluída com sucesso." });
+  };
+
+  async function openBaixa(
+    contaId: number,
+    parcela: ContasPagarParcela,
+    isEstorno = false,
+  ) {
+    const result = await ui.windows.open<true, BaixaParcelaWindowProps>({
+      component: BaixaParcelaWindow,
+      props: {
+        contaId,
+        parcela: {
+          numeroParcela: parcela.numeroParcela,
+          valorParcela: parcela.valorParcela,
+          valorPagoOuRecebido: parcela.valorPago,
+          status: parcela.status,
+        },
+        tipo: "PAGAR",
+        isEstorno,
+      },
+      title: isEstorno ? "Estornar Pagamento" : "Registrar Pagamento",
+      size: "small",
+    });
+    if (result.status === "confirmed") await invalidate();
+  }
+
   return (
-    <>
-      <ContasPagarList
-        {...listProps}
-        onAdd={listProps.onAdd}
-        onEdit={handleEditWrapper}
-        onView={handleViewAction}
-        onBaixa={handleBaixa}
-      />
-
-      {list.isUpsertOpen && (
-        <ContasPagarUpsertForm
-          key={list.editingItem?.id ?? "new"}
-          {...upsertProps}
-          onBaixa={handleBaixa}
-          onEstorno={handleEstorno}
-        />
-      )}
-
-      <DeleteDialog
-        {...deleteDialogProps}
-        title="Excluir Conta a Pagar"
-        description={
-          <p>
-            Deseja realmente excluir a conta a pagar{" "}
-            <strong>
-              #{list.itemToDelete?.id} - {list.itemToDelete?.descricao}
-            </strong>
-            ? Esta ação não poderá ser desfeita.
-          </p>
-        }
-      />
-
-      {baixaOpen && baixaContaId && baixaParcela && (
-        <BaixaParcelaDialog
-          key={`${baixaContaId}-${baixaParcela.numeroParcela}-${baixaIsEstorno}`}
-          open={baixaOpen}
-          onOpenChange={setBaixaOpen}
-          contaId={baixaContaId}
-          parcela={baixaParcela}
-          tipo="PAGAR"
-          isEstorno={baixaIsEstorno}
-          onSuccess={() => {
-            // Recarrega listagens e detalhes ativos invalidando queryKey
-          }}
-        />
-      )}
-    </>
+    <ContasPagarList
+      items={data?.itens ?? []}
+      loading={isLoading}
+      searchTerm={list.searchTerm}
+      page={list.page}
+      totalPages={data?.totalPages ?? 1}
+      totalItems={data?.totalItems ?? 0}
+      onSearchChange={list.handleSearchChange}
+      onAdd={() => openEditor(null)}
+      onEdit={(item) => openEditor(item)}
+      onView={(item) => openEditor(item, true)}
+      onDelete={openDelete}
+      onPageChange={list.setPage}
+      rowSelection={list.rowSelection}
+      onRowSelectionChange={list.setRowSelection}
+      selectAllAcrossPages={list.selectAllAcrossPages}
+      onSelectAllAcrossPagesChange={list.setSelectAllAcrossPages}
+      onBaixa={(contaId, parcela) => openBaixa(contaId, parcela)}
+    />
   );
 }
+
 export default ContasPagarFeature;

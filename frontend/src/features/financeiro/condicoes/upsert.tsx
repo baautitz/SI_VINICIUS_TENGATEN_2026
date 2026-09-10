@@ -1,19 +1,16 @@
 "use client";
 
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
-import { useState, useEffect } from "react";
-import { useHotkeys } from "@tanstack/react-hotkeys";
-import { Button } from "@/components/ui/button";
-import { UpsertDialog } from "@/components/ui/upsert-dialog";
-import { DialogClose } from "@/components/ui/dialog";
-import { Field, FieldLabel, FieldError } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { NumberInput } from "@/components/ui/number-input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FormFieldUI } from "@/components/ui/form-field-ui";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Kbd, KbdGroup } from "@/ui/primitives";
+import React, { useCallback, useState, useEffect } from "react";
+import { Button } from "@/ui/primitives";
+import { Field, FieldLabel, FieldError } from "@/ui/primitives";
+import { Input } from "@/ui/primitives";
+import { NumberInput } from "@/ui/composites";
+import { Alert, AlertDescription } from "@/ui/primitives";
+import { FormFieldUI } from "@/ui/composites";
+import { Checkbox } from "@/ui/primitives";
 import { MetodoPagamentoInput } from "@/components/entity-inputs/metodo-pagamento-input";
-import { useForm } from "@tanstack/react-form";
+import { useForm, useStore } from "@tanstack/react-form";
 import { useSelector } from "@tanstack/react-store";
 import {
   Table,
@@ -22,16 +19,16 @@ import {
   TableRow,
   TableHead,
   TableCell,
-} from "@/components/ui/table";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Card, CardContent } from "@/components/ui/card";
+} from "@/ui/primitives";
+import { ScrollArea } from "@/ui/primitives";
+import { Separator } from "@/ui/primitives";
+import { Card, CardContent } from "@/ui/primitives";
 import {
   Empty,
   EmptyHeader,
   EmptyTitle,
   EmptyDescription,
-} from "@/components/ui/empty";
+} from "@/ui/primitives";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import {
   condicaoPagamentoSchema,
@@ -44,37 +41,26 @@ import { useQuery } from "@tanstack/react-query";
 import { condicoesApi } from "@/api/financeiro";
 import { Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useWindow, useWindowCommands } from "@/ui/imperative";
+import { Spinner } from "@/ui/primitives";
 
-interface CondicoesUpsertProps {
-  open: boolean;
+export interface CondicoesUpsertProps {
   editingItem: CondicaoPagamento | null;
-  onClose: () => void;
-  onSuccess: () => void;
   readOnly?: boolean;
 }
 
 export function CondicoesUpsert(props: CondicoesUpsertProps) {
-  const { open, editingItem, onClose, readOnly = false } = props;
+  const { editingItem, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
     queryKey: ["condicoesPagamento", "detail", editingItem?.id],
     queryFn: () => condicoesApi.getById(editingItem!.id),
-    enabled: isEditMode && open,
+    enabled: isEditMode,
   });
 
   if (isEditMode && isLoading) {
-    return (
-      <UpsertDialog
-      isEdit={!!editingItem && !readOnly}
-        open={open}
-        onOpenChange={(o) => {
-          if (!o) onClose();
-        }}
-        title="Editar Condição de Pagamento"
-        loading={true}
-      />
-    );
+    return <div className="flex min-h-48 items-center justify-center"><Spinner className="size-6" /></div>;
   }
 
   return (
@@ -87,12 +73,10 @@ export function CondicoesUpsert(props: CondicoesUpsertProps) {
 }
 
 function CondicoesUpsertForm({
-  open,
   editingItem,
-  onClose,
-  onSuccess,
   readOnly = false,
 }: CondicoesUpsertProps) {
+  const activeWindow = useWindow<true>();
   const [parcelas, setParcelas] = useState<CondicaoPagamentoParcela[]>(
     editingItem?.condicoesPagamentosParcelas?.map((p) => ({
       numeroParcela: p.numeroParcela,
@@ -113,8 +97,7 @@ function CondicoesUpsertForm({
         : await condicoesApi.create(value);
     },
     queryKey: ["condicoesPagamento"],
-    onSuccessCallback: onSuccess,
-    onClose: onClose,
+    onSuccessCallback: () => activeWindow.resolve(true),
   });
 
   const [localErrors, setLocalErrors] = useState<Record<string, string>>({});
@@ -154,7 +137,7 @@ function CondicoesUpsertForm({
         return;
       }
 
-      mutation.mutate(payload as CondicaoPagamentoFormValues);
+      await mutation.mutateAsync(payload as CondicaoPagamentoFormValues);
     },
   });
 
@@ -172,7 +155,14 @@ function CondicoesUpsertForm({
     0,
   );
 
-  const handleAddParcela = () => {
+  const isDirty = useStore(form.store, (state) => state.isDirty);
+
+  useEffect(() => {
+    activeWindow.setDirty(isDirty);
+    return () => activeWindow.setDirty(false);
+  }, [activeWindow, isDirty]);
+
+  const handleAddParcela = useCallback(() => {
     if (readOnly) return;
     const currentEntrada = entradaMinimaPercentual ?? 0;
     const currentTotalPercent = currentEntrada + totalParcelasPercent;
@@ -190,9 +180,9 @@ function CondicoesUpsertForm({
         prazoDias: defaultDays,
       },
     ]);
-  };
+  }, [entradaMinimaPercentual, parcelas, readOnly, totalParcelasPercent]);
 
-  const handleCalcularPorcentagens = () => {
+  const handleCalcularPorcentagens = useCallback(() => {
     if (readOnly || parcelas.length === 0) return;
     const remaining = 100 - (entradaMinimaPercentual ?? 0);
     if (remaining <= 0) return;
@@ -212,35 +202,54 @@ function CondicoesUpsertForm({
     }
 
     setParcelas(distributed);
-  };
+  }, [entradaMinimaPercentual, parcelas, readOnly]);
 
-  useHotkeys(
-    [
+  const commands = React.useMemo(
+    () => [
       {
-        hotkey: "Alt+P",
-        callback: (e: KeyboardEvent) => {
-          e.preventDefault();
+        id: "condicoesPagamento.addInstallment",
+        hotkey: "Alt+P" as const,
+        label: "Adicionar parcela",
+        enabled: !readOnly && entradaMinimaPercentual !== 100,
+        run: async (event: KeyboardEvent) => {
+          event.preventDefault();
           handleAddParcela();
-        },
-        options: {
-          enabled: open && !readOnly && entradaMinimaPercentual !== 100,
-          ignoreInputs: false,
         },
       },
       {
-        hotkey: "Alt+C",
-        callback: (e: KeyboardEvent) => {
-          e.preventDefault();
+        id: "condicoesPagamento.distributeInstallments",
+        hotkey: "Alt+C" as const,
+        label: "Distribuir porcentagens",
+        enabled:
+          !readOnly && parcelas.length > 0 && entradaMinimaPercentual !== 100,
+        run: async (event: KeyboardEvent) => {
+          event.preventDefault();
           handleCalcularPorcentagens();
         },
-        options: {
-          enabled: open && !readOnly && parcelas.length > 0 && entradaMinimaPercentual !== 100,
-          ignoreInputs: false,
+      },
+      {
+        id: "condicoesPagamento.save",
+        hotkey: "Alt+Enter" as const,
+        label: "Salvar condição de pagamento",
+        enabled: !readOnly && !mutation.isPending,
+        run: async (event: KeyboardEvent) => {
+          event.preventDefault();
+          await form.handleSubmit();
         },
       },
     ],
-    { conflictBehavior: "allow" },
+    [
+      entradaMinimaPercentual,
+      form,
+      handleAddParcela,
+      handleCalcularPorcentagens,
+      mutation.isPending,
+      parcelas.length,
+      readOnly,
+    ],
   );
+
+  useWindowCommands(commands);
 
   const handleRemoveParcela = (index: number) => {
     if (readOnly) return;
@@ -297,52 +306,37 @@ function CondicoesUpsertForm({
   };
 
   return (
-    <UpsertDialog
-      isEdit={!!editingItem && !readOnly}
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) onClose();
-      }}
-      title={
-        editingItem
-          ? "Editar Condição de Pagamento"
-          : "Nova Condição de Pagamento"
-      }
-      footer={
-        <>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancelar <Kbd>Esc</Kbd>
-            </Button>
-          </DialogClose>
-          {!readOnly && (
-            <form.Subscribe
-              selector={(state) => [state.canSubmit, state.isSubmitting]}
-            >
-              {([canSubmit, isSubmitting]) => (
-                <Button
-                  type="submit"
-                  form="upsert-condicoes"
-                  disabled={!canSubmit || isSubmitting}
-                >
-                  {isSubmitting ? (
-                    "Salvando..."
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      Salvar{" "}
-                      <KbdGroup>
-                        <Kbd>Alt</Kbd>
-                        <Kbd>Enter</Kbd>
-                      </KbdGroup>
-                    </span>
-                  )}
-                </Button>
-              )}
-            </form.Subscribe>
-          )}
-        </>
-      }
-    >
+    <div className="flex flex-col gap-4">
+      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => activeWindow.dismiss("cancel")}
+        >
+          Cancelar <Kbd>Esc</Kbd>
+        </Button>
+        {!readOnly && (
+          <form.Subscribe
+            selector={(state) => [state.canSubmit, state.isSubmitting]}
+          >
+            {([canSubmit, isSubmitting]) => (
+              <Button
+                type="submit"
+                form="upsert-condicoes"
+                disabled={!canSubmit || isSubmitting}
+              >
+                {isSubmitting ? (
+                  "Salvando..."
+                ) : (
+                  <span className="flex items-center gap-2">
+                    Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup>
+                  </span>
+                )}
+              </Button>
+            )}
+          </form.Subscribe>
+        )}
+      </div>
       <form
         id="upsert-condicoes"
         className="flex flex-col gap-6"
@@ -858,7 +852,6 @@ function CondicoesUpsertForm({
           </Alert>
         )}
       </form>
-    </UpsertDialog>
+    </div>
   );
 }
-

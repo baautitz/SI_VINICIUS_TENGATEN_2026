@@ -4,9 +4,10 @@ import React from "react";
 import { CondicoesList } from "./list";
 import { CondicoesUpsert } from "./upsert";
 import { CondicaoPagamento } from "./types";
-import { DeleteDialog } from "@/components/ui/delete-dialog";
-import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
 import { condicoesApi } from "@/api/financeiro";
+import { useFeatureList } from "@/hooks/use-feature-list";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useUi } from "@/ui/imperative";
 
 interface CondicoesFeatureProps {
   selectionMode?: boolean;
@@ -19,58 +20,107 @@ export function CondicoesFeature({
   onSelect,
   initialSearchTerm = "",
 }: CondicoesFeatureProps) {
-  const {
-    listProps,
-    upsertProps,
-    deleteDialogProps,
-    featureList: list,
-  } = useFeatureOrchestrator<CondicaoPagamento>({
-    queryKey: "condicoesPagamento",
-    initialSearchTerm,
-    fetchPage: async (searchTerm, page, pageSize) => {
-      const res = await condicoesApi.list(searchTerm || undefined, page, pageSize);
-      if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
-
+  const ui = useUi();
+  const queryClient = useQueryClient();
+  const list = useFeatureList<CondicaoPagamento>({ initialSearchTerm });
+  const { data, isLoading } = useQuery({
+    queryKey: ["condicoesPagamento", list.deferredSearch, list.page],
+    queryFn: async () => {
+      const res = await condicoesApi.list(
+        list.deferredSearch.trim() || undefined,
+        list.page,
+        50,
+      );
       return {
-        itens: res.itens,
-        totalPages: res.totalDePaginas ?? 1,
-        totalItems: res.totalDeItens ?? 0,
+        itens: res?.itens ?? [],
+        totalPages: res?.totalDePaginas ?? 1,
+        totalItems: res?.totalDeItens ?? 0,
       };
-    },
-    fetchById: async (id) => {
-      return await condicoesApi.getById(id as number);
-    },
-    deleteItem: async (item) => {
-      await condicoesApi.delete(item.id);
     },
   });
 
+  const invalidate = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["condicoesPagamento"] }),
+      queryClient.invalidateQueries({ queryKey: ["produtos"] }),
+    ]);
+  };
+
+  const openCreate = async () => {
+    const result = await ui.windows.open<true, CondicoesUpsertProps>({
+      component: CondicoesUpsert,
+      props: { editingItem: null },
+      title: "Nova Condição de Pagamento",
+    });
+    if (result.status === "confirmed") {
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Condição criada com sucesso." });
+    }
+  };
+
+  const openEdit = async (item: CondicaoPagamento) => {
+    const result = await ui.windows.open<true, CondicoesUpsertProps>({
+      component: CondicoesUpsert,
+      props: { editingItem: item },
+      title: "Editar Condição de Pagamento",
+    });
+    if (result.status === "confirmed") {
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Condição atualizada com sucesso." });
+    }
+  };
+
+  const openView = async (item: CondicaoPagamento) => {
+    await ui.windows.open<true, CondicoesUpsertProps>({
+      component: CondicoesUpsert,
+      props: { editingItem: item, readOnly: true },
+      title: "Visualizar Condição de Pagamento",
+    });
+  };
+
+  const deleteCondicao = async (item: CondicaoPagamento) => {
+    const result = await ui.windows.confirm({
+      title: "Excluir Condição de Pagamento",
+      description: (
+        <p>
+          Deseja realmente excluir a condição de pagamento{" "}
+          <strong>{item.descricao}</strong>? Esta ação não poderá ser desfeita.
+        </p>
+      ),
+      confirmLabel: "Excluir",
+      confirmVariant: "destructive",
+    });
+    if (!result) return;
+    await condicoesApi.delete(item.id);
+    await invalidate();
+    ui.feedback.notify({ type: "success", title: "Condição excluída com sucesso." });
+  };
+
   return (
-    <>
-      <CondicoesList
-        {...listProps}
-        selectionMode={selectionMode}
-        onSelect={onSelect}
-      />
-
-      {list.isUpsertOpen && (
-        <CondicoesUpsert
-          key={list.editingItem?.id ?? "new"}
-          {...upsertProps}
-        />
-      )}
-
-      <DeleteDialog
-        {...deleteDialogProps}
-        title="Excluir Condição de Pagamento"
-        description={
-          <p>
-            Deseja realmente excluir a condição de pagamento{" "}
-            <strong>{list.itemToDelete?.descricao}</strong>? Esta ação não poderá ser desfeita.
-          </p>
-        }
-      />
-    </>
+    <CondicoesList
+      items={data?.itens ?? []}
+      loading={isLoading}
+      searchTerm={list.searchTerm}
+      page={list.page}
+      totalPages={data?.totalPages ?? 1}
+      totalItems={data?.totalItems ?? 0}
+      onSearchChange={list.handleSearchChange}
+      onAdd={openCreate}
+      onEdit={openEdit}
+      onView={openView}
+      onDelete={deleteCondicao}
+      onPageChange={list.setPage}
+      rowSelection={list.rowSelection}
+      onRowSelectionChange={list.setRowSelection}
+      selectAllAcrossPages={list.selectAllAcrossPages}
+      onSelectAllAcrossPagesChange={list.setSelectAllAcrossPages}
+      selectionMode={selectionMode}
+      onSelect={onSelect}
+    />
   );
 }
 
+export interface CondicoesUpsertProps {
+  editingItem: CondicaoPagamento | null;
+  readOnly?: boolean;
+}
