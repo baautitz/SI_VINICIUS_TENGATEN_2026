@@ -1,65 +1,48 @@
 "use client";
 
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { Kbd, KbdGroup } from "@/ui/primitives";
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { UpsertDialog } from "@/components/ui/upsert-dialog";
-import { DialogClose } from "@/components/ui/dialog";
-import { Field, FieldLabel, FieldError } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FormFieldUI } from "@/components/ui/form-field-ui";
+import { Button } from "@/ui/primitives";
+import { Field, FieldLabel, FieldError } from "@/ui/primitives";
+import { Input } from "@/ui/primitives";
+import { Alert, AlertDescription } from "@/ui/primitives";
+import { FormFieldUI } from "@/ui/composites";
 import { SexoSelect } from "@/components/sexo-select";
-import { DatePicker } from "@/components/ui/date-picker";
+import { DatePicker } from "@/ui/composites";
 import { cn } from "@/lib/utils";
 import { BairroInput } from "@/components/entity-inputs/bairro-input";
 import { PaisInput } from "@/components/entity-inputs/pais-input";
 import { TipoPessoaSelect } from "@/components/tipo-pessoa-select";
-import { useForm } from "@tanstack/react-form";
+import { useForm, useStore } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import { fornecedorSchema, Fornecedor, FornecedorFormValues } from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { fornecedoresApi } from "@/api/parceiros";
 import { TipoPessoa } from "@/api/types";
 import { Pais } from "@/features/localizacao/paises";
+import { useWindow, useWindowCommands } from "@/ui/imperative";
+import { Spinner } from "@/ui/primitives";
 
-interface FornecedoresUpsertProps {
-  open: boolean;
+export interface FornecedoresUpsertProps {
   editingItem: Fornecedor | null;
-  onClose: () => void;
-  onSuccess: () => void;
-  readOnly?: boolean;
-}
-
-interface FornecedoresUpsertFormProps {
-  open: boolean;
-  editingItem: Fornecedor | null;
-  onClose: () => void;
-  onSuccess: () => void;
   readOnly?: boolean;
 }
 
 export function FornecedoresUpsert(props: FornecedoresUpsertProps) {
-  const { open, editingItem, onClose, readOnly = false } = props;
+  const { editingItem, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
     queryKey: ["fornecedores", "detail", editingItem?.id],
     queryFn: () => fornecedoresApi.getById(editingItem!.id),
-    enabled: isEditMode && open,
+    enabled: isEditMode,
   });
 
   if (isEditMode && isLoading) {
     return (
-      <UpsertDialog
-      isEdit={!!editingItem && !readOnly}
-        open={open}
-        onOpenChange={(o) => {
-          if (!o) onClose();
-        }}
-        title="Editar Fornecedor"
-        loading={true}
-      />
+      <div className="flex min-h-48 items-center justify-center">
+        <Spinner className="size-6" />
+      </div>
     );
   }
 
@@ -72,13 +55,8 @@ export function FornecedoresUpsert(props: FornecedoresUpsertProps) {
   );
 }
 
-function FornecedoresUpsertForm({
-  open,
-  editingItem,
-  onClose,
-  onSuccess,
-  readOnly = false,
-}: FornecedoresUpsertFormProps) {
+function FornecedoresUpsertForm({ editingItem, readOnly = false }: FornecedoresUpsertProps) {
+  const activeWindow = useWindow<true>();
   const [selectedPais, setSelectedPais] = useState<Pais | null>(
     editingItem?.nacionalidade ?? null,
   );
@@ -97,8 +75,7 @@ function FornecedoresUpsertForm({
           : await fornecedoresApi.create(value);
       },
       queryKey: ["fornecedores"],
-      onSuccessCallback: onSuccess,
-      onClose: onClose,
+      onSuccessCallback: () => activeWindow.resolve(true),
     });
 
   const form = useForm({
@@ -128,7 +105,7 @@ function FornecedoresUpsertForm({
         sexo: value.tipoPessoa === TipoPessoa.FISICA ? value.sexo : "",
         dataNascimento: value.dataNascimento || null,
       };
-      mutation.mutate(payload as FornecedorFormValues);
+      await mutation.mutateAsync(payload as FornecedorFormValues);
     },
   });
 
@@ -136,21 +113,45 @@ function FornecedoresUpsertForm({
     selectedPais?.codigoIsoPais === "BRA" ||
     (!selectedPais && nacionalidadeId === 1);
 
+  const submitForm = React.useCallback(async () => {
+    await form.handleSubmit();
+  }, [form]);
+
+  const cancelForm = async () => {
+    activeWindow.dismiss("cancel");
+  };
+
+  const isDirty = useStore(form.store, (state) => state.isDirty);
+
+  React.useEffect(() => {
+    activeWindow.setDirty(isDirty);
+    return () => activeWindow.setDirty(false);
+  }, [activeWindow, isDirty]);
+
+  useWindowCommands(
+    React.useMemo(
+      () => [
+        {
+          id: "fornecedores.save",
+          hotkey: "Alt+Enter" as const,
+          label: "Salvar fornecedor",
+          enabled: !readOnly && !mutation.isPending,
+          run: async (event: KeyboardEvent) => {
+            event.preventDefault();
+            await submitForm();
+          },
+        },
+      ],
+      [mutation.isPending, readOnly, submitForm],
+    ),
+  );
+
   return (
-    <UpsertDialog
-      isEdit={!!editingItem && !readOnly}
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) onClose();
-      }}
-      title={editingItem ? "Editar Fornecedor" : "Novo Fornecedor"}
-      footer={
-        <>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancelar <Kbd>Esc</Kbd>
-            </Button>
-          </DialogClose>
+    <div className="flex flex-col gap-4">
+      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+        <Button type="button" variant="outline" onClick={cancelForm}>
+          Cancelar <Kbd>Esc</Kbd>
+        </Button>
           <form.Subscribe
             selector={(state) => [state.canSubmit, state.isSubmitting]}
           >
@@ -158,7 +159,7 @@ function FornecedoresUpsertForm({
               <Button
                 type="submit"
                 form="upsert-fornecedores"
-                disabled={!canSubmit || isSubmitting}
+                disabled={readOnly || !canSubmit || isSubmitting}
               >
                 {isSubmitting ? (
                   "Salvando..."
@@ -174,16 +175,14 @@ function FornecedoresUpsertForm({
               </Button>
             )}
           </form.Subscribe>
-        </>
-      }
-    >
+      </div>
       <form
         id="upsert-fornecedores"
         className="flex flex-col gap-6"
-        onSubmit={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          form.handleSubmit();
+        onSubmit={async (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          await submitForm();
         }}
       >
         <div className="flex flex-col gap-4">
@@ -215,6 +214,7 @@ function FornecedoresUpsertForm({
                       field.handleChange(val);
                       setTipoPessoa(val);
                     }}
+                    disabled={readOnly}
                     error={getFieldError(field.name, field.state.meta.errors)}
                     inputSize="small"
                   />
@@ -234,6 +234,7 @@ function FornecedoresUpsertForm({
                     label="Nacionalidade"
                     error={getFieldError(field.name, field.state.meta.errors)}
                     initialItem={editingItem?.nacionalidade}
+                    disabled={readOnly}
                     onSelectId={(id) => {
                       field.handleChange(id ?? 0);
                       setNacionalidadeId(id ?? 0);
@@ -256,6 +257,7 @@ function FornecedoresUpsertForm({
                     label="Nome / Razão Social"
                     getFieldError={getFieldError}
                     inputSize="full"
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -276,6 +278,7 @@ function FornecedoresUpsertForm({
                     label="Apelido / Nome Fantasia"
                     getFieldError={getFieldError}
                     inputSize="full"
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -303,6 +306,7 @@ function FornecedoresUpsertForm({
                       label={label}
                       getFieldError={getFieldError}
                       inputSize="medium"
+                      disabled={readOnly}
                     />
                   );
                 }}
@@ -324,6 +328,7 @@ function FornecedoresUpsertForm({
                       }
                       getFieldError={getFieldError}
                       inputSize="medium"
+                      disabled={readOnly}
                     />
                   )}
                 </form.Field>
@@ -343,6 +348,7 @@ function FornecedoresUpsertForm({
                     label="Telefone"
                     getFieldError={getFieldError}
                     inputSize="medium"
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -358,6 +364,7 @@ function FornecedoresUpsertForm({
                     label="E-mail"
                     getFieldError={getFieldError}
                     inputSize="full"
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -462,6 +469,7 @@ function FornecedoresUpsertForm({
                       error={error}
                       initialItem={editingItem?.bairro}
                       onSelectId={(id) => field.handleChange(id)}
+                      disabled={readOnly}
                     />
                   );
                 }}
@@ -480,6 +488,7 @@ function FornecedoresUpsertForm({
               label="Observação"
               getFieldError={getFieldError}
               inputSize="full"
+              disabled={readOnly}
             />
           )}
         </form.Field>
@@ -490,6 +499,6 @@ function FornecedoresUpsertForm({
           </Alert>
         )}
       </form>
-    </UpsertDialog>
+    </div>
   );
 }

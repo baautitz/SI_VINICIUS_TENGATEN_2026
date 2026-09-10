@@ -1,65 +1,46 @@
 "use client";
 
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { Kbd, KbdGroup } from "@/ui/primitives";
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { UpsertDialog } from "@/components/ui/upsert-dialog";
-import { DialogClose } from "@/components/ui/dialog";
-import { Field, FieldLabel, FieldError } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FormFieldUI } from "@/components/ui/form-field-ui";
+import { Button } from "@/ui/primitives";
+import { Field, FieldLabel, FieldError } from "@/ui/primitives";
+import { Input } from "@/ui/primitives";
+import { Alert, AlertDescription } from "@/ui/primitives";
+import { FormFieldUI } from "@/ui/composites";
 import { SexoSelect } from "@/components/sexo-select";
-import { DatePicker } from "@/components/ui/date-picker";
+import { DatePicker } from "@/ui/composites";
 import { cn } from "@/lib/utils";
 import { BairroInput } from "@/components/entity-inputs/bairro-input";
 import { PaisInput } from "@/components/entity-inputs/pais-input";
 import { TipoPessoaSelect } from "@/components/tipo-pessoa-select";
-import { useForm } from "@tanstack/react-form";
+import { useForm, useStore } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import { clienteSchema, Cliente, ClienteFormValues } from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { clientesApi } from "@/api/parceiros";
 import { TipoPessoa } from "@/api/types";
 import { Pais } from "@/features/localizacao/paises";
+import { useWindow, useWindowCommands } from "@/ui/imperative";
+import { Spinner } from "@/ui/primitives";
 
-interface ClientesUpsertProps {
-  open: boolean;
+export interface ClientesUpsertProps {
   editingItem: Cliente | null;
-  onClose: () => void;
-  onSuccess: () => void;
-  readOnly?: boolean;
-}
-
-interface ClientesUpsertFormProps {
-  open: boolean;
-  editingItem: Cliente | null;
-  onClose: () => void;
-  onSuccess: () => void;
   readOnly?: boolean;
 }
 
 export function ClientesUpsert(props: ClientesUpsertProps) {
-  const { open, editingItem, onClose, readOnly = false } = props;
+  const { editingItem, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
     queryKey: ["clientes", "detail", editingItem?.id],
     queryFn: () => clientesApi.getById(editingItem!.id),
-    enabled: isEditMode && open,
+    enabled: isEditMode,
   });
 
   if (isEditMode && isLoading) {
     return (
-      <UpsertDialog
-      isEdit={!!editingItem && !readOnly}
-        open={open}
-        onOpenChange={(o) => {
-          if (!o) onClose();
-        }}
-        title="Editar Cliente"
-        loading={true}
-      />
+      <div className="flex min-h-48 items-center justify-center"><Spinner className="size-6" /></div>
     );
   }
 
@@ -73,12 +54,10 @@ export function ClientesUpsert(props: ClientesUpsertProps) {
 }
 
 function ClientesUpsertForm({
-  open,
   editingItem,
-  onClose,
-  onSuccess,
   readOnly = false,
-}: ClientesUpsertFormProps) {
+}: ClientesUpsertProps) {
+  const activeWindow = useWindow<true>();
   const [selectedPais, setSelectedPais] = useState<Pais | null>(
     editingItem?.nacionalidade ?? null,
   );
@@ -97,8 +76,7 @@ function ClientesUpsertForm({
           : await clientesApi.create(value);
       },
       queryKey: ["clientes"],
-      onSuccessCallback: onSuccess,
-      onClose: onClose,
+      onSuccessCallback: () => activeWindow.resolve(true),
     });
 
   const form = useForm({
@@ -129,29 +107,59 @@ function ClientesUpsertForm({
         sexo: value.tipoPessoa === TipoPessoa.FISICA ? value.sexo : "",
         dataNascimento: value.dataNascimento || null,
       };
-      mutation.mutate(payload as ClienteFormValues);
+      await mutation.mutateAsync(payload as ClienteFormValues);
     },
   });
+
+  const submitForm = React.useCallback(async () => {
+    await form.handleSubmit();
+  }, [form]);
+
+  const cancelForm = async () => {
+    activeWindow.dismiss("cancel");
+  };
+
+  const submitFormEvent = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    await submitForm();
+  };
+
+  const isDirty = useStore(form.store, (state) => state.isDirty);
+
+  React.useEffect(() => {
+    activeWindow.setDirty(isDirty);
+    return () => activeWindow.setDirty(false);
+  }, [activeWindow, isDirty]);
+
+  const commands = React.useMemo(
+    () => [
+      {
+        id: "clientes.save",
+        hotkey: "Alt+Enter" as const,
+        label: "Salvar cliente",
+        enabled: !readOnly && !mutation.isPending,
+        run: async (event: KeyboardEvent) => {
+          event.preventDefault();
+          await submitForm();
+        },
+      },
+    ],
+    [mutation.isPending, readOnly, submitForm],
+  );
+
+  useWindowCommands(commands);
 
   const isBrasil =
     selectedPais?.codigoIsoPais === "BRA" ||
     (!selectedPais && nacionalidadeId === 1);
 
   return (
-    <UpsertDialog
-      isEdit={!!editingItem && !readOnly}
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) onClose();
-      }}
-      title={editingItem ? "Editar Cliente" : "Novo Cliente"}
-      footer={
-        <>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancelar <Kbd>Esc</Kbd>
-            </Button>
-          </DialogClose>
+    <div className="flex flex-col gap-4">
+      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+        <Button type="button" variant="outline" onClick={cancelForm}>
+          Cancelar <Kbd>Esc</Kbd>
+        </Button>
           <form.Subscribe
             selector={(state) => [state.canSubmit, state.isSubmitting]}
           >
@@ -159,7 +167,7 @@ function ClientesUpsertForm({
               <Button
                 type="submit"
                 form="upsert-clientes"
-                disabled={!canSubmit || isSubmitting}
+                disabled={readOnly || !canSubmit || isSubmitting}
               >
                 {isSubmitting ? (
                   "Salvando..."
@@ -175,17 +183,11 @@ function ClientesUpsertForm({
               </Button>
             )}
           </form.Subscribe>
-        </>
-      }
-    >
+      </div>
       <form
         id="upsert-clientes"
         className="flex flex-col gap-6"
-        onSubmit={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          form.handleSubmit();
-        }}
+        onSubmit={submitFormEvent}
       >
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-start gap-4">
@@ -218,6 +220,7 @@ function ClientesUpsertForm({
                     }}
                     error={getFieldError(field.name, field.state.meta.errors)}
                     inputSize="small"
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -238,6 +241,7 @@ function ClientesUpsertForm({
                       setNacionalidadeId(id ?? 0);
                     }}
                     onSelectItem={(item) => setSelectedPais(item)}
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -253,6 +257,7 @@ function ClientesUpsertForm({
                     label="Nome / Razão Social"
                     getFieldError={getFieldError}
                     inputSize="full"
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -273,6 +278,7 @@ function ClientesUpsertForm({
                     label="Apelido / Nome Fantasia"
                     getFieldError={getFieldError}
                     inputSize="full"
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -300,6 +306,7 @@ function ClientesUpsertForm({
                       label={label}
                       getFieldError={getFieldError}
                       inputSize="medium"
+                      disabled={readOnly}
                     />
                   );
                 }}
@@ -321,6 +328,7 @@ function ClientesUpsertForm({
                       }
                       getFieldError={getFieldError}
                       inputSize="medium"
+                      disabled={readOnly}
                     />
                   )}
                 </form.Field>
@@ -340,6 +348,7 @@ function ClientesUpsertForm({
                     label="Telefone"
                     getFieldError={getFieldError}
                     inputSize="medium"
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -355,6 +364,7 @@ function ClientesUpsertForm({
                     label="E-mail"
                     getFieldError={getFieldError}
                     inputSize="full"
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -476,6 +486,7 @@ function ClientesUpsertForm({
                       error={error}
                       initialItem={editingItem?.bairro}
                       onSelectId={(id) => field.handleChange(id)}
+                      disabled={readOnly}
                     />
                   );
                 }}
@@ -484,8 +495,8 @@ function ClientesUpsertForm({
           </div>
         </div>
 
-        <form.Field
-          name="observacao"
+          <form.Field
+            name="observacao"
           validators={{ onChange: clienteSchema.shape.observacao }}
         >
           {(field) => (
@@ -494,6 +505,7 @@ function ClientesUpsertForm({
               label="Observação"
               getFieldError={getFieldError}
               inputSize="full"
+              disabled={readOnly}
             />
           )}
         </form.Field>
@@ -504,6 +516,6 @@ function ClientesUpsertForm({
           </Alert>
         )}
       </form>
-    </UpsertDialog>
+    </div>
   );
 }

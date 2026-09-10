@@ -1,16 +1,14 @@
 "use client";
 
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { Kbd, KbdGroup } from "@/ui/primitives";
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { UpsertDialog } from "@/components/ui/upsert-dialog";
-import { DialogClose } from "@/components/ui/dialog";
-import { Field, FieldLabel, FieldError } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FormFieldUI } from "@/components/ui/form-field-ui";
+import { Button } from "@/ui/primitives";
+import { Field, FieldLabel, FieldError } from "@/ui/primitives";
+import { Input } from "@/ui/primitives";
+import { Alert, AlertDescription } from "@/ui/primitives";
+import { FormFieldUI } from "@/ui/composites";
 import { SexoSelect } from "@/components/sexo-select";
-import { DatePicker } from "@/components/ui/date-picker";
+import { DatePicker } from "@/ui/composites";
 import { cn } from "@/lib/utils";
 import { BairroInput } from "@/components/entity-inputs/bairro-input";
 import { PaisInput } from "@/components/entity-inputs/pais-input";
@@ -22,44 +20,35 @@ import { useQuery } from "@tanstack/react-query";
 import { emitentesApi } from "@/api/parceiros";
 import { TipoPessoa } from "@/api/types";
 import { Pais } from "@/features/localizacao/paises";
+import { Spinner } from "@/ui/primitives";
+import { useWindow, useWindowCommands } from "@/ui/imperative";
+import { useStore } from "@tanstack/react-form";
 
-interface EmitentesUpsertProps {
-  open: boolean;
+export interface EmitentesUpsertProps {
   editingItem: Emitente | null;
-  onClose: () => void;
-  onSuccess: () => void;
   readOnly?: boolean;
 }
 
 interface EmitentesUpsertFormProps {
-  open: boolean;
   editingItem: Emitente | null;
-  onClose: () => void;
-  onSuccess: () => void;
   readOnly?: boolean;
 }
 
 export function EmitentesUpsert(props: EmitentesUpsertProps) {
-  const { open, editingItem, onClose, readOnly = false } = props;
+  const { editingItem, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
     queryKey: ["emitentes", "detail", editingItem?.id],
     queryFn: () => emitentesApi.getById(editingItem!.id),
-    enabled: isEditMode && open,
+    enabled: isEditMode,
   });
 
   if (isEditMode && isLoading) {
     return (
-      <UpsertDialog
-      isEdit={!!editingItem && !readOnly}
-        open={open}
-        onOpenChange={(o) => {
-          if (!o) onClose();
-        }}
-        title="Editar Emitente"
-        loading={true}
-      />
+      <div className="flex min-h-48 items-center justify-center">
+        <Spinner className="size-6" />
+      </div>
     );
   }
 
@@ -73,12 +62,10 @@ export function EmitentesUpsert(props: EmitentesUpsertProps) {
 }
 
 function EmitentesUpsertForm({
-  open,
   editingItem,
-  onClose,
-  onSuccess,
   readOnly = false,
 }: EmitentesUpsertFormProps) {
+  const activeWindow = useWindow<true>();
   const [selectedPais, setSelectedPais] = useState<Pais | null>(
     editingItem?.nacionalidade ?? null,
   );
@@ -97,8 +84,7 @@ function EmitentesUpsertForm({
           : await emitentesApi.create(value);
       },
       queryKey: ["emitentes"],
-      onSuccessCallback: onSuccess,
-      onClose: onClose,
+      onSuccessCallback: () => activeWindow.resolve(true),
     });
 
   const form = useForm({
@@ -130,62 +116,77 @@ function EmitentesUpsertForm({
         sexo: value.tipoPessoa === TipoPessoa.FISICA ? value.sexo : "",
         dataNascimento: value.dataNascimento || null,
       };
-      mutation.mutate(payload as EmitenteFormValues);
+      if (readOnly) return;
+      await mutation.mutateAsync(payload as EmitenteFormValues);
     },
   });
+
+  const isDirty = useStore(form.store, (state) => state.isDirty);
+
+  const save = React.useCallback(async () => {
+    await form.handleSubmit();
+  }, [form]);
+
+  const cancel = React.useCallback(async () => {
+    activeWindow.dismiss("cancel");
+  }, [activeWindow]);
+
+  React.useEffect(() => {
+    activeWindow.setDirty(isDirty);
+    return () => activeWindow.setDirty(false);
+  }, [activeWindow, isDirty]);
+
+  const commands = React.useMemo(
+    () => [
+      {
+        id: "emitentes.save",
+        hotkey: "Alt+Enter" as const,
+        label: "Salvar emitente",
+        enabled: !readOnly && !mutation.isPending,
+        run: async (event: KeyboardEvent) => {
+          event.preventDefault();
+          await save();
+        },
+      },
+    ],
+    [mutation.isPending, readOnly, save],
+  );
+
+  useWindowCommands(commands);
 
   const isBrasil =
     selectedPais?.codigoIsoPais === "BRA" ||
     (!selectedPais && nacionalidadeId === 1);
 
   return (
-    <UpsertDialog
-      isEdit={!!editingItem && !readOnly}
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) onClose();
-      }}
-      title={editingItem ? "Editar Emitente" : "Novo Emitente"}
-      footer={
-        <>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancelar <Kbd>Esc</Kbd>
+    <div className="flex flex-col gap-4">
+      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={cancel}
+        >
+          Cancelar <Kbd>Esc</Kbd>
+        </Button>
+        <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+          {([canSubmit, isSubmitting]) => (
+            <Button
+              type="submit"
+              form="upsert-emitentes"
+              disabled={readOnly || !canSubmit || isSubmitting}
+            >
+              {isSubmitting ? "Salvando..." : <span className="flex items-center gap-2">Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup></span>}
             </Button>
-          </DialogClose>
-          <form.Subscribe
-            selector={(state) => [state.canSubmit, state.isSubmitting]}
-          >
-            {([canSubmit, isSubmitting]) => (
-              <Button
-                type="submit"
-                form="upsert-emitentes"
-                disabled={!canSubmit || isSubmitting}
-              >
-                {isSubmitting ? (
-                  "Salvando..."
-                ) : (
-                  <span className="flex items-center gap-2">
-                    Salvar{" "}
-                    <KbdGroup>
-                      <Kbd>Alt</Kbd>
-                      <Kbd>Enter</Kbd>
-                    </KbdGroup>
-                  </span>
-                )}
-              </Button>
-            )}
-          </form.Subscribe>
-        </>
-      }
-    >
+          )}
+        </form.Subscribe>
+      </div>
       <form
         id="upsert-emitentes"
         className="flex flex-col gap-6"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
           e.stopPropagation();
-          form.handleSubmit();
+          await save();
         }}
       >
         <div className="flex flex-col gap-4">
@@ -217,6 +218,7 @@ function EmitentesUpsertForm({
                       field.handleChange(val);
                       setTipoPessoa(val);
                     }}
+                    disabled={readOnly}
                     error={getFieldError(field.name, field.state.meta.errors)}
                     inputSize="small"
                   />
@@ -239,6 +241,7 @@ function EmitentesUpsertForm({
                       setNacionalidadeId(id ?? 0);
                     }}
                     onSelectItem={(item) => setSelectedPais(item)}
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -254,6 +257,7 @@ function EmitentesUpsertForm({
                     label="Nome / Razão Social"
                     getFieldError={getFieldError}
                     inputSize="full"
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -274,6 +278,7 @@ function EmitentesUpsertForm({
                     label="Apelido / Nome Fantasia"
                     getFieldError={getFieldError}
                     inputSize="full"
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -301,6 +306,7 @@ function EmitentesUpsertForm({
                       label={label}
                       getFieldError={getFieldError}
                       inputSize="medium"
+                      disabled={readOnly}
                     />
                   );
                 }}
@@ -322,6 +328,7 @@ function EmitentesUpsertForm({
                       }
                       getFieldError={getFieldError}
                       inputSize="medium"
+                      disabled={readOnly}
                     />
                   )}
                 </form.Field>
@@ -343,6 +350,7 @@ function EmitentesUpsertForm({
                     label="Inscrição Municipal"
                     getFieldError={getFieldError}
                     inputSize="medium"
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -358,6 +366,7 @@ function EmitentesUpsertForm({
                     label="Regime Tributário"
                     getFieldError={getFieldError}
                     inputSize="medium"
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -373,6 +382,7 @@ function EmitentesUpsertForm({
                     label="Telefone"
                     getFieldError={getFieldError}
                     inputSize="medium"
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -388,6 +398,7 @@ function EmitentesUpsertForm({
                     label="E-mail"
                     getFieldError={getFieldError}
                     inputSize="full"
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -492,6 +503,7 @@ function EmitentesUpsertForm({
                       error={error}
                       initialItem={editingItem?.bairro}
                       onSelectId={(id) => field.handleChange(id)}
+                      disabled={readOnly}
                     />
                   );
                 }}
@@ -510,6 +522,7 @@ function EmitentesUpsertForm({
               label="Observação"
               getFieldError={getFieldError}
               inputSize="full"
+              disabled={readOnly}
             />
           )}
         </form.Field>
@@ -520,6 +533,6 @@ function EmitentesUpsertForm({
           </Alert>
         )}
       </form>
-    </UpsertDialog>
+    </div>
   );
 }

@@ -2,16 +2,15 @@
 
 import * as React from "react";
 
-import { StatusBadge } from "@/components/ui/status-badge";
+import { StatusBadge } from "@/ui/composites";
 import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
-import { useFeatureHotkeys } from "@/hooks/use-feature-hotkeys";
-import { FeatureHeader } from "@/components/ui/feature-header";
-import { Car } from "lucide-react"
+import { FeatureHeader } from "@/ui/composites";
+import { Car } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 
-import { DataTable } from "@/components/ui/data-table";
+import { DataTable } from "@/ui/composites";
 
-import { FeatureLayout } from "@/components/ui/feature-layout";
+import { FeatureLayout } from "@/ui/composites";
 import { Veiculo } from "./types";
 
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
@@ -27,6 +26,7 @@ export function VeiculosList({
   onSearchChange,
   onAdd,
   onEdit,
+  onView,
   onDelete,
   onSelect,
   onPageChange,
@@ -35,9 +35,6 @@ export function VeiculosList({
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<Veiculo>) {
-  const listRef = React.useRef<HTMLDivElement>(null);
-  useFeatureHotkeys({ onAdd, listRef });
-
   const columns: ColumnDef<Veiculo>[] = [
     getSelectColumn<Veiculo>(),
     {
@@ -55,7 +52,9 @@ export function VeiculosList({
         const item = row.original;
         return (
           <div className="flex flex-col">
-            <span className="font-medium">{item.placa} / {item.estado.uf}</span>
+            <span className="font-medium">
+              {item.placa} / {item.estado.uf}
+            </span>
             {item.marcaModelo && (
               <span className="text-xs text-muted-foreground">
                 {item.marcaModelo}
@@ -71,7 +70,9 @@ export function VeiculosList({
       cell: ({ row }) => {
         const item = row.original;
         return (
-          <span className="text-muted-foreground">{item.transportadora?.nomeRazaosocial || "N/A"}</span>
+          <span className="text-muted-foreground">
+            {item.transportadora?.nomeRazaosocial || "N/A"}
+          </span>
         );
       },
     },
@@ -80,18 +81,24 @@ export function VeiculosList({
       header: "Status",
       cell: ({ row }) => <StatusBadge ativo={row.getValue("ativo") as boolean} />,
     },
-    getActionsColumn<Veiculo>({ onEdit, onDelete, selectionMode, onSelect }),
+    getActionsColumn<Veiculo>({
+      onEdit,
+      onView,
+      onDelete,
+      selectionMode,
+      onSelect,
+    }),
   ];
 
   return (
-    <div ref={listRef} className="flex-1 min-h-0 flex flex-col h-full">
+    <div className="flex-1 min-h-0 flex flex-col h-full">
       <FeatureLayout>
-      <FeatureHeader
-        title="Veículos"
-        icon={<Car />}
-        onAdd={onAdd}
-        addButtonLabel="Novo Veículo"
-      />
+        <FeatureHeader
+          title="Veículos"
+          icon={<Car />}
+          onAdd={onAdd}
+          addButtonLabel="Novo Veículo"
+        />
 
       <DataTable
         columns={columns}
@@ -112,8 +119,8 @@ export function VeiculosList({
         onRowSelect={selectionMode ? onSelect : undefined}
         onEditRow={onEdit}
         onDeleteRow={onDelete}
-        />
-    </FeatureLayout>
+      />
+      </FeatureLayout>
     </div>
   );
 }

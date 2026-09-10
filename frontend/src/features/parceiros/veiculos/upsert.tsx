@@ -1,40 +1,29 @@
 "use client";
 
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { Kbd, KbdGroup } from "@/ui/primitives";
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { UpsertDialog } from "@/components/ui/upsert-dialog";
-import { DialogClose } from "@/components/ui/dialog";
-import { FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FormFieldUI } from "@/components/ui/form-field-ui";
+import { Button } from "@/ui/primitives";
+import { FieldLabel } from "@/ui/primitives";
+import { Input } from "@/ui/primitives";
+import { Alert, AlertDescription } from "@/ui/primitives";
+import { FormFieldUI } from "@/ui/composites";
 import { TransportadoraInput } from "@/components/entity-inputs/transportadora-input";
 import { EstadoInput } from "@/components/entity-inputs/estado-input";
-import { useForm } from "@tanstack/react-form";
+import { useForm, useStore } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import { veiculoSchema, Veiculo, VeiculoFormValues } from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { veiculosApi } from "@/api/parceiros";
+import { useWindow, useWindowCommands } from "@/ui/imperative";
+import { Spinner } from "@/ui/primitives";
 
-interface VeiculosUpsertProps {
-  open: boolean;
+export interface VeiculosUpsertProps {
   editingItem: Veiculo | null;
-  onClose: () => void;
-  onSuccess: () => void;
-  readOnly?: boolean;
-}
-
-interface VeiculosUpsertFormProps {
-  open: boolean;
-  editingItem: Veiculo | null;
-  onClose: () => void;
-  onSuccess: () => void;
   readOnly?: boolean;
 }
 
 export function VeiculosUpsert(props: VeiculosUpsertProps) {
-  const { open, editingItem, onClose, readOnly = false } = props;
+  const { editingItem, readOnly = false } = props;
   const isEditMode = !!editingItem;
 
   const { data: fullItem, isLoading } = useQuery({
@@ -45,15 +34,9 @@ export function VeiculosUpsert(props: VeiculosUpsertProps) {
 
   if (isEditMode && isLoading) {
     return (
-      <UpsertDialog
-      isEdit={!!editingItem}
-        open={open}
-        onOpenChange={(o) => {
-          if (!o) onClose();
-        }}
-        title="Editar Veículo"
-        loading={true}
-      />
+      <div className="flex min-h-48 items-center justify-center">
+        <Spinner className="size-6" />
+      </div>
     );
   }
 
@@ -67,11 +50,10 @@ export function VeiculosUpsert(props: VeiculosUpsertProps) {
 }
 
 function VeiculosUpsertForm({
-  open,
   editingItem,
-  onClose,
-  onSuccess,
-}: VeiculosUpsertFormProps) {
+  readOnly = false,
+}: VeiculosUpsertProps) {
+  const activeWindow = useWindow<true>();
   const { mutation, globalError, getFieldError, resetErrors } =
     useUpsertMutation({
       mutationFn: async (value: VeiculoFormValues) => {
@@ -80,8 +62,7 @@ function VeiculosUpsertForm({
           : await veiculosApi.create(value);
       },
       queryKey: ["veiculos"],
-      onSuccessCallback: onSuccess,
-      onClose: onClose,
+      onSuccessCallback: () => activeWindow.resolve(true),
     });
 
   const form = useForm({
@@ -97,56 +78,71 @@ function VeiculosUpsertForm({
       ativo: editingItem?.ativo ?? true,
     } as VeiculoFormValues,
     onSubmit: async ({ value }) => {
+      if (readOnly) return;
       resetErrors();
       const payload = {
         ...value,
         transportadoraId: value.transportadoraId || null,
       };
-      mutation.mutate(payload as VeiculoFormValues);
+      await mutation.mutateAsync(payload as VeiculoFormValues);
     },
   });
 
+  const isDirty = useStore(form.store, (state) => state.isDirty);
+
+  React.useEffect(() => {
+    activeWindow.setDirty(isDirty);
+    return () => activeWindow.setDirty(false);
+  }, [activeWindow, isDirty]);
+
+  const commands = React.useMemo(
+    () => [
+      {
+        id: "veiculos.save",
+        hotkey: "Alt+Enter" as const,
+        label: "Salvar veículo",
+        enabled: !readOnly && !mutation.isPending,
+        run: async (event: KeyboardEvent) => {
+          event.preventDefault();
+          await form.handleSubmit();
+        },
+      },
+    ],
+    [form, mutation.isPending, readOnly],
+  );
+
+  useWindowCommands(commands);
+
   return (
-    <UpsertDialog
-      isEdit={!!editingItem}
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) onClose();
-      }}
-      title={editingItem ? "Editar Veículo" : "Novo Veículo"}
-      footer={
-        <>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancelar <Kbd>Esc</Kbd>
+    <div className="flex flex-col gap-4">
+      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => activeWindow.dismiss("cancel")}
+        >
+          Cancelar <Kbd>Esc</Kbd>
+        </Button>
+        <form.Subscribe
+          selector={(state) => [state.canSubmit, state.isSubmitting]}
+        >
+          {([canSubmit, isSubmitting]) => (
+            <Button
+              type="submit"
+              form="upsert-veiculos"
+              disabled={readOnly || !canSubmit || isSubmitting}
+            >
+              {isSubmitting ? (
+                "Salvando..."
+              ) : (
+                <span className="flex items-center gap-2">
+                  Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup>
+                </span>
+              )}
             </Button>
-          </DialogClose>
-          <form.Subscribe
-            selector={(state) => [state.canSubmit, state.isSubmitting]}
-          >
-            {([canSubmit, isSubmitting]) => (
-              <Button
-                type="submit"
-                form="upsert-veiculos"
-                disabled={!canSubmit || isSubmitting}
-              >
-                {isSubmitting ? (
-                  "Salvando..."
-                ) : (
-                  <span className="flex items-center gap-2">
-                    Salvar{" "}
-                    <KbdGroup>
-                      <Kbd>Alt</Kbd>
-                      <Kbd>Enter</Kbd>
-                    </KbdGroup>
-                  </span>
-                )}
-              </Button>
-            )}
-          </form.Subscribe>
-        </>
-      }
-    >
+          )}
+        </form.Subscribe>
+      </div>
       <form
         id="upsert-veiculos"
         className="flex flex-col gap-6"
@@ -182,6 +178,7 @@ function VeiculosUpsertForm({
                     label="Placa"
                     getFieldError={getFieldError}
                     inputSize="small"
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -200,6 +197,7 @@ function VeiculosUpsertForm({
                     <EstadoInput
                       name={field.name}
                       error={error}
+                      disabled={readOnly}
                       initialItem={editingItem?.estado}
                       onSelectId={(id) => field.handleChange(id ?? 0)}
                     />
@@ -220,6 +218,7 @@ function VeiculosUpsertForm({
                     label="Marca / Modelo"
                     getFieldError={getFieldError}
                     inputSize="full"
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -241,6 +240,7 @@ function VeiculosUpsertForm({
                     <TransportadoraInput
                       name={field.name}
                       error={error}
+                      disabled={readOnly}
                       initialItem={editingItem?.transportadora}
                       onSelectId={(id) => field.handleChange(id)}
                     />
@@ -262,6 +262,7 @@ function VeiculosUpsertForm({
                     label="RNTRC"
                     getFieldError={getFieldError}
                     inputSize="medium"
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -277,6 +278,7 @@ function VeiculosUpsertForm({
                     label="Renavam"
                     getFieldError={getFieldError}
                     inputSize="medium"
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -292,6 +294,7 @@ function VeiculosUpsertForm({
                     label="Tipo de Veículo"
                     getFieldError={getFieldError}
                     inputSize="medium"
+                    disabled={readOnly}
                   />
                 )}
               </form.Field>
@@ -309,6 +312,7 @@ function VeiculosUpsertForm({
               label="Observação"
               getFieldError={getFieldError}
               inputSize="full"
+              disabled={readOnly}
             />
           )}
         </form.Field>
@@ -319,7 +323,6 @@ function VeiculosUpsertForm({
           </Alert>
         )}
       </form>
-    </UpsertDialog>
+    </div>
   );
 }
-

@@ -2,11 +2,12 @@
 
 import React from "react";
 import { EmitentesList } from "./list";
-import { EmitentesUpsert } from "./upsert";
+import { EmitentesUpsert, type EmitentesUpsertProps } from "./upsert";
 import { Emitente } from "./types";
-import { DeleteDialog } from "@/components/ui/delete-dialog";
-import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
 import { emitentesApi } from "@/api/parceiros";
+import { useFeatureList } from "@/hooks/use-feature-list";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useUi } from "@/ui/imperative";
 
 interface EmitentesFeatureProps {
   selectionMode?: boolean;
@@ -19,57 +20,101 @@ export function EmitentesFeature({
   onSelect,
   initialSearchTerm = "",
 }: EmitentesFeatureProps) {
-  const {
-    listProps,
-    upsertProps,
-    deleteDialogProps,
-    featureList: list,
-  } = useFeatureOrchestrator<Emitente>({
-    queryKey: "emitentes",
-    initialSearchTerm,
-    fetchPage: async (searchTerm, page, pageSize) => {
-      const res = await emitentesApi.list(searchTerm || undefined, page, pageSize);
-      if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
-
+  const ui = useUi();
+  const queryClient = useQueryClient();
+  const list = useFeatureList<Emitente>({ initialSearchTerm });
+  const { data, isLoading } = useQuery({
+    queryKey: ["emitentes", list.deferredSearch, list.page],
+    queryFn: async () => {
+      const res = await emitentesApi.list(
+        list.deferredSearch.trim() || undefined,
+        list.page,
+        50,
+      );
       return {
-        itens: res.itens,
-        totalPages: res.totalDePaginas ?? 1,
-        totalItems: res.totalDeItens ?? 0,
+        itens: res?.itens ?? [],
+        totalPages: res?.totalDePaginas ?? 1,
+        totalItems: res?.totalDeItens ?? 0,
       };
-    },
-    fetchById: async (id) => {
-      return await emitentesApi.getById(id as number);
-    },
-    deleteItem: async (item) => {
-      await emitentesApi.delete(item.id);
     },
   });
 
+  const invalidate = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["emitentes"] }),
+      queryClient.invalidateQueries({ queryKey: ["emitente"] }),
+    ]);
+  };
+
+  const openCreate = async () => {
+    const result = await ui.windows.open<true, EmitentesUpsertProps>({
+      component: EmitentesUpsert,
+      props: { editingItem: null },
+      title: "Novo Emitente",
+    });
+    if (result.status === "confirmed") {
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Emitente criado com sucesso." });
+    }
+  };
+
+  const openEdit = async (item: Emitente) => {
+    const result = await ui.windows.open<true, EmitentesUpsertProps>({
+      component: EmitentesUpsert,
+      props: { editingItem: item },
+      title: "Editar Emitente",
+    });
+    if (result.status === "confirmed") {
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Emitente atualizado com sucesso." });
+    }
+  };
+
+  const openView = async (item: Emitente) => {
+    await ui.windows.open<true, EmitentesUpsertProps>({
+      component: EmitentesUpsert,
+      props: { editingItem: item, readOnly: true },
+      title: "Visualizar Emitente",
+    });
+  };
+
+  const deleteEmitente = async (item: Emitente) => {
+    const result = await ui.windows.confirm({
+      title: "Excluir Emitente",
+      description: (
+        <p>
+          Deseja realmente excluir o emitente <strong>{item.nomeRazaoSocial}</strong>? Esta ação não poderá ser desfeita.
+        </p>
+      ),
+      confirmLabel: "Excluir",
+      confirmVariant: "destructive",
+    });
+    if (!result) return;
+    await emitentesApi.delete(item.id);
+    await invalidate();
+    ui.feedback.notify({ type: "success", title: "Emitente excluído com sucesso." });
+  };
+
   return (
-    <>
-      <EmitentesList
-        {...listProps}
-        selectionMode={selectionMode}
-        onSelect={onSelect}
-      />
-
-      {list.isUpsertOpen && (
-        <EmitentesUpsert 
-          key={list.editingItem?.id ?? "new"} 
-          {...upsertProps} 
-        />
-      )}
-
-      <DeleteDialog
-        {...deleteDialogProps}
-        title="Excluir Emitente"
-        description={
-          <p>
-            Deseja realmente excluir o emitente{" "}
-            <strong>{list.itemToDelete?.nomeRazaoSocial}</strong>? Esta ação não poderá ser desfeita.
-          </p>
-        }
-      />
-    </>
+    <EmitentesList
+      items={data?.itens ?? []}
+      loading={isLoading}
+      searchTerm={list.searchTerm}
+      page={list.page}
+      totalPages={data?.totalPages ?? 1}
+      totalItems={data?.totalItems ?? 0}
+      onSearchChange={list.handleSearchChange}
+      onAdd={openCreate}
+      onEdit={openEdit}
+      onView={openView}
+      onDelete={deleteEmitente}
+      onPageChange={list.setPage}
+      rowSelection={list.rowSelection}
+      onRowSelectionChange={list.setRowSelection}
+      selectAllAcrossPages={list.selectAllAcrossPages}
+      onSelectAllAcrossPagesChange={list.setSelectAllAcrossPages}
+      selectionMode={selectionMode}
+      onSelect={onSelect}
+    />
   );
 }

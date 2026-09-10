@@ -3,21 +3,21 @@
 import * as React from "react";
 
 import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
-import { useFeatureHotkeys } from "@/hooks/use-feature-hotkeys";
-import { FeatureHeader } from "@/components/ui/feature-header";
+import { FeatureHeader } from "@/ui/composites";
 import { Users } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 
-import { DataTable } from "@/components/ui/data-table";
+import { DataTable } from "@/ui/composites";
 
-import { FeatureLayout } from "@/components/ui/feature-layout";
-import { Badge } from "@/components/ui/badge";
+import { FeatureLayout } from "@/ui/composites";
+import { Badge } from "@/ui/primitives";
 import { Cliente } from "./types";
 import { TipoPessoa } from "@/api/types";
 
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 
 export function ClientesList({
+  icon,
   items: clientes,
   loading,
   searchTerm,
@@ -28,6 +28,7 @@ export function ClientesList({
   onSearchChange,
   onAdd,
   onEdit,
+  onView,
   onDelete,
   onSelect,
   onPageChange,
@@ -36,9 +37,6 @@ export function ClientesList({
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<Cliente>) {
-  const listRef = React.useRef<HTMLDivElement>(null);
-  useFeatureHotkeys({ onAdd, listRef });
-
   const columns: ColumnDef<Cliente>[] = [
     getSelectColumn<Cliente>(),
     {
@@ -96,15 +94,15 @@ export function ClientesList({
         header: "Telefone",
         cell: ({ row }) => row.getValue("telefone") || "-",
     },
-    getActionsColumn<Cliente>({ onEdit, onDelete, selectionMode, onSelect }),
+    getActionsColumn<Cliente>({ onEdit, onView, onDelete, selectionMode, onSelect }),
   ];
 
   return (
-    <div ref={listRef} className="flex-1 min-h-0 flex flex-col h-full">
+    <div className="flex-1 min-h-0 flex flex-col h-full">
       <FeatureLayout>
         <FeatureHeader
           title="Clientes"
-          icon={<Users />}
+          icon={icon ?? <Users />}
           onAdd={onAdd}
           addButtonLabel="Novo Cliente"
         />

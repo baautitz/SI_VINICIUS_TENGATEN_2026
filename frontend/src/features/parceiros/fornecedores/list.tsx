@@ -1,17 +1,14 @@
 "use client";
 
-import * as React from "react";
-
 import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
-import { useFeatureHotkeys } from "@/hooks/use-feature-hotkeys";
-import { FeatureHeader } from "@/components/ui/feature-header";
+import { FeatureHeader } from "@/ui/composites";
 import { Truck } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 
-import { DataTable } from "@/components/ui/data-table";
+import { DataTable } from "@/ui/composites";
 
-import { FeatureLayout } from "@/components/ui/feature-layout";
-import { Badge } from "@/components/ui/badge";
+import { FeatureLayout } from "@/ui/composites";
+import { Badge } from "@/ui/primitives";
 import { Fornecedor } from "./types";
 import { TipoPessoa } from "@/api/types";
 
@@ -28,6 +25,7 @@ export function FornecedoresList({
   onSearchChange,
   onAdd,
   onEdit,
+  onView,
   onDelete,
   onSelect,
   onPageChange,
@@ -36,9 +34,6 @@ export function FornecedoresList({
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<Fornecedor>) {
-  const listRef = React.useRef<HTMLDivElement>(null);
-  useFeatureHotkeys({ onAdd, listRef });
-
   const columns: ColumnDef<Fornecedor>[] = [
     getSelectColumn<Fornecedor>(),
     {
@@ -81,11 +76,11 @@ export function FornecedoresList({
         <span className="text-muted-foreground">{row.getValue("cpfCnpj")}</span>
       ),
     },
-    getActionsColumn<Fornecedor>({ onEdit, onDelete, selectionMode, onSelect }),
+    getActionsColumn<Fornecedor>({ onEdit, onView, onDelete, selectionMode, onSelect }),
   ];
 
   return (
-    <div ref={listRef} className="flex-1 min-h-0 flex flex-col h-full">
+    <div className="flex-1 min-h-0 flex flex-col h-full">
       <FeatureLayout>
         <FeatureHeader
           title="Fornecedores"

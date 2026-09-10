@@ -1,12 +1,13 @@
 "use client";
 
 import React from "react";
-import { TransportadorasList } from "./list";
-import { TransportadorasUpsert } from "./upsert";
-import { Transportadora } from "./types";
-import { DeleteDialog } from "@/components/ui/delete-dialog";
-import { useFeatureOrchestrator } from "@/hooks/use-feature-orchestrator";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { transportadorasApi } from "@/api/parceiros";
+import { useFeatureList } from "@/hooks/use-feature-list";
+import { useUi } from "@/ui/imperative";
+import { TransportadorasList } from "./list";
+import { TransportadorasUpsert, TransportadorasUpsertProps } from "./upsert";
+import { Transportadora } from "./types";
 
 interface TransportadorasFeatureProps {
   selectionMode?: boolean;
@@ -21,55 +22,90 @@ export function TransportadorasFeature({
   onSelect,
   initialSearchTerm = "",
 }: TransportadorasFeatureProps) {
-  const {
-    listProps,
-    upsertProps,
-    deleteDialogProps,
-    featureList: list,
-  } = useFeatureOrchestrator<Transportadora>({
-    queryKey: "transportadoras",
-    initialSearchTerm,
-    fetchPage: async (searchTerm, page, pageSize) => {
-      const res = await transportadorasApi.list(searchTerm || undefined, page, pageSize);
-      if (!res?.itens) return { itens: [], totalPages: 1, totalItems: 0 };
-
+  const ui = useUi();
+  const queryClient = useQueryClient();
+  const list = useFeatureList<Transportadora>({ initialSearchTerm });
+  const { data, isLoading } = useQuery({
+    queryKey: ["transportadoras", list.deferredSearch, list.page],
+    queryFn: async () => {
+      const res = await transportadorasApi.list(
+        list.deferredSearch.trim() || undefined,
+        list.page,
+        50,
+      );
       return {
-        itens: res.itens,
-        totalPages: res.totalDePaginas ?? 1,
-        totalItems: res.totalDeItens ?? 0,
+        itens: res?.itens ?? [],
+        totalPages: res?.totalDePaginas ?? 1,
+        totalItems: res?.totalDeItens ?? 0,
       };
-    },
-    fetchById: async (id) => {
-      return await transportadorasApi.getById(id as number);
-    },
-    deleteItem: async (item) => {
-      await transportadorasApi.delete(item.id);
     },
   });
 
+  const invalidate = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["transportadoras"] });
+  };
+
+  const openUpsert = async (
+    editingItem: Transportadora | null,
+    readOnly = false,
+  ) => {
+    const result = await ui.windows.open<true, TransportadorasUpsertProps>({
+      component: TransportadorasUpsert,
+      props: { editingItem, readOnly },
+      title: readOnly
+        ? "Visualizar Transportadora"
+        : editingItem
+          ? "Editar Transportadora"
+          : "Nova Transportadora",
+    });
+    if (result.status === "confirmed") {
+      await invalidate();
+      ui.feedback.notify({
+        type: "success",
+        title: editingItem
+          ? "Transportadora atualizada com sucesso."
+          : "Transportadora criada com sucesso.",
+      });
+    }
+  };
+
+  const deleteTransportadora = async (item: Transportadora) => {
+    const result = await ui.windows.confirm({
+      title: "Excluir Transportadora",
+      description: `Deseja realmente excluir a transportadora ${item.nomeRazaosocial}? Esta ação não poderá ser desfeita.`,
+      confirmLabel: "Excluir",
+      confirmVariant: "destructive",
+    });
+    if (!result) return;
+    await transportadorasApi.delete(item.id);
+    await invalidate();
+    ui.feedback.notify({ type: "success", title: "Transportadora excluída com sucesso." });
+  };
+
+  const openCreate = async () => openUpsert(null);
+  const openEdit = async (item: Transportadora) => openUpsert(item);
+  const openView = async (item: Transportadora) => openUpsert(item, true);
+
   return (
-    <>
-      <TransportadorasList
-        {...listProps}
-        selectionMode={selectionMode}
-        onSelect={onSelect}
-      />
-
-      {list.isUpsertOpen && (
-        <TransportadorasUpsert key={list.editingItem?.id ?? "new"} {...upsertProps} />
-      )}
-
-      <DeleteDialog
-        {...deleteDialogProps}
-        title="Excluir Transportadora"
-        description={
-          <p>
-            Deseja realmente excluir a transportadora{" "}
-            <strong>{list.itemToDelete?.nomeRazaosocial}</strong>? Esta ação não poderá ser desfeita.
-          </p>
-        }
-      />
-    </>
+    <TransportadorasList
+      items={data?.itens ?? []}
+      loading={isLoading}
+      searchTerm={list.searchTerm}
+      page={list.page}
+      totalPages={data?.totalPages ?? 1}
+      totalItems={data?.totalItems ?? 0}
+      onSearchChange={list.handleSearchChange}
+      onAdd={openCreate}
+      onEdit={openEdit}
+      onView={openView}
+      onDelete={deleteTransportadora}
+      onPageChange={list.setPage}
+      rowSelection={list.rowSelection}
+      onRowSelectionChange={list.setRowSelection}
+      selectAllAcrossPages={list.selectAllAcrossPages}
+      onSelectAllAcrossPagesChange={list.setSelectAllAcrossPages}
+      selectionMode={selectionMode}
+      onSelect={onSelect}
+    />
   );
 }
-

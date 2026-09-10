@@ -2,17 +2,16 @@
 
 import * as React from "react";
 
-import { StatusBadge } from "@/components/ui/status-badge";
+import { StatusBadge } from "@/ui/composites";
 import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
-import { useFeatureHotkeys } from "@/hooks/use-feature-hotkeys";
-import { FeatureHeader } from "@/components/ui/feature-header";
-import { Truck } from "lucide-react"
+import { FeatureHeader } from "@/ui/composites";
+import { Truck } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 
-import { DataTable } from "@/components/ui/data-table";
+import { DataTable } from "@/ui/composites";
 
-import { FeatureLayout } from "@/components/ui/feature-layout";
-import { Badge } from "@/components/ui/badge";
+import { FeatureLayout } from "@/ui/composites";
+import { Badge } from "@/ui/primitives";
 import { Transportadora } from "./types";
 import { TipoPessoa } from "@/api/types";
 
@@ -29,6 +28,7 @@ export function TransportadorasList({
   onSearchChange,
   onAdd,
   onEdit,
+  onView,
   onDelete,
   onSelect,
   onPageChange,
@@ -37,9 +37,6 @@ export function TransportadorasList({
   selectAllAcrossPages,
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<Transportadora>) {
-  const listRef = React.useRef<HTMLDivElement>(null);
-  useFeatureHotkeys({ onAdd, listRef });
-
   const columns: ColumnDef<Transportadora>[] = [
     getSelectColumn<Transportadora>(),
     {
@@ -87,18 +84,24 @@ export function TransportadorasList({
       header: "Status",
       cell: ({ row }) => <StatusBadge ativo={row.getValue("ativo") as boolean} />,
     },
-    getActionsColumn<Transportadora>({ onEdit, onDelete, selectionMode, onSelect }),
+    getActionsColumn<Transportadora>({
+      onEdit,
+      onView,
+      onDelete,
+      selectionMode,
+      onSelect,
+    }),
   ];
 
   return (
-    <div ref={listRef} className="flex-1 min-h-0 flex flex-col h-full">
+    <div className="flex-1 min-h-0 flex flex-col h-full">
       <FeatureLayout>
-      <FeatureHeader
-        title="Transportadoras"
-        icon={<Truck />}
-        onAdd={onAdd}
-        addButtonLabel="Nova Transportadora"
-      />
+        <FeatureHeader
+          title="Transportadoras"
+          icon={<Truck />}
+          onAdd={onAdd}
+          addButtonLabel="Nova Transportadora"
+        />
 
       <DataTable
         columns={columns}
@@ -120,7 +123,7 @@ export function TransportadorasList({
         onEditRow={onEdit}
         onDeleteRow={onDelete}
         />
-    </FeatureLayout>
+      </FeatureLayout>
     </div>
   );
 }
