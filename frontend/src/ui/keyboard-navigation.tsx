@@ -265,7 +265,6 @@ export function KeyboardNavigationProvider({ children }: { children: React.React
 
       const target = event.target
       if (!(target instanceof HTMLElement)) return
-      if (isPopupInteraction(target)) return
 
       if (event.key === "F2" && isEditableTextEntry(target)) {
         event.preventDefault()
@@ -282,6 +281,13 @@ export function KeyboardNavigationProvider({ children }: { children: React.React
 
       const direction = getNavigationDirection(event)
       if (!direction) return
+      if (
+        isPopupInteraction(target) &&
+        direction !== "forward" &&
+        direction !== "backward"
+      ) {
+        return
+      }
 
       // A clicked/F2 field is in cursor mode. Keep horizontal arrows native
       // so the caret can move; vertical arrows and Tab still navigate fields.
@@ -532,6 +538,7 @@ function findDestination(
 
 function collectCandidates(root: HTMLElement): RectWithElement[] {
   return Array.from(root.querySelectorAll<HTMLElement>(NAVIGABLE_SELECTOR))
+    .filter((element) => !element.matches("[data-navigation-chip-remove='true']"))
     .filter(isEligible)
     .map((element, index) => ({ element, rect: element.getBoundingClientRect(), index }))
 }

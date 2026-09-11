@@ -75,17 +75,31 @@ export function MultiEntityInput({
             items={availableItems}
             value={selectedIds}
             onValueChange={handleValueChange}
-            disabled={disabled}
+            onCreateOption={onCreateOption}
+            disabled={disabled || loading}
           >
             <ComboboxChips ref={anchor} className="w-full">
               <ComboboxValue>
                 {(values) => (
                   <React.Fragment>
-                    {values.map((value: string) => {
+                    {values.map((value: string, chipIndex) => {
                       const item = selectedItems.find((i) => String(i.id) === value);
                       const displayLabel = item ? item.label : value;
                       return (
-                        <ComboboxChip key={value}>
+                        <ComboboxChip
+                          key={value}
+                          chipIndex={chipIndex}
+                          removeLabel={`Remover ${displayLabel}`}
+                          onRemove={() => {
+                            if (!disabled && !loading) {
+                              onChange(
+                                selectedItems.filter(
+                                  (selectedItem) => String(selectedItem.id) !== value,
+                                ),
+                              );
+                            }
+                          }}
+                        >
                           {displayLabel}
                         </ComboboxChip>
                       );
@@ -106,7 +120,7 @@ export function MultiEntityInput({
                 )}
               </ComboboxList>
               {onCreateOption && !disabled && (
-                <ComboboxCreate onClick={onCreateOption}>
+                <ComboboxCreate>
                   {(text) => `+ Criar valor "${text}"`}
                 </ComboboxCreate>
               )}

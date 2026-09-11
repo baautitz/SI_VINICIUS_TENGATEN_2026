@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { X } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -11,6 +12,7 @@ import { selectInputTextOnFocus } from "@/ui/keyboard-navigation";
 
 interface ComboboxContextType {
   multiple?: boolean;
+  disabled: boolean;
   selectedValues: string[];
   setSelectedValues: (vals: string[]) => void;
   searchText: string;
@@ -21,6 +23,10 @@ interface ComboboxContextType {
   filteredItems: unknown[];
   focusedIndex: number;
   setFocusedIndex: (idx: number) => void;
+  canCreate: boolean;
+  createOption: () => void;
+  activeChipIndex: number | null;
+  setActiveChipIndex: (idx: number | null) => void;
   anchorRef: React.RefObject<HTMLDivElement | null>;
   handleSelect: (val: string) => void;
 }
@@ -33,6 +39,7 @@ interface ComboboxProps {
   defaultValue?: string[];
   value?: string[];
   onValueChange?: (value: string[]) => void;
+  onCreateOption?: (text: string) => void;
   disabled?: boolean;
   children: React.ReactNode;
 }
@@ -43,6 +50,7 @@ export function Combobox({
   defaultValue = [],
   value,
   onValueChange,
+  onCreateOption,
   disabled = false,
   children,
 }: ComboboxProps) {
@@ -51,9 +59,27 @@ export function Combobox({
   const [searchText, setSearchText] = React.useState("");
   const [isOpen, setIsOpen] = React.useState(false);
   const [focusedIndex, setFocusedIndex] = React.useState(-1);
+  const [activeChipIndex, setActiveChipIndex] = React.useState<number | null>(null);
   const anchorRef = React.useRef<HTMLDivElement>(null);
 
   const selectedValues = value !== undefined ? value : selectedValuesState;
+  const createText = searchText.trim();
+  const hasExactMatch = React.useMemo(
+    () =>
+      items.some((item) => {
+        const label =
+          typeof item === "string"
+            ? item
+            : String(
+                (item as Record<string, unknown>).label ||
+                  (item as Record<string, unknown>).value ||
+                  "",
+              );
+        return label.toLowerCase() === createText.toLowerCase();
+      }),
+    [createText, items],
+  );
+  const canCreate = Boolean(!disabled && onCreateOption && createText && !hasExactMatch);
   const setSelectedValues = (vals: string[]) => {
     if (value === undefined) {
       setSelectedValuesState(vals);
@@ -89,12 +115,24 @@ export function Combobox({
       setIsOpen(false);
     }
     setSearchText("");
+    setActiveChipIndex(null);
+  };
+
+  const createOption = () => {
+    if (disabled || !onCreateOption || !canCreate) return;
+
+    onCreateOption(createText);
+    setSearchText("");
+    setFocusedIndex(-1);
+    setActiveChipIndex(null);
+    setIsOpen(false);
   };
 
   return (
     <ComboboxContext.Provider
       value={{
         multiple,
+        disabled,
         selectedValues,
         setSelectedValues,
         searchText,
@@ -107,6 +145,10 @@ export function Combobox({
         filteredItems,
         focusedIndex,
         setFocusedIndex,
+        canCreate,
+        createOption,
+        activeChipIndex,
+        setActiveChipIndex,
         anchorRef,
         handleSelect,
       }}
@@ -144,15 +186,23 @@ export const ComboboxChips = ({
         onClick={(e) => {
           const target = e.target as HTMLElement;
           const isInput = target.tagName === "INPUT";
-          const isChip = !!target.closest(".combobox-chip");
+          const chip = target.closest<HTMLElement>("[data-combobox-chip-index]");
+          const isChip = !!chip;
 
           if (isInput || isChip || context.isOpen) {
             e.preventDefault();
           }
 
           const input = e.currentTarget.querySelector("input");
-          if (input) {
+          if (input && !context.disabled && !input.disabled && !input.readOnly) {
+            input.dataset.navigationEditing = "true";
             input.focus();
+            context.setActiveChipIndex(
+              chip ? Number(chip.dataset.comboboxChipIndex) : null,
+            );
+            if (chip && !context.searchText) {
+              input.setSelectionRange(0, 0);
+            }
             if (
               !context.searchText &&
               context.focusedIndex < 0 &&
@@ -183,22 +233,80 @@ export function ComboboxValue({ children }: ComboboxValueProps) {
 
 interface ComboboxChipProps extends React.HTMLAttributes<HTMLSpanElement> {
   children: React.ReactNode;
+  chipIndex?: number;
+  onRemove?: () => void;
+  removeLabel?: string;
 }
 
 export function ComboboxChip({
   children,
+  chipIndex,
   className,
+  onRemove,
+  removeLabel,
   ...props
 }: ComboboxChipProps) {
+  const context = React.useContext(ComboboxContext);
+
+  const remove = () => {
+    if (context?.disabled) return;
+
+    if (onRemove) {
+      onRemove();
+      return;
+    }
+
+    if (!context || typeof children !== "string") return;
+
+    context.setSelectedValues(
+      context.selectedValues.filter((value) => value !== children),
+    );
+  };
+
+  const handleRemovePointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const handleRemoveClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    remove();
+  };
+
+  const handleRemoveKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key !== "Delete" && event.key !== "Backspace") return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    remove();
+  };
+
   return (
     <span
+      data-combobox-chip-index={chipIndex}
       className={cn(
         "combobox-chip bg-secondary text-secondary-foreground inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium",
+        context?.activeChipIndex === chipIndex &&
+          "ring-ring ring-1 ring-offset-1",
         className,
       )}
       {...props}
     >
       {children}
+      <button
+        type="button"
+        disabled={context?.disabled}
+        data-navigation-chip-remove="true"
+        tabIndex={-1}
+        aria-label={removeLabel ?? `Remover ${typeof children === "string" ? children : "item"}`}
+        onPointerDown={handleRemovePointerDown}
+        onClick={handleRemoveClick}
+        onKeyDown={handleRemoveKeyDown}
+        className="focus:ring-ring cursor-pointer rounded-sm opacity-70 hover:opacity-100 focus:ring-1 focus:outline-none disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        <X className="size-3" aria-hidden="true" />
+      </button>
     </span>
   );
 }
@@ -226,12 +334,75 @@ export function ComboboxChipsInput({
         );
 
   const selectItemAt = (index: number) => {
+    if (context.canCreate && index === context.filteredItems.length) {
+      context.createOption();
+      return true;
+    }
     if (index < 0 || index >= context.filteredItems.length) return false;
     context.handleSelect(getItemValue(context.filteredItems[index]));
     return true;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const isCursorMode = e.currentTarget.dataset.navigationEditing === "true";
+
+    const removeChipAt = (index: number) => {
+      if (index < 0 || index >= context.selectedValues.length) return;
+
+      context.setSelectedValues(
+        context.selectedValues.filter((_, chipIndex) => chipIndex !== index),
+      );
+      context.setActiveChipIndex(
+        context.selectedValues.length <= 1
+          ? null
+          : Math.min(index, context.selectedValues.length - 2),
+      );
+    };
+
+    const isCaretAtStart =
+      e.currentTarget.selectionStart === 0 && e.currentTarget.selectionEnd === 0;
+
+    if (isCursorMode && isCaretAtStart) {
+      if (e.key === "ArrowLeft" && context.selectedValues.length > 0) {
+        e.preventDefault();
+        context.setActiveChipIndex(
+          context.activeChipIndex === null
+            ? context.selectedValues.length - 1
+            : Math.max(context.activeChipIndex - 1, 0),
+        );
+        return;
+      }
+
+      if (e.key === "ArrowRight" && context.activeChipIndex !== null) {
+        e.preventDefault();
+        if (context.activeChipIndex >= context.selectedValues.length - 1) {
+          context.setActiveChipIndex(null);
+          requestAnimationFrame(() => {
+            if (document.activeElement === e.currentTarget) {
+              e.currentTarget.setSelectionRange(0, 0);
+            }
+          });
+        } else {
+          context.setActiveChipIndex(context.activeChipIndex + 1);
+        }
+        return;
+      }
+
+      if (e.key === "Backspace" && context.searchText === "") {
+        e.preventDefault();
+        removeChipAt(
+          context.activeChipIndex ?? context.selectedValues.length - 1,
+        );
+        return;
+      }
+
+      if (e.key === "Delete" && context.searchText === "") {
+        e.preventDefault();
+        removeChipAt(context.activeChipIndex ?? 0);
+        return;
+      }
+    }
+
     if (
       e.key === "Backspace" &&
       !context.searchText &&
@@ -253,7 +424,9 @@ export function ComboboxChipsInput({
     if (e.key === "Enter" && !e.altKey && !e.ctrlKey && !e.metaKey && !context.isOpen) {
       e.preventDefault();
       context.setIsOpen(true);
-      context.setFocusedIndex(context.filteredItems.length > 0 ? 0 : -1);
+      context.setFocusedIndex(
+        context.filteredItems.length > 0 || context.canCreate ? 0 : -1,
+      );
       onKeyDown?.(e);
       return;
     }
@@ -263,27 +436,27 @@ export function ComboboxChipsInput({
         selectItemAt(0);
       }
     }
-    if (e.key === "ArrowDown") {
+    if (e.key === "ArrowDown" && context.isOpen) {
       e.preventDefault();
-      if (!context.isOpen) {
-        context.setIsOpen(true);
-        context.setFocusedIndex(context.filteredItems.length > 0 ? 0 : -1);
-      } else {
-        context.setFocusedIndex(
-          Math.min(context.focusedIndex + 1, context.filteredItems.length - 1),
-        );
-      }
+      const lastFocusableIndex =
+        context.filteredItems.length - 1 + (context.canCreate ? 1 : 0);
+      context.setFocusedIndex(
+        lastFocusableIndex < 0
+          ? -1
+          : Math.min(context.focusedIndex + 1, lastFocusableIndex),
+      );
     }
-    if (e.key === "ArrowUp") {
+    if (e.key === "ArrowUp" && context.isOpen) {
       e.preventDefault();
-      if (!context.isOpen) {
-        context.setIsOpen(true);
-        context.setFocusedIndex(
-          context.filteredItems.length > 0 ? context.filteredItems.length - 1 : -1,
-        );
-      } else {
-        context.setFocusedIndex(Math.max(context.focusedIndex - 1, 0));
-      }
+      const lastFocusableIndex =
+        context.filteredItems.length - 1 + (context.canCreate ? 1 : 0);
+      context.setFocusedIndex(
+        lastFocusableIndex < 0
+          ? -1
+          : context.focusedIndex < 0
+            ? lastFocusableIndex
+            : Math.max(context.focusedIndex - 1, 0),
+      );
     }
     onKeyDown?.(e);
   };
@@ -295,11 +468,15 @@ export function ComboboxChipsInput({
       value={context.searchText}
       onChange={(e) => {
         context.setSearchText(e.target.value);
+        context.setActiveChipIndex(null);
         context.setIsOpen(true);
         context.setFocusedIndex(-1);
       }}
       onFocus={(e) => {
         onFocus?.(e);
+        if (e.currentTarget.dataset.navigationEditing !== "true") {
+          context.setActiveChipIndex(null);
+        }
         selectInputTextOnFocus(e.currentTarget);
       }}
       onClick={(e) => {
@@ -428,39 +605,21 @@ export function ComboboxItem({
 }
 
 interface ComboboxCreateProps {
-  onClick: (text: string) => void;
   children: (text: string) => React.ReactNode;
 }
 
-export function ComboboxCreate({ onClick, children }: ComboboxCreateProps) {
+export function ComboboxCreate({ children }: ComboboxCreateProps) {
   const context = React.useContext(ComboboxContext);
   if (!context) return null;
 
   const text = context.searchText.trim();
-  if (!text) return null;
-
-  const hasExactMatch = context.items.some((item) => {
-    const label =
-      typeof item === "string"
-        ? item
-        : String(
-            (item as Record<string, unknown>).label ||
-              (item as Record<string, unknown>).value ||
-              "",
-          );
-    return label.toLowerCase() === text.toLowerCase();
-  });
-
-  if (hasExactMatch) return null;
+  if (!context.canCreate) return null;
 
   return (
     <div
-      onClick={() => {
-        onClick(text);
-        context.setSearchText("");
-        context.setIsOpen(false);
-      }}
-      className="text-primary hover:bg-accent hover:text-accent-foreground relative flex cursor-pointer items-center rounded-sm px-2 py-1.5 text-sm font-medium outline-none select-none"
+      onClick={context.createOption}
+      data-focused={context.focusedIndex === context.filteredItems.length}
+      className="text-primary hover:bg-accent hover:text-accent-foreground data-[focused=true]:bg-accent data-[focused=true]:text-accent-foreground relative flex cursor-pointer items-center rounded-sm px-2 py-1.5 text-sm font-medium outline-none select-none"
     >
       {children(text)}
     </div>
