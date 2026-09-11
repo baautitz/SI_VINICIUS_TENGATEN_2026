@@ -776,29 +776,25 @@ function ProdutosUpsertForm({
                                   }
                                 : null
                             }
-                            onSelectId={(id) => {
-                              if (!id) {
-                                const updated = [...options];
-                                updated[optIdx] = {
-                                  keyId: 0,
-                                  keyName: "",
-                                  valores: [],
-                                };
-                                handleUpdateOptions(updated);
-                                return;
-                              }
-                              const found = atributosList?.itens?.find(
-                                (item) => item.id === id,
-                              );
-                              if (found) {
-                                const updated = [...options];
-                                updated[optIdx] = {
-                                  keyId: id,
-                                  keyName: found.chave,
-                                  valores: [],
-                                };
-                                handleUpdateOptions(updated);
-                              }
+                            // The selected item is authoritative here. Looking
+                            // it up again in `atributosList` can miss an
+                            // attribute created moments earlier from inside
+                            // the selector, before that list query refetches.
+                            onSelectId={() => {}}
+                            onSelectItem={(item) => {
+                              const updated = [...options];
+                              updated[optIdx] = item
+                                ? {
+                                    keyId: item.id,
+                                    keyName: item.chave,
+                                    valores: [],
+                                  }
+                                : {
+                                    keyId: 0,
+                                    keyName: "",
+                                    valores: [],
+                                  };
+                              handleUpdateOptions(updated);
                             }}
                           />
                         </div>
