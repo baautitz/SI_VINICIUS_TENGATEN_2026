@@ -1,7 +1,7 @@
 "use client";
 
 import { Kbd, KbdGroup } from "@/ui/primitives";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { AlertDialogFooter, Button } from "@/ui/primitives";
 import { Field, FieldGroup, FieldLabel } from "@/ui/primitives";
@@ -42,6 +42,7 @@ import {
   statusLabels,
 } from "./types";
 import { ItemLinha } from "./upsert";
+import { navigationCell } from "@/ui/keyboard-navigation";
 
 interface MovimentacoesUpsertFormProps {
   editingItem: MovimentacaoEstoque | null;
@@ -97,6 +98,14 @@ export function MovimentacoesUpsertForm({
 
   const createdIdRef = useRef<number | null>(null);
   const skuInputRef = useRef<HTMLInputElement>(null);
+
+  // Adding an item intentionally remounts SkuInput to reset its controlled
+  // value. Restore focus after that DOM replacement, not before it.
+  useEffect(() => {
+    if (skuInputKey === 0) return;
+    const frame = requestAnimationFrame(() => skuInputRef.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [skuInputKey]);
 
   const {
     mutation,
@@ -298,8 +307,7 @@ export function MovimentacoesUpsertForm({
       );
 
       if (newQty <= 0) {
-        void removeItemRow(existingIndex);
-        return;
+        return removeItemRow(existingIndex);
       }
 
       updated[existingIndex].quantidade = newQty;
@@ -680,6 +688,11 @@ export function MovimentacoesUpsertForm({
                                 <TableCell className="w-44 px-4 py-2.5 text-right align-middle">
                                   <div className="flex flex-col items-end">
                                     <NumberInput
+                                      {...navigationCell({
+                                        grid: "estoque-movimentacao-itens",
+                                        row: index,
+                                        column: 0,
+                                      })}
                                       inputSize="full"
                                       value={item.quantidade}
                                       decimals={item.permiteDecimais ? 4 : 0}
@@ -713,6 +726,11 @@ export function MovimentacoesUpsertForm({
                                   <TableCell className="w-48 px-4 py-2.5 text-right align-middle">
                                     <div className="flex flex-col items-end">
                                       <NumberInput
+                                        {...navigationCell({
+                                          grid: "estoque-movimentacao-itens",
+                                          row: index,
+                                          column: 1,
+                                        })}
                                         inputSize="full"
                                         value={item.custoUnitario}
                                         decimals={2}
@@ -757,6 +775,11 @@ export function MovimentacoesUpsertForm({
                                 {!readOnly && (
                                   <TableCell className="px-4 py-2.5 text-center align-middle">
                                     <Button
+                                      {...navigationCell({
+                                        grid: "estoque-movimentacao-itens",
+                                        row: index,
+                                        column: 2,
+                                      })}
                                       type="button"
                                       variant="ghost"
                                       size="icon"

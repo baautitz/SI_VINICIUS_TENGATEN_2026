@@ -44,6 +44,7 @@ import {
 import { Trash2 } from "lucide-react";
 import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
 import { Spinner } from "@/ui/primitives";
+import { navigationCell } from "@/ui/keyboard-navigation";
 
 export interface VendasUpsertProps {
   editingItem: Venda | null;
@@ -252,6 +253,14 @@ interface ParcelaPreview {
 
   const skuInputRef = useRef<HTMLInputElement>(null);
 
+  // Adding an item intentionally remounts SkuInput to reset its controlled
+  // value. Restore focus after that DOM replacement, not before it.
+  useEffect(() => {
+    if (skuInputKey === 0) return;
+    const frame = requestAnimationFrame(() => skuInputRef.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [skuInputKey]);
+
   const totalItensCount = itens.reduce((sum, i) => sum + i.quantidade, 0);
   const subtotalGross = itens.reduce(
     (sum, i) => sum + i.quantidade * i.valorUnitario,
@@ -439,8 +448,7 @@ interface ParcelaPreview {
       const newQty = currentQty + qtdeAdicionada;
 
       if (newQty <= 0) {
-        void handleRemoveItem(existingIndex);
-        return;
+        return handleRemoveItem(existingIndex);
       }
 
       if (newQty > skuRes.estoque) {
@@ -725,6 +733,11 @@ interface ParcelaPreview {
                             <TableCell className="px-4 py-1 text-right">
                               <div className="flex flex-col items-end">
                                 <NumberInput
+                                  {...navigationCell({
+                                    grid: "venda-itens",
+                                    row: index,
+                                    column: 0,
+                                  })}
                                   value={item.quantidade}
                                   decimals={item.permiteDecimais ? 4 : 0}
                                   inputSize="full"
@@ -760,6 +773,11 @@ interface ParcelaPreview {
                             <TableCell className="px-4 py-1 text-right">
                               <div className="flex flex-col items-end">
                                 <NumberInput
+                                  {...navigationCell({
+                                    grid: "venda-itens",
+                                    row: index,
+                                    column: 1,
+                                  })}
                                   value={item.valorUnitario}
                                   decimals={2}
                                   inputSize="full"
@@ -786,6 +804,11 @@ interface ParcelaPreview {
                             <TableCell className="px-4 py-1 text-right">
                               <div className="flex flex-col items-end">
                                 <NumberInput
+                                  {...navigationCell({
+                                    grid: "venda-itens",
+                                    row: index,
+                                    column: 2,
+                                  })}
                                   value={item.percentualDesconto}
                                   decimals={2}
                                   inputSize="full"
@@ -822,6 +845,11 @@ interface ParcelaPreview {
                             <TableCell className="px-4 py-1 text-right">
                               <div className="flex flex-col items-end">
                                 <NumberInput
+                                  {...navigationCell({
+                                    grid: "venda-itens",
+                                    row: index,
+                                    column: 3,
+                                  })}
                                   value={item.precoFinal}
                                   decimals={2}
                                   inputSize="full"
@@ -862,6 +890,11 @@ interface ParcelaPreview {
                             {!readOnly && (
                               <TableCell className="px-4 py-1 text-center">
                                 <Button
+                                  {...navigationCell({
+                                    grid: "venda-itens",
+                                    row: index,
+                                    column: 4,
+                                  })}
                                   size="icon-xs"
                                   variant="ghost"
                                   className="text-red-500 hover:bg-red-50 hover:text-red-600"

@@ -29,6 +29,8 @@ import { Button } from "@/ui/primitives";
 import { Spinner } from "@/ui/primitives";
 import { Kbd, KbdGroup } from "@/ui/primitives";
 import { useWindowCommands } from "@/ui/imperative";
+import { useOptionalActiveWindow } from "@/ui/imperative";
+import { useNavigationScope } from "@/ui/keyboard-navigation";
 import { InputGroup, InputGroupInput, InputGroupAddon } from "./input-group";
 
 interface DataTableProps<TData, TValue> {
@@ -91,30 +93,23 @@ export function DataTable<TData, TValue>({
 
   const isSelectionMode = !!onRowSelect;
   const hasKeyboardNav = true;
+  const navigationScopeId = React.useId();
   const [focusedRowIndex, setFocusedRowIndex] = React.useState<number | null>(
     null,
   );
-  const rowRefs = React.useRef<(HTMLTableRowElement | null)[]>([]);
+  const navigationRootRef = React.useRef<HTMLDivElement>(null);
   const internalSearchInputRef = React.useRef<HTMLInputElement>(null);
   const activeSearchInputRef = searchInputRef || internalSearchInputRef;
+  const activeWindow = useOptionalActiveWindow<unknown>();
 
-  React.useEffect(() => {
-    const input = activeSearchInputRef?.current;
-    if (!input || !hasKeyboardNav) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        if (rowRefs.current.length > 0) {
-          rowRefs.current[0]?.focus();
-          setFocusedRowIndex(0);
-        }
-      }
-    };
-
-    input.addEventListener("keydown", handleKeyDown);
-    return () => input.removeEventListener("keydown", handleKeyDown);
-  }, [activeSearchInputRef, hasKeyboardNav, data]);
+  // WindowManagerHost owns the normal modal scope. This low-priority local
+  // scope is a portal-safe fallback for lists whose dialog root is not yet
+  // connected when the first keyboard interaction happens.
+  useNavigationScope(navigationRootRef, {
+    id: `data-table-${navigationScopeId}`,
+    active: activeWindow?.isActive ?? true,
+    priority: -1,
+  });
 
   React.useEffect(() => {
     setFocusedRowIndex(null);
@@ -207,55 +202,10 @@ export function DataTable<TData, TValue>({
 
   useWindowCommands(commands);
 
-  const handleRowKeyDown = (
-    e: React.KeyboardEvent<HTMLTableRowElement>,
-    index: number,
-    rowData: TData,
-  ) => {
-    const targetTag = (e.target as HTMLElement)?.tagName;
-    const isFormControl = ["INPUT", "TEXTAREA", "SELECT", "BUTTON"].includes(targetTag);
-
-    if (e.key === "Enter") {
-      if (isFormControl) return;
-      e.preventDefault();
-      if (onRowSelect) {
-        onRowSelect(rowData);
-      } else if (onEditRow) {
-        onEditRow(rowData);
-      }
-    } else if ((e.altKey && e.key === "e") || (e.altKey && e.key === "E")) {
-      e.preventDefault();
-      if (onEditRow) {
-        onEditRow(rowData);
-      }
-    } else if (e.key === "Delete" || e.key === "Backspace") {
-      if (isFormControl) return;
-      e.preventDefault();
-      if (onDeleteRow) {
-        onDeleteRow(rowData);
-      }
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      const next = index + 1;
-      if (next < rows.length) {
-        rowRefs.current[next]?.focus();
-        setFocusedRowIndex(next);
-      }
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      if (index === 0) {
-        activeSearchInputRef?.current?.focus();
-        setFocusedRowIndex(null);
-      } else {
-        const prev = index - 1;
-        rowRefs.current[prev]?.focus();
-        setFocusedRowIndex(prev);
-      }
-    }
-  };
-
   return (
     <div
+      ref={navigationRootRef}
+      data-navigation-list="true"
       className="flex min-h-0 flex-1 flex-col space-y-4"
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node)) {
@@ -270,20 +220,12 @@ export function DataTable<TData, TValue>({
               <InputGroup>
                 <InputGroupInput
                   ref={activeSearchInputRef}
+                  autoFocus
                   placeholder={searchPlaceholder}
                   value={globalFilter ?? ""}
                   onChange={(event) => onGlobalFilterChange(event.target.value)}
                   className="h-9"
-                  onKeyDown={(e) => {
-                    if (e.key === "ArrowDown" && hasKeyboardNav) {
-                      e.preventDefault();
-
-                      if (rows.length > 0) {
-                        rowRefs.current[0]?.focus();
-                        setFocusedRowIndex(0);
-                      }
-                    }
-                  }}
+                  data-navigation-list-search="true"
                 />
 
                 <InputGroupAddon>
@@ -397,10 +339,8 @@ export function DataTable<TData, TValue>({
             ) : rows?.length ? (
               rows.map((row, index) => (
                 <TableRow
+                  data-navigation-list-item="true"
                   key={row.id}
-                  ref={(el) => {
-                    rowRefs.current[index] = el;
-                  }}
                   data-state={row.getIsSelected() && "selected"}
                   data-focused={
                     hasKeyboardNav && focusedRowIndex === index
@@ -416,9 +356,6 @@ export function DataTable<TData, TValue>({
                       : "",
                   ].join(" ")}
                   onFocus={() => hasKeyboardNav && setFocusedRowIndex(index)}
-                  onKeyDown={(e) =>
-                    hasKeyboardNav && handleRowKeyDown(e, index, row.original)
-                  }
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell

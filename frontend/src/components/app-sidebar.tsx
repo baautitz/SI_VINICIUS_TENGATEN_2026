@@ -105,6 +105,7 @@ function SidebarGroupSection({
 
   const localIsOpen = useSidebarSectionOpen(group.id, defaultOpen);
   const isOpen = hasMatchedItems || localIsOpen;
+  const hasActiveItem = group.items.some((item) => pathname === item.url);
 
   const GroupIcon = group.icon;
   const { state, setOpen } = useSidebar();
@@ -135,6 +136,12 @@ function SidebarGroupSection({
                 <SidebarMenuButton
                   tooltip={group.title}
                   isActive={pathname.startsWith(group.urlPrefix)}
+                  data-navigation-sidebar-current={
+                    pathname.startsWith(group.urlPrefix) &&
+                    (!hasActiveItem || state === "collapsed")
+                      ? "true"
+                      : undefined
+                  }
                 >
                   <GroupIcon />
                   <span>{group.title}</span>
@@ -148,7 +155,14 @@ function SidebarGroupSection({
                     const active = pathname === item.url;
                     return (
                       <SidebarMenuSubItem key={item.title}>
-                        <SidebarMenuSubButton asChild isActive={active}>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={active}
+                          data-navigation-sidebar-subitem="true"
+                          data-navigation-sidebar-current={
+                            active ? "true" : undefined
+                          }
+                        >
                           <Link href={item.url} onClick={(event) => {
                             event.preventDefault();
                             ui.navigation.go(item.url);
@@ -243,13 +257,7 @@ export function AppSidebar() {
   const handleSearchInputKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>,
   ) => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      const firstItem = document.getElementById(
-        "sidebar-search-item-0",
-      ) as HTMLAnchorElement | null;
-      firstItem?.focus();
-    } else if (e.key === "Enter") {
+    if (e.key === "Enter") {
       if (flatItems.length === 1) {
         e.preventDefault();
         ui.navigation.go(flatItems[0].url);
@@ -265,117 +273,112 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-sidebar-border border-b">
-        <SidebarMenu className="gap-2">
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname === homeItem.url}
-              tooltip={homeItem.title}
-            >
-              <Link href={homeItem.url} onClick={(event) => {
-                event.preventDefault();
-                ui.navigation.go(homeItem.url);
-              }}>
-                <homeItem.icon />
-                <span>{homeItem.title}</span>
-                <KbdGroup className="ml-auto group-data-[collapsible=icon]:hidden">
+      <div data-navigation-sidebar="true" className="contents">
+        <SidebarHeader className="border-sidebar-border border-b">
+          <SidebarMenu className="gap-2">
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname === homeItem.url}
+                tooltip={homeItem.title}
+              >
+                <Link
+                  href={homeItem.url}
+                  data-navigation-sidebar-current={
+                    pathname === homeItem.url ? "true" : undefined
+                  }
+                  onClick={(event) => {
+                    event.preventDefault();
+                    ui.navigation.go(homeItem.url);
+                  }}
+                >
+                  <homeItem.icon />
+                  <span>{homeItem.title}</span>
+                  <KbdGroup className="ml-auto group-data-[collapsible=icon]:hidden">
+                    <Kbd>Alt</Kbd>
+                    <Kbd>H</Kbd>
+                  </KbdGroup>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem className="group-data-[state=collapsed]:hidden">
+              <InputGroup>
+                <InputGroupInput
+                  ref={searchInputRef}
+                  placeholder="Buscar menu..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={handleSearchInputKeyDown}
+                  className="h-8 rounded-lg border-none text-xs"
+                />
+
+                <InputGroupAddon>
+                  <Search className="text-muted-foreground size-3" />
+                </InputGroupAddon>
+
+                <InputGroupAddon align="inline-end">
                   <Kbd>Alt</Kbd>
-                  <Kbd>H</Kbd>
-                </KbdGroup>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem className="group-data-[state=collapsed]:hidden">
-            <InputGroup>
-              <InputGroupInput
-                ref={searchInputRef}
-                placeholder="Buscar menu..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={handleSearchInputKeyDown}
-                className="h-8 rounded-lg border-none text-xs"
-              />
-
-              <InputGroupAddon>
-                <Search className="text-muted-foreground size-3" />
-              </InputGroupAddon>
-
-              <InputGroupAddon align="inline-end">
-                <Kbd>Alt</Kbd>
-                <Kbd>S</Kbd>
-              </InputGroupAddon>
-            </InputGroup>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-      <SidebarContent>
-        {searchTerm.trim() ? (
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {flatItems.map((item, index) => {
-                  const Icon = item.icon;
-                  const active = pathname === item.url;
-                  return (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild isActive={active}>
-                        <Link
-                          id={`sidebar-search-item-${index}`}
-                          href={item.url}
-                          onClick={(event) => {
-                            event.preventDefault();
-                            navigateSearchItem(item.url);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              navigateSearchItem(item.url);
-                            } else if (e.key === "ArrowDown") {
-                              e.preventDefault();
-                              const nextItem = document.getElementById(
-                                `sidebar-search-item-${index + 1}`,
-                              ) as HTMLAnchorElement | null;
-                              nextItem?.focus();
-                            } else if (e.key === "ArrowUp") {
-                              e.preventDefault();
-                              if (index === 0) {
-                                searchInputRef.current?.focus();
-                              } else {
-                                const prevItem = document.getElementById(
-                                  `sidebar-search-item-${index - 1}`,
-                                ) as HTMLAnchorElement | null;
-                                prevItem?.focus();
-                              }
+                  <Kbd>S</Kbd>
+                </InputGroupAddon>
+              </InputGroup>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarHeader>
+        <SidebarContent>
+          {searchTerm.trim() ? (
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {flatItems.map((item, index) => {
+                    const Icon = item.icon;
+                    const active = pathname === item.url;
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton asChild isActive={active}>
+                          <Link
+                            id={`sidebar-search-item-${index}`}
+                            href={item.url}
+                            data-navigation-sidebar-current={
+                              pathname === item.url ? "true" : undefined
                             }
-                          }}
-                        >
-                          <Icon />
-                          <span>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ) : (
-          groups.map((group) => (
-            <SidebarGroupSection
-              key={group.id}
-              group={group}
-              pathname={pathname}
-              searchTerm={searchTerm}
-            />
-          ))
-        )}
-      </SidebarContent>
-      <SidebarFooter>
-        <SidebarTrigger className="ml-auto" />
-      </SidebarFooter>
-      <SidebarRail />
+                            onClick={(event) => {
+                              event.preventDefault();
+                              navigateSearchItem(item.url);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                navigateSearchItem(item.url);
+                              }
+                            }}
+                          >
+                            <Icon />
+                            <span>{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ) : (
+            groups.map((group) => (
+              <SidebarGroupSection
+                key={group.id}
+                group={group}
+                pathname={pathname}
+                searchTerm={searchTerm}
+              />
+            ))
+          )}
+        </SidebarContent>
+        <SidebarFooter>
+          <SidebarTrigger className="ml-auto" />
+        </SidebarFooter>
+        <SidebarRail />
+      </div>
     </Sidebar>
   );
 }

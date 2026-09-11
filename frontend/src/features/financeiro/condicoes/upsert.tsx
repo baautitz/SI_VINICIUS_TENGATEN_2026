@@ -43,6 +43,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
 import { Spinner } from "@/ui/primitives";
+import { navigationCell } from "@/ui/keyboard-navigation";
 
 export interface CondicoesUpsertProps {
   editingItem: CondicaoPagamento | null;
@@ -274,35 +275,6 @@ function CondicoesUpsertForm({
       [fieldName]: value,
     };
     setParcelas(updated);
-  };
-
-  const handleParcelaKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>,
-    index: number,
-    field: "percentual" | "prazo"
-  ) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      const nextInput = document.getElementById(`parcela-${index + 1}-${field}`);
-      if (nextInput) {
-        nextInput.focus();
-        (nextInput as HTMLInputElement).select?.();
-      }
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      const nextInput = document.getElementById(`parcela-${index + 1}-${field}`);
-      if (nextInput) {
-        nextInput.focus();
-        (nextInput as HTMLInputElement).select?.();
-      }
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      const prevInput = document.getElementById(`parcela-${index - 1}-${field}`);
-      if (prevInput) {
-        prevInput.focus();
-        (prevInput as HTMLInputElement).select?.();
-      }
-    }
   };
 
   return (
@@ -679,6 +651,11 @@ function CondicoesUpsertForm({
                                   <TableCell className="px-2 py-2">
                                     <div className="flex w-full flex-col gap-1">
                                       <NumberInput
+                                        {...navigationCell({
+                                          grid: "condicao-parcelas",
+                                          row: index,
+                                          column: 0,
+                                        })}
                                         id={`parcela-${index}-percentual`}
                                         name={`parcelas.${index}.percentual`}
                                         inputSize="full"
@@ -691,9 +668,6 @@ function CondicoesUpsertForm({
                                             "percentual",
                                             num,
                                           )
-                                        }
-                                        onKeyDown={(e) =>
-                                          handleParcelaKeyDown(e, index, "percentual")
                                         }
                                         onFocus={(e) => e.target.select()}
                                         className={cn(
@@ -726,6 +700,11 @@ function CondicoesUpsertForm({
                                   <TableCell className="px-2 py-2">
                                     <div className="flex w-full flex-col gap-1">
                                       <NumberInput
+                                        {...navigationCell({
+                                          grid: "condicao-parcelas",
+                                          row: index,
+                                          column: 1,
+                                        })}
                                         id={`parcela-${index}-prazo`}
                                         name={`parcelas.${index}.prazo`}
                                         inputSize="full"
@@ -738,9 +717,6 @@ function CondicoesUpsertForm({
                                             "prazoDias",
                                             num,
                                           )
-                                        }
-                                        onKeyDown={(e) =>
-                                          handleParcelaKeyDown(e, index, "prazo")
                                         }
                                         onFocus={(e) => e.target.select()}
                                         className={cn(
@@ -773,6 +749,11 @@ function CondicoesUpsertForm({
                                   {!readOnly && (
                                     <TableCell className="px-2 py-2 text-right">
                                       <Button
+                                        {...navigationCell({
+                                          grid: "condicao-parcelas",
+                                          row: index,
+                                          column: 2,
+                                        })}
                                         type="button"
                                         size="icon"
                                         variant="ghost"

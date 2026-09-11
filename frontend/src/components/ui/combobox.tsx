@@ -8,6 +8,7 @@ import {
   PopoverTrigger,
 } from "@/ui/primitives";
 import { cn } from "@/lib/utils";
+import { selectInputTextOnFocus } from "@/ui/keyboard-navigation";
 
 interface ComboboxContextType {
   multiple?: boolean;
@@ -225,6 +226,9 @@ type ComboboxChipsInputProps = React.InputHTMLAttributes<HTMLInputElement>;
 export function ComboboxChipsInput({
   className,
   autoComplete = "off",
+  onFocus,
+  onKeyDown,
+  onClick,
   ...props
 }: ComboboxChipsInputProps) {
   const context = React.useContext(ComboboxContext);
@@ -236,7 +240,14 @@ export function ComboboxChipsInput({
         context.setSelectedValues(context.selectedValues.slice(0, -1));
       }
     }
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !e.altKey && !e.ctrlKey && !e.metaKey && !context.isOpen) {
+      e.preventDefault();
+      context.setIsOpen(true);
+      context.setFocusedIndex(-1);
+      onKeyDown?.(e);
+      return;
+    }
+    if (e.key === "Enter" && !e.altKey && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
       if (
         context.focusedIndex >= 0 &&
@@ -276,7 +287,7 @@ export function ComboboxChipsInput({
       e.preventDefault();
       context.setFocusedIndex(Math.max(context.focusedIndex - 1, 0));
     }
-    props.onKeyDown?.(e);
+    onKeyDown?.(e);
   };
 
   return (
@@ -290,10 +301,15 @@ export function ComboboxChipsInput({
         context.setFocusedIndex(-1);
       }}
       onFocus={(e) => {
+        onFocus?.(e);
+        selectInputTextOnFocus(e.currentTarget);
+      }}
+      onClick={(e) => {
         context.setIsOpen(true);
-        props.onFocus?.(e);
+        onClick?.(e);
       }}
       onKeyDown={handleKeyDown}
+      data-navigation-popup-open={context.isOpen ? "true" : undefined}
       className={cn(
         "min-w-15 flex-1 border-none bg-transparent p-0 text-sm outline-none focus:ring-0",
         className,

@@ -39,6 +39,7 @@ import { UnidadeMedidaInput } from "@/components/entity-inputs/unidade-medida-in
 import { AtributoChaveInput } from "@/components/entity-inputs/atributo-chave-input";
 import { AtributoValorMultiInput } from "@/components/entity-inputs/atributo-valor-multi-input";
 import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
+import { navigationCell } from "@/ui/keyboard-navigation";
 
 export interface ProdutosUpsertProps {
   editingItem: Produto | null;
@@ -913,6 +914,11 @@ function ProdutosUpsertForm({
                                     return (
                                       <div className="flex flex-col gap-1">
                                         <Input
+                                          {...navigationCell({
+                                            grid: "produto-skus",
+                                            row: index,
+                                            column: 0,
+                                          })}
                                           inputSize="full"
                                           value={field.state.value}
                                           onChange={(e) =>
@@ -959,6 +965,11 @@ function ProdutosUpsertForm({
                                     return (
                                       <div className="flex flex-col gap-1">
                                         <NumberInput
+                                          {...navigationCell({
+                                            grid: "produto-skus",
+                                            row: index,
+                                            column: 1,
+                                          })}
                                           inputSize="full"
                                           decimals={2}
                                           value={field.state.value}
@@ -1001,6 +1012,11 @@ function ProdutosUpsertForm({
                                     return (
                                       <div className="flex flex-col gap-1">
                                         <Input
+                                          {...navigationCell({
+                                            grid: "produto-skus",
+                                            row: index,
+                                            column: 2,
+                                          })}
                                           inputSize="full"
                                           value={field.state.value || ""}
                                           onChange={(e) =>
@@ -1053,6 +1069,11 @@ function ProdutosUpsertForm({
                                 <form.Field name={`skus[${index}].ativo`}>
                                   {(field) => (
                                     <Checkbox
+                                      {...navigationCell({
+                                        grid: "produto-skus",
+                                        row: index,
+                                        column: 3,
+                                      })}
                                       checked={field.state.value}
                                       disabled={readOnly}
                                       onFocus={() => setFocusedSkuIndex(index)}

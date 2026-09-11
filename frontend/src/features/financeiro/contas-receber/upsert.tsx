@@ -48,6 +48,7 @@ import {
 import { Plus, Trash2, Coins, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
+import { navigationCell } from "@/ui/keyboard-navigation";
 
 export interface ContasReceberUpsertProps {
   editingItem: ContasReceber | null;
@@ -323,35 +324,6 @@ function ContasReceberFormBody({
       [key]: value,
     } as ContasReceberParcela;
     setParcelas(updated);
-  };
-
-  const handleParcelaKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>,
-    index: number,
-    field: "dataVencimento" | "valorParcela"
-  ) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      const nextInput = document.getElementById(`parcela-${index + 1}-${field}`);
-      if (nextInput) {
-        nextInput.focus();
-        (nextInput as HTMLInputElement).select?.();
-      }
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      const nextInput = document.getElementById(`parcela-${index + 1}-${field}`);
-      if (nextInput) {
-        nextInput.focus();
-        (nextInput as HTMLInputElement).select?.();
-      }
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      const prevInput = document.getElementById(`parcela-${index - 1}-${field}`);
-      if (prevInput) {
-        prevInput.focus();
-        (prevInput as HTMLInputElement).select?.();
-      }
-    }
   };
 
   const totalParcelasSum = parcelas.reduce((sum, p) => sum + p.valorParcela, 0);
@@ -701,8 +673,16 @@ function ContasReceberFormBody({
                               </TableCell>
                               <TableCell className="px-2 py-2 align-middle">
                                 <div className="flex w-full flex-col gap-1">
-                                  <DatePicker
-                                    id={`parcela-${index}-dataVencimento`}
+                                  <div
+                                    className="contents"
+                                    {...navigationCell({
+                                      grid: "contas-receber-parcelas",
+                                      row: index,
+                                      column: 0,
+                                    })}
+                                  >
+                                    <DatePicker
+                                      id={`parcela-${index}-dataVencimento`}
                                     name={`parcelas.${index}.dataVencimento`}
                                     value={p.dataVencimento}
                                     onChange={(val) =>
@@ -711,9 +691,6 @@ function ContasReceberFormBody({
                                         "dataVencimento",
                                         val ?? "",
                                       )
-                                    }
-                                    onKeyDown={(e) =>
-                                      handleParcelaKeyDown(e, index, "dataVencimento")
                                     }
                                     onFocus={(e) => e.target.select()}
                                     disabled={
@@ -731,7 +708,8 @@ function ContasReceberFormBody({
                                     aria-invalid={
                                       !!localErrors[`parcelas.${index}.dataVencimento`]
                                     }
-                                  />
+                                    />
+                                  </div>
                                   {localErrors[`parcelas.${index}.dataVencimento`] && (
                                     <span className="text-destructive mt-1 block text-right text-xs">
                                       {localErrors[`parcelas.${index}.dataVencimento`]}
@@ -742,6 +720,11 @@ function ContasReceberFormBody({
                               <TableCell className="px-2 py-2 align-middle">
                                 <div className="flex w-full flex-col gap-1">
                                   <NumberInput
+                                    {...navigationCell({
+                                      grid: "contas-receber-parcelas",
+                                      row: index,
+                                      column: 1,
+                                    })}
                                     id={`parcela-${index}-valorParcela`}
                                     name={`parcelas.${index}.valorParcela`}
                                     inputSize="full"
@@ -754,9 +737,6 @@ function ContasReceberFormBody({
                                         "valorParcela",
                                         num,
                                       )
-                                    }
-                                    onKeyDown={(e) =>
-                                      handleParcelaKeyDown(e, index, "valorParcela")
                                     }
                                     onFocus={(e) => e.target.select()}
                                     disabled={
@@ -800,6 +780,11 @@ function ContasReceberFormBody({
                                       p.status === "PARCIAL") &&
                                       onBaixa && (
                                         <Button
+                                          {...navigationCell({
+                                            grid: "contas-receber-parcelas",
+                                            row: index,
+                                            column: 2,
+                                          })}
                                           type="button"
                                           size="icon"
                                           variant="ghost"
@@ -817,6 +802,11 @@ function ContasReceberFormBody({
                                       p.status === "PARCIAL") &&
                                       onEstorno && (
                                         <Button
+                                          {...navigationCell({
+                                            grid: "contas-receber-parcelas",
+                                            row: index,
+                                            column: 2,
+                                          })}
                                           type="button"
                                           size="icon"
                                           variant="ghost"
@@ -836,6 +826,11 @@ function ContasReceberFormBody({
                               {!readOnly && !temParcelaPagaOuParcial && (
                                 <TableCell className="px-2 py-2 text-right align-middle">
                                   <Button
+                                    {...navigationCell({
+                                      grid: "contas-receber-parcelas",
+                                      row: index,
+                                      column: 3,
+                                    })}
                                     type="button"
                                     size="icon"
                                     variant="ghost"

@@ -102,6 +102,7 @@ export function DatePicker({
   className,
   inputSize = "full",
 }: DatePickerProps) {
+  const [isOpen, setIsOpen] = React.useState(false);
   const [prevValue, setPrevValue] = React.useState(value);
   const [inputValue, setInputValue] = React.useState(() => {
     if (value && value !== "invalid-date") {
@@ -136,6 +137,7 @@ export function DatePicker({
       } else {
         setInputValue("");
       }
+      setIsOpen(false);
     },
     [onChange],
   );
@@ -172,6 +174,19 @@ export function DatePicker({
   const isSmall = className?.includes("h-8") || className?.includes("text-xs");
   const isLarge = className?.includes("h-10");
   const hasError = className?.includes("border-destructive");
+  const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    onKeyDown?.(event);
+    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) {
+      return;
+    }
+    // Enter and Space open the calendar from the focused field. Once the
+    // popover is open, focus belongs to the calendar and its native day
+    // navigation remains untouched by the form-level spatial navigator.
+    if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
+      event.preventDefault();
+      setIsOpen((open) => !open);
+    }
+  };
 
   return (
     <div
@@ -186,7 +201,8 @@ export function DatePicker({
         name={name}
         onBlur={onBlur}
         onFocus={onFocus}
-        onKeyDown={onKeyDown}
+        onKeyDown={handleInputKeyDown}
+        data-navigation-popup-open={isOpen ? "true" : undefined}
         type="text"
         value={inputValue}
         onChange={handleInputChange}
@@ -200,7 +216,7 @@ export function DatePicker({
           hasError && "border-destructive focus-visible:ring-destructive",
         )}
       />
-      <Popover>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button
             type="button"
