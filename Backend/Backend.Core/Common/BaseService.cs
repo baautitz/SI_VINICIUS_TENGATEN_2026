@@ -15,9 +15,9 @@ public abstract class BaseService
         {
             return Resultado<T>.Falha(new ResultadoErro("DUPLICIDADE", ex.Message));
         }
-        catch (ConflictException ex)
+        catch (ReferencedRecordException ex)
         {
-            return Resultado<T>.Falha(new ResultadoErro("CONFLITO", ex.Message));
+            return Resultado<T>.Falha(new ResultadoErro(ex.Code, ex.Message));
         }
     }
 }

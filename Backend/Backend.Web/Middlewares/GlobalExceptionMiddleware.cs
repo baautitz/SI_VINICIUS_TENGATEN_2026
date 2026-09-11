@@ -2,6 +2,8 @@ using System.Net;
 using System.Text.Json;
 using Backend.Core.Common.Results;
 using Backend.Core.Common.Exceptions;
+using Backend.Infrastructure.PostgreSQL.Common;
+using Npgsql;
 
 namespace Backend.Web.Middlewares;
 
@@ -32,16 +34,26 @@ public class GlobalExceptionMiddleware
     {
         try
         {
+            if (exception is PostgresException postgresException)
+                exception = DbExceptionTranslator.Translate(postgresException);
+
             var statusCode = HttpStatusCode.InternalServerError;
             var erroCode = "ERRO_INTERNO";
             var mensagem = "Ocorreu um erro inesperado no servidor.";
 
-            if (exception is ConflictException)
+            if (exception is ReferencedRecordException referencedRecordException)
             {
-                statusCode = HttpStatusCode.Conflict;
-                erroCode = "CONFLITO";
-                mensagem = exception.Message;
-                _logger.LogWarning("Conflito detectado: {Message}", exception.Message);
+                statusCode = HttpStatusCode.BadRequest;
+                erroCode = referencedRecordException.Code;
+                mensagem = referencedRecordException.Message;
+                _logger.LogWarning("Regra de integridade violada: {Code} - {Message}", erroCode, mensagem);
+            }
+            else if (exception is UniqueConstraintException uniqueConstraintException)
+            {
+                statusCode = HttpStatusCode.BadRequest;
+                erroCode = "DUPLICIDADE";
+                mensagem = uniqueConstraintException.Message;
+                _logger.LogWarning("Duplicidade detectada: {Message}", mensagem);
             }
             else if (exception is DomainException)
             {
