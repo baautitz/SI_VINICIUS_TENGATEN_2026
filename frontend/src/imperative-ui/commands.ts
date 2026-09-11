@@ -128,7 +128,10 @@ export function useWindowCommands(
         ignoreInputs: false,
         preventDefault: command.preventDefault ?? true,
         stopPropagation: command.stopPropagation ?? true,
-        conflictBehavior: "warn" as const,
+        // O registro do TanStack é global e não conhece o escopo da janela.
+        // A arbitragem por contexto acontece no registro acima; permitir os
+        // handlers aqui evita alertas falsos entre janelas diferentes.
+        conflictBehavior: "allow" as const,
         meta: { name: command.id, description: command.label },
       },
     }
@@ -136,6 +139,6 @@ export function useWindowCommands(
 
   useHotkeys(definitions, {
     target: options.target,
-    conflictBehavior: "warn",
+    conflictBehavior: "allow",
   })
 }

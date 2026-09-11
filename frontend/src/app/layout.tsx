@@ -9,6 +9,10 @@ import { Providers } from "@/providers/query-provider";
 import { Toaster } from "@/ui/primitives";
 import { WindowManagerHost } from "@/ui/imperative";
 import { WindowManagerProvider } from "@/ui/imperative";
+import {
+  KeyboardNavigationProvider,
+  NavigationScope,
+} from "@/ui/keyboard-navigation";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -30,20 +34,24 @@ export default function RootLayout({
     >
       <body className="bg-background text-foreground isolate min-h-screen antialiased">
         <Providers>
-          <WindowManagerProvider>
-            <TooltipProvider>
-              <SidebarProvider>
-                <div className="flex h-screen w-full">
-                  <AppSidebar />
-                  <main className="flex flex-1 flex-col bg-slate-50/50 p-6 dark:bg-slate-900/10">
-                    {children}
-                  </main>
-                </div>
-              </SidebarProvider>
-            </TooltipProvider>
-            <Toaster position="top-right" />
-            <WindowManagerHost />
-          </WindowManagerProvider>
+          <KeyboardNavigationProvider>
+            <WindowManagerProvider>
+              <TooltipProvider>
+                <SidebarProvider>
+                  <NavigationScope id="application-shell">
+                    <div className="flex h-screen w-full">
+                      <AppSidebar />
+                      <main className="flex flex-1 flex-col bg-slate-50/50 p-6 dark:bg-slate-900/10">
+                        {children}
+                      </main>
+                    </div>
+                  </NavigationScope>
+                </SidebarProvider>
+              </TooltipProvider>
+              <Toaster position="top-right" />
+              <WindowManagerHost />
+            </WindowManagerProvider>
+          </KeyboardNavigationProvider>
         </Providers>
       {/* impeccable-live-start */}
 <script src="http://localhost:8400/live.js" async></script>

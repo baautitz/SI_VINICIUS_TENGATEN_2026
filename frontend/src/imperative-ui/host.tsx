@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useRef } from "react"
+import { useLayoutEffect, useMemo, useRef } from "react"
 import type { ComponentType, ComponentProps, ReactNode } from "react"
 import { AppWindow } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -26,12 +26,13 @@ import {
 import { ActiveWindowProvider } from "./active-context"
 import { useWindowRuntime, type WindowRecord } from "./provider"
 import type { WindowCloseReason, WindowIcon } from "./types"
+import { markKeyboardFocus, useNavigationScope } from "@/ui/keyboard-navigation"
 
 const sizeClasses = {
   small: "max-w-md",
   medium: "max-w-2xl",
   large: "max-w-6xl",
-  full: "w-[95vw] max-w-[95vw]",
+  full: "h-[95dvh] max-h-[95dvh] w-[95dvw] max-w-[95dvw]",
 } as const
 
 /** Renderiza cada janela como uma superfície modal independente. */
@@ -83,6 +84,11 @@ function ManagedWindow({
     }),
     [record.id, runtime.controller],
   )
+  useNavigationScope(scopeRef, {
+    id: `window-${String(record.id)}`,
+    active: isTop,
+    priority: 100,
+  })
   const body = (
     <div data-window-scope="true" className="contents">
       <Component {...componentProps} />
@@ -103,6 +109,92 @@ function ManagedWindow({
   const requestClose = (reason: Extract<WindowCloseReason, "cancel" | "escape" | "outside">) =>
     runtime.controller.requestDismiss(record.id, reason)
 
+  // Dialog auto-focus runs in an effect as well. Running this layout effect
+  // first gives forms their first real field before Radix can fall back to the
+  // close button. The body observer/retry also covers fields revealed after
+  // async loading (for example, edit forms that start with a Spinner).
+  useLayoutEffect(() => {
+    if (!isTop) return
+
+    let disposed = false
+    let attempts = 0
+    let frame: number | null = null
+
+    const focusField = () => {
+      if (disposed) return true
+      const container = scopeRef.current
+      if (!container) return false
+
+      const field = findFirstField(container)
+      if (field) {
+        markKeyboardFocus()
+        field.focus({ preventScroll: true })
+        return true
+      }
+
+      // Confirmation/command windows may intentionally have no form. Their
+      // first content action is preferable to the decorative close button.
+      const hasForm = Boolean(container.querySelector("form"))
+      if (!hasForm && attempts > 1) {
+        const action = findFirstAction(container)
+        if (action) {
+          action.focus({ preventScroll: true })
+          return true
+        }
+      }
+
+      // If a form is present but all fields are temporarily disabled, give it
+      // a few frames to settle before falling back to an action.
+      if (attempts >= 60) {
+        const action = findFirstAction(container)
+        if (action) {
+          action.focus({ preventScroll: true })
+          return true
+        }
+      }
+
+      return false
+    }
+
+    const retryFocus = () => {
+      if (disposed) return
+      attempts += 1
+      if (focusField()) {
+        observer.disconnect()
+        if (frame !== null) cancelAnimationFrame(frame)
+        frame = null
+        return
+      }
+      if (attempts < 60) frame = requestAnimationFrame(retryFocus)
+    }
+
+    const observer = new MutationObserver(() => {
+      if (focusField()) {
+        observer.disconnect()
+        if (frame !== null) cancelAnimationFrame(frame)
+        frame = null
+      } else if (frame === null && attempts < 60) {
+        frame = requestAnimationFrame(retryFocus)
+      }
+    })
+
+    // Observe body instead of the dialog ref alone: Radix portals and async
+    // upsert shells can attach the actual content after this layout effect.
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["aria-hidden", "disabled"],
+    })
+    retryFocus()
+
+    return () => {
+      disposed = true
+      observer.disconnect()
+      if (frame !== null) cancelAnimationFrame(frame)
+    }
+  }, [isTop, record.id])
+
   if (record.options.surface === "confirmation") {
     return (
       <AlertDialog
@@ -119,6 +211,7 @@ function ManagedWindow({
             event.preventDefault()
             requestClose("escape")
           }}
+          onOpenAutoFocus={(event) => focusFirstField(event, isTop, scopeRef)}
         >
           <AlertDialogHeader>
             <AlertDialogTitle>{title}</AlertDialogTitle>
@@ -152,7 +245,7 @@ function ManagedWindow({
           aria-hidden={!isTop ? true : undefined}
           inert={!isTop ? true : undefined}
           className={semanticClassName}
-          onOpenAutoFocus={(event) => focusFirstField(event, isTop)}
+          onOpenAutoFocus={(event) => focusFirstField(event, isTop, scopeRef)}
           onEscapeKeyDown={(event) => {
             event.preventDefault()
             requestClose("escape")
@@ -193,7 +286,7 @@ function ManagedWindow({
         aria-hidden={!isTop ? true : undefined}
         inert={!isTop ? true : undefined}
         className={semanticClassName}
-        onOpenAutoFocus={(event) => focusFirstField(event, isTop)}
+        onOpenAutoFocus={(event) => focusFirstField(event, isTop, scopeRef)}
         onEscapeKeyDown={(event) => {
           event.preventDefault()
           requestClose("escape")
@@ -227,30 +320,87 @@ function ManagedWindow({
  * sendo o fallback para janelas sem campos (por exemplo, uma janela só com
  * ações), mas nunca escolhemos Cancelar/Salvar antes de um input real.
  */
-function focusFirstField(event: Event, isTop: boolean): void {
+function focusFirstField(
+  event: Event,
+  isTop: boolean,
+  scopeRef: React.RefObject<HTMLElement | null>,
+): void {
   if (!isTop) {
     event.preventDefault()
     return
   }
 
-  const container = event.currentTarget
-  if (!(container instanceof HTMLElement)) return
+  const container = scopeRef.current ?? (event.currentTarget instanceof HTMLElement
+    ? event.currentTarget
+    : null)
+  const field = findFirstField(container)
 
-  const field = Array.from(
+  // Never let Radix choose the decorative close button while an upsert is
+  // loading. The layout observer above will focus the field when it mounts.
+  event.preventDefault()
+  if (field) {
+    markKeyboardFocus()
+    field.focus({ preventScroll: true })
+    return
+  }
+
+  const hasForm = Boolean(container?.querySelector("form"))
+  if (!hasForm && container) {
+    findFirstAction(container)?.focus({ preventScroll: true })
+  }
+}
+
+function findFirstField(
+  container: HTMLElement | null,
+): HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null {
+  if (!container) return null
+
+  return Array.from(
     container.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
       "input, textarea, select",
     ),
   ).find((candidate) => {
-    if (candidate.disabled || candidate.getAttribute("aria-hidden") === "true") return false
+    if (
+      candidate.disabled ||
+      candidate.getAttribute("aria-hidden") === "true" ||
+      candidate.closest("[aria-hidden='true'], [inert]") ||
+      !isVisible(candidate)
+    ) {
+      return false
+    }
     if (candidate instanceof HTMLInputElement) {
       return !["hidden", "button", "submit", "reset", "image"].includes(candidate.type)
     }
     return true
-  })
+  }) ?? null
+}
 
-  if (!field) return
-  event.preventDefault()
-  field.focus()
+function findFirstAction(container: HTMLElement): HTMLElement | null {
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(
+      "[data-window-actions] button, [data-window-actions] a[href], button, a[href], [tabindex]",
+    ),
+  ).find((candidate) => {
+    if (
+      candidate.getAttribute("data-slot") === "dialog-close" ||
+      candidate.getAttribute("data-slot") === "sheet-close" ||
+      candidate.getAttribute("data-slot") === "alert-dialog-cancel" ||
+      candidate.hasAttribute("disabled") ||
+      candidate.getAttribute("aria-disabled") === "true" ||
+      candidate.tabIndex < 0 ||
+      candidate.closest("[aria-hidden='true'], [inert]")
+    ) {
+      return false
+    }
+    return isVisible(candidate)
+  }) ?? null
+}
+
+function isVisible(element: HTMLElement): boolean {
+  const style = window.getComputedStyle(element)
+  if (style.display === "none" || style.visibility === "hidden") return false
+  const rect = element.getBoundingClientRect()
+  return rect.width > 0 && rect.height > 0
 }
 
 function WindowTitleContent({

@@ -15,6 +15,8 @@ import {
   AlertDialogCancel,
   AlertDialogFooter,
   Button,
+  Kbd,
+  KbdGroup,
 } from "@/ui/primitives"
 import { WindowController } from "@/ui/imperative/controller"
 import { notifyWithSonner } from "@/ui/adapters/feedback-sonner"
@@ -229,16 +231,29 @@ function ConfirmWindow({
   confirmVariant = "default",
 }: ConfirmOptions) {
   const window = useWindow<true>()
+
   return (
-    <AlertDialogFooter>
+    <AlertDialogFooter
+      data-default-confirmation="true"
+      onKeyDown={(event) => {
+        if (!event.altKey || event.key !== "Enter") return
+        event.preventDefault()
+        event.stopPropagation()
+        window.resolve(true)
+      }}
+    >
       <AlertDialogCancel asChild>
         <Button type="button" variant="outline" onClick={() => window.dismiss("cancel")}>
-          {cancelLabel}
+          {cancelLabel} <Kbd>Esc</Kbd>
         </Button>
       </AlertDialogCancel>
       <AlertDialogAction asChild>
         <Button type="button" variant={confirmVariant} onClick={() => window.resolve(true)}>
           {confirmLabel}
+          <KbdGroup className="ml-2">
+            <Kbd>Alt</Kbd>
+            <Kbd>Enter</Kbd>
+          </KbdGroup>
         </Button>
       </AlertDialogAction>
     </AlertDialogFooter>
