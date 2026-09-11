@@ -85,14 +85,7 @@ export function MultiEntityInput({
                       const item = selectedItems.find((i) => String(i.id) === value);
                       const displayLabel = item ? item.label : value;
                       return (
-                        <ComboboxChip
-                          key={value}
-                          onRemove={() => {
-                            if (!disabled) {
-                              onChange(selectedItems.filter((i) => String(i.id) !== value));
-                            }
-                          }}
-                        >
+                        <ComboboxChip key={value}>
                           {displayLabel}
                         </ComboboxChip>
                       );

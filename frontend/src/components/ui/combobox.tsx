@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { X } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -175,32 +174,13 @@ export function ComboboxValue({ children }: ComboboxValueProps) {
 
 interface ComboboxChipProps extends React.HTMLAttributes<HTMLSpanElement> {
   children: React.ReactNode;
-  onRemove?: () => void;
 }
 
 export function ComboboxChip({
   children,
   className,
-  onRemove,
   ...props
 }: ComboboxChipProps) {
-  const context = React.useContext(ComboboxContext);
-
-  const handleRemove = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (onRemove) {
-      onRemove();
-    } else if (context) {
-      const val = typeof children === "string" ? children : "";
-      if (val) {
-        context.setSelectedValues(
-          context.selectedValues.filter((v) => v !== val),
-        );
-      }
-    }
-  };
-
   return (
     <span
       className={cn(
@@ -210,13 +190,6 @@ export function ComboboxChip({
       {...props}
     >
       {children}
-      <button
-        type="button"
-        onClick={handleRemove}
-        className="focus:ring-ring cursor-pointer rounded-sm opacity-70 hover:opacity-100 focus:ring-1 focus:outline-none"
-      >
-        <X className="size-3" />
-      </button>
     </span>
   );
 }
@@ -235,10 +208,13 @@ export function ComboboxChipsInput({
   if (!context) return null;
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !context.searchText) {
-      if (context.selectedValues.length > 0) {
-        context.setSelectedValues(context.selectedValues.slice(0, -1));
-      }
+    if (
+      e.key === "Backspace" &&
+      !context.searchText &&
+      context.isOpen &&
+      context.selectedValues.length > 0
+    ) {
+      context.setSelectedValues(context.selectedValues.slice(0, -1));
     }
     if (e.key === "Enter" && !e.altKey && !e.ctrlKey && !e.metaKey && !context.isOpen) {
       e.preventDefault();
