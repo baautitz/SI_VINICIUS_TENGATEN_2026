@@ -94,6 +94,21 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
   const openingSelectorRef = useRef(false);
   const searchInFlightRef = useRef(false);
 
+  // The value shown in the field is authoritative when the user has edited
+  // it.  When it is still the selected item's display label, use the entity's
+  // canonical search field instead (for example, "BRASIL" instead of
+  // "BRASIL (BRA)").  Without this distinction a dialog opened after typing
+  // would search the stale selected item and could appear to return no rows.
+  const getSelectionSearchTerm = () => {
+    // Read the DOM value as well as React state. A click on the search icon can
+    // arrive in the same event turn as the final input change, before the
+    // controlled state commit is observable by this callback.
+    const visibleText = inputRef.current?.value ?? searchText;
+    return selectedItem && visibleText === selectedLabel
+      ? getSearchTerm(selectedItem)
+      : visibleText;
+  };
+
   const openSelection = async () => {
     // Enter, blur and the search button can converge while the lookup request
     // is still pending. Only the first caller may create a selector window;
@@ -107,12 +122,11 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
         props: {
           renderFeature,
           icon,
-          initialSearchTerm: selectedItem
-            ? getSearchTerm(selectedItem)
-            : searchText,
+          initialSearchTerm: getSelectionSearchTerm(),
         },
         title: modalTitle,
         icon,
+        size: "full",
       });
 
       if (result.status === "confirmed") {
@@ -225,9 +239,13 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
             onChange={(e) => setSearchText(e.target.value)}
             onKeyDown={(e) => {
               if (disabled) return;
-              if (e.key === "Enter") {
+              if (e.key === "Enter" && !e.altKey) {
                 e.preventDefault();
-                void handleSearch(searchText);
+                // Enter is the keyboard command for opening the entity
+                // browser. Do not block the dialog on the optional inline
+                // lookup request; that request remains useful on blur, while
+                // the selector can query the current text immediately.
+                void openSelection();
               }
               if (e.altKey && (e.key === "q" || e.key === "Q")) {
                 e.preventDefault();

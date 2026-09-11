@@ -21,7 +21,7 @@ interface SkuInputProps {
   label?: React.ReactNode;
   error?: string;
   initialSku?: string | null;
-  onSelectSku: (sku: Sku | null, quantidade?: number) => void;
+  onSelectSku: (sku: Sku | null, quantidade?: number) => void | Promise<void>;
   disabled?: boolean;
 }
 
@@ -31,6 +31,35 @@ interface SkuSelectionWindowProps {
 
 interface QuantityWindowProps {
   sku: Sku;
+  initialQuantity?: number;
+}
+
+export interface ParsedSkuInput {
+  code: string;
+  quantity: number;
+  hasQuantityPrefix: boolean;
+}
+
+/**
+ * Accepts the scanner-friendly `quantidade*sku` notation without allowing the
+ * quantity prefix to leak into the SKU lookup.  A comma is accepted as the
+ * decimal separator used by the rest of the Portuguese UI.
+ */
+export function parseSkuInput(value: string): ParsedSkuInput {
+  const text = value.trim();
+  const match = text.match(
+    /^([+-]?(?:[0-9]+(?:[.,][0-9]+)?|[.,][0-9]+))\s*\*\s*(.*)$/,
+  );
+
+  if (!match) {
+    return { code: text, quantity: 1, hasQuantityPrefix: false };
+  }
+
+  return {
+    code: match[2].trim(),
+    quantity: Number(match[1].replace(",", ".")),
+    hasQuantityPrefix: true,
+  };
 }
 
 /** Janela imperativa de seleção: a seleção resolve a Promise da receita chamadora. */
@@ -64,10 +93,10 @@ function SkuSelectionWindow({
 }
 
 /** Janela imperativa para informar a quantidade de um SKU selecionado. */
-function QuantityWindow({ sku }: QuantityWindowProps) {
+function QuantityWindow({ sku, initialQuantity }: QuantityWindowProps) {
   const activeWindow = useWindow<number>();
   const ui = useUi();
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(initialQuantity ?? 1);
   const allowsDecimals = sku.produto?.unidadeMedida?.permiteDecimais ?? false;
 
   useEffect(() => {
@@ -178,6 +207,16 @@ export const SkuInput = ({
     internalRef.current?.focus();
   };
 
+  const refocusAfterWindow = () => {
+    focusInput();
+    // WindowController restores an opener on the next animation frame. A
+    // selector followed by a removal confirmation can otherwise restore an
+    // older field after this callback runs.
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(focusInput);
+    }
+  };
+
   const openSelector = async (initialSearchTerm = "") => {
     // A lookup started by Enter can finish at the same time as the blur
     // lookup. Both paths may ask for the selector, but only one window may be
@@ -200,10 +239,10 @@ export const SkuInput = ({
     }
   };
 
-  const openQuantity = async (sku: Sku) => {
+  const openQuantity = async (sku: Sku, initialQuantity = 1) => {
     const result = await ui.windows.open<number, QuantityWindowProps>({
       component: QuantityWindow,
-      props: { sku },
+      props: { sku, initialQuantity },
       title: "Informe a Quantidade",
       description: `SKU selecionado: ${sku.sku}`,
       size: "small",
@@ -212,22 +251,34 @@ export const SkuInput = ({
     return result.status === "confirmed" ? result.value : null;
   };
 
-  const selectSku = async (sku: Sku) => {
-    if (!sku.ativo) {
-      ui.feedback.notify({
-        type: "error",
-        title: `O SKU "${sku.sku}" está inativo.`,
-      });
-      return;
+  const selectSku = async (
+    sku: Sku,
+    initialQuantity = 1,
+    quantityIsFinal = false,
+  ) => {
+    try {
+      if (!sku.ativo) {
+        ui.feedback.notify({
+          type: "error",
+          title: `O SKU "${sku.sku}" está inativo.`,
+        });
+        return;
+      }
+
+      const quantity = quantityIsFinal
+        ? initialQuantity
+        : await openQuantity(sku, initialQuantity);
+      if (quantity === null) return;
+
+      await onSelectSku(sku, quantity);
+      setSelectedSku(sku.sku);
+      setSkuText("");
+    } finally {
+      // The parent list forms remount this component after adding a row.  The
+      // refocus is also intentional after cancellation, so opening a selector
+      // never strands keyboard users on a closed window.
+      refocusAfterWindow();
     }
-
-    const quantity = await openQuantity(sku);
-    if (quantity === null) return;
-
-    onSelectSku(sku, quantity);
-    setSelectedSku(sku.sku);
-    setSkuText("");
-    focusInput();
   };
 
   const handleLookup = async (
@@ -241,7 +292,23 @@ export const SkuInput = ({
     if (interactionInFlightRef.current) return;
     interactionInFlightRef.current = true;
     try {
-      const trimmedCode = code.trim();
+      const parsedInput = parseSkuInput(code);
+      const trimmedCode = parsedInput.code;
+      const lookupQuantity = parsedInput.hasQuantityPrefix
+        ? parsedInput.quantity
+        : quantity;
+
+      if (
+        parsedInput.hasQuantityPrefix &&
+        (!Number.isFinite(lookupQuantity) || lookupQuantity === 0)
+      ) {
+        ui.feedback.notify({
+          type: "error",
+          title: "Quantidade não pode ser zero.",
+        });
+        return;
+      }
+
       if (!trimmedCode) {
         onSelectSku(null);
         setSelectedSku(null);
@@ -260,25 +327,33 @@ export const SkuInput = ({
             onSelectSku(null);
             setSelectedSku(null);
             setSkuText("");
-            if (refocusAfter) focusInput();
+            if (refocusAfter) refocusAfterWindow();
             return;
           }
 
-          onSelectSku(match, quantity);
+          await onSelectSku(match, lookupQuantity);
           setSelectedSku(match.sku);
           setSkuText("");
-          if (refocusAfter) focusInput();
+          if (refocusAfter) refocusAfterWindow();
           return;
         }
-      } catch (error) {
-        console.error("Erro ao buscar SKU", error);
+      } catch {
+        // A miss is the normal path for a partial code: the selector below
+        // performs the broader search.  Do not report an expected lookup miss
+        // as a console error or interrupt the selection flow.
       }
 
       // Opening the selector is not a selection change. Keep the current form
       // value until the user confirms a SKU, otherwise an Enter used only to
       // search would write `null` and trigger the parent form validator.
       const selected = await openSelector(trimmedCode);
-      if (selected) await selectSku(selected);
+      if (selected) {
+        await selectSku(
+          selected,
+          lookupQuantity,
+          parsedInput.hasQuantityPrefix && lookupQuantity < 0,
+        );
+      } else if (refocusAfter) refocusAfterWindow();
     } finally {
       interactionInFlightRef.current = false;
     }
@@ -294,47 +369,60 @@ export const SkuInput = ({
     if (event.key !== "Enter" || event.altKey) return;
     event.preventDefault();
 
-    const text = skuText.trim();
+    // Read the DOM value as well as React state. Scanner input can dispatch
+    // the final character and Enter in the same turn, before the controlled
+    // state update is observable by this callback.
+    const rawInputText = internalRef.current?.value ?? skuText;
+    const parsedInput = parseSkuInput(rawInputText);
+    const text = parsedInput.code;
+
+    if (
+      parsedInput.hasQuantityPrefix &&
+      (!Number.isFinite(parsedInput.quantity) || parsedInput.quantity === 0)
+    ) {
+      ui.feedback.notify({
+        type: "error",
+        title: "Quantidade não pode ser zero.",
+      });
+      refocusAfterWindow();
+      return;
+    }
+
     if (!text) {
       if (interactionInFlightRef.current) return;
       interactionInFlightRef.current = true;
       try {
         const selected = await openSelector();
-        if (selected) await selectSku(selected);
+        if (selected) {
+          await selectSku(
+            selected,
+            parsedInput.quantity,
+            parsedInput.hasQuantityPrefix && parsedInput.quantity < 0,
+          );
+        }
       } finally {
         interactionInFlightRef.current = false;
+        refocusAfterWindow();
       }
       return;
     }
 
-    let quantity = 1;
-    let codeToSearch = text;
-    if (text.includes("*")) {
-      const parts = text.split("*");
-      const parsedQuantity = Number.parseFloat(parts[0]);
-      if (!Number.isNaN(parsedQuantity)) {
-        if (parsedQuantity <= 0) {
-          ui.feedback.notify({
-            type: "error",
-            title: "Quantidade deve ser maior que zero.",
-          });
-          return;
-        }
-        quantity = parsedQuantity;
-        codeToSearch = parts.slice(1).join("*").trim();
-      }
-    }
-
-    await handleLookup(codeToSearch, quantity, true);
+    await handleLookup(
+      rawInputText,
+      parsedInput.hasQuantityPrefix ? parsedInput.quantity : 1,
+      true,
+    );
   };
 
   const handleInputBlur = async () => {
+    const currentText = internalRef.current?.value ?? skuText;
+    const parsedInput = parseSkuInput(currentText);
     if (
-      skuText !== selectedSku &&
-      skuText.trim() &&
-      !skuText.includes("*")
+      currentText !== selectedSku &&
+      currentText.trim() &&
+      !parsedInput.hasQuantityPrefix
     ) {
-      await handleLookup(skuText);
+      await handleLookup(currentText);
     }
   };
 
@@ -346,6 +434,7 @@ export const SkuInput = ({
       if (selected) await selectSku(selected);
     } finally {
       interactionInFlightRef.current = false;
+      refocusAfterWindow();
     }
   };
 
@@ -399,6 +488,7 @@ export const SkuInput = ({
           disabled={disabled}
           tabIndex={-1}
           className="absolute right-1 top-1 h-6 w-6 text-muted-foreground hover:text-foreground"
+          onMouseDown={(event) => event.preventDefault()}
           onClick={handleSearchClick}
         >
           <Search className="size-4" />

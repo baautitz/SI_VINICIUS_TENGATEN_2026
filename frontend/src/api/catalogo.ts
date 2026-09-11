@@ -86,5 +86,6 @@ export const skusApi = {
     http.get<PaginatedResult<Sku>>(
       `/api/catalogo/skus?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`,
     ),
-  getBySku: (sku: string) => http.get<Sku>(`/api/catalogo/skus/${sku}`),
+  getBySku: (sku: string) =>
+    http.getQuietly<Sku>(`/api/catalogo/skus/${encodeURIComponent(sku)}`),
 };

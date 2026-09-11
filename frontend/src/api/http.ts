@@ -3,7 +3,11 @@ import { extractApiErrors } from "@/utils/api-error";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
+async function request<T>(
+  path: string,
+  options?: RequestInit,
+  silentStatuses: readonly number[] = [],
+): Promise<T> {
   try {
     const res = await fetch(`${API_URL}${path}`, {
       headers: { "Content-Type": "application/json" },
@@ -12,21 +16,23 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
     if (!res.ok) {
       const body = await res.text();
-      
-      if (res.status >= 500) {
-        toast.error("Ocorreu um erro inesperado no servidor (Erro 500).");
-      } else {
-        try {
-          const parsed = JSON.parse(body);
-          const { globalError, fieldErrors } = extractApiErrors(parsed);
-          
-          if (globalError) {
-            toast.error(globalError);
-          }
 
-          Object.values(fieldErrors).forEach((msg) => toast.error(msg));
-        } catch {
-          toast.error("Erro ao processar resposta do servidor.");
+      if (!silentStatuses.includes(res.status)) {
+        if (res.status >= 500) {
+          toast.error("Ocorreu um erro inesperado no servidor (Erro 500).");
+        } else {
+          try {
+            const parsed = JSON.parse(body);
+            const { globalError, fieldErrors } = extractApiErrors(parsed);
+
+            if (globalError) {
+              toast.error(globalError);
+            }
+
+            Object.values(fieldErrors).forEach((msg) => toast.error(msg));
+          } catch {
+            toast.error("Erro ao processar resposta do servidor.");
+          }
         }
       }
 
@@ -45,6 +51,12 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
 export const http = {
   get: <T>(path: string) => request<T>(path),
+  // Some lookups deliberately use a miss as a control-flow signal (for
+  // example, SKU input falls back to its selector after a 404). Keep those
+  // expected statuses out of the global toast channel while preserving the
+  // rejected Promise for the caller to handle.
+  getQuietly: <T>(path: string, silentStatuses: readonly number[] = [404]) =>
+    request<T>(path, undefined, silentStatuses),
   post: <T>(path: string, data: unknown) => request<T>(path, { method: "POST", body: JSON.stringify(data) }),
   put: <T>(path: string, data: unknown) => request<T>(path, { method: "PUT", body: JSON.stringify(data) }),
   delete: (path: string) => request<void>(path, { method: "DELETE" }),
