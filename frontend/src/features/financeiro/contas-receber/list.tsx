@@ -12,6 +12,7 @@ import { Landmark, Pencil, Trash2, Eye, Coins } from "lucide-react";
 import { ContasReceber, ContasReceberParcela } from "./types";
 import { statusTituloLabels, StatusTituloFinanceiro } from "../contas-pagar/types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
+import { fireAndForget } from "@/lib/utils";
 
 interface ContasReceberListProps extends FeatureListProps<ContasReceber> {
   onBaixa: (contaId: number, parcela: ContasReceberParcela) => void;
@@ -174,7 +175,7 @@ export function ContasReceberList({
                 variant="outline"
                 className="text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950 dark:text-green-400"
                 title="Receber Parcela"
-                onClick={() => onBaixa(item.id, firstUnpaid)}
+                onClick={() => fireAndForget(() => onBaixa(item.id, firstUnpaid))}
               >
                 <Coins className="h-4 w-4" />
               </Button>
@@ -185,7 +186,7 @@ export function ContasReceberList({
                   size="icon-sm"
                   variant="outline"
                   title="Editar Conta"
-                  onClick={() => onEdit(item)}
+                  onClick={() => fireAndForget(() => onEdit(item))}
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
@@ -193,7 +194,7 @@ export function ContasReceberList({
                   size="icon-sm"
                   variant="destructive"
                   title="Excluir Conta"
-                  onClick={() => onDelete(item)}
+                  onClick={() => fireAndForget(() => onDelete(item))}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -203,7 +204,7 @@ export function ContasReceberList({
                 size="icon-sm"
                 variant="outline"
                 title="Visualizar Conta"
-                onClick={() => onView(item)}
+                onClick={() => fireAndForget(() => onView(item))}
               >
                 <Eye className="h-4 w-4" />
               </Button>

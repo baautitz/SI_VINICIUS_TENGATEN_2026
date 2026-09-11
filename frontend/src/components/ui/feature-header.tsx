@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/ui/primitives";
 import { Kbd, KbdGroup } from "@/ui/primitives";
 import { useWindowCommands } from "@/ui/imperative";
+import { fireAndForget } from "@/lib/utils";
 
 interface FeatureHeaderProps {
   title: string;
@@ -22,9 +23,9 @@ export function FeatureHeader({
       id: `feature.header.${title}.create`,
       hotkey: "Alt+N",
       label: addButtonLabel,
-      run: async (event) => {
+      run: (event) => {
         event.preventDefault();
-        await onAdd();
+        fireAndForget(onAdd);
       },
     },
   ]);
@@ -40,7 +41,7 @@ export function FeatureHeader({
         </h1>
       </div>
 
-      <Button onClick={onAdd} className="gap-2 rounded-lg shadow-sm">
+      <Button onClick={() => fireAndForget(onAdd)} className="gap-2 rounded-lg shadow-sm">
         <Plus className="h-4 w-4" />
         {addButtonLabel}{" "}
         <KbdGroup>

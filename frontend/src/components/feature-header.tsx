@@ -4,6 +4,7 @@ import React from "react"
 import { Plus, Search } from "lucide-react"
 import { Button } from "@/ui/primitives"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/ui/primitives"
+import { fireAndForget } from "@/lib/utils"
 
 interface FeatureHeaderProps {
   title: string
@@ -64,7 +65,7 @@ export function FeatureHeader({
         </InputGroup>
 
         {onAdd && addButtonLabel && (
-          <Button variant="default" onClick={onAdd}>
+          <Button variant="default" onClick={() => fireAndForget(onAdd)}>
             <Plus />
             {addButtonLabel}
           </Button>

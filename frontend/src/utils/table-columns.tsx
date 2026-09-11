@@ -3,6 +3,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/ui/primitives";
 import { Button } from "@/ui/primitives";
 import { Check, Eye, Pencil, Trash2 } from "lucide-react";
+import { fireAndForget } from "@/lib/utils";
 
 export function getSelectColumn<T>(): ColumnDef<T> {
   return {
@@ -55,7 +56,7 @@ export function getActionsColumn<T>({
             <Button
               size="icon-sm"
               variant="outline"
-              onClick={() => onEdit(item)}
+              onClick={() => fireAndForget(() => onEdit(item))}
             >
               <Pencil className="size-4" />
             </Button>
@@ -64,7 +65,7 @@ export function getActionsColumn<T>({
             <Button
               size="icon-sm"
               variant="outline"
-              onClick={() => onView(item)}
+              onClick={() => fireAndForget(() => onView(item))}
               aria-label="Visualizar"
             >
               <Eye className="size-4" />
@@ -74,13 +75,13 @@ export function getActionsColumn<T>({
             <Button
               size="icon-sm"
               variant="destructive"
-              onClick={() => onDelete(item)}
+              onClick={() => fireAndForget(() => onDelete(item))}
             >
               <Trash2 className="size-4" />
             </Button>
           )}
           {selectionMode && onSelect && (
-            <Button variant="secondary" onClick={() => onSelect(item)}>
+            <Button variant="secondary" onClick={() => fireAndForget(() => onSelect(item))}>
               <Check className="mr-2 size-4" />
               Selecionar
             </Button>

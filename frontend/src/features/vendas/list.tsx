@@ -8,7 +8,7 @@ import { Button } from "@/ui/primitives";
 import { DataTable } from "@/ui/composites";
 import { FeatureLayout } from "@/ui/composites";
 import { Badge } from "@/ui/primitives";
-import { cn } from "@/lib/utils";
+import { cn, fireAndForget } from "@/lib/utils";
 import type { Venda } from "./types";
 import type { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 import { formatToLocal } from "@/utils/date-utils";
@@ -110,7 +110,7 @@ export function VendasList({
               size="icon-sm"
               variant="outline"
               title="Visualizar Detalhes"
-              onClick={() => onView(item)}
+              onClick={() => fireAndForget(() => onView(item))}
             >
               <Eye className="h-4 w-4" />
             </Button>
@@ -119,7 +119,7 @@ export function VendasList({
                 size="icon-sm"
                 variant="destructive"
                 title="Cancelar Venda"
-                onClick={() => onDelete(item)}
+                onClick={() => fireAndForget(() => onDelete(item))}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>

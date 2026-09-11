@@ -16,6 +16,7 @@ import {
 } from "./types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 import { formatToLocal } from "@/utils/date-utils";
+import { fireAndForget } from "@/lib/utils";
 
 interface MovimentacoesListProps extends FeatureListProps<MovimentacaoEstoque> {
   onConfirm: (item: MovimentacaoEstoque) => void;
@@ -138,7 +139,7 @@ export function MovimentacoesList({
                   size="icon-sm"
                   variant="outline"
                   title="Editar Rascunho"
-                  onClick={() => onEdit(item)}
+                  onClick={() => fireAndForget(() => onEdit(item))}
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
@@ -147,7 +148,7 @@ export function MovimentacoesList({
                   variant="outline"
                   className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
                   title="Efetivar Movimentação"
-                  onClick={() => onConfirm(item)}
+                  onClick={() => fireAndForget(() => onConfirm(item))}
                 >
                   <Check className="h-4 w-4" />
                 </Button>
@@ -155,7 +156,7 @@ export function MovimentacoesList({
                   size="icon-sm"
                   variant="destructive"
                   title="Excluir Rascunho"
-                  onClick={() => onDelete(item)}
+                  onClick={() => fireAndForget(() => onDelete(item))}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -166,7 +167,7 @@ export function MovimentacoesList({
                   size="icon-sm"
                   variant="outline"
                   title="Visualizar Detalhes"
-                  onClick={() => onView(item)}
+                  onClick={() => fireAndForget(() => onView(item))}
                 >
                   <Eye className="h-4 w-4" />
                 </Button>
@@ -176,7 +177,7 @@ export function MovimentacoesList({
                     variant="outline"
                     className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                     title="Estornar/Cancelar"
-                    onClick={() => onCancel(item)}
+                    onClick={() => fireAndForget(() => onCancel(item))}
                   >
                     <Ban className="h-4 w-4" />
                   </Button>

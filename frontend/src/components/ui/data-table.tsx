@@ -32,6 +32,7 @@ import { useWindowCommands } from "@/ui/imperative";
 import { useOptionalActiveWindow } from "@/ui/imperative";
 import { useNavigationScope } from "@/ui/keyboard-navigation";
 import { InputGroup, InputGroupInput, InputGroupAddon } from "./input-group";
+import { fireAndForget } from "@/lib/utils";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -161,8 +162,8 @@ export function DataTable<TData, TValue>({
           if (focusedRowIndex === null || !rows[focusedRowIndex]) return;
           event.preventDefault();
           const rowData = rows[focusedRowIndex].original;
-          if (onRowSelect) onRowSelect(rowData);
-          else onEditRow?.(rowData);
+          if (onRowSelect) fireAndForget(() => onRowSelect(rowData));
+          else if (onEditRow) fireAndForget(() => onEditRow(rowData));
         },
       },
       {
@@ -173,7 +174,7 @@ export function DataTable<TData, TValue>({
         run: (event: KeyboardEvent) => {
           if (focusedRowIndex === null || !rows[focusedRowIndex] || !onEditRow) return;
           event.preventDefault();
-          onEditRow(rows[focusedRowIndex].original);
+          fireAndForget(() => onEditRow(rows[focusedRowIndex].original));
         },
       },
       ...(["Delete", "Backspace"] as const).map((hotkey) => ({
@@ -193,7 +194,7 @@ export function DataTable<TData, TValue>({
           const focusedTag = eventTarget?.tagName ?? document.activeElement?.tagName;
           if (["INPUT", "TEXTAREA", "SELECT", "BUTTON"].includes(focusedTag ?? "")) return;
           event.preventDefault();
-          onDeleteRow(rows[focusedRowIndex].original);
+          fireAndForget(() => onDeleteRow(rows[focusedRowIndex].original));
         },
       })),
     ],
