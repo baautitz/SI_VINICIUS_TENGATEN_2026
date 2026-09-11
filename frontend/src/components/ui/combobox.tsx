@@ -151,7 +151,16 @@ export const ComboboxChips = ({
           }
 
           const input = e.currentTarget.querySelector("input");
-          if (input) input.focus();
+          if (input) {
+            input.focus();
+            if (
+              !context.searchText &&
+              context.focusedIndex < 0 &&
+              context.filteredItems.length > 0
+            ) {
+              context.setFocusedIndex(0);
+            }
+          }
         }}
         {...props}
       >
@@ -207,6 +216,21 @@ export function ComboboxChipsInput({
   const context = React.useContext(ComboboxContext);
   if (!context) return null;
 
+  const getItemValue = (item: unknown) =>
+    typeof item === "string"
+      ? item
+      : String(
+          (item as Record<string, unknown>).value ||
+            (item as Record<string, unknown>).id ||
+            "",
+        );
+
+  const selectItemAt = (index: number) => {
+    if (index < 0 || index >= context.filteredItems.length) return false;
+    context.handleSelect(getItemValue(context.filteredItems[index]));
+    return true;
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (
       e.key === "Backspace" &&
@@ -216,52 +240,50 @@ export function ComboboxChipsInput({
     ) {
       context.setSelectedValues(context.selectedValues.slice(0, -1));
     }
+
+    const isSpace = e.key === " " || e.code === "Space";
+    if (isSpace && context.isOpen && context.focusedIndex >= 0) {
+      if (selectItemAt(context.focusedIndex)) {
+        e.preventDefault();
+        onKeyDown?.(e);
+        return;
+      }
+    }
+
     if (e.key === "Enter" && !e.altKey && !e.ctrlKey && !e.metaKey && !context.isOpen) {
       e.preventDefault();
       context.setIsOpen(true);
-      context.setFocusedIndex(-1);
+      context.setFocusedIndex(context.filteredItems.length > 0 ? 0 : -1);
       onKeyDown?.(e);
       return;
     }
     if (e.key === "Enter" && !e.altKey && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
-      if (
-        context.focusedIndex >= 0 &&
-        context.focusedIndex < context.filteredItems.length
-      ) {
-        const item = context.filteredItems[context.focusedIndex];
-        const val =
-          typeof item === "string"
-            ? item
-            : String(
-                (item as Record<string, unknown>).value ||
-                  (item as Record<string, unknown>).id ||
-                  "",
-              );
-        context.handleSelect(val);
-      } else if (context.filteredItems.length === 1) {
-        const item = context.filteredItems[0];
-        const val =
-          typeof item === "string"
-            ? item
-            : String(
-                (item as Record<string, unknown>).value ||
-                  (item as Record<string, unknown>).id ||
-                  "",
-              );
-        context.handleSelect(val);
+      if (!selectItemAt(context.focusedIndex) && context.filteredItems.length === 1) {
+        selectItemAt(0);
       }
     }
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      context.setIsOpen(true);
-      context.setFocusedIndex(
-        Math.min(context.focusedIndex + 1, context.filteredItems.length - 1),
-      );
+      if (!context.isOpen) {
+        context.setIsOpen(true);
+        context.setFocusedIndex(context.filteredItems.length > 0 ? 0 : -1);
+      } else {
+        context.setFocusedIndex(
+          Math.min(context.focusedIndex + 1, context.filteredItems.length - 1),
+        );
+      }
     }
     if (e.key === "ArrowUp") {
       e.preventDefault();
-      context.setFocusedIndex(Math.max(context.focusedIndex - 1, 0));
+      if (!context.isOpen) {
+        context.setIsOpen(true);
+        context.setFocusedIndex(
+          context.filteredItems.length > 0 ? context.filteredItems.length - 1 : -1,
+        );
+      } else {
+        context.setFocusedIndex(Math.max(context.focusedIndex - 1, 0));
+      }
     }
     onKeyDown?.(e);
   };
@@ -282,6 +304,13 @@ export function ComboboxChipsInput({
       }}
       onClick={(e) => {
         context.setIsOpen(true);
+        if (
+          !context.searchText &&
+          context.focusedIndex < 0 &&
+          context.filteredItems.length > 0
+        ) {
+          context.setFocusedIndex(0);
+        }
         onClick?.(e);
       }}
       onKeyDown={handleKeyDown}
