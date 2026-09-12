@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:api-errors": "node --no-warnings --experimental-strip-types scripts/test-api-error-contracts.mjs",
+    "check:ui-feedback": "node scripts/check-ui-feedback-contracts.mjs",
     "test:keyboard-navigation": "node scripts/test-keyboard-navigation.mjs",
     "imperative-ui:check-boundaries": "node scripts/check-imperative-ui-boundaries.mjs",
     "test:imperative-ui": "node scripts/test-imperative-ui-contracts.mjs",
