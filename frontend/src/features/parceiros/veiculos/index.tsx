@@ -75,9 +75,15 @@ export function VeiculosFeature({
       confirmVariant: "destructive",
     });
     if (!result) return;
-    await veiculosApi.delete(item.id);
-    await invalidate();
-    ui.feedback.notify({ type: "success", title: "Veículo excluído com sucesso." });
+    try {
+      await veiculosApi.delete(item.id);
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Veículo excluído com sucesso." });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível excluir o veículo.",
+      });
+    }
   };
 
   return (

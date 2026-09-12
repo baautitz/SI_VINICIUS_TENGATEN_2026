@@ -4,7 +4,6 @@ import { Kbd, KbdGroup } from "@/ui/primitives";
 import React from "react";
 import { Button } from "@/ui/primitives";
 import { Field, FieldGroup, FieldLabel } from "@/ui/primitives";
-import { Alert, AlertDescription } from "@/ui/primitives";
 import { FormFieldUI } from "@/ui/composites";
 import { Checkbox } from "@/ui/primitives";
 import { useForm, useStore } from "@tanstack/react-form";
@@ -56,7 +55,7 @@ function MetodosUpsertForm({
   readOnly = false,
 }: MetodosUpsertProps) {
   const activeWindow = useWindow<true>();
-  const { mutation, globalError, getFieldError, resetErrors } =
+  const { mutation, getFieldError, resetErrors } =
     useUpsertMutation({
       mutationFn: async (value: MetodoPagamentoFormValues) => {
         return editingItem
@@ -73,7 +72,11 @@ function MetodosUpsertForm({
     value: MetodoPagamentoFormValues;
   }) => {
     resetErrors();
-    await mutation.mutateAsync(value);
+    try {
+      await mutation.mutateAsync(value);
+    } catch {
+      // O hook central já apresenta o erro operacional em um toast.
+    }
   };
 
   const form = useForm({
@@ -214,11 +217,6 @@ function MetodosUpsertForm({
           </form.Field>
         </FieldGroup>
 
-        {globalError && (
-          <Alert variant="destructive">
-            <AlertDescription>{globalError}</AlertDescription>
-          </Alert>
-        )}
       </form>
     </div>
   );

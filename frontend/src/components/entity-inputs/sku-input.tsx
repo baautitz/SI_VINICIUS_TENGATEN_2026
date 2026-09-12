@@ -234,6 +234,11 @@ export const SkuInput = ({
       });
 
       return result.status === "confirmed" ? result.value : null;
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível abrir a seleção de SKU.",
+      });
+      return null;
     } finally {
       selectorOpeningRef.current = false;
     }
@@ -273,6 +278,10 @@ export const SkuInput = ({
       await onSelectSku(sku, quantity);
       setSelectedSku(sku.sku);
       setSkuText("");
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível adicionar o SKU.",
+      });
     } finally {
       // The parent list forms remount this component after adding a row.  The
       // refocus is also intentional after cancellation, so opening a selector

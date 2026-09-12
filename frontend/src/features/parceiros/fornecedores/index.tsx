@@ -87,9 +87,15 @@ export function FornecedoresFeature({
       confirmVariant: "destructive",
     });
     if (!result) return;
-    await fornecedoresApi.delete(item.id);
-    await invalidate();
-    ui.feedback.notify({ type: "success", title: "Fornecedor excluído com sucesso." });
+    try {
+      await fornecedoresApi.delete(item.id);
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Fornecedor excluído com sucesso." });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível excluir o fornecedor.",
+      });
+    }
   };
 
   return (

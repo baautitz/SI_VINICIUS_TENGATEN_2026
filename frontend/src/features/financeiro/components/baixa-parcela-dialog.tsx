@@ -113,11 +113,7 @@ export function BaixaParcelaWindow({
       await mutation.mutateAsync();
       activeWindow.resolve(true);
     } catch {
-      setError(
-        isEstorno
-          ? "Não foi possível estornar o pagamento. Tente novamente."
-          : "Não foi possível registrar a baixa. Tente novamente.",
-      );
+      // O MutationCache central apresenta o erro operacional em um toast.
     }
   }, [activeWindow, isEstorno, mutation, parcela, saldoRestante, valorBaixa]);
 
@@ -208,7 +204,7 @@ export function BaixaParcelaWindow({
                 decimals={2}
                 inputMode="decimal"
                 onNumberChange={(num) => setValorBaixa(num)}
-                className="h-9 w-48 text-right font-semibold"
+                className="h-8 w-48 text-right font-semibold"
                 aria-invalid={!!error}
                 disabled={mutation.isPending}
               />

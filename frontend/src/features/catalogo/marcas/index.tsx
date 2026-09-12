@@ -76,9 +76,15 @@ export function MarcasFeature({
       confirmVariant: "destructive",
     });
     if (!result) return;
-    await marcasApi.delete(item.id);
-    await invalidate();
-    ui.feedback.notify({ type: "success", title: "Marca excluída com sucesso." });
+    try {
+      await marcasApi.delete(item.id);
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Marca excluída com sucesso." });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível excluir a marca.",
+      });
+    }
   };
 
   return (

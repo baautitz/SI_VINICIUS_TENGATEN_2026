@@ -5,7 +5,6 @@ import React from "react";
 import { Button } from "@/ui/primitives";
 import { FieldGroup, FieldLabel } from "@/ui/primitives";
 import { Input } from "@/ui/primitives";
-import { Alert, AlertDescription } from "@/ui/primitives";
 import { FormFieldUI } from "@/ui/composites";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
@@ -50,7 +49,7 @@ function PaisesUpsertForm({
   readOnly = false,
 }: PaisesUpsertProps) {
   const activeWindow = useWindow<true>();
-  const { mutation, globalError, getFieldError, resetErrors } =
+  const { mutation, getFieldError, resetErrors } =
     useUpsertMutation({
       mutationFn: async (value: {
         pais: string;
@@ -77,7 +76,11 @@ function PaisesUpsertForm({
     },
     onSubmit: async ({ value }) => {
       resetErrors();
-      await mutation.mutateAsync(value);
+      try {
+        await mutation.mutateAsync(value);
+      } catch {
+        // O hook central já apresenta o erro operacional em um toast.
+      }
     },
   });
 
@@ -234,11 +237,6 @@ function PaisesUpsertForm({
           </form.Field>
         </FieldGroup>
 
-        {globalError && (
-          <Alert variant="destructive">
-            <AlertDescription>{globalError}</AlertDescription>
-          </Alert>
-        )}
       </form>
     </div>
   );

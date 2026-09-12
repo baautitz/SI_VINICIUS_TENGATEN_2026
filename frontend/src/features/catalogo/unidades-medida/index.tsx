@@ -86,12 +86,18 @@ export function UnidadesMedidaFeature({
       confirmVariant: "destructive",
     });
     if (!result) return;
-    await unidadesMedidaApi.delete(item.id);
-    await invalidate();
-    ui.feedback.notify({
-      type: "success",
-      title: "Unidade de medida excluída com sucesso.",
-    });
+    try {
+      await unidadesMedidaApi.delete(item.id);
+      await invalidate();
+      ui.feedback.notify({
+        type: "success",
+        title: "Unidade de medida excluída com sucesso.",
+      });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível excluir a unidade de medida.",
+      });
+    }
   };
 
   return (

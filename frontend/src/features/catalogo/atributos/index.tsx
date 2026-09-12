@@ -81,9 +81,15 @@ export function AtributosFeature({
       confirmVariant: "destructive",
     });
     if (!result) return;
-    await atributosApi.delete(item.id);
-    await invalidate();
-    ui.feedback.notify({ type: "success", title: "Atributo excluído com sucesso." });
+    try {
+      await atributosApi.delete(item.id);
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Atributo excluído com sucesso." });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível excluir o atributo.",
+      });
+    }
   };
 
   return (

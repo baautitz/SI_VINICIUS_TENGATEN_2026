@@ -20,6 +20,11 @@ export interface NotificationOptions {
   id?: string | number
 }
 
+export interface FeedbackErrorOptions {
+  fallbackTitle?: string
+  id?: string | number
+}
+
 export interface NavigationOptions {
   replace?: boolean
   scroll?: boolean
@@ -27,6 +32,7 @@ export interface NavigationOptions {
 
 export interface FeedbackService {
   notify(options: NotificationOptions): void
+  notifyError(error: unknown, options?: FeedbackErrorOptions): void
 }
 
 export interface NavigationService {
@@ -49,5 +55,6 @@ export interface WindowManager extends Ui {
   ): Promise<WindowResult<TResult>>
   confirm(options: ConfirmOptions): Promise<WindowResult<true>>
   notify(options: NotificationOptions): void
+  notifyError(error: unknown, options?: FeedbackErrorOptions): void
   navigate(href: string, options?: NavigationOptions): void
 }

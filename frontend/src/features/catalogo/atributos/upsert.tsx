@@ -9,7 +9,6 @@ import {
   FieldLabel,
   FieldError,
 } from "@/ui/primitives";
-import { Alert, AlertDescription } from "@/ui/primitives";
 import { FormFieldUI } from "@/ui/composites";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
@@ -64,7 +63,7 @@ function AtributosUpsertForm({
   readOnly = false,
 }: AtributosUpsertProps) {
   const activeWindow = useWindow<true>();
-  const { mutation, globalError, getFieldError, resetErrors } =
+  const { mutation, getFieldError, resetErrors } =
     useUpsertMutation({
       mutationFn: async (value: SkuAtributoChaveFormValues) => {
         return editingItem
@@ -82,7 +81,11 @@ function AtributosUpsertForm({
     } as SkuAtributoChaveFormValues,
     onSubmit: async ({ value }) => {
       resetErrors();
-      await mutation.mutateAsync(value);
+      try {
+        await mutation.mutateAsync(value);
+      } catch {
+        // O hook central já apresenta o erro operacional em um toast.
+      }
     },
   });
 
@@ -298,11 +301,6 @@ function AtributosUpsertForm({
           </form.Field>
         </FieldGroup>
 
-        {globalError && (
-          <Alert variant="destructive" className="mt-4">
-            <AlertDescription>{globalError}</AlertDescription>
-          </Alert>
-        )}
       </form>
     </div>
   );

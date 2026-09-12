@@ -70,9 +70,15 @@ export function VendasFeature() {
     });
     if (result.status !== "confirmed") return;
 
-    await vendasApi.cancel(item.id, result.value);
-    await invalidate();
-    ui.feedback.notify({ type: "success", title: "Venda cancelada com sucesso." });
+    try {
+      await vendasApi.cancel(item.id, result.value);
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Venda cancelada com sucesso." });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível cancelar a venda.",
+      });
+    }
   };
 
   return (

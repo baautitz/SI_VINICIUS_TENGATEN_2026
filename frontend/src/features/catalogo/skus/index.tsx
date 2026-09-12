@@ -96,10 +96,8 @@ export function SkusFeature({
     try {
       return await produtosApi.getById(sku.produto.id);
     } catch (error) {
-      console.error("Erro ao buscar produto do SKU", error);
-      ui.feedback.notify({
-        type: "error",
-        title: "Não foi possível carregar o produto.",
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível carregar o produto.",
       });
       return null;
     }

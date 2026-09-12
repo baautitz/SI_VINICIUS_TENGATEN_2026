@@ -51,9 +51,15 @@ export function BairrosFeature({
       confirmVariant: "destructive",
     });
     if (!result) return;
-    await bairrosApi.delete(item.id);
-    await invalidate();
-    ui.feedback.notify({ type: "success", title: "Bairro excluído com sucesso." });
+    try {
+      await bairrosApi.delete(item.id);
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Bairro excluído com sucesso." });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível excluir o bairro.",
+      });
+    }
   };
 
   return (

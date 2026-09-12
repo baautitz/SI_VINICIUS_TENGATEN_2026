@@ -109,7 +109,6 @@ export function MovimentacoesUpsertForm({
 
   const {
     mutation,
-    globalError,
     getFieldError,
     resetErrors,
     backendFieldErrors,
@@ -195,10 +194,14 @@ export function MovimentacoesUpsertForm({
         size: "small",
       });
       if (result.status === "confirmed") {
-        await mutation.mutateAsync({
-          values: payload,
-          efetivar: result.value === "effect",
-        });
+        try {
+          await mutation.mutateAsync({
+            values: payload,
+            efetivar: result.value === "effect",
+          });
+        } catch {
+          // O hook central já apresenta o erro operacional em um toast.
+        }
       }
     },
   });
@@ -820,11 +823,6 @@ export function MovimentacoesUpsertForm({
             }}
           </form.Subscribe>
 
-          {globalError && (
-            <Alert variant="destructive">
-              <AlertDescription>{globalError}</AlertDescription>
-            </Alert>
-          )}
         </form>
       </div>
     </div>

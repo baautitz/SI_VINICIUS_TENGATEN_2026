@@ -173,7 +173,6 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
   const ui = useUi();
   const {
     mutation,
-    globalError,
     getFieldError: originalGetFieldError,
     resetErrors,
   } = useUpsertMutation<VendaFormValues, BackendResult<Venda>>({
@@ -367,10 +366,14 @@ interface ParcelaPreview {
       return;
     }
 
-    await mutation.mutateAsync({
-      ...(payload as VendaFormValues),
-      observacao: checkout.observacao,
-    });
+    try {
+      await mutation.mutateAsync({
+        ...(payload as VendaFormValues),
+        observacao: checkout.observacao,
+      });
+    } catch {
+      // O hook central já apresenta o erro operacional em um toast.
+    }
   };
 
   const commands = [
@@ -389,9 +392,9 @@ interface ParcelaPreview {
         hotkey: "Alt+Enter" as const,
         label: "Avançar para finalização",
         enabled: !readOnly && !mutation.isPending,
-        run: (event: KeyboardEvent) => {
+        run: async (event: KeyboardEvent) => {
           event.preventDefault();
-          void form.handleSubmit();
+          await form.handleSubmit();
         },
       },
   ];
@@ -598,12 +601,6 @@ interface ParcelaPreview {
           </Alert>
         )}
 
-        {globalError && (
-          <Alert variant="destructive">
-            <AlertDescription>{globalError}</AlertDescription>
-          </Alert>
-        )}
-
         <div className="flex h-full w-full flex-col gap-4">
           <div className="flex w-full flex-row gap-2">
             <div className="w-[20%]">
@@ -687,7 +684,7 @@ interface ParcelaPreview {
           )}
 
           <div className="h-full w-full flex-1">
-            <Card className="flex h-full flex-1 flex-col p-0 shadow-sm">
+            <Card className="flex h-full flex-1 flex-col p-0">
               <CardContent className="flex h-full flex-1 flex-col p-0">
                 <ScrollArea className="h-full w-full">
                   <Table className="min-w-250">
@@ -957,7 +954,7 @@ interface ParcelaPreview {
 
           {readOnly && (
             <div className="w-full">
-              <Card className="shadow-sm">
+              <Card>
                 <CardContent className="flex flex-col gap-2">
                   <form.Field name="observacao">
                     {(field) => (

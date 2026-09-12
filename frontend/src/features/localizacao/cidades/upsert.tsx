@@ -5,7 +5,6 @@ import { Kbd, KbdGroup } from "@/ui/primitives";
 import { Button } from "@/ui/primitives";
 import { FieldGroup, FieldLabel } from "@/ui/primitives";
 import { Input } from "@/ui/primitives";
-import { Alert, AlertDescription } from "@/ui/primitives";
 import { FormFieldUI } from "@/ui/composites";
 import { EstadoInput } from "@/components/entity-inputs/estado-input";
 import { useForm, useStore } from "@tanstack/react-form";
@@ -51,7 +50,7 @@ function CidadesUpsertForm({
   readOnly = false,
 }: CidadesUpsertProps) {
   const activeWindow = useWindow<true>();
-  const { mutation, globalError, getFieldError, resetErrors } =
+  const { mutation, getFieldError, resetErrors } =
     useUpsertMutation({
       mutationFn: async (value: CidadeFormValues) => {
         return editingItem
@@ -75,7 +74,11 @@ function CidadesUpsertForm({
         ddd: value.ddd || "",
         estadoId: value.estadoId || null,
       };
-      await mutation.mutateAsync(payload as CidadeFormValues);
+      try {
+        await mutation.mutateAsync(payload as CidadeFormValues);
+      } catch {
+        // O hook central já apresenta o erro operacional em um toast.
+      }
     },
   });
 
@@ -213,11 +216,6 @@ function CidadesUpsertForm({
           </form.Field>
         </FieldGroup>
 
-        {globalError && (
-          <Alert variant="destructive">
-            <AlertDescription>{globalError}</AlertDescription>
-          </Alert>
-        )}
       </form>
     </div>
   );

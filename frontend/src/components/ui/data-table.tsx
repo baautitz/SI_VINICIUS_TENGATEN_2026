@@ -225,7 +225,7 @@ export function DataTable<TData, TValue>({
                   placeholder={searchPlaceholder}
                   value={globalFilter ?? ""}
                   onChange={(event) => onGlobalFilterChange(event.target.value)}
-                  className="h-9"
+                  className="h-8"
                   data-navigation-list-search="true"
                 />
 
@@ -260,7 +260,7 @@ export function DataTable<TData, TValue>({
                   return (
                     <TableHead
                       key={header.id}
-                      className="text-foreground h-11 py-2 font-bold whitespace-nowrap"
+                      className="text-foreground h-10 py-2 font-bold whitespace-nowrap"
                       style={{
                         width:
                           header.column.getSize() !== 150

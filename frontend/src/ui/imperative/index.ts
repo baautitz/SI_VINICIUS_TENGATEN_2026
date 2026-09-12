@@ -5,6 +5,7 @@ export type {
   CloseReason,
   ConfirmOptions,
   DiscardRequest,
+  FeedbackErrorOptions,
   FocusTarget,
   NavigationOptions,
   NotificationOptions,

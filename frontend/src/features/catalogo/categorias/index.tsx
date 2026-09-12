@@ -80,9 +80,15 @@ export function CategoriasFeature({
       confirmVariant: "destructive",
     });
     if (!result) return;
-    await categoriasApi.delete(item.id);
-    await invalidate();
-    ui.feedback.notify({ type: "success", title: "Categoria excluída com sucesso." });
+    try {
+      await categoriasApi.delete(item.id);
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Categoria excluída com sucesso." });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível excluir a categoria.",
+      });
+    }
   };
 
   return (

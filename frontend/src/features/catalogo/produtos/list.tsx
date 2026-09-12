@@ -55,13 +55,13 @@ export function ProdutosList({
     },
     {
       accessorKey: "estoqueTotal",
-      header: "Estoque",
+      header: () => <div className="text-right">Estoque</div>,
       cell: ({ row }) => {
         const value = row.getValue("estoqueTotal");
         return (
-          <span className="font-mono text-xs">
+          <div className="text-right font-mono text-xs">
             {value !== undefined && value !== null ? Number(value) : 0}
-          </span>
+          </div>
         );
       },
     },

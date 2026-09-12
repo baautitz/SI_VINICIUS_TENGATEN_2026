@@ -5,7 +5,6 @@ import React from "react";
 import { Button } from "@/ui/primitives";
 import { FieldLabel } from "@/ui/primitives";
 import { Input } from "@/ui/primitives";
-import { Alert, AlertDescription } from "@/ui/primitives";
 import { FormFieldUI } from "@/ui/composites";
 import { TransportadoraInput } from "@/components/entity-inputs/transportadora-input";
 import { EstadoInput } from "@/components/entity-inputs/estado-input";
@@ -54,7 +53,7 @@ function VeiculosUpsertForm({
   readOnly = false,
 }: VeiculosUpsertProps) {
   const activeWindow = useWindow<true>();
-  const { mutation, globalError, getFieldError, resetErrors } =
+  const { mutation, getFieldError, resetErrors } =
     useUpsertMutation({
       mutationFn: async (value: VeiculoFormValues) => {
         return editingItem
@@ -84,7 +83,11 @@ function VeiculosUpsertForm({
         ...value,
         transportadoraId: value.transportadoraId || null,
       };
-      await mutation.mutateAsync(payload as VeiculoFormValues);
+      try {
+        await mutation.mutateAsync(payload as VeiculoFormValues);
+      } catch {
+        // O hook central já apresenta o erro operacional em um toast.
+      }
     },
   });
 
@@ -317,11 +320,6 @@ function VeiculosUpsertForm({
           )}
         </form.Field>
 
-        {globalError && (
-          <Alert variant="destructive">
-            <AlertDescription>{globalError}</AlertDescription>
-          </Alert>
-        )}
       </form>
     </div>
   );

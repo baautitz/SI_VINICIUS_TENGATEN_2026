@@ -60,13 +60,24 @@ export function SkusList({
     },
     {
       accessorKey: "preco",
-      header: "Preço",
-      cell: ({ row }) => <span>{Number(row.getValue("preco")).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>,
+      header: () => <div className="text-right">Preço</div>,
+      cell: ({ row }) => (
+        <div className="text-right">
+          {Number(row.getValue("preco")).toLocaleString("pt-BR", {
+            style: "currency",
+            currency: "BRL",
+          })}
+        </div>
+      ),
     },
     {
       accessorKey: "estoque",
-      header: "Estoque",
-      cell: ({ row }) => <span>{Number(row.getValue("estoque")).toLocaleString("pt-BR")}</span>,
+      header: () => <div className="text-right">Estoque</div>,
+      cell: ({ row }) => (
+        <div className="text-right">
+          {Number(row.getValue("estoque")).toLocaleString("pt-BR")}
+        </div>
+      ),
     },
     {
       accessorKey: "ativo",

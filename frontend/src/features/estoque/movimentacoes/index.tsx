@@ -80,9 +80,15 @@ export function MovimentacoesFeature() {
       confirmVariant: "destructive",
     });
     if (!result) return;
-    await estoqueApi.delete(item.id);
-    await invalidate();
-    ui.feedback.notify({ type: "success", title: "Rascunho excluído com sucesso." });
+    try {
+      await estoqueApi.delete(item.id);
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Rascunho excluído com sucesso." });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível excluir o rascunho de movimentação.",
+      });
+    }
   };
 
   const confirmAction = async (item: MovimentacaoEstoque) => {
@@ -92,10 +98,21 @@ export function MovimentacoesFeature() {
       confirmLabel: "Efetivar",
     });
     if (!result) return;
-    const response = await estoqueApi.confirmar(item.id);
-    if (response.success === false) return;
-    await invalidate();
-    ui.feedback.notify({ type: "success", title: "Movimentação efetivada com sucesso!" });
+    try {
+      const response = await estoqueApi.confirmar(item.id);
+      if (response.success === false) {
+        ui.feedback.notifyError(response, {
+          fallbackTitle: "Não foi possível efetivar a movimentação.",
+        });
+        return;
+      }
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Movimentação efetivada com sucesso!" });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível efetivar a movimentação.",
+      });
+    }
   };
 
   const cancelAction = async (item: MovimentacaoEstoque) => {
@@ -106,10 +123,21 @@ export function MovimentacoesFeature() {
       confirmVariant: "destructive",
     });
     if (!result) return;
-    const response = await estoqueApi.cancelar(item.id);
-    if (response.success === false) return;
-    await invalidate();
-    ui.feedback.notify({ type: "success", title: "Movimentação estornada com sucesso!" });
+    try {
+      const response = await estoqueApi.cancelar(item.id);
+      if (response.success === false) {
+        ui.feedback.notifyError(response, {
+          fallbackTitle: "Não foi possível estornar a movimentação.",
+        });
+        return;
+      }
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Movimentação estornada com sucesso!" });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível estornar a movimentação.",
+      });
+    }
   };
 
   return (

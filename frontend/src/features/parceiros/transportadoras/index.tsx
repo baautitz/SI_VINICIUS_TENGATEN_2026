@@ -77,9 +77,15 @@ export function TransportadorasFeature({
       confirmVariant: "destructive",
     });
     if (!result) return;
-    await transportadorasApi.delete(item.id);
-    await invalidate();
-    ui.feedback.notify({ type: "success", title: "Transportadora excluída com sucesso." });
+    try {
+      await transportadorasApi.delete(item.id);
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Transportadora excluída com sucesso." });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível excluir a transportadora.",
+      });
+    }
   };
 
   const openCreate = async () => openUpsert(null);

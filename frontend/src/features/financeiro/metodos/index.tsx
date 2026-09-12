@@ -88,9 +88,15 @@ export function MetodosFeature({
       confirmVariant: "destructive",
     });
     if (!result) return;
-    await metodosApi.delete(item.codigo);
-    await invalidate();
-    ui.feedback.notify({ type: "success", title: "Método de pagamento excluído com sucesso." });
+    try {
+      await metodosApi.delete(item.codigo);
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Método de pagamento excluído com sucesso." });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível excluir o método de pagamento.",
+      });
+    }
   };
 
   return (

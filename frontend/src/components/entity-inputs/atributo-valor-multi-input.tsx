@@ -69,27 +69,34 @@ export function AtributoValorMultiInput({
 
     try {
       const res = await atributosApi.update(chaveId, payload);
-      if (res.success && res.data) {
-        await queryClient.invalidateQueries({
-          queryKey: ["atributos", "multi-input-detail", chaveId],
+      if (!res.success || !res.data) {
+        ui.feedback.notifyError(res, {
+          fallbackTitle: "Não foi possível criar o valor do atributo.",
         });
-        await queryClient.invalidateQueries({
-          queryKey: ["atributos", "selector-detail", chaveId],
-        });
-
-        const newCreated = res.data.skuAtributosValores.find(
-          (v) => v.valor.toLowerCase() === trimmed.toLowerCase(),
-        );
-
-        if (newCreated) {
-          onChange([
-            ...selectedValues,
-            { id: newCreated.id, valor: newCreated.valor },
-          ]);
-        }
+        return;
       }
-    } catch (err) {
-      console.error("Erro ao criar valor de atributo:", err);
+
+      await queryClient.invalidateQueries({
+        queryKey: ["atributos", "multi-input-detail", chaveId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["atributos", "selector-detail", chaveId],
+      });
+
+      const newCreated = res.data.skuAtributosValores.find(
+        (v) => v.valor.toLowerCase() === trimmed.toLowerCase(),
+      );
+
+      if (newCreated) {
+        onChange([
+          ...selectedValues,
+          { id: newCreated.id, valor: newCreated.valor },
+        ]);
+      }
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível criar o valor do atributo.",
+      });
     }
   };
 
@@ -104,49 +111,55 @@ export function AtributoValorMultiInput({
   const handleEditEntity = async () => {
     if (!editingResumo) return;
 
-    const result = await ui.windows.open<true, AtributosUpsertProps>({
-      component: AtributosUpsert,
-      props: { editingItem: editingResumo },
-      title: "Editar Atributo",
-    });
+    try {
+      const result = await ui.windows.open<true, AtributosUpsertProps>({
+        component: AtributosUpsert,
+        props: { editingItem: editingResumo },
+        title: "Editar Atributo",
+      });
 
-    if (result.status !== "confirmed") return;
+      if (result.status !== "confirmed") return;
 
-    await Promise.all([
-      queryClient.invalidateQueries({
-        queryKey: ["atributos", "multi-input-detail", chaveId],
-      }),
-      queryClient.invalidateQueries({
-        queryKey: ["atributos", "selector-detail", chaveId],
-      }),
-    ]);
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["atributos", "multi-input-detail", chaveId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["atributos", "selector-detail", chaveId],
+        }),
+      ]);
 
-    const refreshedDetail = queryClient.getQueryData<SkuAtributoChave>([
-      "atributos",
-      "multi-input-detail",
-      chaveId,
-    ]);
-    if (!refreshedDetail) return;
+      const refreshedDetail = queryClient.getQueryData<SkuAtributoChave>([
+        "atributos",
+        "multi-input-detail",
+        chaveId,
+      ]);
+      if (!refreshedDetail) return;
 
-    const valuesById = new Map(
-      refreshedDetail.skuAtributosValores.map((value) => [value.id, value]),
-    );
-    const refreshedSelection = selectedValues.flatMap((value) => {
-      const refreshedValue = valuesById.get(value.id);
-      return refreshedValue
-        ? [{ id: refreshedValue.id, valor: refreshedValue.valor }]
-        : [];
-    });
+      const valuesById = new Map(
+        refreshedDetail.skuAtributosValores.map((value) => [value.id, value]),
+      );
+      const refreshedSelection = selectedValues.flatMap((value) => {
+        const refreshedValue = valuesById.get(value.id);
+        return refreshedValue
+          ? [{ id: refreshedValue.id, valor: refreshedValue.valor }]
+          : [];
+      });
 
-    if (
-      refreshedSelection.length !== selectedValues.length ||
-      refreshedSelection.some(
-        (value, index) =>
-          value.id !== selectedValues[index]?.id ||
-          value.valor !== selectedValues[index]?.valor,
-      )
-    ) {
-      onChange(refreshedSelection);
+      if (
+        refreshedSelection.length !== selectedValues.length ||
+        refreshedSelection.some(
+          (value, index) =>
+            value.id !== selectedValues[index]?.id ||
+            value.valor !== selectedValues[index]?.valor,
+        )
+      ) {
+        onChange(refreshedSelection);
+      }
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível atualizar os valores do atributo.",
+      });
     }
   };
 

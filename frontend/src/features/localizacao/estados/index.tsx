@@ -52,9 +52,15 @@ export function EstadosFeature({
       confirmVariant: "destructive",
     });
     if (!result) return;
-    await estadosApi.delete(item.id);
-    await invalidate();
-    ui.feedback.notify({ type: "success", title: "Estado excluído com sucesso." });
+    try {
+      await estadosApi.delete(item.id);
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Estado excluído com sucesso." });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível excluir o estado.",
+      });
+    }
   };
 
   return (

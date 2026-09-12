@@ -132,6 +132,10 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
       if (result.status === "confirmed") {
         await applySelection(result.value);
       }
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: `Não foi possível abrir ${modalTitle.toLowerCase()}.`,
+      });
     } finally {
       openingSelectorRef.current = false;
     }

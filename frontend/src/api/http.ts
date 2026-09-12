@@ -1,5 +1,7 @@
-import { toast } from "sonner";
-import { extractApiErrors } from "@/utils/api-error";
+import {
+  ApiRequestError,
+  createApiRequestError,
+} from "@/utils/api-error";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -16,36 +18,36 @@ async function request<T>(
 
     if (!res.ok) {
       const body = await res.text();
-
-      if (!silentStatuses.includes(res.status)) {
-        if (res.status >= 500) {
-          toast.error("Ocorreu um erro inesperado no servidor (Erro 500).");
-        } else {
-          try {
-            const parsed = JSON.parse(body);
-            const { globalError, fieldErrors } = extractApiErrors(parsed);
-
-            if (globalError) {
-              toast.error(globalError);
-            }
-
-            Object.values(fieldErrors).forEach((msg) => toast.error(msg));
-          } catch {
-            toast.error("Erro ao processar resposta do servidor.");
-          }
-        }
-      }
-
-      throw { status: res.status, response: body };
+      throw createApiRequestError(
+        res.status,
+        body,
+        silentStatuses.includes(res.status),
+      );
     }
 
     const text = await res.text();
-    return text ? JSON.parse(text) : (undefined as unknown as T);
-  } catch (error: unknown) {
-    if (error && typeof error === "object" && !("status" in error)) {
-      toast.error("Sem conexão com o servidor. Por favor, verifique se o servidor está online.");
+    if (!text) return undefined as unknown as T;
+
+    let body: unknown;
+    try {
+      body = JSON.parse(text);
+    } catch {
+      throw createApiRequestError(res.status, text);
     }
-    throw error;
+
+    if (
+      typeof body === "object" &&
+      body !== null &&
+      "success" in body &&
+      body.success === false
+    ) {
+      throw createApiRequestError(res.status, body);
+    }
+
+    return body as T;
+  } catch (error: unknown) {
+    if (error instanceof ApiRequestError) throw error;
+    throw createApiRequestError(0, error);
   }
 }
 

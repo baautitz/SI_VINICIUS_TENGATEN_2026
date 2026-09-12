@@ -43,29 +43,35 @@ export function ContasReceberFeature() {
   };
 
   const openEditor = async (item: ContasReceber | null, readOnly = false) => {
-    const editingItem = item ? await contasReceberApi.getById(item.id) : null;
-    const result = await ui.windows.open<true, ContasReceberUpsertProps>({
-      component: ContasReceberUpsertForm,
-      props: {
-        editingItem,
-        readOnly,
-        onBaixa: (contaId, parcela) => openBaixa(contaId, parcela),
-        onEstorno: (contaId, parcela) => openBaixa(contaId, parcela, true),
-      },
-      title: readOnly
-        ? "Detalhes da Conta a Receber"
-        : editingItem
-          ? "Editar Conta a Receber"
-          : "Nova Conta a Receber",
-      size: "large",
-    });
-    if (result.status === "confirmed") {
-      await invalidate();
-      ui.feedback.notify({
-        type: "success",
-        title: editingItem
-          ? "Conta atualizada com sucesso."
-          : "Conta criada com sucesso.",
+    try {
+      const editingItem = item ? await contasReceberApi.getById(item.id) : null;
+      const result = await ui.windows.open<true, ContasReceberUpsertProps>({
+        component: ContasReceberUpsertForm,
+        props: {
+          editingItem,
+          readOnly,
+          onBaixa: (contaId, parcela) => openBaixa(contaId, parcela),
+          onEstorno: (contaId, parcela) => openBaixa(contaId, parcela, true),
+        },
+        title: readOnly
+          ? "Detalhes da Conta a Receber"
+          : editingItem
+            ? "Editar Conta a Receber"
+            : "Nova Conta a Receber",
+        size: "large",
+      });
+      if (result.status === "confirmed") {
+        await invalidate();
+        ui.feedback.notify({
+          type: "success",
+          title: editingItem
+            ? "Conta atualizada com sucesso."
+            : "Conta criada com sucesso.",
+        });
+      }
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível carregar os detalhes da conta a receber.",
       });
     }
   };
@@ -78,9 +84,15 @@ export function ContasReceberFeature() {
       confirmVariant: "destructive",
     });
     if (!result) return;
-    await contasReceberApi.delete(item.id);
-    await invalidate();
-    ui.feedback.notify({ type: "success", title: "Conta excluída com sucesso." });
+    try {
+      await contasReceberApi.delete(item.id);
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Conta excluída com sucesso." });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível excluir a conta a receber.",
+      });
+    }
   };
 
   async function openBaixa(

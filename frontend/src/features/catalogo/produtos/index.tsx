@@ -89,9 +89,15 @@ export function ProdutosFeature({
       confirmVariant: "destructive",
     });
     if (!result) return;
-    await produtosApi.delete(item.id);
-    await invalidate();
-    ui.feedback.notify({ type: "success", title: "Produto excluído com sucesso." });
+    try {
+      await produtosApi.delete(item.id);
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Produto excluído com sucesso." });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível excluir o produto.",
+      });
+    }
   };
 
   return (

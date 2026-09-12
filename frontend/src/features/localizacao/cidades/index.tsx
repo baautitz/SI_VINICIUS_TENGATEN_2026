@@ -52,9 +52,15 @@ export function CidadesFeature({
       confirmVariant: "destructive",
     });
     if (!result) return;
-    await cidadesApi.delete(item.id);
-    await invalidate();
-    ui.feedback.notify({ type: "success", title: "Cidade excluída com sucesso." });
+    try {
+      await cidadesApi.delete(item.id);
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Cidade excluída com sucesso." });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível excluir a cidade.",
+      });
+    }
   };
 
   return (

@@ -40,29 +40,35 @@ export function ContasPagarFeature() {
   };
 
   const openEditor = async (item: ContasPagar | null, readOnly = false) => {
-    const editingItem = item ? await contasPagarApi.getById(item.id) : null;
-    const result = await ui.windows.open<true, ContasPagarUpsertProps>({
-      component: ContasPagarUpsertForm,
-      props: {
-        editingItem,
-        readOnly,
-        onBaixa: (contaId, parcela) => openBaixa(contaId, parcela),
-        onEstorno: (contaId, parcela) => openBaixa(contaId, parcela, true),
-      },
-      title: readOnly
-        ? "Detalhes da Conta a Pagar"
-        : editingItem
-          ? "Editar Conta a Pagar"
-          : "Nova Conta a Pagar",
-      size: "large",
-    });
-    if (result.status === "confirmed") {
-      await invalidate();
-      ui.feedback.notify({
-        type: "success",
-        title: editingItem
-          ? "Conta atualizada com sucesso."
-          : "Conta criada com sucesso.",
+    try {
+      const editingItem = item ? await contasPagarApi.getById(item.id) : null;
+      const result = await ui.windows.open<true, ContasPagarUpsertProps>({
+        component: ContasPagarUpsertForm,
+        props: {
+          editingItem,
+          readOnly,
+          onBaixa: (contaId, parcela) => openBaixa(contaId, parcela),
+          onEstorno: (contaId, parcela) => openBaixa(contaId, parcela, true),
+        },
+        title: readOnly
+          ? "Detalhes da Conta a Pagar"
+          : editingItem
+            ? "Editar Conta a Pagar"
+            : "Nova Conta a Pagar",
+        size: "large",
+      });
+      if (result.status === "confirmed") {
+        await invalidate();
+        ui.feedback.notify({
+          type: "success",
+          title: editingItem
+            ? "Conta atualizada com sucesso."
+            : "Conta criada com sucesso.",
+        });
+      }
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível carregar os detalhes da conta a pagar.",
       });
     }
   };
@@ -75,9 +81,15 @@ export function ContasPagarFeature() {
       confirmVariant: "destructive",
     });
     if (!result) return;
-    await contasPagarApi.delete(item.id);
-    await invalidate();
-    ui.feedback.notify({ type: "success", title: "Conta excluída com sucesso." });
+    try {
+      await contasPagarApi.delete(item.id);
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Conta excluída com sucesso." });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível excluir a conta a pagar.",
+      });
+    }
   };
 
   async function openBaixa(

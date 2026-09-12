@@ -55,9 +55,15 @@ export function PaisesFeature({
       confirmVariant: "destructive",
     });
     if (!result) return;
-    await paisesApi.delete(item.id);
-    await invalidate();
-    ui.feedback.notify({ type: "success", title: "País excluído com sucesso." });
+    try {
+      await paisesApi.delete(item.id);
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "País excluído com sucesso." });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível excluir o país.",
+      });
+    }
   };
 
   return (

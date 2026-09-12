@@ -1,6 +1,7 @@
 import React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { extractApiErrors } from "@/utils/api-error";
+import { extractApiErrors, type ApiErrorItem } from "@/utils/api-error";
+import { useUi } from "@/ui/imperative";
 import "@/lib/zod-config";
 
 interface UseUpsertMutationOptions<TValue, TResponse> {
@@ -11,13 +12,14 @@ interface UseUpsertMutationOptions<TValue, TResponse> {
 }
 
 export interface BackendError {
-  field?: string;
+  code?: string;
+  field?: string | null;
   message?: string;
 }
 
 export interface BackendResult<TData = unknown> {
   success?: boolean;
-  errors?: BackendError[];
+  errors?: Array<BackendError | ApiErrorItem>;
   data?: TData; // Standardize to match backend Resultado<T>
 }
 
@@ -27,6 +29,7 @@ export function useUpsertMutation<TValue, TResponse = BackendResult>({
   onSuccessCallback,
   onClose,
 }: UseUpsertMutationOptions<TValue, TResponse>) {
+  const ui = useUi();
   const [backendFieldErrors, setBackendFieldErrors] = React.useState<
     Record<string, string>
   >({});
@@ -50,18 +53,38 @@ export function useUpsertMutation<TValue, TResponse = BackendResult>({
 
         onSuccessCallback?.(res);
         onClose?.();
-      } else if (typedRes.errors) {
+      } else {
         const apiErrors = extractApiErrors(res);
         setBackendFieldErrors(apiErrors.fieldErrors);
-        if (apiErrors.globalError) setGlobalError(apiErrors.globalError);
+        setGlobalError(null);
+        ui.feedback.notifyError(res);
       }
     },
     onError: (e: unknown) => {
       const apiErrors = extractApiErrors(e);
       setBackendFieldErrors(apiErrors.fieldErrors);
-      if (apiErrors.globalError) setGlobalError(apiErrors.globalError);
+      setGlobalError(null);
     },
   });
+
+  // Keep event handlers safe even when a consumer uses mutateAsync directly.
+  // React Query still updates mutation state and invokes onError, but the
+  // rejected promise is consumed at this shared boundary.
+  const safeMutateAsync = React.useCallback(
+    async (value: TValue): Promise<TResponse | undefined> => {
+      try {
+        return await mutation.mutateAsync(value);
+      } catch {
+        return undefined;
+      }
+    },
+    [mutation],
+  );
+
+  const safeMutation = React.useMemo(
+    () => ({ ...mutation, mutateAsync: safeMutateAsync }) as typeof mutation,
+    [mutation, safeMutateAsync],
+  );
 
   const resetErrors = () => {
     setBackendFieldErrors({});
@@ -70,13 +93,16 @@ export function useUpsertMutation<TValue, TResponse = BackendResult>({
 
   const getFieldError = (name: string, formErrors: unknown[]) => {
     const formError = formErrors?.[0];
-    return formError
-      ? (formError as { message?: string })?.message || String(formError)
-      : backendFieldErrors[name.toLowerCase()] || undefined;
+    if (typeof formError === "string") return formError;
+    if (formError && typeof formError === "object") {
+      const message = (formError as { message?: unknown }).message;
+      if (typeof message === "string" && message.trim()) return message;
+    }
+    return backendFieldErrors[name.toLowerCase()] || undefined;
   };
 
   return {
-    mutation,
+    mutation: safeMutation,
     backendFieldErrors,
     globalError,
     getFieldError,

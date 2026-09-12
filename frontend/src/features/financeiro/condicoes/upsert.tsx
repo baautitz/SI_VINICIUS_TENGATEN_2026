@@ -6,7 +6,6 @@ import { Button } from "@/ui/primitives";
 import { Field, FieldLabel, FieldError } from "@/ui/primitives";
 import { Input } from "@/ui/primitives";
 import { NumberInput } from "@/ui/composites";
-import { Alert, AlertDescription } from "@/ui/primitives";
 import { FormFieldUI } from "@/ui/composites";
 import { Checkbox } from "@/ui/primitives";
 import { MetodoPagamentoInput } from "@/components/entity-inputs/metodo-pagamento-input";
@@ -88,7 +87,6 @@ function CondicoesUpsertForm({
 
   const {
     mutation,
-    globalError,
     getFieldError: originalGetFieldError,
     resetErrors,
   } = useUpsertMutation({
@@ -138,7 +136,11 @@ function CondicoesUpsertForm({
         return;
       }
 
-      await mutation.mutateAsync(payload as CondicaoPagamentoFormValues);
+      try {
+        await mutation.mutateAsync(payload as CondicaoPagamentoFormValues);
+      } catch {
+        // O hook central já apresenta o erro operacional em um toast.
+      }
     },
   });
 
@@ -335,7 +337,7 @@ function CondicoesUpsertForm({
                     <Input
                       value={editingItem.id}
                       disabled
-                      className="h-9 text-xs"
+                      className="h-8 text-xs"
                       inputSize="full"
                     />
                   </div>
@@ -827,11 +829,6 @@ function CondicoesUpsertForm({
           )}
         </div>
 
-        {globalError && (
-          <Alert variant="destructive" className="mt-4">
-            <AlertDescription>{globalError}</AlertDescription>
-          </Alert>
-        )}
       </form>
     </div>
   );

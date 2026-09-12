@@ -5,7 +5,6 @@ import React, { useState } from "react";
 import { Button } from "@/ui/primitives";
 import { Field, FieldLabel, FieldError } from "@/ui/primitives";
 import { Input } from "@/ui/primitives";
-import { Alert, AlertDescription } from "@/ui/primitives";
 import { FormFieldUI } from "@/ui/composites";
 import { SexoSelect } from "@/components/sexo-select";
 import { DatePicker } from "@/ui/composites";
@@ -76,7 +75,7 @@ function EmitentesUpsertForm({
     editingItem?.nacionalidade?.id ?? 0,
   );
 
-  const { mutation, globalError, getFieldError, resetErrors } =
+  const { mutation, getFieldError, resetErrors } =
     useUpsertMutation({
       mutationFn: async (value: EmitenteFormValues) => {
         return editingItem
@@ -117,7 +116,11 @@ function EmitentesUpsertForm({
         dataNascimento: value.dataNascimento || null,
       };
       if (readOnly) return;
-      await mutation.mutateAsync(payload as EmitenteFormValues);
+      try {
+        await mutation.mutateAsync(payload as EmitenteFormValues);
+      } catch {
+        // O hook central já apresenta o erro operacional em um toast.
+      }
     },
   });
 
@@ -527,11 +530,6 @@ function EmitentesUpsertForm({
           )}
         </form.Field>
 
-        {globalError && (
-          <Alert variant="destructive">
-            <AlertDescription>{globalError}</AlertDescription>
-          </Alert>
-        )}
       </form>
     </div>
   );

@@ -19,7 +19,10 @@ import {
   KbdGroup,
 } from "@/ui/primitives"
 import { WindowController } from "@/ui/imperative/controller"
-import { notifyWithSonner } from "@/ui/adapters/feedback-sonner"
+import {
+  notifyErrorWithSonner,
+  notifyWithSonner,
+} from "@/ui/adapters/feedback-sonner"
 import { useNextNavigation } from "@/ui/adapters/navigation-next"
 import type {
   ConfirmOptions,
@@ -196,12 +199,16 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
   const manager = useMemo<WindowManager>(
     () => ({
       windows: { open, confirm },
-      feedback: { notify: notifyWithSonner },
+      feedback: {
+        notify: notifyWithSonner,
+        notifyError: notifyErrorWithSonner,
+      },
       navigation: { go: navigate },
       // Compatibilidade temporária, removida quando todos os consumidores usarem ui.windows.
       open,
       confirm: confirmLegacy,
       notify: notifyWithSonner,
+      notifyError: notifyErrorWithSonner,
       navigate,
     }),
     [confirm, confirmLegacy, navigate, open],

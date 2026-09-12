@@ -68,7 +68,6 @@ export function ContasReceberUpsertForm({
 
   const {
     mutation,
-    globalError,
     getFieldError: originalGetFieldError,
     resetErrors,
   } = useUpsertMutation({
@@ -113,7 +112,6 @@ export function ContasReceberUpsertForm({
         onBaixa={onBaixa}
         onEstorno={onEstorno}
         mutation={mutation}
-        globalError={globalError}
         originalGetFieldError={originalGetFieldError}
         resetErrors={resetErrors}
       />
@@ -132,7 +130,6 @@ interface ContasReceberFormBodyProps {
     ContasReceberFormValues,
     unknown
   >;
-  globalError: string | null;
   originalGetFieldError: (
     name: string,
     formErrors: unknown[],
@@ -146,7 +143,6 @@ function ContasReceberFormBody({
   onBaixa,
   onEstorno,
   mutation,
-  globalError,
   originalGetFieldError,
   resetErrors,
 }: ContasReceberFormBodyProps) {
@@ -213,7 +209,11 @@ function ContasReceberFormBody({
         return;
       }
 
-      await mutation.mutateAsync(payload as ContasReceberFormValues);
+      try {
+        await mutation.mutateAsync(payload as ContasReceberFormValues);
+      } catch {
+        // O hook central já apresenta o erro operacional em um toast.
+      }
     },
   });
 
@@ -899,11 +899,6 @@ function ContasReceberFormBody({
         </div>
       </div>
 
-      {globalError && (
-        <Alert variant="destructive" className="mt-4">
-          <AlertDescription>{globalError}</AlertDescription>
-        </Alert>
-      )}
     </form>
   );
 }

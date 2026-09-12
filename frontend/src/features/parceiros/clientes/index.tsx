@@ -97,9 +97,15 @@ export function ClientesFeature({
       confirmVariant: "destructive",
     });
     if (!result) return;
-    await clientesApi.delete(item.id);
-    await invalidate();
-    ui.feedback.notify({ type: "success", title: "Cliente excluído com sucesso." });
+    try {
+      await clientesApi.delete(item.id);
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Cliente excluído com sucesso." });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível excluir o cliente.",
+      });
+    }
   };
 
   return (

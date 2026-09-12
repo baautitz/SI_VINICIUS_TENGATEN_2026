@@ -54,8 +54,8 @@ class LocalStorageStore {
     try {
       localStorage.setItem(key, value);
       this.subscribers.forEach((cb) => cb());
-    } catch (e) {
-      console.error(e);
+    } catch {
+      // Preferência de navegação é opcional; a interface permanece utilizável.
     }
   };
 }

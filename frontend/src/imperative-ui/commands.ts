@@ -6,6 +6,7 @@ import type { RefObject } from "react"
 import { useOptionalActiveWindow } from "./active-context"
 import type { WindowCommand } from "./types"
 import { useWindowRuntime } from "./provider"
+import { fireAndForget } from "@/lib/utils"
 
 type CommandRegistration = { token: string; scope: string; key: string; id: string }
 
@@ -27,13 +28,15 @@ function hotkeyKey(hotkey: WindowCommand["hotkey"]): string {
   }
 }
 
-function reportConflict(command: WindowCommand, scope: string, existing: CommandRegistration) {
-  const message = `[imperative-ui] comando duplicado: "${command.id}" / "${hotkeyKey(command.hotkey)}" no escopo "${scope}" (já registrado por ${existing.token}).`
-  if (process.env.NODE_ENV !== "production") {
-    console.error(message)
-  } else {
-    console.warn(message)
-  }
+function reportConflict(
+  _command: WindowCommand,
+  _scope: string,
+  _existing: CommandRegistration,
+) {
+  // O primeiro registro vence; não exponha detalhes internos no console do usuário.
+  void _command
+  void _scope
+  void _existing
 }
 
 /** Registra atalhos no escopo da janela ativa; apenas o topo fica habilitado. */
@@ -119,7 +122,7 @@ export function useWindowCommands(
       hotkey: command.hotkey,
       callback: (event: KeyboardEvent) => {
         if (!allowedRef.current.has(key) || command.enabled === false) return
-        void command.run(event)
+        fireAndForget(() => command.run(event))
       },
       options: {
         enabled: activeWindow

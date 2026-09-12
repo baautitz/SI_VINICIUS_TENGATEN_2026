@@ -5,7 +5,6 @@ import React from "react";
 import { Button } from "@/ui/primitives";
 import { Field, FieldGroup, FieldLabel } from "@/ui/primitives";
 import { Input } from "@/ui/primitives";
-import { Alert, AlertDescription } from "@/ui/primitives";
 import { FormFieldUI } from "@/ui/composites";
 import { Checkbox } from "@/ui/primitives";
 import { useForm, useStore } from "@tanstack/react-form";
@@ -51,7 +50,7 @@ function MarcasUpsertForm({
   readOnly = false,
 }: MarcasUpsertProps) {
   const activeWindow = useWindow<true>();
-  const { mutation, globalError, getFieldError, resetErrors } =
+  const { mutation, getFieldError, resetErrors } =
     useUpsertMutation({
       mutationFn: async (value: MarcaFormValues) => {
         return editingItem
@@ -70,7 +69,11 @@ function MarcasUpsertForm({
     } as MarcaFormValues,
     onSubmit: async ({ value }) => {
       resetErrors();
-      await mutation.mutateAsync(value);
+      try {
+        await mutation.mutateAsync(value);
+      } catch {
+        // O hook central já apresenta o erro operacional em um toast.
+      }
     },
   });
 
@@ -202,11 +205,6 @@ function MarcasUpsertForm({
           )}
         </FieldGroup>
 
-        {globalError && (
-          <Alert variant="destructive">
-            <AlertDescription>{globalError}</AlertDescription>
-          </Alert>
-        )}
       </form>
     </div>
   );

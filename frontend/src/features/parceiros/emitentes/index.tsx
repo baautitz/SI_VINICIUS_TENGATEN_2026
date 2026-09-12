@@ -90,9 +90,15 @@ export function EmitentesFeature({
       confirmVariant: "destructive",
     });
     if (!result) return;
-    await emitentesApi.delete(item.id);
-    await invalidate();
-    ui.feedback.notify({ type: "success", title: "Emitente excluído com sucesso." });
+    try {
+      await emitentesApi.delete(item.id);
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Emitente excluído com sucesso." });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível excluir o emitente.",
+      });
+    }
   };
 
   return (

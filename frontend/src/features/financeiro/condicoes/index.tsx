@@ -91,9 +91,15 @@ export function CondicoesFeature({
       confirmVariant: "destructive",
     });
     if (!result) return;
-    await condicoesApi.delete(item.id);
-    await invalidate();
-    ui.feedback.notify({ type: "success", title: "Condição excluída com sucesso." });
+    try {
+      await condicoesApi.delete(item.id);
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Condição excluída com sucesso." });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível excluir a condição de pagamento.",
+      });
+    }
   };
 
   return (

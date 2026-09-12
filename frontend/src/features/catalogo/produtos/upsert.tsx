@@ -11,7 +11,6 @@ import {
   FieldLabel,
   FieldError,
 } from "@/ui/primitives";
-import { Alert, AlertDescription } from "@/ui/primitives";
 import { FormFieldUI } from "@/ui/composites";
 import { Textarea } from "@/ui/primitives";
 import { useForm, useStore } from "@tanstack/react-form";
@@ -104,7 +103,7 @@ function ProdutosUpsertForm({
     queryFn: () => atributosApi.list(undefined, 1, 100),
   });
 
-  const { mutation, globalError, getFieldError, resetErrors } =
+  const { mutation, getFieldError, resetErrors } =
     useUpsertMutation({
       mutationFn: async (value: ProdutoFormValues) => {
         return editingItem
@@ -227,7 +226,11 @@ function ProdutosUpsertForm({
         const singleSku = { ...submissionValue.skus[0], atributoValorIds: [] };
         submissionValue.skus = [singleSku];
       }
-      await mutation.mutateAsync(submissionValue);
+      try {
+        await mutation.mutateAsync(submissionValue);
+      } catch {
+        // O hook central já apresenta o erro operacional em um toast.
+      }
     },
   });
 
@@ -352,7 +355,7 @@ function ProdutosUpsertForm({
     ]);
   }, []);
 
-  const removeOption = async (optionIndex: number) => {
+  const removeOption = (optionIndex: number) => {
     const updated = options.filter((_, index) => index !== optionIndex);
     handleUpdateOptions(updated);
   };
@@ -825,7 +828,7 @@ function ProdutosUpsertForm({
                             variant="ghost"
                             size="icon"
                             className="text-muted-foreground hover:text-destructive h-8 w-8"
-                            onClick={() => void removeOption(optIdx)}
+                            onClick={() => removeOption(optIdx)}
                             disabled={readOnly}
                           >
                             <Trash2 className="size-4" />
@@ -1104,11 +1107,6 @@ function ProdutosUpsertForm({
           )}
         </FieldGroup>
 
-        {globalError && (
-          <Alert variant="destructive">
-            <AlertDescription>{globalError}</AlertDescription>
-          </Alert>
-        )}
       </form>
 
     </div>
