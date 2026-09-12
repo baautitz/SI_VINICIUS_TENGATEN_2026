@@ -90,7 +90,7 @@ public class GlobalExceptionMiddleware
             {
                 context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
                 context.Response.ContentType = "application/json";
-                await context.Response.WriteAsync("{\"success\":false,\"errors\":[{\"code\":\"ERRO_CRITICO\",\"message\":\"Erro crítico interno.\"}]}");
+                await context.Response.WriteAsync("{\"success\":false,\"data\":null,\"errors\":[{\"code\":\"ERRO_CRITICO\",\"message\":\"Erro crítico interno.\",\"field\":null}]}");
             }
         }
     }

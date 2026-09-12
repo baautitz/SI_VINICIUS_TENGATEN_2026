@@ -69,7 +69,10 @@ public class ContasPagarController : ControllerBase
     public async Task<ActionResult<Resultado<ContasPagar>>> RegistrarPagamento(int id, int numeroParcela, [FromBody] RegistrarPagamentoParcelaCommand command)
     {
         if (command.NumeroParcela != numeroParcela)
-            return BadRequest("O número da parcela no path não corresponde ao número do corpo da requisição.");
+            return BadRequest(Resultado<ContasPagar>.Falha(new ResultadoErro(
+                "PARCELA_PATH_INVALIDA",
+                "O número da parcela no path não corresponde ao número do corpo da requisição.",
+                "NumeroParcela")));
 
         var result = await _service.RegistrarPagamento(id, command);
         if (!result.Success)
@@ -87,7 +90,10 @@ public class ContasPagarController : ControllerBase
     public async Task<ActionResult<Resultado<ContasPagar>>> EstornarPagamento(int id, int numeroParcela, [FromBody] EstornarPagamentoParcelaCommand command)
     {
         if (command.NumeroParcela != numeroParcela)
-            return BadRequest("O número da parcela no path não corresponde ao número do corpo da requisição.");
+            return BadRequest(Resultado<ContasPagar>.Falha(new ResultadoErro(
+                "PARCELA_PATH_INVALIDA",
+                "O número da parcela no path não corresponde ao número do corpo da requisição.",
+                "NumeroParcela")));
 
         var result = await _service.EstornarPagamento(id, command);
         if (!result.Success)

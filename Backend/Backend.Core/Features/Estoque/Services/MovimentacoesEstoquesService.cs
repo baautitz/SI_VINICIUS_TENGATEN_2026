@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Backend.Core.Common;
+using Backend.Core.Common.Exceptions;
 using Backend.Core.Common.Extensions;
 using Backend.Core.Common.Results;
 using Backend.Core.Common.Interfaces;
@@ -310,7 +311,7 @@ public sealed class MovimentacoesEstoquesService : BaseService
         if (existente == null) return false;
 
         if (existente.Status != StatusMovimentacaoEstoque.RASCUNHO)
-            throw new InvalidOperationException("Movimentações efetivadas não podem ser excluídas, apenas estornadas.");
+            throw new DomainException("Movimentações efetivadas não podem ser excluídas, apenas estornadas.");
 
         return await _movimentacoesRepository.DeletarMovimentacao(id);
     }

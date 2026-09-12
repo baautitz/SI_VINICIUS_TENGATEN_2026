@@ -11,6 +11,7 @@ public interface ISkusRepository
     public Task<Skus> CriarSku(int produtoId, Skus skuData);
     public Task<Skus> AtualizarSku(string sku, Skus skuData);
     public Task<bool> DeletarSku(string sku);
+    public Task<IReadOnlyCollection<string>> ObterSkusComMovimentacoesEstoque(IEnumerable<string> skus);
     public Task<ResultadoPaginado<Skus>> PesquisarSkus(string termo, int pagina = 1, int tamanhoDaPagina = 20);
     public Task<Skus?> ObterSkuCompleto(string sku);
     public Task<Produtos?> ObterProdutoPorSku(string sku);

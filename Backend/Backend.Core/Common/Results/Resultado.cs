@@ -5,6 +5,7 @@ public sealed record ResultadoErro(string Code, string Message, string? Field = 
 public sealed class Resultado
 {
     public bool Success { get; }
+    public object? Data => null;
     public IReadOnlyCollection<ResultadoErro>? Errors { get; }
 
     private Resultado(bool success, IReadOnlyCollection<ResultadoErro>? errors)

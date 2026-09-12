@@ -77,6 +77,20 @@ public class Program
 
         app.UseMiddleware<Web.Middlewares.GlobalExceptionMiddleware>();
 
+        app.UseStatusCodePages(async statusContext =>
+        {
+            var response = statusContext.HttpContext.Response;
+            if (response.StatusCode != StatusCodes.Status404NotFound)
+                return;
+
+            response.ContentType = "application/json";
+            var result = Common.Results.Resultado<object>.Falha(
+                new Common.Results.ResultadoErro(
+                    "RECURSO_NAO_ENCONTRADO",
+                    "O recurso solicitado não foi encontrado."));
+            await response.WriteAsJsonAsync(result);
+        });
+
         app.UseCors();
 
         app.UseOpenApi();

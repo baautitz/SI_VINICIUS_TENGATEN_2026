@@ -1,6 +1,7 @@
 using Backend.Core.Common.Extensions;
 using Backend.Core.Common.Results;
 using Backend.Core.Common;
+using Backend.Core.Common.Interfaces;
 using Backend.Core.Features.Catalogo.Commands;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Catalogo.Repositories;
@@ -17,8 +18,16 @@ public sealed class ProdutosService : BaseService
     private readonly IUnidadesMedidaRepository _unidadesMedidaRepository;
     private readonly ISkuAtributosChavesRepository _atributosRepository;
     private readonly ISkusRepository _skusRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public ProdutosService(IProdutosRepository produtosRepository, ICategoriasRepository categoriasRepository, IMarcasRepository marcasRepository, IUnidadesMedidaRepository unidadesMedidaRepository, ISkuAtributosChavesRepository atributosRepository, ISkusRepository skusRepository)
+    public ProdutosService(
+        IProdutosRepository produtosRepository,
+        ICategoriasRepository categoriasRepository,
+        IMarcasRepository marcasRepository,
+        IUnidadesMedidaRepository unidadesMedidaRepository,
+        ISkuAtributosChavesRepository atributosRepository,
+        ISkusRepository skusRepository,
+        IUnitOfWork unitOfWork)
     {
         _produtosRepository = produtosRepository;
         _categoriasRepository = categoriasRepository;
@@ -26,6 +35,7 @@ public sealed class ProdutosService : BaseService
         _unidadesMedidaRepository = unidadesMedidaRepository;
         _atributosRepository = atributosRepository;
         _skusRepository = skusRepository;
+        _unitOfWork = unitOfWork;
     }
 
     public Task<ResultadoPaginado<Produtos>> ObterProdutos(string? search, int pagina = 1, int tamanhoPagina = 20)
@@ -112,51 +122,78 @@ public sealed class ProdutosService : BaseService
         var unidadeMedida = await _unidadesMedidaRepository.ObterUnidadeMedidaPorId(command.UnidadeMedidaId);
         if (unidadeMedida == null) return Resultado<Produtos>.Falha(new ResultadoErro("UNIDADE_MEDIDA_INEXISTENTE", "Unidade de medida não encontrada.", "UnidadeMedidaId"));
 
-        existente.Atualizar(command.Produto, command.Descricao, categoria, marca, unidadeMedida);
-        if (command.Ativo) existente.Ativar(); else existente.Desativar();
-
         return await ExecuteResultAsync(async () =>
         {
-            var atualizado = await _produtosRepository.AtualizarProduto(id, existente);
-            
-            var skusAtuais = await _skusRepository.ObterSkusPorProduto(id);
-            var skusParaManter = command.Skus.Where(s => !string.IsNullOrWhiteSpace(s.Sku)).Select(s => s.Sku).ToList();
-            
-            foreach (var skuAtual in skusAtuais.Itens)
+            try
             {
-                if (!skusParaManter.Contains(skuAtual.Sku))
+                _unitOfWork.BeginTransaction();
+
+                var skusAtuais = await _skusRepository.ObterSkusPorProduto(id);
+                var skusParaManter = command.Skus
+                    .Where(s => !string.IsNullOrWhiteSpace(s.Sku))
+                    .Select(s => s.Sku!)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var skusParaExcluir = skusAtuais.Itens
+                    .Where(sku => !skusParaManter.Contains(sku.Sku))
+                    .Select(sku => sku.Sku)
+                    .ToArray();
+
+                var skusComMovimentacoes = await _skusRepository
+                    .ObterSkusComMovimentacoesEstoque(skusParaExcluir);
+
+                if (skusComMovimentacoes.Count > 0)
+                {
+                    _unitOfWork.Rollback();
+
+                    return Resultado<Produtos>.Falha(new ResultadoErro(
+                        "SKU_COM_MOVIMENTACAO_ESTOQUE",
+                        $"Não é possível remover os SKUs {string.Join(", ", skusComMovimentacoes)} porque possuem movimentações de estoque vinculadas. Cancele ou estorne essas movimentações antes de alterar as variações do produto."));
+                }
+
+                existente.Atualizar(command.Produto, command.Descricao, categoria, marca, unidadeMedida);
+                if (command.Ativo) existente.Ativar(); else existente.Desativar();
+
+                var atualizado = await _produtosRepository.AtualizarProduto(id, existente);
+
+                foreach (var skuAtual in skusAtuais.Itens.Where(sku => skusParaExcluir.Contains(sku.Sku)))
                 {
                     await _skusRepository.DeletarSku(skuAtual.Sku);
                 }
-            }
 
-            var skuIndex = skusAtuais.Itens.Count() + 1;
-            foreach (var skuCommand in command.Skus)
+                var skuIndex = skusAtuais.Itens.Count() + 1;
+                foreach (var skuCommand in command.Skus)
+                {
+                    var isNew = string.IsNullOrWhiteSpace(skuCommand.Sku);
+                    var skuCode = isNew ? $"{id}{skuIndex++}" : skuCommand.Sku!;
+
+                    var sku = new Skus(skuCode, skuCommand.Preco, 0, skuCommand.Ativo, skuCommand.GtinEan);
+                    if (skuCommand.AtributoValorIds != null && skuCommand.AtributoValorIds.Any())
+                    {
+                        var valoresAtributo = await _atributosRepository.ObterValoresPorIds(skuCommand.AtributoValorIds);
+                        foreach (var valor in valoresAtributo) sku.AdicionarAtributo(valor);
+                    }
+
+                    if (isNew || !skusAtuais.Itens.Any(s => s.Sku == skuCode))
+                    {
+                        await _skusRepository.CriarSku(id, sku);
+                    }
+                    else
+                    {
+                        var skuExistente = skusAtuais.Itens.First(s => s.Sku == skuCode);
+                        var skuParaUpdate = new Skus(skuCode, skuCommand.Preco, skuExistente.Estoque, skuCommand.Ativo, skuCommand.GtinEan, skuExistente.CustoMedio, skuExistente.CustoUltimaCompra);
+                        skuParaUpdate.DefinirAtributos(sku.Atributos);
+                        await _skusRepository.AtualizarSku(skuCode, skuParaUpdate);
+                    }
+                }
+
+                _unitOfWork.Commit();
+                return Resultado<Produtos>.Sucesso(atualizado);
+            }
+            catch
             {
-                var isNew = string.IsNullOrWhiteSpace(skuCommand.Sku);
-                var skuCode = isNew ? $"{id}{skuIndex++}" : skuCommand.Sku!;
-
-                var sku = new Skus(skuCode, skuCommand.Preco, 0, skuCommand.Ativo, skuCommand.GtinEan);
-                if (skuCommand.AtributoValorIds != null && skuCommand.AtributoValorIds.Any())
-                {
-                    var valoresAtributo = await _atributosRepository.ObterValoresPorIds(skuCommand.AtributoValorIds);
-                    foreach (var valor in valoresAtributo) sku.AdicionarAtributo(valor);
-                }
-
-                if (isNew || !skusAtuais.Itens.Any(s => s.Sku == skuCode))
-                {
-                    await _skusRepository.CriarSku(id, sku);
-                }
-                else
-                {
-                    var skuExistente = skusAtuais.Itens.First(s => s.Sku == skuCode);
-                    var skuParaUpdate = new Skus(skuCode, skuCommand.Preco, skuExistente.Estoque, skuCommand.Ativo, skuCommand.GtinEan, skuExistente.CustoMedio, skuExistente.CustoUltimaCompra);
-                    skuParaUpdate.DefinirAtributos(sku.Atributos);
-                    await _skusRepository.AtualizarSku(skuCode, skuParaUpdate);
-                }
+                _unitOfWork.Rollback();
+                throw;
             }
-
-            return Resultado<Produtos>.Sucesso(atualizado);
         });
     }
 

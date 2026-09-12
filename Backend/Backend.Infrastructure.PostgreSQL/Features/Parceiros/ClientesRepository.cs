@@ -1,6 +1,7 @@
 using System.Linq;
 using Backend.Core.Common.Results;
 using Backend.Core.Features.Localizacao.Entities;
+using Backend.Core.Common.Exceptions;
 using Backend.Core.Features.Parceiros.Entities;
 using Backend.Core.Features.Parceiros.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;
@@ -178,7 +179,7 @@ public class ClientesRepository : IClientesRepository
         );
 
         if (linhasAfetadas == 0)
-            throw new Exception($"Falha ao atualizar: O cliente com ID {id} não foi encontrado ou não houve mudanças.");
+            throw new DomainException($"Falha ao atualizar: O cliente com ID {id} não foi encontrado ou não houve mudanças.");
 
         cliente.Id = id;
         return cliente;

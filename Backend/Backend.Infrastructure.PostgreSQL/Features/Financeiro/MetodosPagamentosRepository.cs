@@ -1,4 +1,5 @@
 using Backend.Core.Common.Results;
+using Backend.Core.Common.Exceptions;
 using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Financeiro.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;
@@ -80,7 +81,7 @@ public class MetodosPagamentosRepository : IMetodosPagamentosRepository
             );
 
             if (linhasAfetadas == 0)
-                throw new Exception($"Falha ao atualizar: o método de pagamento com código '{codigo}' não foi encontrado.");
+                throw new DomainException($"Falha ao atualizar: o método de pagamento com código '{codigo}' não foi encontrado.");
 
             return metodo;
         }
@@ -150,4 +151,3 @@ public class MetodosPagamentosRepository : IMetodosPagamentosRepository
             .FirstOrDefault();
     }
 }
-

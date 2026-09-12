@@ -261,6 +261,29 @@ public class SkusRepository : ISkusRepository
         }
     }
 
+    public async Task<IReadOnlyCollection<string>> ObterSkusComMovimentacoesEstoque(IEnumerable<string> skus)
+    {
+        var skuCodes = skus
+            .Where(sku => !string.IsNullOrWhiteSpace(sku))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        if (skuCodes.Length == 0)
+            return Array.Empty<string>();
+
+        const string sql = @"
+            SELECT DISTINCT mei.sku
+            FROM movimentacoes_estoque_itens mei
+            WHERE mei.sku = ANY(@Skus);";
+
+        var result = await _session.Connection.QueryAsync<string>(
+            sql,
+            new { Skus = skuCodes },
+            transaction: _session.Transaction);
+
+        return result.ToArray();
+    }
+
     public async Task<ResultadoPaginado<Skus>> PesquisarSkus(string termo, int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
