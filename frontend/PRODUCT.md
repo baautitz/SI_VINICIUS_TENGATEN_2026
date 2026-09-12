@@ -26,6 +26,29 @@ Simular um sistema de gestão integrado (ERP) completo e acadêmico que demonstr
 3. **Clareza de Estado**: Fornecer feedback imediato e inequívoco sobre erros de validação, estados de carregamento e sucesso de operações.
 4. **Consistência de Fluxo**: Manter os mesmos padrões de navegação, tabelas e modais de inserção (Upsert) em todos os módulos do ERP (Vendas, Estoque, Financeiro, etc.).
 
+## Contrato de Feedback da Interação
+
+Todo resultado operacional tem uma apresentação previsível. Erros de API,
+domínio, rede e mutação produzem um único toast. O dialog ou sheet que iniciou
+a operação permanece aberto, preservando os dados preenchidos para que a
+pessoa possa entender o resultado e continuar com segurança. Falhas
+operacionais nunca são duplicadas como `Alert` dentro dessa superfície nem
+registradas com `console.error` ou `console.warn` durante o fluxo de uso.
+
+A validação de campo é diferente de propósito: campos obrigatórios, inválidos
+ou malformados são apresentados inline junto ao campo e marcados com
+`aria-invalid`. Assim a pessoa identifica exatamente o que precisa corrigir
+sem confundir validação com falha do sistema.
+
+Sucesso, informação, warnings, loading, confirmações e navegação seguem a
+matriz canônica em `docs/ui-feedback.md`. Uma operação pode produzir no máximo
+um toast. `Alert` persistente fica restrito a estados contextuais duradouros,
+não à resposta de uma requisição recém-executada.
+
+A fronteira backend/frontend usa um envelope estruturado com `success`, `data` e
+`errors`; cada erro possui `code` estável, `message` compreensível e `field`
+opcional. Isso torna o feedback consistente em todos os módulos do ERP.
+
 ## Accessibility & Inclusion
 - Contraste em conformidade com as diretrizes WCAG AA para garantir legibilidade sob diferentes condições de luz.
 - Suporte completo a navegação por teclado e compatibilidade com leitores de tela em componentes interativos (utilizando primitives Radix / Shadcn).

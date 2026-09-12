@@ -126,3 +126,17 @@ Os aliases `prod:up`, `prod:down` e `prod:<comando>` continuam disponíveis para
 - React
 - PostgreSQL
 - Docker / Docker Compose
+
+## Padrões de interface e feedback
+
+O frontend segue um contrato único para feedback operacional. Erros de API,
+domínio, rede ou mutações são apresentados uma única vez em toast; a superfície
+que iniciou a ação, inclusive um dialog, permanece aberta para que a pessoa
+possa corrigir ou revisar os dados. Validações de preenchimento continuam
+próximas ao respectivo campo, com `aria-invalid` e mensagem inline.
+
+Mensagens operacionais não devem ser renderizadas como `Alert` dentro de
+dialogs, nem registradas com `console.error` ou `console.warn` em fluxos de
+uso. A API responde com envelope estruturado, consumido pelo frontend sem
+lançar objetos literais. A matriz completa de estados, feedback e navegação
+está em [frontend/docs/ui-feedback.md](frontend/docs/ui-feedback.md).

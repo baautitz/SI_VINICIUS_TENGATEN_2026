@@ -98,21 +98,42 @@ O Host não usa `modal={isTop}`, `showOverlay`, `hasBaseOverlay`, `opacity`,
 ## Fronteira de UI
 
 ```text
-src/ui/
-  imperative/       controller, provider, host, context e commands
-  primitives/       contrato visual público (adaptador shadcn/Radix)
-  composites/       DataTable, EntityInput, FeatureHeader etc.
-  adapters/          integrações futuras (Base UI, navegação, feedback)
+src/
+  imperative-ui/    implementação React: provider, host, context e commands
+  ui/
+    imperative/     API pública e reexports para a implementação e contratos
+    primitives/      contrato visual público (adaptador shadcn/Radix)
+    composites/      DataTable, EntityInput, FeatureHeader etc.
+    adapters/        integrações de feedback, navegação e futuras bases visuais
 ```
 
 As opções de janela são semânticas (`surface`, `size`, `chrome`, `side` e
 `closeOnOutside`); classes estruturais não atravessam a API. As features
-importam `@/ui/primitives`, `@/ui/composites` e `@/ui/imperative`. A implementação atual é reexportada de
-`components/ui`; essa pasta é o adaptador shadcn legado e não deve ser usada
-diretamente por novas features.
+importam `@/ui/primitives`, `@/ui/composites` e `@/ui/imperative`.
+`src/imperative-ui` contém a implementação; `src/ui/imperative` é o contrato
+público e a camada de reexportação. `components/ui` é a implementação visual
+shadcn/Radix legada, reexportada pelas superfícies públicas, e não deve ser
+importada diretamente por novas features.
 
 `scripts/check-imperative-ui-boundaries.mjs` verifica imports de Router,
 Sonner, hotkeys, Radix/Base UI e superfícies de janela fora dos adaptadores.
+
+## Feedback, falhas e navegação
+
+`ui.feedback.notify` e `ui.feedback.notifyError` são a única fachada para
+feedback operacional. Um erro de API, domínio, rede ou mutação gera exatamente
+um toast; não deve ser apresentado novamente como `Alert` dentro da janela que o originou. A janela permanece
+aberta após a falha e sua Promise/handler precisa consumir a rejeição, sem
+`unhandledRejection`, `console.error` ou `console.warn` no fluxo do usuário.
+
+Erros de validação de campo permanecem declarativos e inline, com
+`aria-invalid`; eles não substituem nem duplicam o feedback operacional. A
+matriz completa de sucesso, informação, warning, loading, confirmação e
+navegação está em [ui-feedback.md](ui-feedback.md).
+
+Para navegação que participa do ciclo de vida de janelas, usar
+`ui.navigation`. Um `next/link` é adequado apenas para navegação declarativa
+sem necessidade de coordenar descarte, foco ou limpeza de superfícies.
 
 ## Foco e comandos
 

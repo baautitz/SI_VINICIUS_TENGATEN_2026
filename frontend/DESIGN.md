@@ -139,8 +139,17 @@ Os componentes são compactos, uniformes e desenhados para responder de forma im
 - **Focus:** Contorno azul com anel suave (`focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50`).
 - **Error:** Borda vermelha (`aria-invalid:border-destructive`) e anel avermelhado (`aria-invalid:ring-destructive/20`).
 
+### Feedback and transient states
+- **Field validation:** Erros de preenchimento pertencem ao campo: usar `aria-invalid`, mensagem inline e foco no primeiro campo inválido quando a ação de envio for bloqueada.
+- **Operational failure:** Falhas de API, domínio, rede e mutação são transientes e aparecem uma única vez em toast. Não usar `Alert` dentro de um dialog para repetir a mesma mensagem; o dialog permanece aberto.
+- **Persistent state:** `Alert` é reservado a informação que continua válida enquanto a pessoa observa a tela, como uma venda já cancelada ou uma restrição contextual. Não é um canal para resposta de uma operação recém-executada.
+- **Loading:** Preservar o contexto da superfície. Em tabela, usar o estado de carregamento da tabela; em formulário ou ação local, desabilitar apenas a ação afetada e usar o indicador compacto correspondente. Não trocar toda a tela por um spinner para uma mutação local.
+- **Toast:** Sucesso, informação, warning e erro usam o mesmo sistema de feedback. Um único resultado de operação gera no máximo um toast.
+- **Confirmation:** Ações destrutivas, irreversíveis ou de descarte usam confirmação antes da mutação, nunca uma mensagem de erro posterior como substituto de confirmação.
+
 ### Navigation
 - **Sidebar**: Fundo quase branco (`bg-sidebar`), texto escuro, itens ativos destacados em azul suave (`bg-sidebar-accent`).
+- **Behavior:** Navegação de fluxo que possa precisar encerrar superfícies usa `ui.navigation`; links sem ciclo de vida adicional podem usar `next/link`. A escolha deve preservar foco, descarte e estado de janela previstos pelo fluxo.
 
 ## 6. Do's and Don'ts
 
@@ -149,6 +158,9 @@ Os componentes são compactos, uniformes e desenhados para responder de forma im
 - **Do** Manter a altura de botões e inputs padrão em `h-8` para consistência e alta densidade.
 - **Do** Garantir que todo campo de input com erro de validação utilize `aria-invalid` para estilos corretos e acessibilidade.
 - **Do** Utilizar fontes mono-espaçadas (`font-mono`) estritamente para códigos técnicos, SKUs e siglas de unidades de medida.
+- **Do** Usar `h-8` como altura padrão de controles compactos; exceções precisam ser semânticas e documentadas, não ajustes visuais locais.
+- **Do** Manter mensagens de validação junto ao campo e feedback operacional no toast.
+- **Do** Usar sombra somente em superfícies temporárias sobrepostas, como menu, popover, tooltip e modal.
 
 ### Don't:
 - **Don't** Usar cantos extremamente arredondados (`rounded-3xl` / `32px+`) em cartões ou botões normais.
@@ -156,3 +168,5 @@ Os componentes são compactos, uniformes e desenhados para responder de forma im
 - **Don't** Utilizar degradês ou sombras gigantes com desfocagem maior que 16px para fins decorativos.
 - **Don't** Usar texto em gradiente (`background-clip: text`) em títulos ou elementos da interface.
 - **Don't** Usar fontes mono-espaçadas para identificadores simples de tabelas ou números sequenciais comuns (ex: `#1`, `#2`).
+- **Don't** Exibir a resposta de erro de API dentro de um dialog como `Alert` ou duplicá-la em mais de um toast.
+- **Don't** Aplicar `shadow-*` em cards, sidebar ou outras superfícies estáticas.
