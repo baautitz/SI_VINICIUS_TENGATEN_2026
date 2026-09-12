@@ -68,7 +68,8 @@ export function ContasPagarFeature() {
       }
     } catch (error) {
       ui.feedback.notifyError(error, {
-        fallbackTitle: "Não foi possível carregar os detalhes da conta a pagar.",
+        fallbackTitle:
+          "Não foi possível carregar os detalhes da conta a pagar.",
       });
     }
   };
@@ -84,7 +85,10 @@ export function ContasPagarFeature() {
     try {
       await contasPagarApi.delete(item.id);
       await invalidate();
-      ui.feedback.notify({ type: "success", title: "Conta excluída com sucesso." });
+      ui.feedback.notify({
+        type: "success",
+        title: "Conta excluída com sucesso.",
+      });
     } catch (error) {
       ui.feedback.notifyError(error, {
         fallbackTitle: "Não foi possível excluir a conta a pagar.",
@@ -111,6 +115,9 @@ export function ContasPagarFeature() {
         isEstorno,
       },
       title: isEstorno ? "Estornar Pagamento" : "Registrar Pagamento",
+      description: isEstorno
+        ? `Informe o valor a estornar para a parcela #${parcela.numeroParcela} da conta #${contaId}.`
+        : `Informe o valor pago para a parcela #${parcela.numeroParcela} da conta #${contaId}.`,
       size: "small",
     });
     if (result.status === "confirmed") await invalidate();

@@ -71,7 +71,8 @@ export function ContasReceberFeature() {
       }
     } catch (error) {
       ui.feedback.notifyError(error, {
-        fallbackTitle: "Não foi possível carregar os detalhes da conta a receber.",
+        fallbackTitle:
+          "Não foi possível carregar os detalhes da conta a receber.",
       });
     }
   };
@@ -87,7 +88,10 @@ export function ContasReceberFeature() {
     try {
       await contasReceberApi.delete(item.id);
       await invalidate();
-      ui.feedback.notify({ type: "success", title: "Conta excluída com sucesso." });
+      ui.feedback.notify({
+        type: "success",
+        title: "Conta excluída com sucesso.",
+      });
     } catch (error) {
       ui.feedback.notifyError(error, {
         fallbackTitle: "Não foi possível excluir a conta a receber.",
@@ -114,6 +118,9 @@ export function ContasReceberFeature() {
         isEstorno,
       },
       title: isEstorno ? "Estornar Recebimento" : "Registrar Recebimento",
+      description: isEstorno
+        ? `Informe o valor a estornar para a parcela #${parcela.numeroParcela} da conta #${contaId}.`
+        : `Informe o valor pago para a parcela #${parcela.numeroParcela} da conta #${contaId}.`,
       size: "small",
     });
     if (result.status === "confirmed") await invalidate();

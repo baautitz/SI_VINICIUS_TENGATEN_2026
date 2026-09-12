@@ -10,11 +10,7 @@ import { SkusFeature } from "@/features/catalogo/skus";
 import { Sku } from "@/features/catalogo/skus/types";
 import { NumberInput } from "@/ui/composites";
 import { Kbd, KbdGroup } from "@/ui/primitives";
-import {
-  useWindow,
-  useWindowCommands,
-  useUi,
-} from "@/ui/imperative";
+import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
 
 interface SkuInputProps {
   name: string;
@@ -138,7 +134,7 @@ function QuantityWindow({ sku, initialQuantity }: QuantityWindowProps) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <div className="py-2">
         <FieldLabel htmlFor="qty-input">Quantidade a adicionar</FieldLabel>
         <NumberInput
@@ -151,7 +147,7 @@ function QuantityWindow({ sku, initialQuantity }: QuantityWindowProps) {
           onKeyDown={handleQuantityKeyDown}
         />
       </div>
-      <div className="flex justify-end gap-2">
+      <div data-window-actions className="flex justify-end gap-2">
         <Button variant="outline" type="button" onClick={cancel}>
           Cancelar <Kbd>Esc</Kbd>
         </Button>
@@ -452,18 +448,21 @@ export const SkuInput = ({
     await handleSearchClick();
   };
 
-  useWindowCommands([
+  useWindowCommands(
+    [
+      {
+        id: `sku-input.${name}.open-selector`,
+        hotkey: "Alt+K",
+        label: "Abrir seleção de SKU",
+        enabled: !disabled,
+        run: handleSearchHotkey,
+      },
+    ],
     {
-      id: `sku-input.${name}.open-selector`,
-      hotkey: "Alt+K",
-      label: "Abrir seleção de SKU",
-      enabled: !disabled,
-      run: handleSearchHotkey,
+      scope: `sku-input.${name}`,
+      target: internalRef,
     },
-  ], {
-    scope: `sku-input.${name}`,
-    target: internalRef,
-  });
+  );
 
   return (
     <Field data-invalid={!!error}>
@@ -496,7 +495,7 @@ export const SkuInput = ({
           type="button"
           disabled={disabled}
           tabIndex={-1}
-          className="absolute right-1 top-1 h-6 w-6 text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground absolute top-1 right-1 h-6 w-6"
           onMouseDown={(event) => event.preventDefault()}
           onClick={handleSearchClick}
         >

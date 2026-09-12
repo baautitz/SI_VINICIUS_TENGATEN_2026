@@ -62,10 +62,16 @@ export function VendasUpsertForm({
   });
 
   if (editingItem && isLoading) {
-    return <div className="flex min-h-48 items-center justify-center"><Spinner className="size-6" /></div>;
+    return (
+      <div className="flex min-h-48 items-center justify-center">
+        <Spinner className="size-6" />
+      </div>
+    );
   }
 
-  return <VendasFormBody editingItem={fullItem ?? editingItem} readOnly={readOnly} />;
+  return (
+    <VendasFormBody editingItem={fullItem ?? editingItem} readOnly={readOnly} />
+  );
 }
 
 interface VendasFormBodyProps {
@@ -96,7 +102,9 @@ function VendasCheckout({
   initialObservacao,
 }: VendasCheckoutProps) {
   const activeWindow = useWindow<VendasCheckoutResult>();
-  const [condicao, setCondicao] = useState<CondicaoPagamento | null>(initialCondicao);
+  const [condicao, setCondicao] = useState<CondicaoPagamento | null>(
+    initialCondicao,
+  );
   const [observacao, setObservacao] = useState(initialObservacao);
 
   const finish = useCallback(() => {
@@ -106,16 +114,18 @@ function VendasCheckout({
 
   useWindowCommands(
     useMemo(
-      () => [{
-        id: "vendas.checkout.confirm",
-        hotkey: "Alt+Enter" as const,
-        label: "Finalizar venda",
-        enabled: !!condicao,
-        run: (event: KeyboardEvent) => {
-          event.preventDefault();
-          finish();
+      () => [
+        {
+          id: "vendas.checkout.confirm",
+          hotkey: "Alt+Enter" as const,
+          label: "Finalizar venda",
+          enabled: !!condicao,
+          run: (event: KeyboardEvent) => {
+            event.preventDefault();
+            finish();
+          },
         },
-      }],
+      ],
       [condicao, finish],
     ),
   );
@@ -128,11 +138,25 @@ function VendasCheckout({
   return (
     <div className="flex flex-col gap-5 py-2">
       <div className="flex flex-col gap-2.5 rounded-lg border p-4">
-        <div className="flex items-center justify-between"><span className="text-muted-foreground font-medium">Itens no Carrinho:</span><span className="font-semibold">{totalItensCount}</span></div>
-        <div className="flex items-center justify-between"><span className="text-muted-foreground font-medium">Subtotal</span><span className="font-semibold">{formatCurrency(subtotalGross)}</span></div>
-        <div className="flex items-center justify-between text-red-500"><span className="font-medium">Descontos:</span><span className="font-bold">-{formatCurrency(totalDiscount)}</span></div>
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground font-medium">
+            Itens no Carrinho:
+          </span>
+          <span className="font-semibold">{totalItensCount}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground font-medium">Subtotal</span>
+          <span className="font-semibold">{formatCurrency(subtotalGross)}</span>
+        </div>
+        <div className="flex items-center justify-between text-red-500">
+          <span className="font-medium">Descontos:</span>
+          <span className="font-bold">-{formatCurrency(totalDiscount)}</span>
+        </div>
         <Separator />
-        <div className="flex items-center justify-between font-bold text-emerald-600"><span>Total:</span><span className="text-lg">{formatCurrency(totalNet)}</span></div>
+        <div className="flex items-center justify-between font-bold text-emerald-600">
+          <span>Total:</span>
+          <span className="text-lg">{formatCurrency(totalNet)}</span>
+        </div>
       </div>
       <div className="w-full">
         <CondicaoPagamentoInput
@@ -141,12 +165,16 @@ function VendasCheckout({
           initialItem={condicao}
           onSelectItem={setCondicao}
           onSelectId={() => {}}
-          error={!condicao ? "Selecione o método/condição de pagamento." : undefined}
+          error={
+            !condicao ? "Selecione o método/condição de pagamento." : undefined
+          }
         />
       </div>
       <div className="w-full">
         <Field>
-          <FieldLabel htmlFor="venda-checkout-observacao">Observação da Venda</FieldLabel>
+          <FieldLabel htmlFor="venda-checkout-observacao">
+            Observação da Venda
+          </FieldLabel>
           <Textarea
             id="venda-checkout-observacao"
             value={observacao}
@@ -156,16 +184,31 @@ function VendasCheckout({
           />
         </Field>
       </div>
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>Voltar <Kbd>Esc</Kbd></Button>
-        <Button type="button" onClick={finish} disabled={!condicao}>Concluir <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup></Button>
+      <div data-window-actions className="flex justify-end gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => activeWindow.dismiss("cancel")}
+        >
+          Voltar <Kbd>Esc</Kbd>
+        </Button>
+        <Button type="button" onClick={finish} disabled={!condicao}>
+          Concluir{" "}
+          <KbdGroup>
+            <Kbd>Alt</Kbd>
+            <Kbd>Enter</Kbd>
+          </KbdGroup>
+        </Button>
       </div>
     </div>
   );
 }
 
 function formatCurrency(value: number) {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value);
 }
 
 function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
@@ -203,11 +246,11 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     onSuccessCallback: () => activeWindow.resolve(true),
   });
 
-interface ParcelaPreview {
-  numeroParcela: number;
-  dataVencimento: string;
-  valorParcela: number;
-}
+  interface ParcelaPreview {
+    numeroParcela: number;
+    dataVencimento: string;
+    valorParcela: number;
+  }
 
   const [itens, setItens] = useState<VendaItem[]>(() => {
     if (!editingItem || !editingItem.itens) return [];
@@ -294,7 +337,10 @@ interface ParcelaPreview {
         return;
       }
       if (itens.length === 0) {
-        ui.feedback.notify({ type: "error", title: "A venda deve conter ao menos um item." });
+        ui.feedback.notify({
+          type: "error",
+          title: "A venda deve conter ao menos um item.",
+        });
         return;
       }
 
@@ -302,7 +348,10 @@ interface ParcelaPreview {
       itens.forEach((item) => {
         if (item.quantidade <= 0) {
           hasInvalidQty = true;
-          ui.feedback.notify({ type: "error", title: `Quantidade do SKU "${item.sku}" deve ser maior que zero.` });
+          ui.feedback.notify({
+            type: "error",
+            title: `Quantidade do SKU "${item.sku}" deve ser maior que zero.`,
+          });
         }
       });
       if (hasInvalidQty) return;
@@ -311,12 +360,18 @@ interface ParcelaPreview {
       itens.forEach((item) => {
         if (item.quantidade > item.estoqueAtual) {
           hasStockShortage = true;
-          ui.feedback.notify({ type: "error", title: `Estoque insuficiente para o SKU "${item.sku}".` });
+          ui.feedback.notify({
+            type: "error",
+            title: `Estoque insuficiente para o SKU "${item.sku}".`,
+          });
         }
       });
       if (hasStockShortage) return;
 
-      const checkout = await ui.windows.open<VendasCheckoutResult, VendasCheckoutProps>({
+      const checkout = await ui.windows.open<
+        VendasCheckoutResult,
+        VendasCheckoutProps
+      >({
         component: VendasCheckout,
         props: {
           totalItensCount,
@@ -329,7 +384,8 @@ interface ParcelaPreview {
         title: "Finalizar Venda",
         size: "medium",
       });
-      if (checkout.status === "confirmed") await handleFinalSubmit(checkout.value);
+      if (checkout.status === "confirmed")
+        await handleFinalSubmit(checkout.value);
     },
   });
 
@@ -377,26 +433,26 @@ interface ParcelaPreview {
   };
 
   const commands = [
-      {
-        id: "vendas.focus-sku",
-        hotkey: "Alt+K" as const,
-        label: "Adicionar SKU",
-        enabled: !readOnly,
-        run: (event: KeyboardEvent) => {
-          event.preventDefault();
-          skuInputRef.current?.focus();
-        },
+    {
+      id: "vendas.focus-sku",
+      hotkey: "Alt+K" as const,
+      label: "Adicionar SKU",
+      enabled: !readOnly,
+      run: (event: KeyboardEvent) => {
+        event.preventDefault();
+        skuInputRef.current?.focus();
       },
-      {
-        id: "vendas.submit",
-        hotkey: "Alt+Enter" as const,
-        label: "Avançar para finalização",
-        enabled: !readOnly && !mutation.isPending,
-        run: async (event: KeyboardEvent) => {
-          event.preventDefault();
-          await form.handleSubmit();
-        },
+    },
+    {
+      id: "vendas.submit",
+      hotkey: "Alt+Enter" as const,
+      label: "Avançar para finalização",
+      enabled: !readOnly && !mutation.isPending,
+      run: async (event: KeyboardEvent) => {
+        event.preventDefault();
+        await form.handleSubmit();
       },
+    },
   ];
   useWindowCommands(commands);
 
@@ -417,7 +473,10 @@ interface ParcelaPreview {
 
     if (existingIndex === -1) {
       if (qtdeAdicionada <= 0) {
-        ui.feedback.notify({ type: "error", title: "Produto não está no carrinho para ser decrementado." });
+        ui.feedback.notify({
+          type: "error",
+          title: "Produto não está no carrinho para ser decrementado.",
+        });
         return;
       }
 
@@ -425,7 +484,10 @@ interface ParcelaPreview {
       const gross = qtdeAdicionada * priceVal;
 
       if (qtdeAdicionada > skuRes.estoque) {
-        ui.feedback.notify({ type: "error", title: `Estoque insuficiente para o SKU "${skuRes.sku}". Disponível: ${skuRes.estoque.toFixed(skuRes.produto?.unidadeMedida?.permiteDecimais ? 4 : 0)}.` });
+        ui.feedback.notify({
+          type: "error",
+          title: `Estoque insuficiente para o SKU "${skuRes.sku}". Disponível: ${skuRes.estoque.toFixed(skuRes.produto?.unidadeMedida?.permiteDecimais ? 4 : 0)}.`,
+        });
         return;
       }
 
@@ -445,7 +507,10 @@ interface ParcelaPreview {
           estoqueAtual: Number(skuRes.estoque),
         },
       ]);
-      ui.feedback.notify({ type: "success", title: `SKU "${skuRes.sku}" adicionado com sucesso.` });
+      ui.feedback.notify({
+        type: "success",
+        title: `SKU "${skuRes.sku}" adicionado com sucesso.`,
+      });
     } else {
       const currentQty = itens[existingIndex].quantidade;
       const newQty = currentQty + qtdeAdicionada;
@@ -455,7 +520,10 @@ interface ParcelaPreview {
       }
 
       if (newQty > skuRes.estoque) {
-        ui.feedback.notify({ type: "error", title: `Estoque insuficiente para o SKU "${skuRes.sku}". Disponível: ${skuRes.estoque.toFixed(skuRes.produto?.unidadeMedida?.permiteDecimais ? 4 : 0)}.` });
+        ui.feedback.notify({
+          type: "error",
+          title: `Estoque insuficiente para o SKU "${skuRes.sku}". Disponível: ${skuRes.estoque.toFixed(skuRes.produto?.unidadeMedida?.permiteDecimais ? 4 : 0)}.`,
+        });
         return;
       }
 
@@ -468,7 +536,10 @@ interface ParcelaPreview {
       setItens(updated);
 
       const acao = qtdeAdicionada >= 0 ? "alterada" : "decrementada";
-      ui.feedback.notify({ type: "success", title: `Quantidade do SKU "${skuRes.sku}" ${acao} para ${newQty}.` });
+      ui.feedback.notify({
+        type: "success",
+        title: `Quantidade do SKU "${skuRes.sku}" ${acao} para ${newQty}.`,
+      });
     }
 
     setSkuInputKey((prev) => prev + 1);
@@ -487,7 +558,10 @@ interface ParcelaPreview {
     });
     if (!result) return;
     setItens(itens.filter((_, i) => i !== index));
-    ui.feedback.notify({ type: "info", title: `SKU "${itemToRemove.sku}" removido.` });
+    ui.feedback.notify({
+      type: "info",
+      title: `SKU "${itemToRemove.sku}" removido.`,
+    });
   };
 
   const updateItemRow = (
@@ -540,16 +614,31 @@ interface ParcelaPreview {
     let count = 1;
     const entradaPercent = payment.entradaMinimaPercentual ?? 0;
     if (entradaPercent > 0) {
-      result.push({ numeroParcela: count++, dataVencimento: baseDate.toISOString().split("T")[0], valorParcela: parseFloat((totalNet * (entradaPercent / 100)).toFixed(2)) });
+      result.push({
+        numeroParcela: count++,
+        dataVencimento: baseDate.toISOString().split("T")[0],
+        valorParcela: parseFloat(
+          (totalNet * (entradaPercent / 100)).toFixed(2),
+        ),
+      });
     }
     (payment.condicoesPagamentosParcelas || []).forEach((item) => {
       const venc = new Date(baseDate);
       venc.setDate(baseDate.getDate() + item.prazoDias);
-      result.push({ numeroParcela: count++, dataVencimento: venc.toISOString().split("T")[0], valorParcela: parseFloat((totalNet * (item.percentual / 100)).toFixed(2)) });
+      result.push({
+        numeroParcela: count++,
+        dataVencimento: venc.toISOString().split("T")[0],
+        valorParcela: parseFloat(
+          (totalNet * (item.percentual / 100)).toFixed(2),
+        ),
+      });
     });
     if (result.length) {
-      const difference = totalNet - result.reduce((sum, item) => sum + item.valorParcela, 0);
-      result[result.length - 1].valorParcela = parseFloat((result[result.length - 1].valorParcela + difference).toFixed(2));
+      const difference =
+        totalNet - result.reduce((sum, item) => sum + item.valorParcela, 0);
+      result[result.length - 1].valorParcela = parseFloat(
+        (result[result.length - 1].valorParcela + difference).toFixed(2),
+      );
     }
     return result;
   };
@@ -565,11 +654,20 @@ interface ParcelaPreview {
           Cancelar <Kbd>Esc</Kbd>
         </Button>
         {!readOnly && (
-          <Button type="submit" form="upsert-venda" disabled={mutation.isPending}>
-            {mutation.isPending ? "Salvando..." : (
+          <Button
+            type="submit"
+            form="upsert-venda"
+            disabled={mutation.isPending}
+          >
+            {mutation.isPending ? (
+              "Salvando..."
+            ) : (
               <span className="flex items-center gap-2">
                 Ir para Finalização
-                <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup>
+                <KbdGroup>
+                  <Kbd>Alt</Kbd>
+                  <Kbd>Enter</Kbd>
+                </KbdGroup>
               </span>
             )}
           </Button>

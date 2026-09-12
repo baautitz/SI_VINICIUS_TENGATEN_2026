@@ -135,113 +135,94 @@ export function BaixaParcelaWindow({
 
   useWindowCommands(commands);
 
-  const getTitle = () => {
-    if (isEstorno) {
-      return tipo === "PAGAR" ? "Estornar Pagamento" : "Estornar Recebimento";
-    }
-    return tipo === "PAGAR" ? "Registrar Pagamento" : "Registrar Recebimento";
-  };
-
-  const getDescription = () => {
-    if (isEstorno) {
-      return `Informe o valor a estornar para a parcela #${parcela?.numeroParcela} da conta #${contaId}.`;
-    }
-    return `Informe o valor pago para a parcela #${parcela?.numeroParcela} da conta #${contaId}.`;
-  };
-
   const getFieldLabel = () => {
     return isEstorno ? "Valor a Estornar (R$)" : "Valor a Baixar (R$)";
   };
 
   return (
     <>
-        <div className="space-y-1">
-          <h2 className="text-lg font-semibold">{getTitle()}</h2>
-          <p className="text-muted-foreground text-sm">{getDescription()}</p>
+      <div className="flex flex-col gap-4 py-4">
+        <div className="text-muted-foreground flex items-center justify-between border-b pb-2 text-sm">
+          <span>Valor Total da Parcela:</span>
+          <span className="text-foreground font-semibold">
+            {new Intl.NumberFormat("pt-BR", {
+              style: "currency",
+              currency: "BRL",
+            }).format(parcela?.valorParcela ?? 0)}
+          </span>
         </div>
 
-        <div className="flex flex-col gap-4 py-4">
+        <div className="text-muted-foreground flex items-center justify-between border-b pb-2 text-sm">
+          <span>Valor Já Quitado:</span>
+          <span className="text-foreground font-semibold">
+            {new Intl.NumberFormat("pt-BR", {
+              style: "currency",
+              currency: "BRL",
+            }).format(parcela?.valorPagoOuRecebido ?? 0)}
+          </span>
+        </div>
+
+        {!isEstorno && (
           <div className="text-muted-foreground flex items-center justify-between border-b pb-2 text-sm">
-            <span>Valor Total da Parcela:</span>
+            <span>Saldo Devedor Restante:</span>
             <span className="text-foreground font-semibold">
               {new Intl.NumberFormat("pt-BR", {
                 style: "currency",
                 currency: "BRL",
-              }).format(parcela?.valorParcela ?? 0)}
+              }).format(saldoRestante)}
             </span>
           </div>
+        )}
 
-          <div className="text-muted-foreground flex items-center justify-between border-b pb-2 text-sm">
-            <span>Valor Já Quitado:</span>
-            <span className="text-foreground font-semibold">
-              {new Intl.NumberFormat("pt-BR", {
-                style: "currency",
-                currency: "BRL",
-              }).format(parcela?.valorPagoOuRecebido ?? 0)}
-            </span>
+        <Field data-invalid={!!error}>
+          <div className="flex items-center justify-between">
+            <FieldLabel className="text-right font-semibold">
+              {getFieldLabel()}
+            </FieldLabel>
+            <NumberInput
+              inputSize="full"
+              value={valorBaixa}
+              decimals={2}
+              inputMode="decimal"
+              onNumberChange={(num) => setValorBaixa(num)}
+              className="h-8 w-48 text-right font-semibold"
+              aria-invalid={!!error}
+              disabled={mutation.isPending}
+            />
           </div>
-
-          {!isEstorno && (
-            <div className="text-muted-foreground flex items-center justify-between border-b pb-2 text-sm">
-              <span>Saldo Devedor Restante:</span>
-              <span className="text-foreground font-semibold">
-                {new Intl.NumberFormat("pt-BR", {
-                  style: "currency",
-                  currency: "BRL",
-                }).format(saldoRestante)}
-              </span>
-            </div>
+          {error && (
+            <FieldError className="mt-1 block text-right">{error}</FieldError>
           )}
+        </Field>
+      </div>
 
-          <Field data-invalid={!!error}>
-            <div className="flex items-center justify-between">
-              <FieldLabel className="text-right font-semibold">
-                {getFieldLabel()}
-              </FieldLabel>
-              <NumberInput
-                inputSize="full"
-                value={valorBaixa}
-                decimals={2}
-                inputMode="decimal"
-                onNumberChange={(num) => setValorBaixa(num)}
-                className="h-8 w-48 text-right font-semibold"
-                aria-invalid={!!error}
-                disabled={mutation.isPending}
-              />
-            </div>
-            {error && (
-              <FieldError className="mt-1 block text-right">{error}</FieldError>
-            )}
-          </Field>
-        </div>
-
-        <div className="flex justify-end gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={mutation.isPending}
-            onClick={() => activeWindow.dismiss("cancel")}
-          >
-            Cancelar <Kbd>Esc</Kbd>
-          </Button>
-          <Button
-            type="button"
-            disabled={mutation.isPending}
-            onClick={() => void handleConfirm()}
-          >
-            {mutation.isPending ? (
-              "Processando..."
-            ) : (
-              <span className="flex items-center gap-2">
-                Confirmar
-                <KbdGroup>
-                  <Kbd>Alt</Kbd>
-                  <Kbd>Enter</Kbd>
-                </KbdGroup>
-              </span>
-            )}
-          </Button>
-        </div>
+      <div data-window-actions className="flex justify-end gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          disabled={mutation.isPending}
+          onClick={() => activeWindow.dismiss("cancel")}
+        >
+          Cancelar <Kbd>Esc</Kbd>
+        </Button>
+        <Button
+          type="button"
+          disabled={mutation.isPending}
+          onClick={() => void handleConfirm()}
+        >
+          {mutation.isPending ? (
+            "Processando..."
+          ) : (
+            <span className="flex items-center gap-2">
+              Confirmar
+              <KbdGroup>
+                <Kbd>Alt</Kbd>
+                <Kbd>Enter</Kbd>
+              </KbdGroup>
+            </span>
+          )}
+        </Button>
+      </div>
     </>
   );
 }

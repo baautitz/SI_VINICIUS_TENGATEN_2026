@@ -48,7 +48,11 @@ export function VendasFeature() {
     const result = await ui.windows.open<true, VendasUpsertProps>({
       component: VendasUpsertForm,
       props: { editingItem: item, readOnly },
-      title: readOnly ? "Detalhes da Venda" : item ? "Editar Venda" : "Nova venda",
+      title: readOnly
+        ? "Detalhes da Venda"
+        : item
+          ? "Editar Venda"
+          : "Nova venda",
       size: "large",
     });
 
@@ -56,7 +60,9 @@ export function VendasFeature() {
       await invalidate();
       ui.feedback.notify({
         type: "success",
-        title: item ? "Venda atualizada com sucesso." : "Venda registrada com sucesso.",
+        title: item
+          ? "Venda atualizada com sucesso."
+          : "Venda registrada com sucesso.",
       });
     }
   };
@@ -73,7 +79,10 @@ export function VendasFeature() {
     try {
       await vendasApi.cancel(item.id, result.value);
       await invalidate();
-      ui.feedback.notify({ type: "success", title: "Venda cancelada com sucesso." });
+      ui.feedback.notify({
+        type: "success",
+        title: "Venda cancelada com sucesso.",
+      });
     } catch (error) {
       ui.feedback.notifyError(error, {
         fallbackTitle: "Não foi possível cancelar a venda.",
@@ -150,13 +159,16 @@ function VendasCancelWindow({ venda }: VendasCancelWindowProps) {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-destructive text-xs font-semibold">
-        Esta ação reverterá as movimentações de estoque físicas dos itens e excluirá a conta a receber gerada.
+        Esta ação reverterá as movimentações de estoque físicas dos itens e
+        excluirá a conta a receber gerada.
       </p>
       <p className="text-sm">
         Tem certeza que deseja cancelar a venda <strong>#{venda.id}</strong>?
       </p>
       <Field data-invalid={!!error}>
-        <FieldLabel htmlFor="motivo-cancelamento">Motivo do Cancelamento</FieldLabel>
+        <FieldLabel htmlFor="motivo-cancelamento">
+          Motivo do Cancelamento
+        </FieldLabel>
         <Textarea
           id="motivo-cancelamento"
           value={motivo}
@@ -170,8 +182,12 @@ function VendasCancelWindow({ venda }: VendasCancelWindowProps) {
         />
         {error && <FieldError>{error}</FieldError>}
       </Field>
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>
+      <div data-window-actions className="flex justify-end gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => activeWindow.dismiss("cancel")}
+        >
           Cancelar
         </Button>
         <Button type="button" variant="destructive" onClick={confirm}>

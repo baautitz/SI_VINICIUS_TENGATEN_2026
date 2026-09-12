@@ -107,45 +107,41 @@ export function MovimentacoesUpsertForm({
     return () => cancelAnimationFrame(frame);
   }, [skuInputKey]);
 
-  const {
-    mutation,
-    getFieldError,
-    resetErrors,
-    backendFieldErrors,
-  } = useUpsertMutation<
-    { values: MovimentacaoEstoqueFormValues; efetivar: boolean },
-    Resultado<MovimentacaoEstoque>
-  >({
-    mutationFn: async ({ values, efetivar }) => {
-      const existingId = editingItem?.id ?? createdIdRef.current;
+  const { mutation, getFieldError, resetErrors, backendFieldErrors } =
+    useUpsertMutation<
+      { values: MovimentacaoEstoqueFormValues; efetivar: boolean },
+      Resultado<MovimentacaoEstoque>
+    >({
+      mutationFn: async ({ values, efetivar }) => {
+        const existingId = editingItem?.id ?? createdIdRef.current;
 
-      const saveRes = existingId
-        ? await estoqueApi.update(existingId, values)
-        : await estoqueApi.create(values);
+        const saveRes = existingId
+          ? await estoqueApi.update(existingId, values)
+          : await estoqueApi.create(values);
 
-      if (!saveRes.success || !saveRes.data) {
+        if (!saveRes.success || !saveRes.data) {
+          return saveRes;
+        }
+
+        if (!editingItem) {
+          createdIdRef.current = saveRes.data.id;
+        }
+
+        if (efetivar) {
+          const confirmRes = await estoqueApi.confirmar(saveRes.data.id);
+          return confirmRes;
+        }
+
         return saveRes;
-      }
-
-      if (!editingItem) {
-        createdIdRef.current = saveRes.data.id;
-      }
-
-      if (efetivar) {
-        const confirmRes = await estoqueApi.confirmar(saveRes.data.id);
-        return confirmRes;
-      }
-
-      return saveRes;
-    },
-    queryKey: ["movimentacoes"],
-    onSuccessCallback: () => {
-      queryClient.invalidateQueries({ queryKey: ["skus"] });
-      queryClient.invalidateQueries({ queryKey: ["produtos"] });
-      createdIdRef.current = null;
-      activeWindow.resolve(true);
-    },
-  });
+      },
+      queryKey: ["movimentacoes"],
+      onSuccessCallback: () => {
+        queryClient.invalidateQueries({ queryKey: ["skus"] });
+        queryClient.invalidateQueries({ queryKey: ["produtos"] });
+        createdIdRef.current = null;
+        activeWindow.resolve(true);
+      },
+    });
 
   const form = useForm({
     defaultValues: {
@@ -278,7 +274,6 @@ export function MovimentacoesUpsertForm({
     return sum + itemTotal;
   }, 0);
 
-
   const removeItemRow = async (index: number) => {
     const itemToRemove = itens[index];
     if (!itemToRemove) return;
@@ -289,8 +284,13 @@ export function MovimentacoesUpsertForm({
       confirmVariant: "destructive",
     });
     if (!result) return;
-    setItens((current) => current.filter((_, itemIndex) => itemIndex !== index));
-    ui.feedback.notify({ type: "info", title: `SKU "${itemToRemove.sku}" removido.` });
+    setItens((current) =>
+      current.filter((_, itemIndex) => itemIndex !== index),
+    );
+    ui.feedback.notify({
+      type: "info",
+      title: `SKU "${itemToRemove.sku}" removido.`,
+    });
   };
 
   const handleSkuAdded = (skuRes: Sku | null, qtdeAdicionada: number = 1) => {
@@ -328,7 +328,8 @@ export function MovimentacoesUpsertForm({
       if (qtdeAdicionada <= 0) {
         ui.feedback.notify({
           type: "warning",
-          title: "Não é possível adicionar um item com quantidade inicial zero ou negativa.",
+          title:
+            "Não é possível adicionar um item com quantidade inicial zero ou negativa.",
         });
         return;
       }
@@ -402,10 +403,26 @@ export function MovimentacoesUpsertForm({
           </span>
         </Button>
         {!readOnly && (
-          <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+          <form.Subscribe
+            selector={(state) => [state.canSubmit, state.isSubmitting]}
+          >
             {([canSubmit, isSubmitting]) => (
-              <Button type="submit" form="upsert-movimentacao" disabled={!canSubmit || isSubmitting || mutation.isPending}>
-                {isSubmitting || mutation.isPending ? "Salvando..." : <span className="flex items-center gap-2">Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup></span>}
+              <Button
+                type="submit"
+                form="upsert-movimentacao"
+                disabled={!canSubmit || isSubmitting || mutation.isPending}
+              >
+                {isSubmitting || mutation.isPending ? (
+                  "Salvando..."
+                ) : (
+                  <span className="flex items-center gap-2">
+                    Salvar{" "}
+                    <KbdGroup>
+                      <Kbd>Alt</Kbd>
+                      <Kbd>Enter</Kbd>
+                    </KbdGroup>
+                  </span>
+                )}
               </Button>
             )}
           </form.Subscribe>
@@ -667,11 +684,17 @@ export function MovimentacoesUpsertForm({
                                 <TableCell className="px-4 py-2.5 text-right align-middle">
                                   <div className="flex items-baseline justify-end gap-1">
                                     <span className="text-muted-foreground text-sm">
-                                      {item.estoqueAtual?.toLocaleString("pt-BR", {
-                                        minimumFractionDigits: item.permiteDecimais ? 4 : 0,
-                                      }) ?? "-"}
+                                      {item.estoqueAtual?.toLocaleString(
+                                        "pt-BR",
+                                        {
+                                          minimumFractionDigits:
+                                            item.permiteDecimais ? 4 : 0,
+                                        },
+                                      ) ?? "-"}
                                     </span>
-                                    <span className="text-muted-foreground/60 text-xs">→</span>
+                                    <span className="text-muted-foreground/60 text-xs">
+                                      →
+                                    </span>
                                     <span
                                       className={cn(
                                         "text-sm font-bold",
@@ -722,8 +745,6 @@ export function MovimentacoesUpsertForm({
                                     )}
                                   </div>
                                 </TableCell>
-
-
 
                                 {comCusto && (
                                   <TableCell className="w-48 px-4 py-2.5 text-right align-middle">
@@ -822,7 +843,6 @@ export function MovimentacoesUpsertForm({
               );
             }}
           </form.Subscribe>
-
         </form>
       </div>
     </div>
@@ -860,23 +880,26 @@ function SaveConfirmationWindow() {
   useWindowCommands(commands);
 
   return (
-    <AlertDialogFooter className="flex-row flex-wrap items-center justify-end gap-2">
-      <Button
-        type="button"
-        variant="outline"
-        onClick={handleCancel}
-      >
+    <AlertDialogFooter
+      data-window-actions
+      className="flex-row flex-wrap items-center justify-end gap-2"
+    >
+      <Button type="button" variant="outline" onClick={handleCancel}>
         Cancelar <Kbd>Esc</Kbd>
       </Button>
-      <Button
-        type="button"
-        variant="secondary"
-        onClick={handleDraft}
-      >
-        Salvar Rascunho <KbdGroup><Kbd>Alt</Kbd><Kbd>S</Kbd></KbdGroup>
+      <Button type="button" variant="secondary" onClick={handleDraft}>
+        Salvar Rascunho{" "}
+        <KbdGroup>
+          <Kbd>Alt</Kbd>
+          <Kbd>S</Kbd>
+        </KbdGroup>
       </Button>
       <Button type="button" onClick={handleEffect}>
-        Efetivar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup>
+        Efetivar{" "}
+        <KbdGroup>
+          <Kbd>Alt</Kbd>
+          <Kbd>Enter</Kbd>
+        </KbdGroup>
       </Button>
     </AlertDialogFooter>
   );
