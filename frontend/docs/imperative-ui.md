@@ -9,36 +9,40 @@ Popover, filtros, menus e campos continua declarativo.
 O produto usa uma única fachada:
 
 ```tsx
-const ui = useUi()
+const ui = useUi();
 
-const result = await ui.windows.open(ClienteForm, { editingItem: cliente }, {
-  title: "Editar cliente",
-  icon: <Users />,
-  surface: "dialog",
-  size: "large",
-})
+const result = await ui.windows.open(
+  ClienteForm,
+  { editingItem: cliente },
+  {
+    title: "Editar cliente",
+    icon: <Users />,
+    surface: "dialog",
+    size: "large",
+  },
+);
 
 if (result.status === "confirmed") {
-  await invalidate()
-  ui.feedback.notify({ type: "success", title: "Cliente atualizado" })
+  await invalidate();
+  ui.feedback.notify({ type: "success", title: "Cliente atualizado" });
 }
 
 const confirmed = await ui.windows.confirm({
   title: "Excluir cliente?",
   description: "Esta ação não poderá ser desfeita.",
   confirmVariant: "destructive",
-})
-if (confirmed) await invalidate()
+});
+if (confirmed) await invalidate();
 ```
 
 Dentro da superfície, `useWindow()` expõe somente o ciclo de vida daquela
 janela:
 
 ```tsx
-const window = useWindow<Cliente>()
-window.resolve(cliente)
-window.dismiss()
-window.setDirty(isDirty)
+const window = useWindow<Cliente>();
+window.resolve(cliente);
+window.dismiss();
+window.setDirty(isDirty);
 ```
 
 `useWindowManager` e `useActiveWindow` continuam apenas como aliases de
@@ -52,8 +56,8 @@ Ela não importa React, DOM, Radix, shadcn, Next ou Sonner. As portas são:
 
 ```ts
 interface WindowPorts {
-  confirmDiscard(request: DiscardRequest): Promise<boolean>
-  restoreFocus(target: FocusTarget | null): void
+  confirmDiscard(request: DiscardRequest): Promise<boolean>;
+  restoreFocus(target: FocusTarget | null): void;
 }
 ```
 
@@ -70,6 +74,39 @@ a identidade visual.
 `ui.windows.confirm` é uma superfície de confirmação independente da janela
 de formulário. Ela usa `AlertDialog` compacto, com título, descrição e ações
 no footer; não herda largura, chrome ou layout do formulário que a abriu.
+
+### Contrato estrutural das janelas
+
+Toda janela de produto segue a mesma composição visual:
+
+```text
+Dialog/Sheet/AlertDialogContent
+├── Header / titlebar fixo
+├── Body com rolagem independente
+└── Footer / ações fixo ou sticky no limite inferior do body
+```
+
+`DialogContent`, `SheetContent` e `AlertDialogContent` não rolam mais. Eles
+possuem `overflow-hidden` e os componentes `DialogBody`, `SheetBody` e
+`AlertDialogBody` são os únicos donos de `overflow-y-auto`. O cabeçalho não
+deve ser repetido dentro do formulário. Ações de uma janela devem usar
+`data-window-actions`; assim o adaptador mantém o rodapé no final e visível
+durante a rolagem, inclusive em formulários longos.
+
+Novos componentes abertos por `ui.windows.open` devem seguir este contrato:
+
+```tsx
+return (
+  <div className="flex flex-col gap-4">
+    <div data-window-actions>{/* cancelar / salvar */}</div>
+    {/* conteúdo do formulário */}
+  </div>
+);
+```
+
+O `WindowManagerHost` é responsável por inserir o título fixo e o body
+rolável. Features não devem importar diretamente as implementações de
+`components/ui` nem criar outro modal.
 
 ### Invariantes
 
@@ -160,6 +197,7 @@ npm run lint
 npm run build
 npm run test:imperative-ui
 npm run imperative-ui:check-boundaries
+npm run check:dialog-layout
 ```
 
 O teste de contrato cobre invariantes do controller, overlays independentes,

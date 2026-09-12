@@ -68,6 +68,7 @@ Este sistema de design foi projetado para interfaces operacionais de alta densid
 O design afasta-se de decorações supérfluas e clichês SaaS (como cantos excessivamente arredondados, sombras gigantescas e fundos coloridos barulhentos), focando no alinhamento rigoroso, tipografia estruturada e contrastes limpos. A interface é concebida como uma ferramenta de trabalho confiável, estável e rápida para operadores de sistema.
 
 **Key Characteristics:**
+
 - **Densidade Otimizada**: Spacing compacto e elementos de controle de tamanho uniforme (`h-8`) para permitir a visualização de múltiplos registros simultaneamente sem poluição visual.
 - **Teclado como Cidadão de Primeira Classe**: Layouts e comportamentos focados em navegação por atalhos e preenchimento ágil.
 - **Contraste de Confiança**: Cores funcionais nítidas e ausência de cinzas lavados para evitar fadiga ocular após uso prolongado.
@@ -77,15 +78,18 @@ O design afasta-se de decorações supérfluas e clichês SaaS (como cantos exce
 O esquema de cores utiliza OKLCH como fonte de verdade no código para transições suaves de tema, com representação hex sRGB na especificação técnica. O contraste é mantido rigorosamente acima de 4.5:1 para garantir legibilidade sob qualquer iluminação ambiente.
 
 ### Primary
+
 - **Active Blue** (`#2575c0` / `oklch(0.52 0.105 223.128)`): Usado estritamente para ações principais, destaques de foco ativo e links prioritários.
 
 ### Neutral
+
 - **Deep Ink** (`#212124` / `oklch(0.141 0.005 285.823)`): Texto de corpo principal e elementos estruturais de alta prioridade.
 - **Muted Slate** (`#82818a` / `oklch(0.552 0.016 285.938)`): Rótulos secundários, placeholders e textos auxiliares de menor hierarquia.
 - **Clean Border** (`#e5e6e7` / `oklch(0.92 0.004 286.32)`): Linhas delimitadoras e bordas de inputs.
 - **Solid White** (`#ffffff` / `oklch(1 0 0)`): Fundo de cartões, popovers e área de trabalho geral.
 
 ### Named Rules
+
 **A Regra da Sobriedade do Azul.** O azul primário é usado em menos de 10% de qualquer tela. Sua força está em ser raro, indicando apenas elementos acionáveis ou de foco.
 **A Regra da Legibilidade Absoluta.** Textos secundários ou silenciados nunca devem ter contraste inferior a 4.5:1 contra o fundo. Se um cinza parecer difícil de ler, ele deve ser escurecido imediatamente.
 
@@ -98,6 +102,7 @@ O esquema de cores utiliza OKLCH como fonte de verdade no código para transiç�
 A tipografia do sistema é baseada na família Inter para garantir clareza mecânica e excelente renderização de texto e números em telas de diferentes resoluções. Letras muito próximas em cabeçalhos display são proibidas.
 
 ### Hierarchy
+
 - **Display** (Semi-bold (600), `1.875rem` / 30px, `1.25` line-height): Título principal de telas ou seções globais.
 - **Headline** (Semi-bold (600), `1.5rem` / 24px, `1.25` line-height): Subtítulos de grandes painéis ou grupos de recursos.
 - **Title** (Medium (500), `1.125rem` / 18px, `1.5` line-height): Títulos de cartões, modais ou subtópicos.
@@ -105,6 +110,7 @@ A tipografia do sistema é baseada na família Inter para garantir clareza mecâ
 - **Label** (Medium (500), `0.75rem` / 12px, `normal` letter-spacing): Rótulos de formulários, metadados secundários e tags.
 
 ### Named Rules
+
 **A Regra do Alinhamento de Números.** Todos os valores numéricos, quantitativos e monetários em tabelas e grades devem usar alinhamento à direita (`text-right`) para facilitar a varredura visual imediata.
 
 ## 4. Elevation
@@ -112,10 +118,12 @@ A tipografia do sistema é baseada na família Inter para garantir clareza mecâ
 O sistema rejeita elevações volumétricas decorativas e sombras amplas e desfocadas. A profundidade é sugerida através de divisões finas (`border`) e sobreposição tonal plana.
 
 ### Shadow Vocabulary
+
 - **Modal Overlay** (`box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05)`): Usado exclusivamente para dar destaque a modais, dropdowns e menus que se sobrepõem à tela principal.
 - **Card Rest** (`box-shadow: none` / `ring-1 ring-foreground/10`): Cartões e painéis principais permanecem planos, delimitados por um contorno fino de 1px.
 
 ### Named Rules
+
 **A Regra de Sombras Funcionais.** Sombras só aparecem em elementos temporários que flutuam sobre a interface (dropdowns, modais, tooltips). Elementos da página estática (cards, sidebars) nunca devem usar sombras.
 
 ## 5. Components
@@ -123,23 +131,35 @@ O sistema rejeita elevações volumétricas decorativas e sombras amplas e desfo
 Os componentes são compactos, uniformes e desenhados para responder de forma imediata à interação do operador.
 
 ### Buttons
+
 - **Shape:** Cantos levemente arredondados (`rounded-lg`, `0.45rem` / 7.2px)
 - **Primary:** Fundo azul (`#2575c0`), texto branco (`#f4fbfc`), preenchimento interno compacto (`h-8`, `px-2.5`)
 - **Hover / Focus:** Transição de opacidade no hover (`hover:bg-primary/80`); anel de foco azul-claro (`focus-visible:ring-3 focus-visible:ring-ring/50`) no foco por teclado.
 - **Secondary:** Fundo cinza-claro (`bg-secondary`), texto escuro (`text-secondary-foreground`), hover com mistura suave (`hover:bg-secondary/90`).
 
 ### Cards / Containers
+
 - **Corner Style:** Arredondamento médio-alto (`rounded-xl`, `12px` aproximado)
 - **Background:** Branco sólido (`bg-card`)
 - **Shadow Strategy:** Plano por padrão, contornado por `ring-1 ring-foreground/10`.
 - **Internal Padding:** Espaçamento compacto de `p-4` (16px) a `p-6` (24px).
 
+### Modal / Window layout
+
+- **Structure:** Toda janela usa titlebar fixa, body com rolagem independente e footer de ações fixo/sticky.
+- **Titlebar:** `DialogHeader`, `SheetHeader` ou `AlertDialogHeader` fica fora da área rolável e concentra título, descrição e fechamento.
+- **Body:** `DialogBody`, `SheetBody` ou `AlertDialogBody` possui `min-h-0 flex-1 overflow-y-auto` e `p-1` como margem interna segura contra recorte de bordas e anéis de foco.
+- **Footer:** Ações usam `data-window-actions`; o adaptador posiciona o footer no fim do body e o mantém visível durante a rolagem.
+- **Avoid:** Não repetir o título dentro do formulário, não aplicar `overflow-y-auto` no `*Content` da janela e não criar footer específico por feature.
+
 ### Inputs / Fields
+
 - **Style:** Altura padrão (`h-8`), borda fina (`border-input`), cantos arredondados (`rounded-lg`).
 - **Focus:** Contorno azul com anel suave (`focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50`).
 - **Error:** Borda vermelha (`aria-invalid:border-destructive`) e anel avermelhado (`aria-invalid:ring-destructive/20`).
 
 ### Feedback and transient states
+
 - **Field validation:** Erros de preenchimento pertencem ao campo: usar `aria-invalid`, mensagem inline e foco no primeiro campo inválido quando a ação de envio for bloqueada.
 - **Operational failure:** Falhas de API, domínio, rede e mutação são transientes e aparecem uma única vez em toast. Não usar `Alert` dentro de um dialog para repetir a mesma mensagem; o dialog permanece aberto.
 - **Persistent state:** `Alert` é reservado a informação que continua válida enquanto a pessoa observa a tela, como uma venda já cancelada ou uma restrição contextual. Não é um canal para resposta de uma operação recém-executada.
@@ -148,12 +168,14 @@ Os componentes são compactos, uniformes e desenhados para responder de forma im
 - **Confirmation:** Ações destrutivas, irreversíveis ou de descarte usam confirmação antes da mutação, nunca uma mensagem de erro posterior como substituto de confirmação.
 
 ### Navigation
+
 - **Sidebar**: Fundo quase branco (`bg-sidebar`), texto escuro, itens ativos destacados em azul suave (`bg-sidebar-accent`).
 - **Behavior:** Navegação de fluxo que possa precisar encerrar superfícies usa `ui.navigation`; links sem ciclo de vida adicional podem usar `next/link`. A escolha deve preservar foco, descarte e estado de janela previstos pelo fluxo.
 
 ## 6. Do's and Don'ts
 
 ### Do:
+
 - **Do** Alinhar sempre cabeçalhos de colunas monetárias e seus respectivos campos numéricos à direita (`text-right`).
 - **Do** Manter a altura de botões e inputs padrão em `h-8` para consistência e alta densidade.
 - **Do** Garantir que todo campo de input com erro de validação utilize `aria-invalid` para estilos corretos e acessibilidade.
@@ -163,6 +185,7 @@ Os componentes são compactos, uniformes e desenhados para responder de forma im
 - **Do** Usar sombra somente em superfícies temporárias sobrepostas, como menu, popover, tooltip e modal.
 
 ### Don't:
+
 - **Don't** Usar cantos extremamente arredondados (`rounded-3xl` / `32px+`) em cartões ou botões normais.
 - **Don't** Adicionar bordas coloridas espessas em um único lado (`border-left-4` / faixa lateral) para destacar cards ou alertas.
 - **Don't** Utilizar degradês ou sombras gigantes com desfocagem maior que 16px para fins decorativos.
