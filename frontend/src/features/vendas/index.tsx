@@ -8,7 +8,7 @@ import type { Venda } from "./types";
 import { useFeatureList } from "@/hooks/use-feature-list";
 import { vendasApi } from "@/api/vendas";
 import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
-import { Button } from "@/ui/primitives";
+import { Button, Kbd, KbdGroup } from "@/ui/primitives";
 import { Textarea } from "@/ui/primitives";
 import { Field, FieldError, FieldLabel } from "@/ui/primitives";
 
@@ -184,10 +184,14 @@ function VendasCancelWindow({ venda }: VendasCancelWindowProps) {
           variant="outline"
           onClick={() => activeWindow.dismiss("cancel")}
         >
-          Cancelar
+          Cancelar <Kbd>Esc</Kbd>
         </Button>
         <Button type="button" variant="destructive" onClick={confirm}>
           Confirmar Cancelamento
+          <KbdGroup className="ml-2">
+            <Kbd>Alt</Kbd>
+            <Kbd>Enter</Kbd>
+          </KbdGroup>
         </Button>
       </div>
     </div>
