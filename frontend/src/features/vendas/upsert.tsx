@@ -179,6 +179,7 @@ function VendasCheckout({
           <Textarea
             id="venda-checkout-observacao"
             value={observacao}
+            maxLength={500}
             onChange={(event) => setObservacao(event.target.value)}
             placeholder="Informações adicionais da venda..."
             rows={2}
@@ -398,7 +399,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
       dataVenda: dataVenda,
       clienteId: cliente?.id ?? 0,
       emitenteId: activeEmitente?.id ?? 0,
-      observacao: form.getFieldValue("observacao") || "",
+      observacao: checkout.observacao,
       condicaoPagamentoId: checkout.condicao.id,
       itens: itens.map((i) => ({
         sku: i.sku,
@@ -424,10 +425,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     }
 
     try {
-      await mutation.mutateAsync({
-        ...(payload as VendaFormValues),
-        observacao: checkout.observacao,
-      });
+      await mutation.mutateAsync(payload as VendaFormValues);
     } catch {
       // O hook central já apresenta o erro operacional em um toast.
     }
