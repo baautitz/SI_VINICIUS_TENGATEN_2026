@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { WindowActions } from "@/imperative-ui";
 import { Kbd, KbdGroup } from "@/ui/primitives";
 import { Button } from "@/ui/primitives";
 import { FieldLabel } from "@/ui/primitives";
@@ -115,7 +116,7 @@ function UnidadesMedidaUpsertForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+      <WindowActions>
         <Button
           type="button"
           variant="outline"
@@ -146,7 +147,7 @@ function UnidadesMedidaUpsertForm({
             </Button>
           )}
         </form.Subscribe>)}
-      </div>
+      </WindowActions>
       <form
         ref={registerDirty}
         id="upsert-unidades-medida"

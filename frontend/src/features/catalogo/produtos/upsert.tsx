@@ -1,6 +1,7 @@
 "use client";
 
 import { Kbd, KbdGroup } from "@/ui/primitives";
+import { WindowActions } from "@/imperative-ui";
 import { useState, useRef, useMemo, useCallback } from "react";
 import type { FormEvent } from "react";
 import { cn } from "@/lib/utils";
@@ -411,7 +412,7 @@ function ProdutosUpsertForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+      <WindowActions>
         <Button
           type="button"
           variant="outline"
@@ -442,7 +443,7 @@ function ProdutosUpsertForm({
             </Button>
           )}
         </form.Subscribe>)}
-      </div>
+      </WindowActions>
       <form
         ref={registerDirty}
         id="upsert-produtos"
