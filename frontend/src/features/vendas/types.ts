@@ -46,9 +46,8 @@ export const vendaItemSchema = z.object({
   valorUnitario: z.coerce.number().min(0, "Preço unitário não pode ser negativo."),
   percentualDesconto: z.coerce
     .number()
-    .min(0, "Desconto não pode ser negativo.")
     .max(100, "Desconto não pode ser maior que 100%."),
-  valorDesconto: z.coerce.number().min(0),
+  valorDesconto: z.coerce.number(),
   valorTotal: z.coerce.number().min(0),
   // UI helper fields
   produtoNome: z.string(),

@@ -158,7 +158,7 @@ function VendasCheckout({
         </div>
         <div className="flex items-center justify-between text-red-500">
           <span className="font-medium">Descontos:</span>
-          <span className="font-bold">-{formatCurrency(totalDiscount)}</span>
+          <span className="font-bold">{formatCurrency(-totalDiscount)}</span>
         </div>
         <Separator />
         <div className="flex items-center justify-between font-bold text-emerald-600">
@@ -639,11 +639,11 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     if (key === "quantidade") {
       item.quantidade = value;
     } else if (key === "percentualDesconto") {
-      const discPercent = Math.min(100, Math.max(0, value));
+      const discPercent = Math.min(100, value);
       if (discPercent !== value) {
         ui.feedback.notify({
           type: "error",
-          title: `Desconto deve ficar entre 0% e 100%. Ajustado para ${discPercent}%.`,
+          title: `Desconto não pode passar de 100%. Ajustado para ${discPercent}%.`,
         });
       }
       item.percentualDesconto = discPercent;
@@ -651,7 +651,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
         (item.valorUnitario * (1 - discPercent / 100)).toFixed(2),
       );
     } else if (key === "precoFinal") {
-      const finalPrice = Math.min(item.valorUnitario, Math.max(0, value));
+      const finalPrice = Math.max(0, value);
       item.precoFinal = finalPrice;
       item.percentualDesconto =
         item.valorUnitario > 0
@@ -946,14 +946,11 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                                   decimals={2}
                                   inputSize="full"
                                   inputMode="decimal"
-                                  aria-invalid={
-                                    item.percentualDesconto < 0 ||
-                                    item.percentualDesconto > 100
-                                  }
+                                  allowNegative
+                                  aria-invalid={item.percentualDesconto > 100}
                                   className={cn(
                                     "h-7 text-right text-xs font-semibold text-red-500",
-                                    item.percentualDesconto < 0 ||
-                                      item.percentualDesconto > 100
+                                    item.percentualDesconto > 100
                                       ? "border-destructive focus-visible:ring-destructive"
                                       : "border-red-200 focus-visible:ring-red-500",
                                   )}
@@ -966,10 +963,9 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                                     )
                                   }
                                 />
-                                {(item.percentualDesconto < 0 ||
-                                  item.percentualDesconto > 100) && (
+                                {item.percentualDesconto > 100 && (
                                   <span className="text-destructive text-2xs mt-0.5 text-right font-semibold whitespace-nowrap">
-                                    0% a 100%
+                                    Máx: 100%
                                   </span>
                                 )}
                               </div>
@@ -987,14 +983,10 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                                   decimals={2}
                                   inputSize="full"
                                   inputMode="decimal"
-                                  aria-invalid={
-                                    item.precoFinal < 0 ||
-                                    item.precoFinal > item.valorUnitario
-                                  }
+                                  aria-invalid={item.precoFinal < 0}
                                   className={cn(
                                     "h-7 text-right text-xs font-semibold",
-                                    (item.precoFinal < 0 ||
-                                      item.precoFinal > item.valorUnitario) &&
+                                    item.precoFinal < 0 &&
                                       "border-destructive focus-visible:ring-destructive",
                                   )}
                                   disabled={readOnly}
@@ -1002,12 +994,9 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                                     updateItemRow(index, "precoFinal", val)
                                   }
                                 />
-                                {(item.precoFinal < 0 ||
-                                  item.precoFinal > item.valorUnitario) && (
+                                {item.precoFinal < 0 && (
                                   <span className="text-destructive text-2xs mt-0.5 text-right font-semibold whitespace-nowrap">
-                                    {item.precoFinal < 0
-                                      ? "Mín: 0"
-                                      : "Excede base"}
+                                    Mín: 0
                                   </span>
                                 )}
                               </div>
