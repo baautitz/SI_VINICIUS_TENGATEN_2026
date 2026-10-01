@@ -127,7 +127,7 @@ function QuantityWindow({ sku, initialQuantity }: QuantityWindowProps) {
   const handleQuantityKeyDown = async (
     event: React.KeyboardEvent<HTMLInputElement>,
   ) => {
-    if (event.key === "Enter" && !event.altKey) {
+    if (event.key === "Enter" && !event.altKey && !event.ctrlKey) {
       event.preventDefault();
       await confirm();
     }
@@ -371,7 +371,7 @@ export const SkuInput = ({
   const handleInputKeyDown = async (
     event: React.KeyboardEvent<HTMLInputElement>,
   ) => {
-    if (event.key !== "Enter" || event.altKey) return;
+    if (event.key !== "Enter" || event.altKey || event.ctrlKey) return;
     event.preventDefault();
 
     // Read the DOM value as well as React state. Scanner input can dispatch

@@ -241,7 +241,7 @@ function AtributosUpsertForm({
                       disabled={readOnly}
                       onChange={(e) => setNewValue(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.altKey) {
+                        if (e.key === "Enter" && !e.altKey && !e.ctrlKey) {
                           e.preventDefault();
                           e.stopPropagation();
                           handleAddValue(e);
