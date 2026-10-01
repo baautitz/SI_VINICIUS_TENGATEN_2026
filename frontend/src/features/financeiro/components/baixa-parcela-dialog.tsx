@@ -39,15 +39,6 @@ export function BaixaParcelaWindow({
   const [valorBaixa, setValorBaixa] = useState<number>(initialValue);
   const [error, setError] = useState<string | null>(null);
 
-  // Sync state if parcela or isEstorno changes
-  React.useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setValorBaixa(
-      isEstorno ? (parcela?.valorPagoOuRecebido ?? 0) : saldoRestante,
-    );
-    setError(null);
-  }, [parcela, isEstorno, saldoRestante]);
-
   const mutation = useMutation({
     mutationFn: async () => {
       if (!parcela) return;
