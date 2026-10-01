@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useMemo, useEffect, useCallback } from "react";
+import { useState, useRef, useMemo, useCallback } from "react";
 import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -105,8 +105,6 @@ function VendasCheckout({
   const [condicao, setCondicao] = useState<CondicaoPagamento | null>(
     initialCondicao,
   );
-  const [observacao, setObservacao] = useState(initialObservacao);
-
   const [valorRecebido, setValorRecebido] = useState(0);
 
   const isDinheiro = isMetodoDinheiro(condicao);
@@ -114,16 +112,16 @@ function VendasCheckout({
   const troco = isDinheiro ? Math.max(0, valorRecebido - totalNet) : 0;
   const canFinish = !!condicao && totalNet > 0 && !recebidoInsuficiente;
 
-  // A observação é lida por ref para o comando de teclado não ser recriado a
-  // cada tecla digitada.
-  const observacaoRef = useRef(observacao);
-  useEffect(() => {
-    observacaoRef.current = observacao;
-  }, [observacao]);
+  // Campo não controlado: digitar não re-renderiza o checkout; a observação é
+  // lida ao finalizar e ao consultar se há alterações não salvas.
+  const observacaoRef = useRef<HTMLTextAreaElement | null>(null);
 
   const finish = useCallback(() => {
     if (!condicao || totalNet <= 0 || recebidoInsuficiente) return;
-    activeWindow.resolve({ condicao, observacao: observacaoRef.current });
+    activeWindow.resolve({
+      condicao,
+      observacao: observacaoRef.current?.value ?? "",
+    });
   }, [activeWindow, condicao, totalNet, recebidoInsuficiente]);
 
   useWindowCommands(
@@ -144,14 +142,19 @@ function VendasCheckout({
     ),
   );
 
-  const checkoutDirty = !!condicao || observacao.length > 0;
-  useEffect(() => {
-    activeWindow.setDirty(checkoutDirty);
-  }, [activeWindow, checkoutDirty]);
-  useEffect(() => () => activeWindow.setDirty(false), [activeWindow]);
+  const registerDirty = useCallback(
+    (element: HTMLDivElement | null) => {
+      if (!element) return;
+      activeWindow.setDirtyCheck(
+        () => !!condicao || (observacaoRef.current?.value.length ?? 0) > 0,
+      );
+      return () => activeWindow.setDirtyCheck(null);
+    },
+    [activeWindow, condicao],
+  );
 
   return (
-    <div className="flex flex-col gap-5 py-2">
+    <div ref={registerDirty} className="flex flex-col gap-5 py-2">
       <div className="flex flex-col gap-2.5 rounded-lg border p-4">
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground font-medium">
@@ -227,9 +230,9 @@ function VendasCheckout({
           </FieldLabel>
           <Textarea
             id="venda-checkout-observacao"
-            value={observacao}
+            ref={observacaoRef}
+            defaultValue={initialObservacao}
             maxLength={500}
-            onChange={(event) => setObservacao(event.target.value)}
             placeholder="Informações adicionais da venda..."
             rows={2}
           />
@@ -356,13 +359,18 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
 
   const skuInputRef = useRef<HTMLInputElement>(null);
 
-  // Adding an item intentionally remounts SkuInput to reset its controlled
-  // value. Restore focus after that DOM replacement, not before it.
-  useEffect(() => {
-    if (skuInputKey === 0) return;
-    const frame = requestAnimationFrame(() => skuInputRef.current?.focus());
-    return () => cancelAnimationFrame(frame);
-  }, [skuInputKey]);
+  // Adding an item intentionally remounts SkuInput (new key) to reset its
+  // controlled value. The ref callback changes identity only with the key, so
+  // it runs once per remount and restores focus after the DOM replacement.
+  const setSkuInput = useCallback(
+    (element: HTMLInputElement | null) => {
+      skuInputRef.current = element;
+      if (element && skuInputKey > 0) {
+        requestAnimationFrame(() => element.focus());
+      }
+    },
+    [skuInputKey],
+  );
 
   const totalItensCount = itens.reduce((sum, i) => sum + i.quantidade, 0);
   const subtotalGross = itens.reduce(
@@ -844,7 +852,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
           {!readOnly && (
             <div className="w-full">
               <SkuInput
-                ref={skuInputRef}
+                ref={setSkuInput}
                 key={skuInputKey}
                 name="add-sku-pos"
                 label="Inserir Produto"

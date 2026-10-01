@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { Search } from "lucide-react";
 import { Button } from "@/ui/primitives";
 import { Input } from "@/ui/primitives";
@@ -92,14 +92,19 @@ function SkuSelectionWindow({
 function QuantityWindow({ sku, initialQuantity }: QuantityWindowProps) {
   const activeWindow = useWindow<number>();
   const ui = useUi();
-  const [quantity, setQuantity] = useState(initialQuantity ?? 1);
+  const startQuantity = initialQuantity ?? 1;
+  // A quantidade digitada fica numa ref: digitar não re-renderiza a janela.
+  const quantityRef = useRef(startQuantity);
   const allowsDecimals = sku.produto?.unidadeMedida?.permiteDecimais ?? false;
 
-  useEffect(() => {
-    activeWindow.setDirty(quantity !== 1);
-  }, [activeWindow, quantity]);
+  const registerDirty = (element: HTMLDivElement | null) => {
+    if (!element) return;
+    activeWindow.setDirtyCheck(() => quantityRef.current !== startQuantity);
+    return () => activeWindow.setDirtyCheck(null);
+  };
 
   const confirm = async () => {
+    const quantity = quantityRef.current;
     if (Number.isNaN(quantity) || quantity <= 0) {
       ui.feedback.notify({
         type: "error",
@@ -134,16 +139,18 @@ function QuantityWindow({ sku, initialQuantity }: QuantityWindowProps) {
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div ref={registerDirty} className="flex flex-col gap-4">
       <div className="py-2">
         <FieldLabel htmlFor="qty-input">Quantidade a adicionar</FieldLabel>
         <NumberInput
           id="qty-input"
           autoFocus
           className="mt-1.5"
-          value={quantity}
+          value={startQuantity}
           decimals={allowsDecimals ? 4 : 0}
-          onNumberChange={setQuantity}
+          onNumberChange={(value) => {
+            quantityRef.current = value;
+          }}
           onKeyDown={handleQuantityKeyDown}
         />
       </div>

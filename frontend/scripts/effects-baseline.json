@@ -1,8 +1,4 @@
 {
   "src/components/app-sidebar.tsx": 1,
-  "src/components/entity-inputs/sku-input.tsx": 1,
-  "src/components/feature-header.tsx": 1,
-  "src/features/estoque/movimentacoes/upsert-form.tsx": 1,
-  "src/features/vendas/index.tsx": 3,
-  "src/features/vendas/upsert.tsx": 4
+  "src/components/feature-header.tsx": 1
 }

@@ -194,14 +194,10 @@ assert.match(skuInput, /finally \{[\s\S]*refocusAfterWindow\(\)/);
 assert.match(http, /getQuietly/);
 assert.match(catalogoApi, /getQuietly<Sku>/);
 assert.match(catalogoApi, /encodeURIComponent\(sku\)/);
-assert.match(
-  vendasUpsert,
-  /requestAnimationFrame\(\(\) => skuInputRef\.current\?\.focus\(\)\)/,
-);
-assert.match(
-  movimentacoesUpsert,
-  /requestAnimationFrame\(\(\) => skuInputRef\.current\?\.focus\(\)\)/,
-);
+assert.match(vendasUpsert, /requestAnimationFrame\(\(\) => element\.focus\(\)\)/);
+assert.match(vendasUpsert, /ref=\{setSkuInput\}/);
+assert.match(movimentacoesUpsert, /requestAnimationFrame\(\(\) => element\.focus\(\)\)/);
+assert.match(movimentacoesUpsert, /ref=\{setSkuInput\}/);
 assert.match(vendasUpsert, /return handleRemoveItem\(existingIndex\)/);
 assert.match(movimentacoesUpsert, /return removeItemRow\(existingIndex\)/);
 assert.match(zodConfig, /z\.setErrorMap\(portugueseErrorMap\)/);

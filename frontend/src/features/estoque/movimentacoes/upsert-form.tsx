@@ -1,7 +1,7 @@
 "use client";
 
 import { Kbd, KbdGroup } from "@/ui/primitives";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { AlertDialogFooter, Button } from "@/ui/primitives";
 import { Field, FieldGroup, FieldLabel } from "@/ui/primitives";
@@ -99,13 +99,18 @@ export function MovimentacoesUpsertForm({
   const createdIdRef = useRef<number | null>(null);
   const skuInputRef = useRef<HTMLInputElement>(null);
 
-  // Adding an item intentionally remounts SkuInput to reset its controlled
-  // value. Restore focus after that DOM replacement, not before it.
-  useEffect(() => {
-    if (skuInputKey === 0) return;
-    const frame = requestAnimationFrame(() => skuInputRef.current?.focus());
-    return () => cancelAnimationFrame(frame);
-  }, [skuInputKey]);
+  // Adding an item intentionally remounts SkuInput (new key) to reset its
+  // controlled value. The ref callback changes identity only with the key, so
+  // it runs once per remount and restores focus after the DOM replacement.
+  const setSkuInput = useCallback(
+    (element: HTMLInputElement | null) => {
+      skuInputRef.current = element;
+      if (element && skuInputKey > 0) {
+        requestAnimationFrame(() => element.focus());
+      }
+    },
+    [skuInputKey],
+  );
 
   const { mutation, getFieldError, resetErrors, backendFieldErrors } =
     useUpsertMutation<
@@ -552,7 +557,7 @@ export function MovimentacoesUpsertForm({
                     <div className="flex flex-col gap-2">
                       <div className="max-w-md">
                         <SkuInput
-                          ref={skuInputRef}
+                          ref={setSkuInput}
                           key={skuInputKey}
                           name="add-sku"
                           label="Itens da Movimentação"
