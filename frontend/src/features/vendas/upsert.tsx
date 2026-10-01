@@ -108,10 +108,17 @@ function VendasCheckout({
   );
   const [observacao, setObservacao] = useState(initialObservacao);
 
+  const [valorRecebido, setValorRecebido] = useState(0);
+
+  const isDinheiro = isMetodoDinheiro(condicao);
+  const recebidoInsuficiente = isDinheiro && valorRecebido + 0.005 < totalNet;
+  const troco = isDinheiro ? Math.max(0, valorRecebido - totalNet) : 0;
+  const canFinish = !!condicao && totalNet > 0 && !recebidoInsuficiente;
+
   const finish = useCallback(() => {
-    if (!condicao || totalNet <= 0) return;
+    if (!condicao || totalNet <= 0 || recebidoInsuficiente) return;
     activeWindow.resolve({ condicao, observacao });
-  }, [activeWindow, condicao, observacao, totalNet]);
+  }, [activeWindow, condicao, observacao, totalNet, recebidoInsuficiente]);
 
   useWindowCommands(
     useMemo(
@@ -120,14 +127,14 @@ function VendasCheckout({
           id: "vendas.checkout.confirm",
           hotkey: "Alt+Enter" as const,
           label: "Finalizar venda",
-          enabled: !!condicao && totalNet > 0,
+          enabled: canFinish,
           run: (event: KeyboardEvent) => {
             event.preventDefault();
             finish();
           },
         },
       ],
-      [condicao, totalNet, finish],
+      [canFinish, finish],
     ),
   );
 
@@ -175,6 +182,37 @@ function VendasCheckout({
           }
         />
       </div>
+      {isDinheiro && (
+        <Field data-invalid={recebidoInsuficiente}>
+          <div className="flex items-center justify-between gap-4">
+            <FieldLabel htmlFor="venda-checkout-valor-recebido">
+              Valor recebido (R$)
+            </FieldLabel>
+            <NumberInput
+              id="venda-checkout-valor-recebido"
+              inputSize="full"
+              value={valorRecebido}
+              decimals={2}
+              inputMode="decimal"
+              onNumberChange={setValorRecebido}
+              className="h-8 w-48 text-right font-semibold"
+              aria-invalid={recebidoInsuficiente}
+            />
+          </div>
+          {recebidoInsuficiente ? (
+            <FieldError className="mt-1 block text-right">
+              O valor recebido é menor que o total da venda.
+            </FieldError>
+          ) : (
+            <div className="text-muted-foreground mt-1 flex justify-between text-sm">
+              <span>Troco:</span>
+              <span className="text-foreground font-semibold">
+                {formatCurrency(troco)}
+              </span>
+            </div>
+          )}
+        </Field>
+      )}
       <div className="w-full">
         <Field>
           <FieldLabel htmlFor="venda-checkout-observacao">
@@ -198,11 +236,7 @@ function VendasCheckout({
         >
           Voltar <Kbd>Esc</Kbd>
         </Button>
-        <Button
-          type="button"
-          onClick={finish}
-          disabled={!condicao || totalNet <= 0}
-        >
+        <Button type="button" onClick={finish} disabled={!canFinish}>
           Concluir{" "}
           <KbdGroup>
             <Kbd>Alt</Kbd>
@@ -212,6 +246,16 @@ function VendasCheckout({
       </div>
     </div>
   );
+}
+
+function isMetodoDinheiro(condicao: CondicaoPagamento | null) {
+  const metodo = condicao?.metodoPagamento;
+  if (!metodo) return false;
+  return `${metodo.codigo} ${metodo.descricao}`
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .includes("dinheiro");
 }
 
 function formatCurrency(value: number) {
