@@ -154,6 +154,7 @@ function QuantityWindow({ sku, initialQuantity }: QuantityWindowProps) {
         <Button type="button" onClick={confirm}>
           Confirmar
           <KbdGroup className="ml-2">
+            <Kbd>Alt</Kbd>
             <Kbd>Enter</Kbd>
           </KbdGroup>
         </Button>
