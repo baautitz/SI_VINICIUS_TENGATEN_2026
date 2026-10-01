@@ -7,7 +7,7 @@ import { FieldGroup, FieldLabel } from "@/ui/primitives";
 import { Input } from "@/ui/primitives";
 import { FormFieldUI } from "@/ui/composites";
 import { EstadoInput } from "@/components/entity-inputs/estado-input";
-import { useForm, useStore } from "@tanstack/react-form";
+import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import { cidadeSchema, Cidade, CidadeFormValues } from "./types";
 import { useQuery } from "@tanstack/react-query";
@@ -82,11 +82,10 @@ function CidadesUpsertForm({
     },
   });
 
-  const isDirty = useStore(form.store, (state) => state.isDirty);
-  React.useEffect(() => {
-    activeWindow.setDirty(isDirty);
-    return () => activeWindow.setDirty(false);
-  }, [activeWindow, isDirty]);
+  const registerDirty = React.useCallback(() => {
+    activeWindow.setDirtyCheck(() => form.state.isDirty);
+    return () => activeWindow.setDirtyCheck(null);
+  }, [activeWindow, form]);
   useWindowCommands([
     {
       id: "cidades.save",
@@ -131,6 +130,7 @@ function CidadesUpsertForm({
           </form.Subscribe>)}
       </div>
       <form
+        ref={registerDirty}
         id="upsert-cidades"
         className="flex flex-col gap-4"
         onSubmit={(e) => {

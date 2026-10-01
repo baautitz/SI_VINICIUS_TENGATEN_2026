@@ -7,7 +7,7 @@ import { FieldGroup, FieldLabel } from "@/ui/primitives";
 import { Input } from "@/ui/primitives";
 import { FormFieldUI } from "@/ui/composites";
 import { CidadeInput } from "@/components/entity-inputs/cidade-input";
-import { useForm, useStore } from "@tanstack/react-form";
+import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import { bairroSchema, Bairro, BairroFormValues } from "./types";
 import { useQuery } from "@tanstack/react-query";
@@ -80,11 +80,10 @@ function BairrosUpsertForm({
     },
   });
 
-  const isDirty = useStore(form.store, (state) => state.isDirty);
-  React.useEffect(() => {
-    activeWindow.setDirty(isDirty);
-    return () => activeWindow.setDirty(false);
-  }, [activeWindow, isDirty]);
+  const registerDirty = React.useCallback(() => {
+    activeWindow.setDirtyCheck(() => form.state.isDirty);
+    return () => activeWindow.setDirtyCheck(null);
+  }, [activeWindow, form]);
   useWindowCommands([
     {
       id: "bairros.save",
@@ -129,6 +128,7 @@ function BairrosUpsertForm({
           </form.Subscribe>)}
       </div>
       <form
+        ref={registerDirty}
         id="upsert-bairros"
         className="flex flex-col gap-4"
         onSubmit={(e) => {

@@ -6,7 +6,7 @@ import { Button } from "@/ui/primitives";
 import { FieldGroup, FieldLabel } from "@/ui/primitives";
 import { Input } from "@/ui/primitives";
 import { FormFieldUI } from "@/ui/composites";
-import { useForm, useStore } from "@tanstack/react-form";
+import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import { paisSchema, Pais } from "./types";
 import { useQuery } from "@tanstack/react-query";
@@ -84,11 +84,10 @@ function PaisesUpsertForm({
     },
   });
 
-  const isDirty = useStore(form.store, (state) => state.isDirty);
-  React.useEffect(() => {
-    activeWindow.setDirty(isDirty);
-    return () => activeWindow.setDirty(false);
-  }, [activeWindow, isDirty]);
+  const registerDirty = React.useCallback(() => {
+    activeWindow.setDirtyCheck(() => form.state.isDirty);
+    return () => activeWindow.setDirtyCheck(null);
+  }, [activeWindow, form]);
   useWindowCommands([
     {
       id: "paises.save",
@@ -133,6 +132,7 @@ function PaisesUpsertForm({
           </form.Subscribe>)}
       </div>
       <form
+        ref={registerDirty}
         id="upsert-paises"
         className="flex flex-col gap-4"
         onSubmit={(e) => {

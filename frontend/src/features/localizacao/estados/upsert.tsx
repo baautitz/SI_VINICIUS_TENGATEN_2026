@@ -7,7 +7,7 @@ import { FieldGroup, FieldLabel } from "@/ui/primitives";
 import { Input } from "@/ui/primitives";
 import { FormFieldUI } from "@/ui/composites";
 import { PaisInput } from "@/components/entity-inputs/pais-input";
-import { useForm, useStore } from "@tanstack/react-form";
+import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import { estadoSchema, Estado, EstadoFormValues } from "./types";
 import { useQuery } from "@tanstack/react-query";
@@ -81,11 +81,10 @@ function EstadosUpsertForm({
     },
   });
 
-  const isDirty = useStore(form.store, (state) => state.isDirty);
-  React.useEffect(() => {
-    activeWindow.setDirty(isDirty);
-    return () => activeWindow.setDirty(false);
-  }, [activeWindow, isDirty]);
+  const registerDirty = React.useCallback(() => {
+    activeWindow.setDirtyCheck(() => form.state.isDirty);
+    return () => activeWindow.setDirtyCheck(null);
+  }, [activeWindow, form]);
   useWindowCommands([
     {
       id: "estados.save",
@@ -130,6 +129,7 @@ function EstadosUpsertForm({
           </form.Subscribe>)}
       </div>
       <form
+        ref={registerDirty}
         id="upsert-estados"
         className="flex flex-col gap-4"
         onSubmit={(e) => {
