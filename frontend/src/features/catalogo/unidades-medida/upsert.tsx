@@ -122,9 +122,9 @@ function UnidadesMedidaUpsertForm({
           variant="outline"
           onClick={() => activeWindow.dismiss("cancel")}
         >
-          Cancelar <Kbd>Esc</Kbd>
+          {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
         </Button>
-        <form.Subscribe
+        {!readOnly && (<form.Subscribe
           selector={(state) => [state.canSubmit, state.isSubmitting]}
         >
           {([canSubmit, isSubmitting]) => (
@@ -146,7 +146,7 @@ function UnidadesMedidaUpsertForm({
               )}
             </Button>
           )}
-        </form.Subscribe>
+        </form.Subscribe>)}
       </div>
       <form
         id="upsert-unidades-medida"

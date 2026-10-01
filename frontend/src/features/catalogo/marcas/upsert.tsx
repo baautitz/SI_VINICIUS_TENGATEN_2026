@@ -110,15 +110,15 @@ function MarcasUpsertForm({
           variant="outline"
           onClick={() => activeWindow.dismiss("cancel")}
         >
-          Cancelar <Kbd>Esc</Kbd>
+          {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
         </Button>
-        <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+        {!readOnly && (<form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
             <Button type="submit" form="upsert-marcas" disabled={readOnly || !canSubmit || isSubmitting}>
               {isSubmitting ? "Salvando..." : <span className="flex items-center gap-2">Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup></span>}
             </Button>
           )}
-        </form.Subscribe>
+        </form.Subscribe>)}
       </div>
       <form
         id="upsert-marcas"
