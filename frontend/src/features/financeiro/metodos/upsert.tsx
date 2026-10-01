@@ -131,7 +131,7 @@ function MetodosUpsertForm({
           variant="outline"
           onClick={cancelForm}
         >
-          Cancelar <Kbd>Esc</Kbd>
+          {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
         </Button>
         {!readOnly && (
           <form.Subscribe

@@ -111,7 +111,7 @@ export function ContasPagarUpsertForm({
     <div className="flex flex-col gap-4">
       <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
         <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>
-          Cancelar <Kbd>Esc</Kbd>
+          {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
         </Button>
         {!readOnly && (
           <Button type="submit" form="upsert-contas-pagar" disabled={mutation.isPending}>

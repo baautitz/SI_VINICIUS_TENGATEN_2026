@@ -287,7 +287,7 @@ function CondicoesUpsertForm({
           variant="outline"
           onClick={() => activeWindow.dismiss("cancel")}
         >
-          Cancelar <Kbd>Esc</Kbd>
+          {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
         </Button>
         {!readOnly && (
           <form.Subscribe
