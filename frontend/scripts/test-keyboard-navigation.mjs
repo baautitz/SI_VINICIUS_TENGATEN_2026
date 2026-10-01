@@ -90,9 +90,14 @@ const categoria = node("categoria", 0, 100, 280)
 const marca = node("marca", 310, 100, 280)
 const unidade = node("unidade", 620, 100, 280)
 const row = [unidade, marca, categoria]
+assert.equal(chooseSpatialDestination(descricao, row, "forward"), "categoria", "Tab from a wide field goes to the first control of the next row")
 assert.equal(chooseSpatialDestination(descricao, row, "down"), "categoria", "ArrowDown from a wide field starts at its left edge")
+assert.equal(chooseSpatialDestination(categoria, [descricao, marca, unidade], "backward"), "descricao", "Shift+Tab goes back to the previous row")
 assert.equal(chooseSpatialDestination(descricao, row, "down", marca.rect.left), "marca", "ArrowDown honors the remembered goal column")
 assert.equal(chooseSpatialDestination(marca, [descricao, categoria], "up"), "descricao", "ArrowUp reaches the wide field")
+const ativo = node("ativo", 0, 150, 80)
+assert.equal(chooseSpatialDestination(unidade, [ativo], "forward"), "ativo", "Tab wraps to the next row's first control")
+assert.equal(chooseSpatialDestination(unidade, [descricao, marca, categoria, ativo], "backward"), "marca", "Shift+Tab keeps the same row first")
 
 const grid = "stock"
 const gridSource = node("qty-0", 10, 10, 80, 32, { grid, row: 0, column: 0 })

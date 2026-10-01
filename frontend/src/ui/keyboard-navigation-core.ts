@@ -71,7 +71,14 @@ export function chooseSpatialDestination(
     horizontalDirection,
   )
   const verticalDirection = direction === "forward" ? "down" : "up"
-  const verticalDestination = chooseVertical(source, geometryCandidates, verticalDirection, goalX)
+  // Tab follows reading order: the first control of the next row (the last
+  // one of the previous row for Shift+Tab), whatever the source's width.
+  const verticalDestination = chooseVertical(
+    source,
+    geometryCandidates,
+    verticalDirection,
+    direction === "forward" ? -READING_ORDER_GOAL : READING_ORDER_GOAL,
+  )
 
   // Tab follows the next row when there is no control on the same visual row.
   // A diagonally displaced control is only used when no vertical destination
@@ -84,6 +91,8 @@ export function chooseSpatialDestination(
   }
   return verticalDestination ?? horizontalDestination
 }
+
+const READING_ORDER_GOAL = 1e9
 
 function chooseGridDestination(
   source: NavigationCell,
