@@ -707,7 +707,7 @@ function ContasReceberFormBody({
                         <TableBody>
                           {parcelas.map((p, index) => (
                             <TableRow
-                              key={index}
+                              key={`parcela-${p.numeroParcela}`}
                               className="hover:bg-transparent"
                             >
                               <TableCell className="px-2 py-2 align-middle font-semibold">
