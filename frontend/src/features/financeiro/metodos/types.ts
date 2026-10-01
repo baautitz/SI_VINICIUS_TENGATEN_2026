@@ -4,6 +4,7 @@ export interface MetodoPagamento {
   codigo: string;
   descricao: string;
   ativo: boolean;
+  permiteTroco: boolean;
 }
 
 export const metodoPagamentoSchema = z.object({
@@ -17,6 +18,7 @@ export const metodoPagamentoSchema = z.object({
     .min(1, "Descrição é obrigatória.")
     .max(100, "Descrição deve ter no máximo 100 caracteres."),
   ativo: z.boolean().default(true),
+  permiteTroco: z.boolean().default(false),
 });
 
 export type MetodoPagamentoFormValues = z.infer<typeof metodoPagamentoSchema>;

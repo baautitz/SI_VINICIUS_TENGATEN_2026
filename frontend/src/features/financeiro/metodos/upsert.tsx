@@ -84,6 +84,7 @@ function MetodosUpsertForm({
       codigo: editingItem?.codigo ?? "",
       descricao: editingItem?.descricao ?? "",
       ativo: editingItem?.ativo ?? true,
+      permiteTroco: editingItem?.permiteTroco ?? false,
     } as MetodoPagamentoFormValues,
     onSubmit: submitForm,
   });
@@ -213,6 +214,21 @@ function MetodosUpsertForm({
                 </Field>
               );
             }}
+          </form.Field>
+
+          <form.Field name="permiteTroco">
+            {(field) => (
+              <Field orientation="horizontal">
+                <Checkbox
+                  id={field.name}
+                  name={field.name}
+                  checked={field.state.value}
+                  onCheckedChange={(checked) => field.handleChange(!!checked)}
+                  disabled={readOnly}
+                />
+                <FieldLabel htmlFor={field.name}>Permite troco</FieldLabel>
+              </Field>
+            )}
           </form.Field>
         </FieldGroup>
 
