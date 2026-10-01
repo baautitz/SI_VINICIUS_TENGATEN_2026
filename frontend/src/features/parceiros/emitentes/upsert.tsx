@@ -21,7 +21,6 @@ import { TipoPessoa } from "@/api/types";
 import { Pais } from "@/features/localizacao/paises";
 import { Spinner } from "@/ui/primitives";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
-import { useStore } from "@tanstack/react-form";
 
 export interface EmitentesUpsertProps {
   editingItem: Emitente | null;
@@ -124,7 +123,6 @@ function EmitentesUpsertForm({
     },
   });
 
-  const isDirty = useStore(form.store, (state) => state.isDirty);
 
   const save = React.useCallback(async () => {
     await form.handleSubmit();
@@ -134,10 +132,10 @@ function EmitentesUpsertForm({
     activeWindow.dismiss("cancel");
   }, [activeWindow]);
 
-  React.useEffect(() => {
-    activeWindow.setDirty(isDirty);
-    return () => activeWindow.setDirty(false);
-  }, [activeWindow, isDirty]);
+  const registerDirty = React.useCallback(() => {
+    activeWindow.setDirtyCheck(() => form.state.isDirty);
+    return () => activeWindow.setDirtyCheck(null);
+  }, [activeWindow, form]);
 
   const commands = React.useMemo(
     () => [
@@ -186,6 +184,7 @@ function EmitentesUpsertForm({
 )}
       </div>
       <form
+        ref={registerDirty}
         id="upsert-emitentes"
         className="flex flex-col gap-6"
         onSubmit={async (e) => {

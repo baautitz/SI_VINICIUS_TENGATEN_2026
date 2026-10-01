@@ -8,7 +8,7 @@ import { Input } from "@/ui/primitives";
 import { FormFieldUI } from "@/ui/composites";
 import { TransportadoraInput } from "@/components/entity-inputs/transportadora-input";
 import { EstadoInput } from "@/components/entity-inputs/estado-input";
-import { useForm, useStore } from "@tanstack/react-form";
+import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import { veiculoSchema, Veiculo, VeiculoFormValues } from "./types";
 import { useQuery } from "@tanstack/react-query";
@@ -91,12 +91,11 @@ function VeiculosUpsertForm({
     },
   });
 
-  const isDirty = useStore(form.store, (state) => state.isDirty);
 
-  React.useEffect(() => {
-    activeWindow.setDirty(isDirty);
-    return () => activeWindow.setDirty(false);
-  }, [activeWindow, isDirty]);
+  const registerDirty = React.useCallback(() => {
+    activeWindow.setDirtyCheck(() => form.state.isDirty);
+    return () => activeWindow.setDirtyCheck(null);
+  }, [activeWindow, form]);
 
   const commands = React.useMemo(
     () => [
@@ -149,6 +148,7 @@ function VeiculosUpsertForm({
 )}
       </div>
       <form
+        ref={registerDirty}
         id="upsert-veiculos"
         className="flex flex-col gap-6"
         onSubmit={(e) => {

@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { BairroInput } from "@/components/entity-inputs/bairro-input";
 import { PaisInput } from "@/components/entity-inputs/pais-input";
 import { TipoPessoaSelect } from "@/components/tipo-pessoa-select";
-import { useForm, useStore } from "@tanstack/react-form";
+import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import { clienteSchema, Cliente, ClienteFormValues } from "./types";
 import { useQuery } from "@tanstack/react-query";
@@ -128,12 +128,11 @@ function ClientesUpsertForm({
     await submitForm();
   };
 
-  const isDirty = useStore(form.store, (state) => state.isDirty);
 
-  React.useEffect(() => {
-    activeWindow.setDirty(isDirty);
-    return () => activeWindow.setDirty(false);
-  }, [activeWindow, isDirty]);
+  const registerDirty = React.useCallback(() => {
+    activeWindow.setDirtyCheck(() => form.state.isDirty);
+    return () => activeWindow.setDirtyCheck(null);
+  }, [activeWindow, form]);
 
   const commands = React.useMemo(
     () => [
@@ -190,6 +189,7 @@ function ClientesUpsertForm({
 )}
       </div>
       <form
+        ref={registerDirty}
         id="upsert-clientes"
         className="flex flex-col gap-6"
         onSubmit={submitFormEvent}
