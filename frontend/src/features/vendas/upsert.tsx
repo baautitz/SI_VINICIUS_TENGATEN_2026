@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useMemo, useEffect, useCallback } from "react";
-import { useForm, useStore } from "@tanstack/react-form";
+import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Button } from "@/ui/primitives";
@@ -514,12 +514,6 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
   ];
   useWindowCommands(commands);
 
-  const isDirty = useStore(form.store, (state) => state.isDirty);
-  useEffect(() => {
-    activeWindow.setDirty(isDirty || itens.length > 0);
-    return () => activeWindow.setDirty(false);
-  }, [activeWindow, isDirty, itens.length]);
-
   const getFieldError = (name: string, formErrors: unknown[]) => {
     return localErrors[name] || originalGetFieldError(name, formErrors);
   };
@@ -715,6 +709,11 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     return result;
   };
 
+  const registerDirty = () => {
+    activeWindow.setDirtyCheck(() => form.state.isDirty || itens.length > 0);
+    return () => activeWindow.setDirtyCheck(null);
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
       <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
@@ -746,6 +745,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
         )}
       </div>
       <form
+        ref={registerDirty}
         id="upsert-venda"
         className="flex min-h-0 flex-1 flex-col gap-4"
         onSubmit={(e) => {
