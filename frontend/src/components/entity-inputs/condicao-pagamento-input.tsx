@@ -31,7 +31,18 @@ export function CondicaoPagamentoInput({
       error={error}
       initialItem={initialItem}
       onSelectId={onSelectId}
-      onSelectItem={onSelectItem}
+      onSelectItem={async (item) => {
+        if (!onSelectItem) return;
+        if (item && !item.condicoesPagamentosParcelas?.length) {
+          try {
+            onSelectItem(await condicoesApi.getById(item.id));
+            return;
+          } catch {
+            // mantém o item da lista
+          }
+        }
+        onSelectItem(item);
+      }}
       modalTitle="Selecionar Condição de Pagamento"
       getDisplayLabel={(item) => item?.descricao ?? ""}
       getSearchTerm={(item) => item.descricao}
@@ -47,7 +58,7 @@ export function CondicaoPagamentoInput({
       fetchList={async (term) => {
         try {
           const res = await condicoesApi.list(term.trim() || undefined, 1, 10);
-          return res ? { itens: res.itens } : null;
+          return res ? { itens: res.itens.filter((c) => c.ativo) } : null;
         } catch {
           return null;
         }
