@@ -26,7 +26,7 @@ public class MetodosPagamentosRepository : IMetodosPagamentosRepository
 
         const string sqlCount = "SELECT COUNT(*) FROM metodos_pagamento;";
         const string sqlData = @"
-            SELECT codigo, descricao, ativo
+            SELECT codigo, descricao, ativo, permite_troco AS PermiteTroco
             FROM metodos_pagamento
             ORDER BY codigo DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
@@ -39,7 +39,7 @@ public class MetodosPagamentosRepository : IMetodosPagamentosRepository
 
     public async Task<MetodosPagamentos?> ObterMetodoPagamentoPorCodigo(string codigo)
     {
-        const string sql = "SELECT codigo, descricao, ativo FROM metodos_pagamento WHERE codigo = @Codigo;";
+        const string sql = "SELECT codigo, descricao, ativo, permite_troco AS PermiteTroco FROM metodos_pagamento WHERE codigo = @Codigo;";
         return await _session.Connection.QuerySingleOrDefaultAsync<MetodosPagamentos>(sql, new { Codigo = codigo }, transaction: _session.Transaction);
     }
 
@@ -48,12 +48,12 @@ public class MetodosPagamentosRepository : IMetodosPagamentosRepository
         try
         {
             const string sql = @"
-                INSERT INTO metodos_pagamento (codigo, descricao, ativo)
-                VALUES (@Codigo, @Descricao, @Ativo);";
+                INSERT INTO metodos_pagamento (codigo, descricao, ativo, permite_troco)
+                VALUES (@Codigo, @Descricao, @Ativo, @PermiteTroco);";
 
             await _session.Connection.ExecuteAsync(
                 sql,
-                new { metodo.Codigo, metodo.Descricao, metodo.Ativo },
+                new { metodo.Codigo, metodo.Descricao, metodo.Ativo, metodo.PermiteTroco },
                 transaction: _session.Transaction
             );
 
@@ -71,12 +71,12 @@ public class MetodosPagamentosRepository : IMetodosPagamentosRepository
         {
             const string sql = @"
                 UPDATE metodos_pagamento
-                SET descricao = @Descricao, ativo = @Ativo
+                SET descricao = @Descricao, ativo = @Ativo, permite_troco = @PermiteTroco
                 WHERE codigo = @Codigo;";
 
             var linhasAfetadas = await _session.Connection.ExecuteAsync(
                 sql,
-                new { Codigo = codigo, metodo.Descricao, metodo.Ativo },
+                new { Codigo = codigo, metodo.Descricao, metodo.Ativo, metodo.PermiteTroco },
                 transaction: _session.Transaction
             );
 
@@ -112,7 +112,7 @@ public class MetodosPagamentosRepository : IMetodosPagamentosRepository
 
         const string sqlCount = "SELECT COUNT(*) FROM metodos_pagamento WHERE codigo ILIKE @Termo OR descricao ILIKE @Termo;";
         const string sqlData = @"
-            SELECT codigo, descricao, ativo
+            SELECT codigo, descricao, ativo, permite_troco AS PermiteTroco
             FROM metodos_pagamento
             WHERE codigo ILIKE @Termo OR descricao ILIKE @Termo
             ORDER BY codigo DESC

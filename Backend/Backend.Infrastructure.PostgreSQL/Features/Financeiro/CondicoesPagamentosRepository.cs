@@ -29,7 +29,7 @@ public class CondicoesPagamentosRepository : ICondicoesPagamentosRepository
             SELECT cp.id AS Id, cp.descricao AS Descricao, cp.entrada_minima_percentual AS EntradaMinimaPercentual,
                    cp.desconto_percentual AS DescontoPercentual, cp.acrescimo_percentual AS AcrescimoPercentual,
                    cp.multa_percentual AS MultaPercentual, cp.taxa_juros_percentual AS TaxaJurosPercentual, cp.ativo AS Ativo,
-                   mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo
+                   mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo, mp.permite_troco AS PermiteTroco
             FROM condicoes_pagamentos cp
             INNER JOIN metodos_pagamento mp ON mp.codigo = cp.metodo_pagamento_codigo
             ORDER BY cp.id DESC
@@ -91,7 +91,7 @@ public class CondicoesPagamentosRepository : ICondicoesPagamentosRepository
             SELECT cp.id AS Id, cp.descricao AS Descricao, cp.entrada_minima_percentual AS EntradaMinimaPercentual,
                    cp.desconto_percentual AS DescontoPercentual, cp.acrescimo_percentual AS AcrescimoPercentual,
                    cp.multa_percentual AS MultaPercentual, cp.taxa_juros_percentual AS TaxaJurosPercentual, cp.ativo AS Ativo,
-                   mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo
+                   mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo, mp.permite_troco AS PermiteTroco
             FROM condicoes_pagamentos cp
             INNER JOIN metodos_pagamento mp ON mp.codigo = cp.metodo_pagamento_codigo
             WHERE cp.id = @Id;";
@@ -253,7 +253,7 @@ public class CondicoesPagamentosRepository : ICondicoesPagamentosRepository
             SELECT cp.id AS Id, cp.descricao AS Descricao, cp.entrada_minima_percentual AS EntradaMinimaPercentual,
                    cp.desconto_percentual AS DescontoPercentual, cp.acrescimo_percentual AS AcrescimoPercentual,
                    cp.multa_percentual AS MultaPercentual, cp.taxa_juros_percentual AS TaxaJurosPercentual, cp.ativo AS Ativo,
-                   mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo
+                   mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo, mp.permite_troco AS PermiteTroco
             FROM condicoes_pagamentos cp
             INNER JOIN metodos_pagamento mp ON mp.codigo = cp.metodo_pagamento_codigo
             WHERE cp.descricao ILIKE @Termo OR mp.descricao ILIKE @Termo
