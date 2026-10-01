@@ -109,9 +109,9 @@ function VendasCheckout({
   const [observacao, setObservacao] = useState(initialObservacao);
 
   const finish = useCallback(() => {
-    if (!condicao) return;
+    if (!condicao || totalNet <= 0) return;
     activeWindow.resolve({ condicao, observacao });
-  }, [activeWindow, condicao, observacao]);
+  }, [activeWindow, condicao, observacao, totalNet]);
 
   useWindowCommands(
     useMemo(
@@ -120,14 +120,14 @@ function VendasCheckout({
           id: "vendas.checkout.confirm",
           hotkey: "Alt+Enter" as const,
           label: "Finalizar venda",
-          enabled: !!condicao,
+          enabled: !!condicao && totalNet > 0,
           run: (event: KeyboardEvent) => {
             event.preventDefault();
             finish();
           },
         },
       ],
-      [condicao, finish],
+      [condicao, totalNet, finish],
     ),
   );
 
@@ -167,7 +167,11 @@ function VendasCheckout({
           onSelectItem={setCondicao}
           onSelectId={() => {}}
           error={
-            !condicao ? "Selecione o método/condição de pagamento." : undefined
+            totalNet <= 0
+              ? "Venda com total zerado não pode ser finalizada: o sistema exige ao menos uma parcela. Ajuste os descontos."
+              : !condicao
+                ? "Selecione o método/condição de pagamento."
+                : undefined
           }
         />
       </div>
@@ -194,7 +198,11 @@ function VendasCheckout({
         >
           Voltar <Kbd>Esc</Kbd>
         </Button>
-        <Button type="button" onClick={finish} disabled={!condicao}>
+        <Button
+          type="button"
+          onClick={finish}
+          disabled={!condicao || totalNet <= 0}
+        >
           Concluir{" "}
           <KbdGroup>
             <Kbd>Alt</Kbd>
@@ -528,7 +536,9 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
 
       const current = itens[existingIndex];
       const grossNew = newQty * current.valorUnitario;
-      const valorTotalNew = parseFloat((newQty * current.precoFinal).toFixed(2));
+      const valorTotalNew = parseFloat(
+        (newQty * current.precoFinal).toFixed(2),
+      );
       setItens(
         itens.map((it, i) =>
           i === existingIndex
@@ -536,7 +546,9 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                 ...it,
                 quantidade: newQty,
                 valorTotal: valorTotalNew,
-                valorDesconto: parseFloat((grossNew - valorTotalNew).toFixed(2)),
+                valorDesconto: parseFloat(
+                  (grossNew - valorTotalNew).toFixed(2),
+                ),
               }
             : it,
         ),
