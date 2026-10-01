@@ -45,6 +45,7 @@ import { Trash2 } from "lucide-react";
 import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
 import { Spinner } from "@/ui/primitives";
 import { navigationCell } from "@/ui/keyboard-navigation";
+import { toLocalISODate, todayLocalISODate } from "@/utils/date-utils";
 
 export interface VendasUpsertProps {
   editingItem: Venda | null;
@@ -290,7 +291,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
   const [dataVenda, setDataVenda] = useState(() =>
     editingItem?.dataVenda
       ? editingItem.dataVenda.split("T")[0]
-      : new Date().toISOString().split("T")[0],
+      : todayLocalISODate(),
   );
 
   const skuInputRef = useRef<HTMLInputElement>(null);
@@ -616,7 +617,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     if (entradaPercent > 0) {
       result.push({
         numeroParcela: count++,
-        dataVencimento: baseDate.toISOString().split("T")[0],
+        dataVencimento: toLocalISODate(baseDate),
         valorParcela: parseFloat(
           (totalNet * (entradaPercent / 100)).toFixed(2),
         ),
@@ -627,7 +628,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
       venc.setDate(baseDate.getDate() + item.prazoDias);
       result.push({
         numeroParcela: count++,
-        dataVencimento: venc.toISOString().split("T")[0],
+        dataVencimento: toLocalISODate(venc),
         valorParcela: parseFloat(
           (totalNet * (item.percentual / 100)).toFixed(2),
         ),
@@ -716,7 +717,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                       value={dataVenda}
                       onChange={(val) => {
                         const newVal =
-                          val || new Date().toISOString().split("T")[0];
+                          val || todayLocalISODate();
                         setDataVenda(newVal);
                         field.handleChange(newVal);
                       }}
