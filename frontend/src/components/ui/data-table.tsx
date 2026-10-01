@@ -112,9 +112,13 @@ export function DataTable<TData, TValue>({
     priority: -1,
   });
 
-  React.useEffect(() => {
+  // Trocar de página invalida a linha focada: ajusta durante o render, sem
+  // um render extra com o índice da página anterior.
+  const [prevPageIndex, setPrevPageIndex] = React.useState(pageIndex);
+  if (pageIndex !== prevPageIndex) {
+    setPrevPageIndex(pageIndex);
     setFocusedRowIndex(null);
-  }, [pageIndex]);
+  }
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
