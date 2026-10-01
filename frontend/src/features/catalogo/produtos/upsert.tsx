@@ -1,7 +1,7 @@
 "use client";
 
 import { Kbd, KbdGroup } from "@/ui/primitives";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useRef, useMemo, useCallback } from "react";
 import type { FormEvent } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/ui/primitives";
@@ -13,7 +13,7 @@ import {
 } from "@/ui/primitives";
 import { FormFieldUI } from "@/ui/composites";
 import { Textarea } from "@/ui/primitives";
-import { useForm, useStore } from "@tanstack/react-form";
+import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import { UnidadeMedida } from "@/features/catalogo/unidades-medida/types";
 import { Produto, ProdutoFormValues, produtoSchema } from "./types";
@@ -96,7 +96,7 @@ function ProdutosUpsertForm({
     editingItem?.unidadeMedida ?? null,
   );
   const [focusedSkuIndex, setFocusedSkuIndex] = useState<number | null>(null);
-  const [hasLocalChanges, setHasLocalChanges] = useState(false);
+  const hasLocalChanges = useRef(false);
 
   const { data: atributosList } = useQuery({
     queryKey: ["atributos", "list-all"],
@@ -306,7 +306,7 @@ function ProdutosUpsertForm({
   };
 
   const handleUpdateOptions = (newOptions: VariantOption[]) => {
-    setHasLocalChanges(true);
+    hasLocalChanges.current = true;
     setOptions(newOptions);
     const newCombinations = generateCartesianCombinations(newOptions);
     form.setFieldValue("skus", newCombinations);
@@ -347,7 +347,7 @@ function ProdutosUpsertForm({
   };
 
   const addOption = useCallback(async () => {
-    setHasLocalChanges(true);
+    hasLocalChanges.current = true;
     setHasVariants(true);
     setOptions((prev) => [
       ...prev,
@@ -366,11 +366,10 @@ function ProdutosUpsertForm({
     await form.handleSubmit();
   };
 
-  const isDirty = useStore(form.store, (state) => state.isDirty);
-  useEffect(() => {
-    activeWindow.setDirty(!readOnly && (isDirty || hasLocalChanges));
-    return () => activeWindow.setDirty(false);
-  }, [activeWindow, hasLocalChanges, isDirty, readOnly]);
+  const registerDirty = useCallback(() => {
+    activeWindow.setDirtyCheck(() => !readOnly && (form.state.isDirty || hasLocalChanges.current));
+    return () => activeWindow.setDirtyCheck(null);
+  }, [activeWindow, form, readOnly]);
 
   const commands = useMemo(
     () => [
@@ -445,6 +444,7 @@ function ProdutosUpsertForm({
         </form.Subscribe>)}
       </div>
       <form
+        ref={registerDirty}
         id="upsert-produtos"
         className="flex flex-col gap-6"
         onSubmit={submitForm}

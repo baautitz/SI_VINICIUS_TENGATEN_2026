@@ -10,7 +10,7 @@ import {
   FieldError,
 } from "@/ui/primitives";
 import { FormFieldUI } from "@/ui/composites";
-import { useForm, useStore } from "@tanstack/react-form";
+import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import {
   skuAtributoChaveSchema,
@@ -91,12 +91,11 @@ function AtributosUpsertForm({
 
   const [newValue, setNewValue] = React.useState("");
 
-  const isDirty = useStore(form.store, (state) => state.isDirty);
 
-  React.useEffect(() => {
-    activeWindow.setDirty(isDirty);
-    return () => activeWindow.setDirty(false);
-  }, [activeWindow, isDirty]);
+  const registerDirty = React.useCallback(() => {
+    activeWindow.setDirtyCheck(() => form.state.isDirty);
+    return () => activeWindow.setDirtyCheck(null);
+  }, [activeWindow, form]);
 
   const commands = React.useMemo(
     () => [
@@ -151,6 +150,7 @@ function AtributosUpsertForm({
         </form.Subscribe>)}
       </div>
       <form
+        ref={registerDirty}
         id="upsert-atributos"
         className="flex flex-col gap-6"
         onSubmit={(e) => {

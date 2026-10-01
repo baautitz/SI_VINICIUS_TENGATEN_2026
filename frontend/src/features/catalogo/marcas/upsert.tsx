@@ -7,7 +7,7 @@ import { Field, FieldGroup, FieldLabel } from "@/ui/primitives";
 import { Input } from "@/ui/primitives";
 import { FormFieldUI } from "@/ui/composites";
 import { Checkbox } from "@/ui/primitives";
-import { useForm, useStore } from "@tanstack/react-form";
+import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import { marcaSchema, Marca, MarcaFormValues } from "./types";
 import { useQuery } from "@tanstack/react-query";
@@ -77,12 +77,11 @@ function MarcasUpsertForm({
     },
   });
 
-  const isDirty = useStore(form.store, (state) => state.isDirty);
 
-  React.useEffect(() => {
-    activeWindow.setDirty(isDirty);
-    return () => activeWindow.setDirty(false);
-  }, [activeWindow, isDirty]);
+  const registerDirty = React.useCallback(() => {
+    activeWindow.setDirtyCheck(() => form.state.isDirty);
+    return () => activeWindow.setDirtyCheck(null);
+  }, [activeWindow, form]);
 
   const commands = React.useMemo(
     () => [
@@ -121,6 +120,7 @@ function MarcasUpsertForm({
         </form.Subscribe>)}
       </div>
       <form
+        ref={registerDirty}
         id="upsert-marcas"
         className="flex flex-col gap-4"
         onSubmit={(e) => {
