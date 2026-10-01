@@ -1,6 +1,8 @@
 export {
   ActiveWindowContext,
   ActiveWindowProvider,
+  WindowActions,
+  WindowFooterContext,
   useActiveWindow,
   useWindow,
   useOptionalActiveWindow,

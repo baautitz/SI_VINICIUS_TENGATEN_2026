@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useMemo, useRef } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ComponentType, ComponentProps, ReactNode } from "react";
 import { AppWindow } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -26,7 +26,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/ui/primitives";
-import { ActiveWindowProvider } from "./active-context";
+import { ActiveWindowProvider, WindowFooterContext } from "./active-context";
 import { useWindowRuntime, type WindowRecord } from "./provider";
 import type { WindowCloseReason, WindowIcon } from "./types";
 import {
@@ -103,10 +103,16 @@ function ManagedWindow({
     active: isTop,
     priority: 100,
   });
+  const [footerSlot, setFooterSlot] = useState<HTMLDivElement | null>(null);
   const body = (
-    <div data-window-scope="true" className="contents">
-      <Component {...componentProps} />
-    </div>
+    <WindowFooterContext.Provider value={footerSlot}>
+      <div data-window-scope="true" className="contents">
+        <Component {...componentProps} />
+      </div>
+    </WindowFooterContext.Provider>
+  );
+  const footer = (
+    <div ref={setFooterSlot} className="shrink-0 border-t pt-4 empty:hidden" />
   );
   const semanticClassName = cn(
     record.options.size ? sizeClasses[record.options.size] : undefined,
@@ -299,6 +305,7 @@ function ManagedWindow({
               {body}
             </ActiveWindowProvider>
           </SheetBody>
+          {footer}
         </SheetContent>
       </Sheet>
     );
@@ -344,6 +351,7 @@ function ManagedWindow({
             {body}
           </ActiveWindowProvider>
         </DialogBody>
+        {footer}
       </DialogContent>
     </Dialog>
   );

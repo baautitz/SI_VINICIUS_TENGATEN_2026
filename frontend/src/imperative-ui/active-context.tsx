@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext } from "react"
+import { createPortal } from "react-dom"
 import type { RefObject, ReactNode } from "react"
 import type { WindowCloseReason } from "./types"
 
@@ -47,4 +48,17 @@ export function useWindow<TResult>(): ActiveWindowContextValue<TResult> {
 
 export function useOptionalActiveWindow<TResult>(): ActiveWindowContextValue<TResult> | null {
   return useContext(ActiveWindowContext) as ActiveWindowContextValue<TResult> | null
+}
+
+/** Slot do rodapé fixo da janela; os botões de ação entram nele via portal. */
+export const WindowFooterContext = createContext<HTMLElement | null>(null)
+
+export function WindowActions({ children }: { children: ReactNode }) {
+  const slot = useContext(WindowFooterContext)
+  const content = (
+    <div data-window-actions className="flex justify-end gap-2">
+      {children}
+    </div>
+  )
+  return slot ? createPortal(content, slot) : content
 }
