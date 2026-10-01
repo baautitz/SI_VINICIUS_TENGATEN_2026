@@ -27,9 +27,6 @@ public class VendaItens
         if (valorUnitario < 0)
             throw new DomainException("Valor unitário não pode ser negativo.");
 
-        if (valorDesconto < 0)
-            throw new DomainException("Valor de desconto não pode ser negativo.");
-
         if (sku == null)
             throw new DomainException("SKU é obrigatório.");
 
@@ -60,9 +57,6 @@ public class VendaItens
 
     public void AtualizarValorDesconto(decimal valorDesconto)
     {
-        if (valorDesconto < 0)
-            throw new DomainException("Valor de desconto não pode ser negativo.");
-
         ValorDesconto = valorDesconto;
         AtualizarValorTotal();
     }
