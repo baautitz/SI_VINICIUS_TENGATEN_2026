@@ -858,7 +858,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                         <TableHead className="w-full px-4 text-left">
                           Produto
                         </TableHead>
-                        <TableHead className="w-24 px-4 text-right">
+                        <TableHead className="w-36 px-4 text-right">
                           Quantidade
                         </TableHead>
                         <TableHead className="w-28 px-4 text-right">
