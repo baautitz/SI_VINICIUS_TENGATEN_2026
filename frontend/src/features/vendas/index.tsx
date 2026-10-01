@@ -116,8 +116,15 @@ function VendasCancelWindow({ venda }: VendasCancelWindowProps) {
   const [motivo, setMotivo] = React.useState("");
   const [error, setError] = React.useState("");
 
+  // O motivo é lido por ref para o comando de teclado não ser recriado a cada
+  // tecla digitada.
+  const motivoRef = React.useRef(motivo);
+  React.useEffect(() => {
+    motivoRef.current = motivo;
+  }, [motivo]);
+
   const confirm = React.useCallback(() => {
-    const value = motivo.trim();
+    const value = motivoRef.current.trim();
     if (!value) {
       setError("Motivo do cancelamento é obrigatório.");
       return;
@@ -127,7 +134,7 @@ function VendasCancelWindow({ venda }: VendasCancelWindowProps) {
       return;
     }
     activeWindow.resolve(value);
-  }, [activeWindow, motivo]);
+  }, [activeWindow]);
 
   useWindowCommands(
     React.useMemo(
@@ -146,10 +153,14 @@ function VendasCancelWindow({ venda }: VendasCancelWindowProps) {
     ),
   );
 
+  const isDirty = motivo.trim().length > 0;
   React.useEffect(() => {
-    activeWindow.setDirty(motivo.trim().length > 0);
-    return () => activeWindow.setDirty(false);
-  }, [activeWindow, motivo]);
+    activeWindow.setDirty(isDirty);
+  }, [activeWindow, isDirty]);
+  React.useEffect(
+    () => () => activeWindow.setDirty(false),
+    [activeWindow],
+  );
 
   return (
     <div className="flex flex-col gap-4">

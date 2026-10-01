@@ -114,10 +114,17 @@ function VendasCheckout({
   const troco = isDinheiro ? Math.max(0, valorRecebido - totalNet) : 0;
   const canFinish = !!condicao && totalNet > 0 && !recebidoInsuficiente;
 
+  // A observação é lida por ref para o comando de teclado não ser recriado a
+  // cada tecla digitada.
+  const observacaoRef = useRef(observacao);
+  useEffect(() => {
+    observacaoRef.current = observacao;
+  }, [observacao]);
+
   const finish = useCallback(() => {
     if (!condicao || totalNet <= 0 || recebidoInsuficiente) return;
-    activeWindow.resolve({ condicao, observacao });
-  }, [activeWindow, condicao, observacao, totalNet, recebidoInsuficiente]);
+    activeWindow.resolve({ condicao, observacao: observacaoRef.current });
+  }, [activeWindow, condicao, totalNet, recebidoInsuficiente]);
 
   useWindowCommands(
     useMemo(
@@ -137,10 +144,11 @@ function VendasCheckout({
     ),
   );
 
+  const checkoutDirty = !!condicao || observacao.length > 0;
   useEffect(() => {
-    activeWindow.setDirty(!!condicao || observacao.length > 0);
-    return () => activeWindow.setDirty(false);
-  }, [activeWindow, condicao, observacao]);
+    activeWindow.setDirty(checkoutDirty);
+  }, [activeWindow, checkoutDirty]);
+  useEffect(() => () => activeWindow.setDirty(false), [activeWindow]);
 
   return (
     <div className="flex flex-col gap-5 py-2">
