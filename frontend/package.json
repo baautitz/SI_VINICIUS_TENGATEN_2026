@@ -13,7 +13,8 @@
     "test:keyboard-navigation": "node scripts/test-keyboard-navigation.mjs",
     "imperative-ui:check-boundaries": "node scripts/check-imperative-ui-boundaries.mjs",
     "test:imperative-ui": "node scripts/test-imperative-ui-contracts.mjs",
-    "test:window-controller": "node scripts/test-window-controller.mjs"
+    "test:window-controller": "node scripts/test-window-controller.mjs",
+    "check:effects": "node scripts/check-no-effects.mjs"
   },
   "dependencies": {
     "@tanstack/react-form": "^1.33.0",
