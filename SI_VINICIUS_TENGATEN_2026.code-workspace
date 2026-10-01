@@ -1,19 +1,21 @@
 {
-	"folders": [
-		{
-			"path": "Backend"
-		},
-		{
-			"path": "frontend"
-		},
-		{
-			"path": "."
-		}
-	],
-	"settings": {
-		"files.exclude": {
-			"Backend": true,
-			"frontend": true
-		}
-	}
+  "folders": [
+    {
+      "path": "Backend",
+    },
+    {
+      "path": "frontend",
+    },
+    {
+      "name": "root",
+      "path": ".",
+    },
+  ],
+  "settings": {
+    "terminal.integrated.cwd": "${workspaceFolder:root}",
+    "files.exclude": {
+      "Backend": true,
+      "frontend": true,
+    },
+  },
 }
