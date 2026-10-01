@@ -806,9 +806,11 @@ function CondicoesUpsertForm({
                     <span>Total (Entrada + Parcelas):</span>
                     <span
                       className={
-                        (entradaMinimaPercentual ?? 0) +
-                          totalParcelasPercent ===
-                        100
+                        Math.abs(
+                          (entradaMinimaPercentual ?? 0) +
+                            totalParcelasPercent -
+                            100,
+                        ) <= 0.0001
                           ? "text-emerald-600"
                           : (entradaMinimaPercentual ?? 0) +
                                 totalParcelasPercent >
