@@ -10,6 +10,9 @@ export interface ActiveWindowContextValue<TResult> {
   scopeRef: RefObject<HTMLDivElement | null>
   dismiss: (reason?: WindowCloseReason) => void
   resolve: (value: TResult) => void
+  /** Registra a consulta de "sujo", lida só ao tentar fechar a janela. */
+  setDirtyCheck: (check: (() => boolean) | null) => void
+  /** @deprecated Use setDirtyCheck. */
   setDirty: (dirty: boolean) => void
 }
 

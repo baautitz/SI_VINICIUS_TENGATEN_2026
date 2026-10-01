@@ -43,6 +43,7 @@ assert.match(controller, /resolve<TResult>\(id: WindowId/);
 assert.match(controller, /dismiss\(id: WindowId/);
 assert.match(controller, /requestDismiss\(/);
 assert.match(controller, /markDirty\(/);
+assert.match(controller, /setDirtyCheck\(/);
 assert.match(controller, /snapshot = \(\)/);
 assert.match(controller, /subscribe = \(listener/);
 assert.match(controller, /dispose\(\)/);

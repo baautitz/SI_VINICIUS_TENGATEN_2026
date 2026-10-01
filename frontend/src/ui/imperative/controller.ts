@@ -15,6 +15,9 @@ import type {
 
 interface PendingWindow extends WindowSnapshotEntry {
   resolve: (result: WindowResult<unknown>) => void
+  // O estado "sujo" é consultado ao fechar, não empurrado a cada alteração:
+  // digitar não republica o snapshot nem re-renderiza o host.
+  dirtyCheck: (() => boolean) | null
 }
 
 const defaultPorts: WindowPorts = {
@@ -64,7 +67,7 @@ export class WindowController implements WindowControllerContract {
         id,
         options: normalized as OpenWindowOptions<unknown>,
         focusTarget,
-        dirty: false,
+        dirtyCheck: null,
         resolve: resolve as (result: WindowResult<unknown>) => void,
       })
       this.publish()
@@ -92,7 +95,7 @@ export class WindowController implements WindowControllerContract {
     const current = this.top()
     if (!current || current.id !== id || this.pendingClose.has(id)) return
 
-    if (!current.dirty) {
+    if (!current.dirtyCheck?.()) {
       this.settle(id, { status: "cancelled", reason })
       return
     }
@@ -120,11 +123,14 @@ export class WindowController implements WindowControllerContract {
     )
   }
 
-  markDirty(id: WindowId, dirty: boolean): void {
+  setDirtyCheck(id: WindowId, check: (() => boolean) | null): void {
     const current = this.windows.find((window) => window.id === id)
-    if (!current || current.dirty === dirty) return
-    current.dirty = dirty
-    this.publish()
+    if (current) current.dirtyCheck = check
+  }
+
+  /** @deprecated Use setDirtyCheck; mantido durante a migração dos formulários. */
+  markDirty(id: WindowId, dirty: boolean): void {
+    this.setDirtyCheck(id, dirty ? () => true : null)
   }
 
   dismissAll(): void {
@@ -174,7 +180,6 @@ export class WindowController implements WindowControllerContract {
       id: window.id,
       options: window.options,
       focusTarget: window.focusTarget,
-      dirty: window.dirty,
     }))
     this.currentSnapshot = { windows, activeId: windows.at(-1)?.id ?? null }
     this.listeners.forEach((listener) => listener())

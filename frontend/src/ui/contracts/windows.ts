@@ -42,7 +42,6 @@ export interface WindowSnapshotEntry {
   id: WindowId
   options: OpenWindowOptions<unknown>
   focusTarget: FocusTarget | null
-  dirty: boolean
 }
 
 export interface WindowSnapshot {
@@ -62,6 +61,9 @@ export interface WindowController {
     id: WindowId,
     reason?: Extract<CloseReason, "cancel" | "escape" | "outside">,
   ): void
+  /** Registra a consulta de "sujo", avaliada só ao fechar. Não republica o snapshot. */
+  setDirtyCheck(id: WindowId, check: (() => boolean) | null): void
+  /** @deprecated Use setDirtyCheck; mantido durante a migração dos formulários. */
   markDirty(id: WindowId, dirty: boolean): void
   snapshot(): WindowSnapshot
   subscribe(listener: () => void): () => void

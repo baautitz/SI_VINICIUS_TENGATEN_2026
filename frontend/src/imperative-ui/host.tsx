@@ -91,6 +91,8 @@ function ManagedWindow({
         runtime.controller.dismiss(record.id, reason);
       },
       resolve: (value: unknown) => runtime.controller.resolve(record.id, value),
+      setDirtyCheck: (check: (() => boolean) | null) =>
+        runtime.controller.setDirtyCheck(record.id, check),
       setDirty: (dirty: boolean) =>
         runtime.controller.markDirty(record.id, dirty),
     }),

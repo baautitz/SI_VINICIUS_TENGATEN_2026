@@ -44,10 +44,19 @@ controller.dismiss(secondId)
 assert.equal((await second).reason, "cancel")
 assert.deepEqual(focusCalls, [])
 
-controller.markDirty(firstId, true)
+let publishes = 0
+controller.subscribe(() => publishes++)
+let dirtyChecks = 0
+controller.setDirtyCheck(firstId, () => {
+  dirtyChecks++
+  return true
+})
+assert.equal(publishes, 0, "registrar a consulta de sujo não republica o snapshot")
+assert.equal(dirtyChecks, 0, "a consulta só roda ao fechar")
 controller.requestDismiss(firstId, "escape")
 controller.requestDismiss(firstId, "escape")
 assert.equal(confirmCalls, 1, "fechamentos repetidos não podem abrir confirmações duplicadas")
+assert.equal(dirtyChecks, 1, "a consulta de sujo roda uma vez por fechamento válido")
 releaseConfirm()
 await new Promise((resolve) => setImmediate(resolve))
 assert.equal(controller.snapshot().activeId, firstId, "cancelar descarte preserva a janela")
