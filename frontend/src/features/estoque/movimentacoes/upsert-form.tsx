@@ -1,6 +1,7 @@
 "use client";
 
 import { Kbd, KbdGroup } from "@/ui/primitives";
+import { WindowActions } from "@/imperative-ui";
 import React, { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { AlertDialogFooter, Button } from "@/ui/primitives";
@@ -401,7 +402,7 @@ export function MovimentacoesUpsertForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+      <WindowActions>
         <Button type="button" variant="outline" onClick={handleCancel}>
           <span className="flex items-center gap-2">
             {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
@@ -432,7 +433,7 @@ export function MovimentacoesUpsertForm({
             )}
           </form.Subscribe>
         )}
-      </div>
+      </WindowActions>
       <div aria-label={title}>
         <form
           ref={registerDirty}
