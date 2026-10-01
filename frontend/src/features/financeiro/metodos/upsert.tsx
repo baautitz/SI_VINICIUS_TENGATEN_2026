@@ -6,7 +6,7 @@ import { Button } from "@/ui/primitives";
 import { Field, FieldGroup, FieldLabel } from "@/ui/primitives";
 import { FormFieldUI } from "@/ui/composites";
 import { Checkbox } from "@/ui/primitives";
-import { useForm, useStore } from "@tanstack/react-form";
+import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import {
   metodoPagamentoSchema,
@@ -88,12 +88,10 @@ function MetodosUpsertForm({
     onSubmit: submitForm,
   });
 
-  const isDirty = useStore(form.store, (state) => state.isDirty);
-
-  React.useEffect(() => {
-    activeWindow.setDirty(isDirty);
-    return () => activeWindow.setDirty(false);
-  }, [activeWindow, isDirty]);
+  const registerDirty = React.useCallback(() => {
+    activeWindow.setDirtyCheck(() => form.state.isDirty);
+    return () => activeWindow.setDirtyCheck(null);
+  }, [activeWindow, form]);
 
   const commands = React.useMemo(
     () => [
@@ -157,6 +155,7 @@ function MetodosUpsertForm({
       </div>
       <form
         id="upsert-metodos"
+        ref={registerDirty}
         className="flex flex-col gap-4"
         onSubmit={submitFormEvent}
       >
