@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/ui/primitives";
-import { useForm, useStore } from "@tanstack/react-form";
+import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import { useQueryClient } from "@tanstack/react-query";
 import { estoqueApi } from "@/api/estoque";
@@ -232,12 +232,12 @@ export function MovimentacoesUpsertForm({
     }
   };
 
-  const isDirty = useStore(form.store, (state) => state.isDirty);
-
-  React.useEffect(() => {
-    activeWindow.setDirty(!readOnly && (isDirty || itens.length > 0));
-    return () => activeWindow.setDirty(false);
-  }, [activeWindow, isDirty, itens.length, readOnly]);
+  const registerDirty = React.useCallback(() => {
+    activeWindow.setDirtyCheck(
+      () => !readOnly && (form.state.isDirty || itens.length > 0),
+    );
+    return () => activeWindow.setDirtyCheck(null);
+  }, [activeWindow, form, itens.length, readOnly]);
 
   useWindowCommands(
     React.useMemo(
@@ -430,6 +430,7 @@ export function MovimentacoesUpsertForm({
       </div>
       <div aria-label={title}>
         <form
+          ref={registerDirty}
           id="upsert-movimentacao"
           className="flex flex-col gap-6"
           onSubmit={handleFormSubmit}
