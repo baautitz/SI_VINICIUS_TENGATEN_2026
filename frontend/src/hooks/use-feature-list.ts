@@ -31,18 +31,14 @@ export function useFeatureList<T>({
       | RowSelectionState
       | ((old: RowSelectionState) => RowSelectionState),
   ) => {
-    setRowSelectionRaw((old) => {
-      const newValue =
-        typeof updaterOrValue === "function"
-          ? updaterOrValue(old)
-          : updaterOrValue;
-
-      if (selectAllAcrossPages) {
-        setSelectAllAcrossPages(false);
-      }
-
-      return newValue;
-    });
+    // O updater do setState precisa ser puro (roda duas vezes em StrictMode):
+    // calcula o valor aqui e chama os dois setters no handler.
+    setRowSelectionRaw(
+      typeof updaterOrValue === "function"
+        ? updaterOrValue(rowSelection)
+        : updaterOrValue,
+    );
+    setSelectAllAcrossPages(false);
   };
   const handleSearchChange = useCallback((val: string) => {
     setSearchTerm(val);
