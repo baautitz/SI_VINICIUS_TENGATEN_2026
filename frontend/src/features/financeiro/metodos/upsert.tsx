@@ -1,6 +1,7 @@
 "use client";
 
 import { Kbd, KbdGroup } from "@/ui/primitives";
+import { WindowActions } from "@/imperative-ui";
 import React from "react";
 import { Button } from "@/ui/primitives";
 import { Field, FieldGroup, FieldLabel } from "@/ui/primitives";
@@ -124,7 +125,7 @@ function MetodosUpsertForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+      <WindowActions>
         <Button
           type="button"
           variant="outline"
@@ -153,7 +154,7 @@ function MetodosUpsertForm({
             )}
           </form.Subscribe>
         )}
-      </div>
+      </WindowActions>
       <form
         id="upsert-metodos"
         ref={registerDirty}

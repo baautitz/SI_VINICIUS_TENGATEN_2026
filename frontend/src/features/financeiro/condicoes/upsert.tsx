@@ -1,6 +1,7 @@
 "use client";
 
 import { Kbd, KbdGroup } from "@/ui/primitives";
+import { WindowActions } from "@/imperative-ui";
 import React, { useCallback, useState } from "react";
 import { Button } from "@/ui/primitives";
 import { Field, FieldLabel, FieldError } from "@/ui/primitives";
@@ -278,7 +279,7 @@ function CondicoesUpsertForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+      <WindowActions>
         <Button
           type="button"
           variant="outline"
@@ -307,7 +308,7 @@ function CondicoesUpsertForm({
             )}
           </form.Subscribe>
         )}
-      </div>
+      </WindowActions>
       <form
         id="upsert-condicoes"
         ref={registerDirty}

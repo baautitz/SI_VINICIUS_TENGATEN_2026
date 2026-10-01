@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
+import { WindowActions } from "@/imperative-ui";
 import { useForm } from "@tanstack/react-form";
 import { useSelector } from "@tanstack/react-store";
 import { Button } from "@/ui/primitives";
@@ -109,7 +110,7 @@ export function ContasPagarUpsertForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+      <WindowActions>
         <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>
           {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
         </Button>
@@ -118,7 +119,7 @@ export function ContasPagarUpsertForm({
             {mutation.isPending ? "Salvando..." : <span className="flex items-center gap-2">Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup></span>}
           </Button>
         )}
-      </div>
+      </WindowActions>
       <ContasPagarFormBody
         key={
           editingItem

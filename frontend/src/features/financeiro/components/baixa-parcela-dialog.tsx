@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { WindowActions } from "@/imperative-ui";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/ui/primitives";
 import { Kbd, KbdGroup } from "@/ui/primitives";
@@ -187,7 +188,7 @@ export function BaixaParcelaWindow({
         </Field>
       </div>
 
-      <div data-window-actions className="flex justify-end gap-2">
+      <WindowActions>
         <Button
           type="button"
           variant="outline"
@@ -213,7 +214,7 @@ export function BaixaParcelaWindow({
             </span>
           )}
         </Button>
-      </div>
+      </WindowActions>
     </>
   );
 }
