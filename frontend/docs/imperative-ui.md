@@ -81,15 +81,6 @@ sem `onKeyDown` no rodapé; o atalho funciona independentemente do foco enquanto
 a confirmação é a janela do topo. O rodapé mantém `data-window-actions` e os
 `Kbd` de `Esc` e `Alt`+`Enter`.
 
-### Atalhos de janela
-
-`useWindowCommands` trata todo comando com `Alt+Enter` como também acionável por
-`Control+Enter` (alias central, registrado como segunda definição do
-`useHotkeys`; combinações distintas, então nunca disparam duas vezes no mesmo
-evento). Somente `Alt+Enter` aparece nos `Kbd`. O alias é omitido se a mesma
-janela já registrar `Control+Enter`. Campos que tratam `Enter` (entity-input,
-sku-input) ignoram `Alt` e `Ctrl`, para não competir com o atalho.
-
 ### Contrato estrutural das janelas
 
 Toda janela de produto segue a mesma composição visual:

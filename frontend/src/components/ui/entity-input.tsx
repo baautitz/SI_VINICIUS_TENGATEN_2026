@@ -243,7 +243,7 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
             onChange={(e) => setSearchText(e.target.value)}
             onKeyDown={(e) => {
               if (disabled) return;
-              if (e.key === "Enter" && !e.altKey && !e.ctrlKey) {
+              if (e.key === "Enter" && !e.altKey) {
                 e.preventDefault();
                 // Enter is the keyboard command for opening the entity
                 // browser. Do not block the dialog on the optional inline

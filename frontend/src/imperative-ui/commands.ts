@@ -17,7 +17,6 @@ export interface WindowCommandOptions {
   target?: RefObject<HTMLElement | null>
 }
 
-const ALT_ENTER_KEY = hotkeyKey("Alt+Enter")
 const registrations = new Map<string, CommandRegistration>()
 const idRegistrations = new Map<string, CommandRegistration>()
 
@@ -117,9 +116,9 @@ export function useWindowCommands(
     }
   }, [commands, commandKeys, duplicateIds, duplicateKeys, scope, token])
 
-  const definitions = commands.flatMap((command, index) => {
+  const definitions = commands.map((command, index) => {
     const key = commandKeys[index]
-    const base = {
+    return {
       hotkey: command.hotkey,
       callback: (event: KeyboardEvent) => {
         if (!allowedRef.current.has(key) || command.enabled === false) return
@@ -139,11 +138,6 @@ export function useWindowCommands(
         meta: { name: command.id, description: command.label },
       },
     }
-    // Alt+Enter também responde a Control+Enter. São combinações distintas
-    // (um único keydown nunca casa as duas), então não há disparo duplicado.
-    return key === ALT_ENTER_KEY
-      ? [base, { ...base, hotkey: "Control+Enter" as const }]
-      : [base]
   })
 
   useHotkeys(definitions, {
