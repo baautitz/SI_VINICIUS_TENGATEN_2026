@@ -42,7 +42,7 @@ export function navigationCell({
 }
 
 /** Selects an input's complete value after focus has settled. */
-export function selectInputTextOnFocus(input: HTMLInputElement): void {
+export function selectInputTextOnFocus(input: HTMLInputElement | HTMLTextAreaElement): void {
   if (input.disabled || input.readOnly) return
 
   requestAnimationFrame(() => {
