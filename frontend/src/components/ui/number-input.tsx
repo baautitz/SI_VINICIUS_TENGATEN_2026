@@ -60,8 +60,9 @@ const NumberInput = ({
     if (propValue === "") {
       setInternalValue("");
     } else if (!isNaN(pNum)) {
-      if (internalValue === "-") {
-        // Sinal digitado sem dígitos ainda: mantém o campo como está.
+      if (isNaN(iNum) && pNum === 0) {
+        // Campo vazio (ou só com o sinal): o pai recebeu 0 por padrão, mas o
+        // usuário ainda está digitando, então não reescreve o texto.
       } else if (isNaN(iNum) || pNum !== iNum) {
         setInternalValue(
           isFocused ? normalize(propValue) : pad(normalize(propValue)),
@@ -114,7 +115,12 @@ const NumberInput = ({
     setIsFocused(false);
     const val = internalValue;
 
-    if (val !== "" && decimals > 0) {
+    if ((val === "" || val === "-") && propValue !== "") {
+      // Ao sair com o campo vazio, mostra o zero que o pai já recebeu.
+      const zero = pad("0") || "0";
+      setInternalValue(zero);
+      onValueChange?.(zero);
+    } else if (val !== "" && decimals > 0) {
       const padded = pad(val);
       if (padded !== val) {
         setInternalValue(padded);
