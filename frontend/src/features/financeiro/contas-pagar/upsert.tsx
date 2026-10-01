@@ -54,17 +54,34 @@ import { toLocalISODate, todayLocalISODate } from "@/utils/date-utils";
 export interface ContasPagarUpsertProps {
   editingItem: ContasPagar | null;
   readOnly?: boolean;
-  onBaixa?: (contaId: number, parcela: ContasPagarParcela) => void;
-  onEstorno?: (contaId: number, parcela: ContasPagarParcela) => void;
+  onBaixa?: (contaId: number, parcela: ContasPagarParcela) => void | Promise<void>;
+  onEstorno?: (contaId: number, parcela: ContasPagarParcela) => void | Promise<void>;
 }
 
 export function ContasPagarUpsertForm({
-  editingItem,
+  editingItem: initialItem,
   readOnly = false,
-  onBaixa,
-  onEstorno,
+  onBaixa: onBaixaProp,
+  onEstorno: onEstornoProp,
 }: ContasPagarUpsertProps) {
   const activeWindow = useWindow<true>();
+  const [editingItem, setEditingItem] = useState(initialItem);
+  const [version, setVersion] = useState(0);
+
+  // Recarrega a conta apos baixa/estorno para nao reenviar parcelas antigas no PUT.
+  const withRefresh =
+    (fn?: (contaId: number, parcela: ContasPagarParcela) => void | Promise<void>) =>
+    async (contaId: number, parcela: ContasPagarParcela) => {
+      await fn?.(contaId, parcela);
+      try {
+        setEditingItem(await contasPagarApi.getById(contaId));
+        setVersion((v) => v + 1);
+      } catch {
+        // mantem dados atuais; o PUT usa o ultimo estado carregado
+      }
+    };
+  const onBaixa = onBaixaProp ? withRefresh(onBaixaProp) : undefined;
+  const onEstorno = onEstornoProp ? withRefresh(onEstornoProp) : undefined;
   const isEditMode = !!editingItem;
 
   const {
@@ -105,7 +122,7 @@ export function ContasPagarUpsertForm({
       <ContasPagarFormBody
         key={
           editingItem
-            ? `${editingItem.id}-${editingItem.status}-${editingItem.valorSaldo}`
+            ? `${editingItem.id}-${version}`
             : "new"
         }
         editingItem={editingItem}
@@ -123,8 +140,8 @@ export function ContasPagarUpsertForm({
 interface ContasPagarFormBodyProps {
   editingItem: ContasPagar | null;
   readOnly: boolean;
-  onBaixa?: (contaId: number, parcela: ContasPagarParcela) => void;
-  onEstorno?: (contaId: number, parcela: ContasPagarParcela) => void;
+  onBaixa?: (contaId: number, parcela: ContasPagarParcela) => void | Promise<void>;
+  onEstorno?: (contaId: number, parcela: ContasPagarParcela) => void | Promise<void>;
   mutation: UseMutationResult<
     BackendResult<ContasPagar>,
     unknown,
