@@ -586,6 +586,12 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
       item.quantidade = value;
     } else if (key === "percentualDesconto") {
       const discPercent = Math.min(100, Math.max(0, value));
+      if (discPercent !== value) {
+        ui.feedback.notify({
+          type: "error",
+          title: `Desconto deve ficar entre 0% e 100%. Ajustado para ${discPercent}%.`,
+        });
+      }
       item.percentualDesconto = discPercent;
       item.precoFinal = parseFloat(
         (item.valorUnitario * (1 - discPercent / 100)).toFixed(2),
