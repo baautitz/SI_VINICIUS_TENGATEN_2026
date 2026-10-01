@@ -158,6 +158,9 @@ export function useNavigationScope(
 export function KeyboardNavigationProvider({ children }: { children: React.ReactNode }) {
   const scopesRef = React.useRef<NavigationScopeRegistration[]>([])
   const lastFocusedRef = React.useRef<FocusedNavigationSnapshot | null>(null)
+  // Goal column for consecutive ArrowUp/ArrowDown moves; only valid while
+  // focus is still on `element`, so any other move or click discards it.
+  const goalColumnRef = React.useRef<{ x: number; element: HTMLElement } | null>(null)
 
   const registerScope = React.useCallback((scope: NavigationScopeRegistration) => {
     scopesRef.current = scopesRef.current.filter((item) => item.id !== scope.id)
@@ -305,7 +308,12 @@ export function KeyboardNavigationProvider({ children }: { children: React.React
       const source = findNavigationElement(target)
       if (!source || !isEligible(source)) return
 
-      const destination = findDestination(source, direction, scope.root)
+      const vertical = direction === "up" || direction === "down"
+      const goalX =
+        goalColumnRef.current?.element === source
+          ? goalColumnRef.current.x
+          : source.getBoundingClientRect().left
+      const destination = findDestination(source, direction, scope.root, goalX)
       if (!destination || destination === source) {
         if (direction === "forward" || direction === "backward") {
           event.preventDefault()
@@ -317,6 +325,7 @@ export function KeyboardNavigationProvider({ children }: { children: React.React
       event.stopPropagation()
       destination.scrollIntoView({ block: "nearest", inline: "nearest" })
       destination.focus({ preventScroll: true })
+      goalColumnRef.current = vertical ? { x: goalX, element: destination } : null
     }
 
     document.addEventListener("keydown", handleKeyDown, true)
@@ -452,6 +461,7 @@ function findDestination(
   source: HTMLElement,
   direction: NavigationDirection,
   root: HTMLElement,
+  goalX: number,
 ): HTMLElement | null {
   const allCandidates = collectCandidates(root)
   const horizontalCandidates = allCandidates.filter(
@@ -509,6 +519,7 @@ function findDestination(
     sourceCandidate,
     geometryCandidates,
     direction,
+    goalX,
   )
   const destination =
     destinationId === null
