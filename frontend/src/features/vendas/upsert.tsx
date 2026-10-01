@@ -629,7 +629,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
 
   const updateItemRow = (
     index: number,
-    key: "quantidade" | "percentualDesconto" | "valorUnitario" | "precoFinal",
+    key: "quantidade" | "percentualDesconto" | "precoFinal",
     value: number,
   ) => {
     const current = itens[index];
@@ -649,11 +649,6 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
       item.percentualDesconto = discPercent;
       item.precoFinal = parseFloat(
         (item.valorUnitario * (1 - discPercent / 100)).toFixed(2),
-      );
-    } else if (key === "valorUnitario") {
-      item.valorUnitario = value;
-      item.precoFinal = parseFloat(
-        (value * (1 - item.percentualDesconto / 100)).toFixed(2),
       );
     } else if (key === "precoFinal") {
       const finalPrice = Math.min(item.valorUnitario, Math.max(0, value));
@@ -935,35 +930,8 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                               </div>
                             </TableCell>
 
-                            <TableCell className="px-4 py-1 text-right">
-                              <div className="flex flex-col items-end">
-                                <NumberInput
-                                  {...navigationCell({
-                                    grid: "venda-itens",
-                                    row: index,
-                                    column: 1,
-                                  })}
-                                  value={item.valorUnitario}
-                                  decimals={2}
-                                  inputSize="full"
-                                  inputMode="decimal"
-                                  aria-invalid={item.valorUnitario < 0}
-                                  className={cn(
-                                    "h-7 text-right text-xs font-semibold",
-                                    item.valorUnitario < 0 &&
-                                      "border-destructive focus-visible:ring-destructive",
-                                  )}
-                                  disabled={readOnly}
-                                  onNumberChange={(val) =>
-                                    updateItemRow(index, "valorUnitario", val)
-                                  }
-                                />
-                                {item.valorUnitario < 0 && (
-                                  <span className="text-destructive text-2xs mt-0.5 text-right font-semibold whitespace-nowrap">
-                                    Mín: 0
-                                  </span>
-                                )}
-                              </div>
+                            <TableCell className="px-4 py-1 text-right text-xs font-semibold">
+                              {formatCurrency(item.valorUnitario)}
                             </TableCell>
 
                             <TableCell className="px-4 py-1 text-right">
@@ -972,7 +940,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                                   {...navigationCell({
                                     grid: "venda-itens",
                                     row: index,
-                                    column: 2,
+                                    column: 1,
                                   })}
                                   value={item.percentualDesconto}
                                   decimals={2}
@@ -1013,7 +981,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                                   {...navigationCell({
                                     grid: "venda-itens",
                                     row: index,
-                                    column: 3,
+                                    column: 2,
                                   })}
                                   value={item.precoFinal}
                                   decimals={2}
@@ -1058,7 +1026,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                                   {...navigationCell({
                                     grid: "venda-itens",
                                     row: index,
-                                    column: 4,
+                                    column: 3,
                                   })}
                                   size="icon-xs"
                                   variant="ghost"
