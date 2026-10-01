@@ -63,6 +63,11 @@ export function VendasFeature() {
   };
 
   const cancelVenda = async (item: Venda) => {
+    // Delete na linha chega aqui mesmo sem o botão visível.
+    if (item.dataCancelamento) {
+      ui.feedback.notify({ type: "info", title: "Venda já está cancelada." });
+      return;
+    }
     const result = await ui.windows.open<string, VendasCancelWindowProps>({
       component: VendasCancelWindow,
       props: { venda: item },
