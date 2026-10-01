@@ -47,7 +47,7 @@ import {
 } from "./types";
 import { Plus, Trash2, Coins, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useWindow, useWindowCommands } from "@/ui/imperative";
+import { useUi, useWindow, useWindowCommands } from "@/ui/imperative";
 import { navigationCell } from "@/ui/keyboard-navigation";
 import { toLocalISODate, todayLocalISODate } from "@/utils/date-utils";
 
@@ -165,6 +165,8 @@ function ContasPagarFormBody({
   resetErrors,
 }: ContasPagarFormBodyProps) {
   const activeWindow = useWindow<true>();
+  const ui = useUi();
+  const parcelasEditadas = React.useRef(false);
   const isEditMode = !!editingItem;
 
   const [parcelas, setParcelas] = useState<ContasPagarParcela[]>(
@@ -238,13 +240,27 @@ function ContasPagarFormBody({
     form.setFieldValue("parcelas", parcelas);
   }, [parcelas, form]);
 
-  const gerarSugeridas = (
+  const valorGerado = React.useRef<number | null>(
+    form.state.values.valorOriginal,
+  );
+
+  const gerarSugeridas = async (
     valor: number,
     cond: CondicaoPagamento | null,
     emissaoStr?: string | null,
   ) => {
     if (temParcelaPagaOuParcial) return;
     if (!cond || valor <= 0) return;
+    if (parcelasEditadas.current && parcelas.length > 0) {
+      const confirmado = await ui.windows.confirm({
+        title: "Substituir parcelas",
+        description:
+          "As parcelas foram editadas manualmente. Deseja gerá-las novamente e descartar as alterações?",
+        confirmLabel: "Substituir",
+      });
+      if (!confirmado) return;
+    }
+    valorGerado.current = valor;
     const baseDate = emissaoStr
       ? new Date(emissaoStr + "T12:00:00")
       : new Date();
@@ -292,11 +308,13 @@ function ContasPagarFormBody({
       }
     }
 
+    parcelasEditadas.current = false;
     setParcelas(sugeridas);
   };
 
   const handleAddParcela = React.useCallback(() => {
     if (readOnly || temParcelaPagaOuParcial) return;
+    parcelasEditadas.current = true;
     const nextNum = parcelas.length + 1;
     const valorOriginal = form.getFieldValue("valorOriginal") || 0;
     const totalAtual = parcelas.reduce((sum, p) => sum + p.valorParcela, 0);
@@ -321,6 +339,7 @@ function ContasPagarFormBody({
 
   const handleRemoveParcela = (index: number) => {
     if (readOnly || temParcelaPagaOuParcial) return;
+    parcelasEditadas.current = true;
     const filtered = parcelas.filter((_, i) => i !== index);
     const reindexed = filtered.map((p, idx) => ({
       ...p,
@@ -335,6 +354,7 @@ function ContasPagarFormBody({
     value: string | number,
   ) => {
     if (readOnly || temParcelaPagaOuParcial) return;
+    parcelasEditadas.current = true;
     const updated = [...parcelas];
     updated[index] = {
       ...updated[index],
@@ -472,7 +492,16 @@ function ContasPagarFormBody({
                   <NumberInput
                     id={field.name}
                     name={field.name}
-                    onBlur={field.handleBlur}
+                    onBlur={() => {
+                      field.handleBlur();
+                      if (field.state.value !== valorGerado.current) {
+                        gerarSugeridas(
+                          field.state.value,
+                          condicao,
+                          form.getFieldValue("dataEmissao") as string | null,
+                        );
+                      }
+                    }}
                     inputSize="full"
                     value={field.state.value}
                     decimals={2}
@@ -480,11 +509,6 @@ function ContasPagarFormBody({
                     onNumberChange={(num) => {
                       if (num !== field.state.value) {
                         field.handleChange(num);
-                        gerarSugeridas(
-                          num,
-                          condicao,
-                          form.getFieldValue("dataEmissao") as string | null,
-                        );
                       }
                     }}
                     disabled={readOnly || temParcelaPagaOuParcial}
