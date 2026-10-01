@@ -163,9 +163,10 @@ function TransportadorasUpsertForm({
             variant="outline"
             onClick={() => activeWindow.dismiss("cancel")}
           >
-            Cancelar <Kbd>Esc</Kbd>
+            {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
           </Button>
-          <form.Subscribe
+          {!readOnly && (
+<form.Subscribe
             selector={(state) => [state.canSubmit, state.isSubmitting]}
           >
             {([canSubmit, isSubmitting]) => (
@@ -188,6 +189,7 @@ function TransportadorasUpsertForm({
               </Button>
             )}
           </form.Subscribe>
+)}
       </div>
       <form
         id="upsert-transportadoras"

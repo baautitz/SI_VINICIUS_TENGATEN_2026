@@ -153,9 +153,10 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false }: FornecedoresU
     <div className="flex flex-col gap-4">
       <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
         <Button type="button" variant="outline" onClick={cancelForm}>
-          Cancelar <Kbd>Esc</Kbd>
+          {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
         </Button>
-          <form.Subscribe
+          {!readOnly && (
+<form.Subscribe
             selector={(state) => [state.canSubmit, state.isSubmitting]}
           >
             {([canSubmit, isSubmitting]) => (
@@ -178,6 +179,7 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false }: FornecedoresU
               </Button>
             )}
           </form.Subscribe>
+)}
       </div>
       <form
         id="upsert-fornecedores"

@@ -169,9 +169,10 @@ function EmitentesUpsertForm({
           variant="outline"
           onClick={cancel}
         >
-          Cancelar <Kbd>Esc</Kbd>
+          {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
         </Button>
-        <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+        {!readOnly && (
+<form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
             <Button
               type="submit"
@@ -182,6 +183,7 @@ function EmitentesUpsertForm({
             </Button>
           )}
         </form.Subscribe>
+)}
       </div>
       <form
         id="upsert-emitentes"
