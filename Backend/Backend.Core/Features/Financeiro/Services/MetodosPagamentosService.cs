@@ -53,7 +53,7 @@ public sealed class MetodosPagamentosService : BaseService
 
         return await ExecuteResultAsync(async () =>
         {
-            var metodo = new MetodosPagamentos(codigoFinal, command.Descricao, command.Ativo);
+            var metodo = new MetodosPagamentos(codigoFinal, command.Descricao, command.Ativo, command.PermiteTroco);
             var criado = await _metodosRepository.CriarMetodoPagamento(metodo);
             return Resultado<MetodosPagamentos>.Sucesso(criado);
         });
@@ -73,6 +73,7 @@ public sealed class MetodosPagamentosService : BaseService
         return await ExecuteResultAsync(async () =>
         {
             existente.AtualizarDescricao(command.Descricao);
+            existente.DefinirPermiteTroco(command.PermiteTroco);
             if (command.Ativo) existente.Ativar();
             else existente.Desativar();
 
