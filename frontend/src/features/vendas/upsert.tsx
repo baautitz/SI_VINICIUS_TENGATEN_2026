@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useMemo, useCallback } from "react";
+import { WindowActions } from "@/imperative-ui";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -238,7 +239,7 @@ function VendasCheckout({
           />
         </Field>
       </div>
-      <div data-window-actions className="flex justify-end gap-2">
+      <WindowActions>
         <Button
           type="button"
           variant="outline"
@@ -253,7 +254,7 @@ function VendasCheckout({
             <Kbd>Enter</Kbd>
           </KbdGroup>
         </Button>
-      </div>
+      </WindowActions>
     </div>
   );
 }
@@ -714,7 +715,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
-      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+      <WindowActions>
         <Button
           type="button"
           variant="outline"
@@ -741,7 +742,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
             )}
           </Button>
         )}
-      </div>
+      </WindowActions>
       <form
         ref={registerDirty}
         id="upsert-venda"

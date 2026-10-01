@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { WindowActions } from "@/imperative-ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { VendasList } from "./list";
 import { VendasUpsertForm, type VendasUpsertProps } from "./upsert";
@@ -189,7 +190,7 @@ function VendasCancelWindow({ venda }: VendasCancelWindowProps) {
         />
         {error && <FieldError>{error}</FieldError>}
       </Field>
-      <div data-window-actions className="flex justify-end gap-2">
+      <WindowActions>
         <Button
           type="button"
           variant="outline"
@@ -204,7 +205,7 @@ function VendasCancelWindow({ venda }: VendasCancelWindowProps) {
             <Kbd>Enter</Kbd>
           </KbdGroup>
         </Button>
-      </div>
+      </WindowActions>
     </div>
   );
 }
