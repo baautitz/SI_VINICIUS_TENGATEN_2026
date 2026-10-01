@@ -90,7 +90,9 @@ export function ContasReceberList({
         )[0];
 
         const dateStr = formatDateToLocal(maisProxima.dataVencimento);
-        const isAtrasada = new Date(maisProxima.dataVencimento).getTime() < new Date().setHours(0, 0, 0, 0);
+        const hoje = new Date();
+        const hojeLocal = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
+        const isAtrasada = String(maisProxima.dataVencimento).slice(0, 10) < hojeLocal;
 
         return (
           <span className={isAtrasada ? "text-destructive font-bold" : "text-foreground font-semibold"}>
