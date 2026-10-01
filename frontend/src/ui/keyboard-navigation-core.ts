@@ -34,6 +34,7 @@ export function chooseSpatialDestination(
   source: SpatialNavigationNode,
   candidates: SpatialNavigationNode[],
   direction: NavigationDirection,
+  goalX: number = source.rect.left,
 ): string | null {
   const available = candidates.filter((candidate) => candidate.id !== source.id)
   let geometryCandidates = available
@@ -48,7 +49,7 @@ export function chooseSpatialDestination(
   }
 
   if (direction === "up" || direction === "down") {
-    return chooseVertical(source, geometryCandidates, direction)
+    return chooseVertical(source, geometryCandidates, direction, goalX)
   }
 
   const horizontalDirection =
@@ -70,7 +71,7 @@ export function chooseSpatialDestination(
     horizontalDirection,
   )
   const verticalDirection = direction === "forward" ? "down" : "up"
-  const verticalDestination = chooseVertical(source, geometryCandidates, verticalDirection)
+  const verticalDestination = chooseVertical(source, geometryCandidates, verticalDirection, goalX)
 
   // Tab follows the next row when there is no control on the same visual row.
   // A diagonally displaced control is only used when no vertical destination
@@ -151,8 +152,8 @@ function chooseVertical(
   source: SpatialNavigationNode,
   candidates: SpatialNavigationNode[],
   direction: "up" | "down",
+  goalX: number,
 ): string | null {
-  const sourceCenterX = centerX(source.rect)
 
   // A vertical move is a move to the next visual row, not to whichever
   // control happens to overlap the source's X axis.  The previous ordering
@@ -187,17 +188,20 @@ function chooseVertical(
     .filter(({ gap }) => Math.max(0, gap) <= nearestGap + rowTolerance)
     .map(({ candidate, gap }) => ({ candidate, gap }))
 
-  return nextRow
-    .sort((a, b) => {
-      const aOverlap = overlapsX(source.rect, a.candidate.rect) ? 0 : 1
-      const bOverlap = overlapsX(source.rect, b.candidate.rect) ? 0 : 1
-      if (aOverlap !== bOverlap) return aOverlap - bOverlap
+  // Like a text editor's goal column: pick the control that covers goalX,
+  // or the nearest one. A wide source starts at its left edge, so it never
+  // lands on whichever control happens to sit under its center.
+  const distanceToGoal = (rect: NavigationRect) =>
+    Math.max(rect.left - goalX, goalX - (rect.left + rect.width), 0)
 
-      return Math.abs(centerX(a.candidate.rect) - sourceCenterX) -
-        Math.abs(centerX(b.candidate.rect) - sourceCenterX) ||
-        a.gap - b.gap ||
-        (a.candidate.index ?? 0) - (b.candidate.index ?? 0)
-    })[0]?.candidate.id ?? null
+  return nextRow
+    .sort((a, b) =>
+      distanceToGoal(a.candidate.rect) - distanceToGoal(b.candidate.rect) ||
+      Math.abs(centerX(a.candidate.rect) - goalX) -
+        Math.abs(centerX(b.candidate.rect) - goalX) ||
+      a.gap - b.gap ||
+      (a.candidate.index ?? 0) - (b.candidate.index ?? 0),
+    )[0]?.candidate.id ?? null
 }
 
 function chooseHorizontal(

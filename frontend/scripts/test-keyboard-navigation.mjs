@@ -84,6 +84,16 @@ assert.equal(
   "ArrowRight ignores controls on a different visual row",
 )
 
+// Formulário de produto: campo largo seguido de uma linha com três campos.
+const descricao = node("descricao", 0, 0, 900, 64)
+const categoria = node("categoria", 0, 100, 280)
+const marca = node("marca", 310, 100, 280)
+const unidade = node("unidade", 620, 100, 280)
+const row = [unidade, marca, categoria]
+assert.equal(chooseSpatialDestination(descricao, row, "down"), "categoria", "ArrowDown from a wide field starts at its left edge")
+assert.equal(chooseSpatialDestination(descricao, row, "down", marca.rect.left), "marca", "ArrowDown honors the remembered goal column")
+assert.equal(chooseSpatialDestination(marca, [descricao, categoria], "up"), "descricao", "ArrowUp reaches the wide field")
+
 const grid = "stock"
 const gridSource = node("qty-0", 10, 10, 80, 32, { grid, row: 0, column: 0 })
 const gridQtyNext = node("qty-1", 10, 70, 80, 32, { grid, row: 1, column: 0 })
