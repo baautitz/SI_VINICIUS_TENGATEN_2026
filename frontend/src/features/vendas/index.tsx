@@ -44,15 +44,12 @@ export function VendasFeature() {
     ]);
   };
 
-  const openVenda = async (item: Venda | null, readOnly = false) => {
+  // Backend nao possui edicao de venda: venda existente abre sempre em leitura.
+  const openVenda = async (item: Venda | null, readOnly = !!item) => {
     const result = await ui.windows.open<true, VendasUpsertProps>({
       component: VendasUpsertForm,
       props: { editingItem: item, readOnly },
-      title: readOnly
-        ? "Detalhes da Venda"
-        : item
-          ? "Editar Venda"
-          : "Nova venda",
+      title: item ? "Detalhes da Venda" : "Nova venda",
       size: "large",
     });
 
@@ -60,9 +57,7 @@ export function VendasFeature() {
       await invalidate();
       ui.feedback.notify({
         type: "success",
-        title: item
-          ? "Venda atualizada com sucesso."
-          : "Venda registrada com sucesso.",
+        title: "Venda registrada com sucesso.",
       });
     }
   };
@@ -100,7 +95,7 @@ export function VendasFeature() {
       totalItems={data?.totalItems ?? 0}
       onSearchChange={list.handleSearchChange}
       onAdd={() => openVenda(null)}
-      onEdit={(item) => openVenda(item)}
+      onEdit={(item) => openVenda(item, true)}
       onView={(item) => openVenda(item, true)}
       onDelete={cancelVenda}
       onPageChange={list.setPage}
