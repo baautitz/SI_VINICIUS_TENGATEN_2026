@@ -103,9 +103,9 @@ function EstadosUpsertForm({
     <div className="flex flex-col gap-4">
       <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
         <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>
-          Cancelar <Kbd>Esc</Kbd>
+          {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
         </Button>
-          <form.Subscribe
+          {!readOnly && (<form.Subscribe
             selector={(state) => [state.canSubmit, state.isSubmitting]}
           >
             {([canSubmit, isSubmitting]) => (
@@ -127,7 +127,7 @@ function EstadosUpsertForm({
                 )}
               </Button>
             )}
-          </form.Subscribe>
+          </form.Subscribe>)}
       </div>
       <form
         id="upsert-estados"
