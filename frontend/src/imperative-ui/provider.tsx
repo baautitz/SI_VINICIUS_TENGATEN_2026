@@ -37,6 +37,7 @@ import type {
 } from "./types"
 import type { WindowOptions } from "@/ui/imperative/contracts"
 import { useWindow } from "./active-context"
+import { useWindowCommands } from "./commands"
 
 export type WindowRecord = WindowSnapshotEntry
 
@@ -238,17 +239,21 @@ function ConfirmWindow({
   confirmVariant = "default",
 }: ConfirmOptions) {
   const window = useWindow<true>()
+  const commands = useMemo(
+    () => [
+      {
+        id: "confirm",
+        label: "Confirmar",
+        hotkey: "Alt+Enter" as const,
+        run: () => window.resolve(true),
+      },
+    ],
+    [window],
+  )
+  useWindowCommands(commands)
 
   return (
-    <AlertDialogFooter
-      data-default-confirmation="true"
-      onKeyDown={(event) => {
-        if (!event.altKey || event.key !== "Enter") return
-        event.preventDefault()
-        event.stopPropagation()
-        window.resolve(true)
-      }}
-    >
+    <AlertDialogFooter data-default-confirmation="true">
       <AlertDialogCancel asChild>
         <Button type="button" variant="outline" onClick={() => window.dismiss("cancel")}>
           {cancelLabel} <Kbd>Esc</Kbd>
