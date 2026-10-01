@@ -67,7 +67,10 @@ assert.match(
   /<KbdGroup className="ml-2">[\s\S]*<Kbd>Alt<\/Kbd>[\s\S]*<Kbd>Enter<\/Kbd>/,
 );
 assert.match(provider, /data-default-confirmation="true"/);
-assert.match(provider, /!event\.altKey \|\| event\.key !== "Enter"/);
+assert.match(provider, /useWindowCommands\(commands\)/);
+assert.match(provider, /hotkey: "Alt\+Enter"/);
+assert.doesNotMatch(provider, /onKeyDown/);
+assert.match(commands, /Control\+Enter/);
 assert.match(commands, /conflictBehavior: "allow" as const/);
 assert.match(commands, /conflictBehavior: "allow",/);
 assert.doesNotMatch(commands, /conflictBehavior: "warn"/);
@@ -162,7 +165,7 @@ assert.match(entityInput, /openingSelectorRef/);
 assert.match(entityInput, /searchInFlightRef/);
 assert.match(entityInput, /getSelectionSearchTerm/);
 assert.match(entityInput, /visibleText === selectedLabel/);
-assert.match(entityInput, /e\.key === "Enter" && !e\.altKey/);
+assert.match(entityInput, /e\.key === "Enter" && !e\.altKey && !e\.ctrlKey/);
 assert.match(entityInput, /title: modalTitle,\s*icon,\s*size: "full"/);
 assert.match(combobox, /e\.key === "Enter" && !e\.altKey/);
 assert.match(combobox, /import \{ X \} from "lucide-react"/);
