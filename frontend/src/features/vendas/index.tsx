@@ -50,7 +50,7 @@ export function VendasFeature() {
       component: VendasUpsertForm,
       props: { editingItem: item, readOnly },
       title: item ? "Detalhes da Venda" : "Nova venda",
-      size: "large",
+      size: "full",
     });
 
     if (result.status === "confirmed") {

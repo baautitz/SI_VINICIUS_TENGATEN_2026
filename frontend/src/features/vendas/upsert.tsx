@@ -21,7 +21,6 @@ import {
   TableHead,
   TableCell,
 } from "@/ui/primitives";
-import { ScrollArea } from "@/ui/primitives";
 import { ClienteInput } from "@/components/entity-inputs/cliente-input";
 import { EmitenteInput } from "@/components/entity-inputs/emitente-input";
 import { CondicaoPagamentoInput } from "@/components/entity-inputs/condicao-pagamento-input";
@@ -709,7 +708,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex h-full min-h-0 flex-col gap-4">
       <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
         <Button
           type="button"
@@ -740,7 +739,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
       </div>
       <form
         id="upsert-venda"
-        className="flex h-full flex-col gap-4"
+        className="flex min-h-0 flex-1 flex-col gap-4"
         onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -764,7 +763,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
           </Alert>
         )}
 
-        <div className="flex h-full w-full flex-col gap-4">
+        <div className="flex min-h-0 w-full flex-1 flex-col gap-4">
           <div className="flex w-full flex-row gap-2">
             <div className="w-[20%]">
               <form.Field name="dataVenda">
@@ -846,12 +845,12 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
             </div>
           )}
 
-          <div className="h-full w-full flex-1">
-            <Card className="flex h-full flex-1 flex-col p-0">
-              <CardContent className="flex h-full flex-1 flex-col p-0">
-                <ScrollArea className="h-full w-full">
+          <div className="flex min-h-0 w-full flex-1 flex-col">
+            <Card className="flex min-h-0 flex-1 flex-col p-0">
+              <CardContent className="flex min-h-0 flex-1 flex-col p-0">
+                <div className="flex min-h-0 w-full flex-1 flex-col">
                   <Table className="min-w-250">
-                    <TableHeader className="bg-muted border-b">
+                    <TableHeader className="bg-muted sticky top-0 z-10 border-b">
                       <TableRow className="border-b hover:bg-transparent">
                         <TableHead className="w-28 px-4 text-left">
                           SKU
@@ -1030,7 +1029,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                         ))}
                     </TableBody>
                   </Table>
-                </ScrollArea>
+                </div>
 
                 <div className="/50 /10 grid grid-cols-1 divide-y border-t md:grid-cols-4 md:divide-x md:divide-y-0">
                   <div className="flex flex-col px-4 py-2 text-end">
