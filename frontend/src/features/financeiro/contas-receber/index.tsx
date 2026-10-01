@@ -78,6 +78,13 @@ export function ContasReceberFeature() {
   };
 
   const openDelete = async (item: ContasReceber) => {
+    if (item.vendaId) {
+      ui.feedback.notify({
+        type: "error",
+        title: `Conta gerada pela venda #${item.vendaId} não pode ser excluída manualmente. Cancele a venda.`,
+      });
+      return;
+    }
     const result = await ui.windows.confirm({
       title: "Excluir Conta a Receber",
       description: `Deseja realmente excluir a conta a receber #${item.id} - ${item.descricao}? Esta ação não poderá ser desfeita.`,

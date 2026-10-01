@@ -611,7 +611,7 @@ function ContasReceberFormBody({
                     decimals={0}
                     inputMode="numeric"
                     onNumberChange={(num) => field.handleChange(num || null)}
-                    disabled={readOnly}
+                    disabled={readOnly || !!editingItem?.vendaId}
                     className="text-right"
                   />
                 </div>
