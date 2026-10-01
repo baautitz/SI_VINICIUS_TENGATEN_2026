@@ -110,11 +110,12 @@ export const condicaoPagamentoSchema = condicaoPagamentoBaseSchema.superRefine(
       });
     }
 
-    if (data.entradaMinimaPercentual + totalPercentual !== 100) {
+    const somaPercentual = data.entradaMinimaPercentual + totalPercentual;
+    if (Math.abs(somaPercentual - 100) > 0.0001) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["parcelas"],
-        message: `A soma da entrada mínima e das parcelas deve ser exatamente igual a 100%. Atual: ${(data.entradaMinimaPercentual + totalPercentual).toFixed(2)}%.`,
+        message: `A soma da entrada mínima e das parcelas deve ser exatamente igual a 100%. Atual: ${somaPercentual.toFixed(2)}%.`,
       });
     }
 
