@@ -107,7 +107,7 @@ function VendasCheckout({
   );
   const [valorRecebido, setValorRecebido] = useState(0);
 
-  const isDinheiro = isMetodoDinheiro(condicao);
+  const isDinheiro = condicao?.metodoPagamento?.permiteTroco ?? false;
   const recebidoInsuficiente = isDinheiro && valorRecebido + 0.005 < totalNet;
   const troco = isDinheiro ? Math.max(0, valorRecebido - totalNet) : 0;
   const canFinish = !!condicao && totalNet > 0 && !recebidoInsuficiente;
@@ -256,16 +256,6 @@ function VendasCheckout({
       </div>
     </div>
   );
-}
-
-function isMetodoDinheiro(condicao: CondicaoPagamento | null) {
-  const metodo = condicao?.metodoPagamento;
-  if (!metodo) return false;
-  return `${metodo.codigo} ${metodo.descricao}`
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .includes("dinheiro");
 }
 
 function formatCurrency(value: number) {
