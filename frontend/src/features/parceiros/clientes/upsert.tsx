@@ -1,6 +1,7 @@
 "use client";
 
 import { Kbd, KbdGroup } from "@/ui/primitives";
+import { WindowActions } from "@/imperative-ui";
 import React, { useState } from "react";
 import { Button } from "@/ui/primitives";
 import { Field, FieldLabel, FieldError } from "@/ui/primitives";
@@ -158,7 +159,7 @@ function ClientesUpsertForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <div data-window-actions className="flex justify-end gap-2 border-b pb-4">
+      <WindowActions>
         <Button type="button" variant="outline" onClick={cancelForm}>
           {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
         </Button>
@@ -187,7 +188,7 @@ function ClientesUpsertForm({
             )}
           </form.Subscribe>
 )}
-      </div>
+      </WindowActions>
       <form
         ref={registerDirty}
         id="upsert-clientes"
