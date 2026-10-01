@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import { useForm } from "@tanstack/react-form";
 import { useSelector } from "@tanstack/react-store";
 import { Button } from "@/ui/primitives";
@@ -236,10 +236,6 @@ function ContasPagarFormBody({
     },
   });
 
-  useEffect(() => {
-    form.setFieldValue("parcelas", parcelas);
-  }, [parcelas, form]);
-
   const valorGerado = React.useRef<number | null>(
     form.state.values.valorOriginal,
   );
@@ -397,16 +393,18 @@ function ContasPagarFormBody({
 
   useWindowCommands(commands);
 
-  const isDirty = useSelector(form.store, (state) => state.isDirty);
-
-  useEffect(() => {
-    activeWindow.setDirty(isDirty);
-    return () => activeWindow.setDirty(false);
-  }, [activeWindow, isDirty]);
+  const [initialParcelasJson] = useState(() => JSON.stringify(parcelas));
+  const registerDirty = useCallback(() => {
+    activeWindow.setDirtyCheck(
+      () => form.state.isDirty || JSON.stringify(parcelas) !== initialParcelasJson,
+    );
+    return () => activeWindow.setDirtyCheck(null);
+  }, [activeWindow, form, parcelas, initialParcelasJson]);
 
   return (
     <form
       id="upsert-contas-pagar"
+      ref={registerDirty}
       className="flex flex-col gap-6"
       onSubmit={async (e) => {
         e.preventDefault();

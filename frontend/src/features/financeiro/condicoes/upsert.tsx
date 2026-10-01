@@ -1,7 +1,7 @@
 "use client";
 
 import { Kbd, KbdGroup } from "@/ui/primitives";
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useCallback, useState } from "react";
 import { Button } from "@/ui/primitives";
 import { Field, FieldLabel, FieldError } from "@/ui/primitives";
 import { Input } from "@/ui/primitives";
@@ -9,7 +9,7 @@ import { NumberInput } from "@/ui/composites";
 import { FormFieldUI } from "@/ui/composites";
 import { Checkbox } from "@/ui/primitives";
 import { MetodoPagamentoInput } from "@/components/entity-inputs/metodo-pagamento-input";
-import { useForm, useStore } from "@tanstack/react-form";
+import { useForm } from "@tanstack/react-form";
 import { useSelector } from "@tanstack/react-store";
 import {
   Table,
@@ -144,10 +144,6 @@ function CondicoesUpsertForm({
     },
   });
 
-  useEffect(() => {
-    form.setFieldValue("parcelas", parcelas);
-  }, [parcelas, form]);
-
   const entradaMinimaPercentual = useSelector(
     form.store,
     (state) => state.values.entradaMinimaPercentual,
@@ -158,12 +154,13 @@ function CondicoesUpsertForm({
     0,
   );
 
-  const isDirty = useStore(form.store, (state) => state.isDirty);
-
-  useEffect(() => {
-    activeWindow.setDirty(isDirty);
-    return () => activeWindow.setDirty(false);
-  }, [activeWindow, isDirty]);
+  const [initialParcelasJson] = useState(() => JSON.stringify(parcelas));
+  const registerDirty = useCallback(() => {
+    activeWindow.setDirtyCheck(
+      () => form.state.isDirty || JSON.stringify(parcelas) !== initialParcelasJson,
+    );
+    return () => activeWindow.setDirtyCheck(null);
+  }, [activeWindow, form, parcelas, initialParcelasJson]);
 
   const handleAddParcela = useCallback(() => {
     if (readOnly) return;
@@ -313,6 +310,7 @@ function CondicoesUpsertForm({
       </div>
       <form
         id="upsert-condicoes"
+        ref={registerDirty}
         className="flex flex-col gap-6"
         onSubmit={(e) => {
           e.preventDefault();
