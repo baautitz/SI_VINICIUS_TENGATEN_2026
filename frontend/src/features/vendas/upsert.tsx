@@ -528,13 +528,21 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
         return;
       }
 
-      const updated = [...itens];
-      updated[existingIndex].quantidade = newQty;
-      const item = updated[existingIndex];
-      const gross = newQty * item.valorUnitario;
-      item.valorTotal = parseFloat((newQty * item.precoFinal).toFixed(2));
-      item.valorDesconto = parseFloat((gross - item.valorTotal).toFixed(2));
-      setItens(updated);
+      const current = itens[existingIndex];
+      const grossNew = newQty * current.valorUnitario;
+      const valorTotalNew = parseFloat((newQty * current.precoFinal).toFixed(2));
+      setItens(
+        itens.map((it, i) =>
+          i === existingIndex
+            ? {
+                ...it,
+                quantidade: newQty,
+                valorTotal: valorTotalNew,
+                valorDesconto: parseFloat((grossNew - valorTotalNew).toFixed(2)),
+              }
+            : it,
+        ),
+      );
 
       const acao = qtdeAdicionada >= 0 ? "alterada" : "decrementada";
       ui.feedback.notify({
@@ -570,8 +578,9 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     key: "quantidade" | "percentualDesconto" | "valorUnitario" | "precoFinal",
     value: number,
   ) => {
-    const updated = [...itens];
-    const item = updated[index];
+    const current = itens[index];
+    if (!current) return;
+    const item = { ...current };
 
     if (key === "quantidade") {
       item.quantidade = value;
@@ -605,7 +614,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
       (item.quantidade * item.precoFinal).toFixed(2),
     );
     item.valorDesconto = parseFloat((gross - item.valorTotal).toFixed(2));
-    setItens(updated);
+    setItens(itens.map((it, i) => (i === index ? item : it)));
   };
 
   const buildParcelas = (payment: CondicaoPagamento): ParcelaPreview[] => {
