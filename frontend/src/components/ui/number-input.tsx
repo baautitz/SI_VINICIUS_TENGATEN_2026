@@ -9,11 +9,13 @@ interface NumberInputProps extends Omit<InputProps, "value" | "onChange"> {
   onValueChange?: (value: string) => void;
   onNumberChange?: (value: number) => void;
   decimals?: number;
+  allowNegative?: boolean;
 }
 
 const NumberInput = ({
   className,
   decimals = 2,
+  allowNegative = false,
   value: propValue,
   onValueChange,
   onNumberChange,
@@ -58,7 +60,9 @@ const NumberInput = ({
     if (propValue === "") {
       setInternalValue("");
     } else if (!isNaN(pNum)) {
-      if (isNaN(iNum) || pNum !== iNum) {
+      if (internalValue === "-") {
+        // Sinal digitado sem dígitos ainda: mantém o campo como está.
+      } else if (isNaN(iNum) || pNum !== iNum) {
         setInternalValue(
           isFocused ? normalize(propValue) : pad(normalize(propValue)),
         );
@@ -73,7 +77,9 @@ const NumberInput = ({
 
     let val = originalValue;
     val = val.replace(/\./g, ",");
+    const negative = allowNegative && val.trimStart().startsWith("-");
     val = val.replace(/[^0-9,]/g, "");
+    if (negative) val = "-" + val;
 
     const parts = val.split(",");
     if (parts.length > 2) {
