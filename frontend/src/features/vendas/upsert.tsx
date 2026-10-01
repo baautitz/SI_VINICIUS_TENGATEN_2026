@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useMemo, useCallback } from "react";
-import { useForm } from "@tanstack/react-form";
+import { useForm, useStore } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Button } from "@/ui/primitives";
@@ -351,7 +351,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
   const [localErrors, setLocalErrors] = useState<Record<string, string>>({});
   const [skuInputKey, setSkuInputKey] = useState(0);
 
-  const [dataVenda, setDataVenda] = useState(() =>
+  const [initialDataVenda] = useState(() =>
     editingItem?.dataVenda
       ? editingItem.dataVenda.split("T")[0]
       : todayLocalISODate(),
@@ -380,11 +380,9 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
   const totalDiscount = itens.reduce((sum, i) => sum + i.valorDesconto, 0);
   const totalNet = Math.max(0, subtotalGross - totalDiscount);
 
-  const activeEmitente = emitente;
-
   const form = useForm({
     defaultValues: {
-      dataVenda: dataVenda,
+      dataVenda: initialDataVenda,
       observacao: editingItem?.observacao ?? "",
     } as VendaFormValues,
     onSubmit: async () => {
@@ -398,7 +396,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
         }));
         return;
       }
-      if (!activeEmitente) {
+      if (!emitente) {
         setLocalErrors((prev) => ({
           ...prev,
           emitenteId: "Emitente é obrigatório.",
@@ -458,6 +456,8 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     },
   });
 
+  const dataVenda = useStore(form.store, (state) => state.values.dataVenda);
+
   const handleFinalSubmit = async (checkout: VendasCheckoutResult) => {
     resetErrors();
     setLocalErrors({});
@@ -465,7 +465,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     const payload = {
       dataVenda: dataVenda,
       clienteId: cliente?.id ?? 0,
-      emitenteId: activeEmitente?.id ?? 0,
+      emitenteId: emitente?.id ?? 0,
       observacao: checkout.observacao,
       condicaoPagamentoId: checkout.condicao.id,
       itens: itens.map((i) => ({
@@ -797,7 +797,6 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                       onChange={(val) => {
                         const newVal =
                           val || todayLocalISODate();
-                        setDataVenda(newVal);
                         field.handleChange(newVal);
                       }}
                       disabled={readOnly}
