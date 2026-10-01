@@ -4,7 +4,7 @@ import * as React from "react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
-import { Button } from "@/ui/primitives";
+import { Button, Kbd } from "@/ui/primitives";
 import { XIcon } from "lucide-react";
 
 function Dialog({
@@ -128,7 +128,9 @@ function DialogFooter({
       {children}
       {showCloseButton && (
         <DialogPrimitive.Close asChild>
-          <Button variant="outline">Close</Button>
+          <Button variant="outline">
+            Fechar <Kbd>Esc</Kbd>
+          </Button>
         </DialogPrimitive.Close>
       )}
     </div>
