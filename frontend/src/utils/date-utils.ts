@@ -44,3 +44,19 @@ export function formatTimeToLocal(date: string | Date | null | undefined): strin
     minute: "2-digit",
   });
 }
+
+/**
+ * Converte uma data para "YYYY-MM-DD" usando o fuso horário local
+ * (toISOString usa UTC e pode adiantar o dia após as 21h em UTC-3).
+ */
+export function toLocalISODate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/** Retorna a data de hoje no fuso local como "YYYY-MM-DD". */
+export function todayLocalISODate(): string {
+  return toLocalISODate(new Date());
+}
