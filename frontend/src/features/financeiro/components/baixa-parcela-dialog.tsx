@@ -95,14 +95,14 @@ export function BaixaParcelaWindow({
     }
     if (isEstorno) {
       const maxEstorno = parcela?.valorPagoOuRecebido ?? 0;
-      if (valorBaixa > maxEstorno + 0.01) {
+      if (Math.round(valorBaixa * 100) > Math.round(maxEstorno * 100)) {
         setError(
           `O valor não pode exceder o valor já pago/recebido (R$ ${maxEstorno.toFixed(2)}).`,
         );
         return;
       }
     } else {
-      if (valorBaixa > saldoRestante + 0.01) {
+      if (Math.round(valorBaixa * 100) > Math.round(saldoRestante * 100)) {
         setError(
           `O valor não pode exceder o saldo restante (R$ ${saldoRestante.toFixed(2)}).`,
         );
