@@ -49,6 +49,7 @@ import { Plus, Trash2, Coins, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
 import { navigationCell } from "@/ui/keyboard-navigation";
+import { toLocalISODate, todayLocalISODate } from "@/utils/date-utils";
 
 export interface ContasPagarUpsertProps {
   editingItem: ContasPagar | null;
@@ -183,7 +184,7 @@ function ContasPagarFormBody({
       nfeId: editingItem?.nfeId ?? null,
       dataEmissao: editingItem?.dataEmissao
         ? editingItem.dataEmissao.split("T")[0]
-        : new Date().toISOString().split("T")[0],
+        : todayLocalISODate(),
       valorOriginal: editingItem?.valorOriginal ?? 0,
       condicaoPagamentoId: editingItem?.condicaoPagamento?.id ?? null,
       observacao: editingItem?.observacao ?? "",
@@ -240,7 +241,7 @@ function ContasPagarFormBody({
       );
       sugeridas.push({
         numeroParcela: count++,
-        dataVencimento: baseDate.toISOString().split("T")[0],
+        dataVencimento: toLocalISODate(baseDate),
         valorParcela: valEntrada,
         valorPago: 0,
         status: "ABERTO",
@@ -254,7 +255,7 @@ function ContasPagarFormBody({
       const valParcela = parseFloat((valor * (it.percentual / 100)).toFixed(2));
       sugeridas.push({
         numeroParcela: count++,
-        dataVencimento: venc.toISOString().split("T")[0],
+        dataVencimento: toLocalISODate(venc),
         valorParcela: valParcela,
         valorPago: 0,
         status: "ABERTO",
@@ -293,7 +294,7 @@ function ContasPagarFormBody({
       ...parcelas,
       {
         numeroParcela: nextNum,
-        dataVencimento: baseDate.toISOString().split("T")[0],
+        dataVencimento: toLocalISODate(baseDate),
         valorParcela: parseFloat(rem.toFixed(2)),
         valorPago: 0,
         status: "ABERTO",
