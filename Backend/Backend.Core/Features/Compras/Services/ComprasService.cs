@@ -76,6 +76,26 @@ public sealed class ComprasService : BaseService
     // Compra = recebimento imediato: compra, entrada de estoque (custo rateado) e contas a pagar na mesma transação.
     public async Task<Resultado<Compra>> CriarCompra(CriarCompraCommand command)
     {
+        return await ExecuteResultAsync(async () =>
+        {
+            try
+            {
+                _unitOfWork.BeginTransaction();
+                var resultado = await GravarCompra(command);
+                if (resultado.Success) _unitOfWork.Commit(); else _unitOfWork.Rollback();
+                return resultado;
+            }
+            catch (Exception)
+            {
+                _unitOfWork.Rollback();
+                throw;
+            }
+        });
+    }
+
+    // Grava na transação já aberta pelo chamador (ex.: importação de NF-e, que grava a NFe junto).
+    public async Task<Resultado<Compra>> GravarCompra(CriarCompraCommand command)
+    {
         var validation = await new CriarCompraCommandValidator().ValidateAsync(command);
         if (!validation.IsValid)
             return Resultado<Compra>.Falha(validation.ToResultadoErros());
@@ -117,66 +137,52 @@ public sealed class ComprasService : BaseService
             command.ValorFrete, command.ValorSeguro, command.ValorOutrasDespesas, command.ValorDesconto,
             command.ValorFreteTerceiro, command.TransportadoraId, command.CondicaoPagamentoId, command.Observacao);
 
-        return await ExecuteResultAsync(async () =>
+        var criada = await _comprasRepository.CriarCompra(compra);
+
+        // Entrada de estoque ao custo rateado (todas as despesas); itens do mesmo SKU viram uma linha só.
+        var entrada = new MovimentacoesEstoques(
+            TipoMovimentacaoEstoque.ENTRADA, OrigemMovimentacaoEstoque.COMPRA, criada.Id,
+            observacao: $"Compra nº {criada.Id}");
+
+        foreach (var g in criada.Itens.GroupBy(i => i.Sku.Sku))
         {
-            try
-            {
-                _unitOfWork.BeginTransaction();
+            var quantidade = g.Sum(i => i.Quantidade);
+            var custo = Math.Round(g.Sum(i => i.ValorTotal + i.ValorRateio) / quantidade, 4, MidpointRounding.AwayFromZero);
+            entrada.AdicionarItem(g.First().Sku, quantidade, custo);
+        }
 
-                var criada = await _comprasRepository.CriarCompra(compra);
+        var recebimento = await _estoqueService.Registrar(entrada);
+        if (!recebimento.Success)
+            throw new DomainException(recebimento.Errors!.First().Message);
 
-                // Entrada de estoque ao custo rateado (todas as despesas); itens do mesmo SKU viram uma linha só.
-                var entrada = new MovimentacoesEstoques(
-                    TipoMovimentacaoEstoque.ENTRADA, OrigemMovimentacaoEstoque.COMPRA, criada.Id,
-                    observacao: $"Compra nº {criada.Id}");
+        foreach (var item in criada.Itens.Where(i => i.CodigoProdutoFornecedor != null))
+            await _comprasRepository.VincularSku(fornecedor.Id, item.CodigoProdutoFornecedor!, item.Sku.Sku);
 
-                foreach (var g in criada.Itens.GroupBy(i => i.Sku.Sku))
-                {
-                    var quantidade = g.Sum(i => i.Quantidade);
-                    var custo = Math.Round(g.Sum(i => i.ValorTotal + i.ValorRateio) / quantidade, 4, MidpointRounding.AwayFromZero);
-                    entrada.AdicionarItem(g.First().Sku, quantidade, custo);
-                }
+        var aVista = condicao?.EntradaMinimaPercentual >= 100;
+        var conta = new ContasPagar(
+            descricao: $"Compra nº {criada.Id}", valorOriginal: criada.ValorNota, fornecedor: fornecedor,
+            dataEmissao: criada.DataCompra, condicaoPagamento: condicao,
+            origemTipo: OrigemTituloFinanceiro.COMPRA, origemId: criada.Id, observacao: criada.Observacao);
 
-                var recebimento = await _estoqueService.Registrar(entrada);
-                if (!recebimento.Success)
-                    throw new DomainException(recebimento.Errors!.First().Message);
+        foreach (var p in command.Parcelas!)
+        {
+            conta.AdicionarParcela(p.NumeroParcela, p.DataVencimento, p.ValorParcela);
+            if (aVista)
+                conta.RegistrarPagamento(p.NumeroParcela, p.ValorParcela);
+        }
+        await _contasPagarRepository.CriarContaPagar(conta);
 
-                foreach (var item in criada.Itens.Where(i => i.CodigoProdutoFornecedor != null))
-                    await _comprasRepository.VincularSku(fornecedor.Id, item.CodigoProdutoFornecedor!, item.Sku.Sku);
+        // Frete de terceiro (FOB/CT-e): conta separada à transportadora, parcela única.
+        if (criada.ValorFreteTerceiro > 0)
+        {
+            var frete = new ContasPagar(
+                descricao: $"Frete da compra nº {criada.Id}", valorOriginal: criada.ValorFreteTerceiro, fornecedor: null,
+                dataEmissao: criada.DataCompra, origemTipo: OrigemTituloFinanceiro.COMPRA, origemId: criada.Id,
+                transportadoraId: transportadora!.Id);
+            frete.AdicionarParcela(1, command.VencimentoFreteTerceiro!.Value, criada.ValorFreteTerceiro);
+            await _contasPagarRepository.CriarContaPagar(frete);
+        }
 
-                var aVista = condicao?.EntradaMinimaPercentual >= 100;
-                var conta = new ContasPagar(
-                    descricao: $"Compra nº {criada.Id}", valorOriginal: criada.ValorNota, fornecedor: fornecedor,
-                    dataEmissao: criada.DataCompra, condicaoPagamento: condicao,
-                    origemTipo: OrigemTituloFinanceiro.COMPRA, origemId: criada.Id, observacao: criada.Observacao);
-
-                foreach (var p in command.Parcelas!)
-                {
-                    conta.AdicionarParcela(p.NumeroParcela, p.DataVencimento, p.ValorParcela);
-                    if (aVista)
-                        conta.RegistrarPagamento(p.NumeroParcela, p.ValorParcela);
-                }
-                await _contasPagarRepository.CriarContaPagar(conta);
-
-                // Frete de terceiro (FOB/CT-e): conta separada à transportadora, parcela única.
-                if (criada.ValorFreteTerceiro > 0)
-                {
-                    var frete = new ContasPagar(
-                        descricao: $"Frete da compra nº {criada.Id}", valorOriginal: criada.ValorFreteTerceiro, fornecedor: null,
-                        dataEmissao: criada.DataCompra, origemTipo: OrigemTituloFinanceiro.COMPRA, origemId: criada.Id,
-                        transportadoraId: transportadora!.Id);
-                    frete.AdicionarParcela(1, command.VencimentoFreteTerceiro!.Value, criada.ValorFreteTerceiro);
-                    await _contasPagarRepository.CriarContaPagar(frete);
-                }
-
-                _unitOfWork.Commit();
-                return Resultado<Compra>.Sucesso(criada);
-            }
-            catch (Exception)
-            {
-                _unitOfWork.Rollback();
-                throw;
-            }
-        });
+        return Resultado<Compra>.Sucesso(criada);
     }
 }

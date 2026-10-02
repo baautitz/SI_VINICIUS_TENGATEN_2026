@@ -41,6 +41,12 @@ public class PaisesRepository : IPaisesRepository
         return await _session.Connection.QuerySingleOrDefaultAsync<Paises>(sql, new { Id = id }, transaction: _session.Transaction);
     }
 
+    public async Task<Paises?> ObterPaisPorCodigoIso(string codigoIso)
+    {
+        const string sql = "SELECT id, pais, codigo_iso_pais AS CodigoIsoPais, ddi, codigo_iso_moeda AS CodigoIsoMoeda, simbolo_moeda AS SimboloMoeda FROM paises WHERE codigo_iso_pais = @CodigoIso;";
+        return await _session.Connection.QuerySingleOrDefaultAsync<Paises>(sql, new { CodigoIso = codigoIso }, transaction: _session.Transaction);
+    }
+
     public async Task<Paises> CriarPais(Paises pais)
     {
         const string sql = "INSERT INTO paises (ddi, codigo_iso_pais, codigo_iso_moeda, simbolo_moeda, pais) VALUES (@Ddi, @CodigoIsoPais, @CodigoIsoMoeda, @SimboloMoeda, @Pais) RETURNING id;";

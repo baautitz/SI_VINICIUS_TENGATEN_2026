@@ -274,6 +274,14 @@ public class TransportadorasRepository : ITransportadorasRepository
         return new ResultadoPaginado<Transportadoras>(itens, total, pagina, tamanhoDaPagina);
     }
 
+    public async Task<Transportadoras?> ObterTransportadoraPorCpfCnpj(string cpfCnpj)
+    {
+        var id = await _session.Connection.ExecuteScalarAsync<int?>(
+            "SELECT id FROM transportadoras WHERE cpf_cnpj = @CpfCnpj;",
+            new { CpfCnpj = cpfCnpj }, transaction: _session.Transaction);
+        return id is null ? null : await ObterTransportadoraPorId(id.Value);
+    }
+
     public async Task<bool> ExisteTransportadoraCpfCnpj(string cpfCnpj, int nacionalidadeId, int? ignorarId = null)
     {
         var sql = @"

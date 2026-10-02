@@ -13,5 +13,6 @@ public interface ITransportadorasRepository
     public Task<Transportadoras> AtualizarTransportadora(int id, Transportadoras transportadora);
     public Task<bool> DeletarTransportadora(int id);
     public Task<ResultadoPaginado<Transportadoras>> PesquisarTransportadoras(string termo, int pagina = 1, int tamanhoDaPagina = 20);
+    public Task<Transportadoras?> ObterTransportadoraPorCpfCnpj(string cpfCnpj);
     public Task<bool> ExisteTransportadoraCpfCnpj(string cpfCnpj, int nacionalidadeId, int? ignorarId = null);
 }

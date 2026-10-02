@@ -244,6 +244,14 @@ public class FornecedoresRepository : IFornecedoresRepository
         return new ResultadoPaginado<Fornecedores>(itens.ToList(), total, pagina, tamanhoDaPagina);
     }
 
+    public async Task<Fornecedores?> ObterFornecedorPorCpfCnpj(string cpfCnpj)
+    {
+        var id = await _session.Connection.ExecuteScalarAsync<int?>(
+            "SELECT id FROM fornecedores WHERE cpf_cnpj = @CpfCnpj;",
+            new { CpfCnpj = cpfCnpj }, transaction: _session.Transaction);
+        return id is null ? null : await ObterFornecedorPorId(id.Value);
+    }
+
     public async Task<bool> ExisteFornecedorCpfCnpj(string cpfCnpj, int nacionalidadeId, int? ignorarId = null)
     {
         var sql = @"

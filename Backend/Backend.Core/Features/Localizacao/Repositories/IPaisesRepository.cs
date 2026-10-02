@@ -6,6 +6,7 @@ namespace Backend.Core.Features.Localizacao.Repositories;
 public interface IPaisesRepository {
     public Task<ResultadoPaginado<Paises>> ObterPaises(int pagina = 1, int tamanhoDaPagina = 20);
     public Task<Paises?> ObterPaisPorId(int id);
+    public Task<Paises?> ObterPaisPorCodigoIso(string codigoIso);
     public Task<Paises> CriarPais(Paises pais);
     public Task<Paises> AtualizarPais(int id, Paises pais);
     public Task<bool> DeletarPais(int id);
