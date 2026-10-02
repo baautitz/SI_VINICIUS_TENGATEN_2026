@@ -45,11 +45,4 @@ public class VendasController : ControllerBase
 
         return CreatedAtAction(nameof(GetVenda), new { id = result.Data!.Id }, result);
     }
-
-    [HttpPost("{id:int}/cancelar")]
-    public async Task<IActionResult> CancelarVenda(int id, [FromBody] CancelarVendaCommand command)
-    {
-        var canceled = await _vendasService.CancelarVenda(id, command);
-        return canceled ? NoContent() : NotFound();
-    }
 }

@@ -19,9 +19,6 @@ public class Devolucao
 
     public Devolucao(Venda venda, string motivo, IEnumerable<DevolucaoItens> itens)
     {
-        if (venda.DataCancelamento != null)
-            throw new DomainException("Não é possível devolver itens de uma venda cancelada.");
-
         motivo = TextNormalization.Normalize(motivo);
         if (motivo.Length < 5)
             throw new DomainException("Motivo da devolução é obrigatório e deve ter pelo menos 5 caracteres.");

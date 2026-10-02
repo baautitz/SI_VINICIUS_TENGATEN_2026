@@ -25,7 +25,6 @@ public class VendasRepository : IVendasRepository
 
         const string querySql = @"
             SELECT v.id AS Id, v.data_venda, v.valor_total, v.observacao,
-                   v.data_cancelamento, v.motivo_cancelamento,
                    e.id AS Id, e.nome_razaosocial, e.cpf_cnpj, e.ativo,
                    c.id AS Id, c.nome_razaosocial, c.cpf_cnpj, c.ativo
             FROM vendas v
@@ -102,7 +101,6 @@ public class VendasRepository : IVendasRepository
     {
         const string vendaSql = @"
             SELECT v.id AS Id, v.data_venda, v.valor_total, v.observacao,
-                   v.data_cancelamento, v.motivo_cancelamento,
                    e.id AS Id, e.nome_razaosocial, e.cpf_cnpj, e.apelido_nomefantasia,
                    e.logradouro, e.numero, e.telefone, e.email, e.rg_ie, e.inscricao_municipal,
                    e.regime_tributario, e.ativo, e.criado_em, e.observacao,
@@ -214,30 +212,6 @@ public class VendasRepository : IVendasRepository
         return venda;
     }
 
-    public async Task<bool> DeletarVenda(int id)
-    {
-        await _session.Connection.ExecuteAsync(
-            "DELETE FROM vendas_itens WHERE venda_id = @Id;",
-            new { Id = id }, transaction: _session.Transaction);
-
-        var linhasAfetadas = await _session.Connection.ExecuteAsync(
-            "DELETE FROM vendas WHERE id = @Id;",
-            new { Id = id }, transaction: _session.Transaction);
-
-        return linhasAfetadas > 0;
-    }
-
-    public async Task<bool> CancelarVenda(int id, string motivo, DateTime dataCancelamento)
-    {
-        var linhasAfetadas = await _session.Connection.ExecuteAsync(
-            @"UPDATE vendas 
-              SET data_cancelamento = @DataCancelamento, motivo_cancelamento = @MotivoCancelamento 
-              WHERE id = @Id;",
-            new { Id = id, DataCancelamento = dataCancelamento, MotivoCancelamento = motivo },
-            transaction: _session.Transaction);
-        return linhasAfetadas > 0;
-    }
-
     public async Task<ResultadoPaginado<Venda>> PesquisarVendas(string termo, int pagina = 1, int tamanhoDaPagina = 20, int? clienteId = null)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
@@ -251,7 +225,6 @@ public class VendasRepository : IVendasRepository
 
         const string querySql = @"
             SELECT v.id AS Id, v.data_venda, v.valor_total, v.observacao,
-                   v.data_cancelamento, v.motivo_cancelamento,
                    e.id AS Id, e.nome_razaosocial, e.cpf_cnpj, e.ativo,
                    c.id AS Id, c.nome_razaosocial, c.cpf_cnpj, c.ativo
             FROM vendas v

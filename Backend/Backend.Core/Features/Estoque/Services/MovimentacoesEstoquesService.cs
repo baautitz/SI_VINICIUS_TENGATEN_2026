@@ -90,7 +90,7 @@ public sealed class MovimentacoesEstoquesService : BaseService
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_INEXISTENTE", "Movimentação não encontrada."));
 
         if (original.OrigemTipo == OrigemMovimentacaoEstoque.VENDA)
-            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_VENDA", "Esta movimentação foi gerada por uma venda. Cancele a venda para estornar a movimentação de estoque."));
+            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_VENDA", "Esta movimentação foi gerada por uma venda. Use a devolução da venda para reentrar o estoque."));
 
         if (original.OrigemTipo == OrigemMovimentacaoEstoque.COMPRA)
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_COMPRA", "Esta movimentação foi gerada por uma compra. Cancele a compra para estornar a movimentação de estoque."));
@@ -111,7 +111,7 @@ public sealed class MovimentacoesEstoquesService : BaseService
         return await ExecutarEmTransacao(estorno, custosARestaurar);
     }
 
-    // Usado ao cancelar o documento de origem (venda, balanço, compra): estorna todas as movimentações dele
+    // Usado ao cancelar o documento de origem (balanço, compra): estorna todas as movimentações dele
     // que ainda não foram estornadas. O chamador controla a transação.
     public async Task EstornarPorOrigem(OrigemMovimentacaoEstoque origemTipo, int origemId, string motivo)
     {
