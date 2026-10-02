@@ -107,6 +107,7 @@ function VendasCheckout({
     initialCondicao,
   );
   const [valorRecebido, setValorRecebido] = useState(0);
+  const [condicaoTocada, setCondicaoTocada] = useState(false);
 
   const isDinheiro = condicao?.metodoPagamento?.permiteTroco ?? false;
   const recebidoInsuficiente = isDinheiro && valorRecebido + 0.005 < totalNet;
@@ -182,12 +183,15 @@ function VendasCheckout({
           name="checkoutCondicaoId"
           label="Método de Pagamento"
           initialItem={condicao}
-          onSelectItem={setCondicao}
+          onSelectItem={(item) => {
+            setCondicao(item);
+            setCondicaoTocada(true);
+          }}
           onSelectId={() => {}}
           error={
             totalNet <= 0
               ? "Venda com total zerado não pode ser finalizada: o sistema exige ao menos uma parcela. Ajuste os descontos."
-              : !condicao
+              : !condicao && condicaoTocada
                 ? "Selecione o método/condição de pagamento."
                 : undefined
           }
