@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { OrigemTitulo } from "../origem";
 import type { Fornecedor } from "@/features/parceiros/fornecedores/types";
 import type { CondicaoPagamento } from "@/features/financeiro/condicoes/types";
 
@@ -31,8 +32,11 @@ export interface ContasPagar {
   status: StatusTituloFinanceiro;
   observacao?: string | null;
   criadoEm: string;
-  fornecedor: Fornecedor;
-  nfeId?: number | null;
+  fornecedor?: Fornecedor | null;
+  clienteId?: number | null;
+  clienteNome?: string | null;
+  origemTipo: OrigemTitulo;
+  origemId?: number | null;
   condicaoPagamento?: CondicaoPagamento | null;
   contasPagarParcelas: ContasPagarParcela[];
 }
@@ -53,7 +57,6 @@ export const contasPagarBaseSchema = z.object({
   fornecedorId: z
     .number({ required_error: "Fornecedor é obrigatório." })
     .min(1, "Fornecedor é obrigatório."),
-  nfeId: z.number().nullable().optional(),
   dataEmissao: z.string().nullable().optional(),
   valorOriginal: z.coerce
     .number({ invalid_type_error: "Valor original deve ser um número." })

@@ -12,6 +12,8 @@ using Backend.Core.Features.Catalogo.Repositories;
 using Backend.Core.Features.Estoque.Services;
 using Backend.Core.Features.Estoque.Entities;
 using Backend.Core.Features.Estoque.Entities.Enums;
+using Backend.Core.Features.Estoque.Repositories;
+using Backend.Core.Features.Parceiros.Entities;
 using Backend.Core.Features.Financeiro.Repositories;
 using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Financeiro.Entities.Enums;
@@ -32,6 +34,9 @@ public sealed class VendasService : BaseService
     private readonly ICondicoesPagamentosRepository _condicoesRepository;
     private readonly MovimentacoesEstoquesService _estoqueService;
     private readonly IContasReceberRepository _contasRepository;
+    private readonly IContasPagarRepository _contasPagarRepository;
+    private readonly IDevolucoesRepository _devolucoesRepository;
+    private readonly IMovimentacoesEstoquesRepository _movimentacoesRepository;
     private readonly IRelacionadosRepository _relacionadosRepository;
     private readonly IUnitOfWork _unitOfWork;
 
@@ -43,6 +48,9 @@ public sealed class VendasService : BaseService
         ICondicoesPagamentosRepository condicoesRepository,
         MovimentacoesEstoquesService estoqueService,
         IContasReceberRepository contasRepository,
+        IContasPagarRepository contasPagarRepository,
+        IDevolucoesRepository devolucoesRepository,
+        IMovimentacoesEstoquesRepository movimentacoesRepository,
         IRelacionadosRepository relacionadosRepository,
         IUnitOfWork unitOfWork)
     {
@@ -53,6 +61,9 @@ public sealed class VendasService : BaseService
         _condicoesRepository = condicoesRepository;
         _estoqueService = estoqueService;
         _contasRepository = contasRepository;
+        _contasPagarRepository = contasPagarRepository;
+        _devolucoesRepository = devolucoesRepository;
+        _movimentacoesRepository = movimentacoesRepository;
         _relacionadosRepository = relacionadosRepository;
         _unitOfWork = unitOfWork;
     }
@@ -157,8 +168,8 @@ public sealed class VendasService : BaseService
                         dataEmissao: command.DataVenda,
                         dataVencimento: null,
                         condicaoPagamento: condicao,
-                        nfeId: null,
-                        vendaId: criada.Id,
+                        origemTipo: OrigemTituloFinanceiro.VENDA,
+                        origemId: criada.Id,
                         observacao: command.Observacao
                     );
 
@@ -186,10 +197,6 @@ public sealed class VendasService : BaseService
 
     private static bool EhAVista(CondicoesPagamentos? condicao) => condicao?.EntradaMinimaPercentual >= 100;
 
-    // O recebimento automático da condição à vista não impede cancelar/deletar a venda.
-    private static bool TemRecebimentoManual(ContasReceberParcelas p, CondicoesPagamentos? condicao)
-        => p.ValorRecebido > 0 && !(EhAVista(condicao) && p.Status == StatusTituloFinanceiro.PAGO);
-
     private async Task<ContasReceber?> ObterContaDaVenda(int vendaId)
     {
         var contas = await _relacionadosRepository.ContasReceberPorVenda(vendaId);
@@ -201,6 +208,8 @@ public sealed class VendasService : BaseService
         var venda = await _vendasRepository.ObterVendaPorId(id);
         if (venda is null)
             return false;
+
+        await GarantirSemDevolucoes(id, "excluir");
 
         try
         {
@@ -214,9 +223,8 @@ public sealed class VendasService : BaseService
             if (contaVenda != null)
             {
                 // Check if any installments were already paid
-                var temPagas = contaVenda.ContasReceberParcelas.Any(p => TemRecebimentoManual(p, contaVenda.CondicaoPagamento));
-                if (temPagas)
-                    throw new DomainException("Não é possível deletar uma venda com parcelas financeiras já pagas ou parciais.");
+                if (contaVenda.ContasReceberParcelas.Any(p => p.ValorRecebido > 0))
+                    throw new DomainException("Não é possível excluir uma venda com valores já recebidos (inclusive à vista). Use a Devolução.");
 
                 // Delete or cancel the title
                 await _contasRepository.DeletarContaReceber(contaVenda.Id);
@@ -240,6 +248,8 @@ public sealed class VendasService : BaseService
         if (!validationResult.IsValid)
             throw new DomainException(string.Join(" ", validationResult.Errors.Select(e => e.ErrorMessage)));
 
+        await GarantirSemDevolucoes(id, "cancelar");
+
         try
         {
             _unitOfWork.BeginTransaction();
@@ -252,9 +262,8 @@ public sealed class VendasService : BaseService
             if (contaVenda != null)
             {
                 // Check if any installments were already paid
-                var temPagas = contaVenda.ContasReceberParcelas.Any(p => TemRecebimentoManual(p, contaVenda.CondicaoPagamento));
-                if (temPagas)
-                    throw new DomainException("Não é possível cancelar uma venda com parcelas financeiras já pagas ou parciais.");
+                if (contaVenda.ContasReceberParcelas.Any(p => p.ValorRecebido > 0))
+                    throw new DomainException("Não é possível cancelar uma venda com valores já recebidos (inclusive à vista). Use a Devolução.");
 
                 contaVenda.Cancelar();
                 await _contasRepository.AtualizarContaReceber(contaVenda.Id, contaVenda);
@@ -278,5 +287,108 @@ public sealed class VendasService : BaseService
             _unitOfWork.Rollback();
             throw;
         }
+    }
+
+    private async Task GarantirSemDevolucoes(int vendaId, string acao)
+    {
+        if ((await _devolucoesRepository.ObterDevolucoesPorVenda(vendaId)).Count > 0)
+            throw new DomainException($"Não é possível {acao} uma venda que possui devoluções.");
+    }
+
+    public Task<Devolucao?> ObterDevolucaoPorId(int id)
+        => _devolucoesRepository.ObterDevolucaoPorId(id);
+
+    public Task<IReadOnlyList<Devolucao>> ObterDevolucoesPorVenda(int vendaId)
+        => _devolucoesRepository.ObterDevolucoesPorVenda(vendaId);
+
+    // Devolução por item: estoque volta ao custo original da saída; o valor abate o saldo aberto da conta a receber
+    // e o que excede (já recebido) vira conta a pagar ao cliente. Tudo na mesma transação.
+    public async Task<Resultado<Devolucao>> CriarDevolucao(int vendaId, CriarDevolucaoCommand command)
+    {
+        var validation = await new CriarDevolucaoCommandValidator().ValidateAsync(command);
+        if (!validation.IsValid)
+            return Resultado<Devolucao>.Falha(validation.ToResultadoErros());
+
+        var venda = await _vendasRepository.ObterVendaPorId(vendaId);
+        if (venda is null)
+            return Resultado<Devolucao>.Falha(new ResultadoErro("VENDA_INEXISTENTE", "A venda informada não existe.", "VendaId"));
+
+        // Custo original = custo da movimentação de saída da venda (sku único por movimentação).
+        var custos = (await _movimentacoesRepository.ObterMovimentacoesPorOrigem(OrigemMovimentacaoEstoque.VENDA, vendaId))
+            .Where(m => m.TipoMovimentacao == TipoMovimentacaoEstoque.SAIDA)
+            .SelectMany(m => m.MovimentacoesEstoquesItens)
+            .ToDictionary(i => i.Sku.Sku, i => i.CustoUnitario);
+
+        var itens = new List<DevolucaoItens>();
+        foreach (var g in command.Itens.Where(i => i.Quantidade > 0).GroupBy(i => i.VendaItemId))
+        {
+            var itemVenda = venda.Itens.FirstOrDefault(i => i.Id == g.Key)
+                ?? throw new DomainException($"O item {g.Key} não pertence à venda {vendaId}.");
+            itens.Add(new DevolucaoItens(itemVenda, g.Sum(i => i.Quantidade), custos.GetValueOrDefault(itemVenda.Sku.Sku)));
+        }
+
+        var devolucao = new Devolucao(venda, command.Motivo, itens);
+
+        return await ExecuteResultAsync(async () =>
+        {
+            try
+            {
+                _unitOfWork.BeginTransaction();
+
+                var criada = await _devolucoesRepository.CriarDevolucao(devolucao);
+
+                var entrada = new MovimentacoesEstoques(
+                    TipoMovimentacaoEstoque.ENTRADA,
+                    OrigemMovimentacaoEstoque.DEVOLUCAO_VENDA,
+                    criada.Id,
+                    observacao: $"Devolução nº {criada.Id} da venda nº {vendaId}");
+
+                foreach (var item in criada.Itens)
+                    entrada.AdicionarItem(venda.Itens.First(i => i.Id == item.VendaItemId).Sku, item.Quantidade, item.CustoUnitario);
+
+                var resultadoEstoque = await _estoqueService.Registrar(entrada);
+                if (!resultadoEstoque.Success)
+                    throw new DomainException(resultadoEstoque.Errors!.First().Message);
+
+                // Sem conta a receber (venda sem condição de pagamento) não há valor financeiro a reverter.
+                var conta = await ObterContaDaVenda(vendaId);
+                if (conta != null)
+                {
+                    var excedente = conta.AbaterSaldoAberto(criada.ValorTotal);
+                    await _contasRepository.AtualizarContaReceber(conta.Id, conta);
+
+                    if (excedente > 0)
+                        await CriarReembolso(venda, criada, excedente);
+                }
+
+                _unitOfWork.Commit();
+                return Resultado<Devolucao>.Sucesso(criada);
+            }
+            catch (Exception)
+            {
+                _unitOfWork.Rollback();
+                throw;
+            }
+        });
+    }
+
+    private async Task CriarReembolso(Venda venda, Devolucao devolucao, decimal valor)
+    {
+        var cliente = await _clientesRepository.ObterClientePorId(venda.Cliente.Id)
+            ?? throw new DomainException("Cliente da venda não encontrado.");
+
+        var hoje = DateTime.Today;
+        var conta = new ContasPagar(
+            descricao: $"Reembolso da devolução nº {devolucao.Id} (venda nº {venda.Id})",
+            valorOriginal: valor,
+            fornecedor: null,
+            clienteId: cliente.Id,
+            clienteNome: cliente.NomeRazaoSocial,
+            dataEmissao: hoje,
+            origemTipo: OrigemTituloFinanceiro.DEVOLUCAO_VENDA,
+            origemId: devolucao.Id);
+        conta.AdicionarParcela(1, hoje, valor);
+
+        await _contasPagarRepository.CriarContaPagar(conta);
     }
 }

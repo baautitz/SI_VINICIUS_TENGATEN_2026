@@ -1,6 +1,7 @@
 using Backend.Core.Common.Exceptions;
 using Backend.Core.Common.Helpers;
 using Backend.Core.Features.Parceiros.Entities;
+using Backend.Core.Features.Vendas.Entities.Enums;
 
 namespace Backend.Core.Features.Vendas.Entities;
 
@@ -18,6 +19,12 @@ public class Venda
     public Emitentes Emitente { get; private set; } = null!;
     public Clientes Cliente { get; private set; } = null!;
     public IReadOnlyCollection<VendaItens> Itens => _itens.AsReadOnly();
+
+    // Derivado das quantidades devolvidas por item; não é armazenado.
+    public StatusDevolucaoVenda StatusDevolucao =>
+        _itens.All(i => i.QuantidadeDevolvida == 0) ? StatusDevolucaoVenda.NENHUMA
+        : _itens.All(i => i.SaldoDevolvivel == 0) ? StatusDevolucaoVenda.TOTAL
+        : StatusDevolucaoVenda.PARCIAL;
 
     protected Venda() { }
 

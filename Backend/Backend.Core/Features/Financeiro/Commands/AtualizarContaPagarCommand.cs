@@ -15,7 +15,6 @@ public record AtualizarParcelaPagarCommand(
 public record AtualizarContaPagarCommand(
     string Descricao,
     int FornecedorId,
-    int? NfeId,
     DateTime? DataEmissao,
     decimal ValorOriginal,
     int? CondicaoPagamentoId,

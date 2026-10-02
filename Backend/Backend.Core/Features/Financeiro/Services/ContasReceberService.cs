@@ -21,24 +21,18 @@ public sealed class ContasReceberService : BaseService
 {
     private readonly IContasReceberRepository _contasRepository;
     private readonly IClientesRepository _clientesRepository;
-    private readonly INfesRepository _nfesRepository;
     private readonly ICondicoesPagamentosRepository _condicoesRepository;
-    private readonly IVendasRepository _vendasRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public ContasReceberService(
         IContasReceberRepository contasRepository,
         IClientesRepository clientesRepository,
-        INfesRepository nfesRepository,
         ICondicoesPagamentosRepository condicoesRepository,
-        IVendasRepository vendasRepository,
         IUnitOfWork unitOfWork)
     {
         _contasRepository = contasRepository;
         _clientesRepository = clientesRepository;
-        _nfesRepository = nfesRepository;
         _condicoesRepository = condicoesRepository;
-        _vendasRepository = vendasRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -62,28 +56,12 @@ public sealed class ContasReceberService : BaseService
         if (cliente is null)
             return Resultado<ContasReceber>.Falha(new ResultadoErro("CLIENTE_INEXISTENTE", "O cliente informado não existe.", "ClienteId"));
 
-        Nfes? nfe = null;
-        if (command.NfeId.HasValue)
-        {
-            nfe = await _nfesRepository.ObterNfePorId(command.NfeId.Value);
-            if (nfe is null)
-                return Resultado<ContasReceber>.Falha(new ResultadoErro("NFE_INEXISTENTE", "A nota fiscal informada não existe.", "NfeId"));
-        }
-
         CondicoesPagamentos? condicao = null;
         if (command.CondicaoPagamentoId.HasValue)
         {
             condicao = await _condicoesRepository.ObterCondicaoPagamentoPorId(command.CondicaoPagamentoId.Value);
             if (condicao is null)
                 return Resultado<ContasReceber>.Falha(new ResultadoErro("CONDICAO_PAGAMENTO_INEXISTENTE", "A condição de pagamento informada não existe.", "CondicaoPagamentoId"));
-        }
-
-        Venda? venda = null;
-        if (command.VendaId.HasValue)
-        {
-            venda = await _vendasRepository.ObterVendaPorId(command.VendaId.Value);
-            if (venda is null)
-                return Resultado<ContasReceber>.Falha(new ResultadoErro("VENDA_INEXISTENTE", "A venda informada não existe.", "VendaId"));
         }
 
         return await ExecuteResultAsync(async () =>
@@ -99,9 +77,7 @@ public sealed class ContasReceberService : BaseService
                     command.DataEmissao,
                     null,
                     condicao,
-                    command.NfeId,
-                    command.VendaId,
-                    command.Observacao
+                    observacao: command.Observacao
                 );
 
                 foreach (var p in command.Parcelas)
@@ -137,28 +113,12 @@ public sealed class ContasReceberService : BaseService
         if (cliente is null)
             return Resultado<ContasReceber>.Falha(new ResultadoErro("CLIENTE_INEXISTENTE", "O cliente informado não existe.", "ClienteId"));
 
-        Nfes? nfe = null;
-        if (command.NfeId.HasValue)
-        {
-            nfe = await _nfesRepository.ObterNfePorId(command.NfeId.Value);
-            if (nfe is null)
-                return Resultado<ContasReceber>.Falha(new ResultadoErro("NFE_INEXISTENTE", "A nota fiscal informada não existe.", "NfeId"));
-        }
-
         CondicoesPagamentos? condicao = null;
         if (command.CondicaoPagamentoId.HasValue)
         {
             condicao = await _condicoesRepository.ObterCondicaoPagamentoPorId(command.CondicaoPagamentoId.Value);
             if (condicao is null)
                 return Resultado<ContasReceber>.Falha(new ResultadoErro("CONDICAO_PAGAMENTO_INEXISTENTE", "A condição de pagamento informada não existe.", "CondicaoPagamentoId"));
-        }
-
-        Venda? venda = null;
-        if (command.VendaId.HasValue)
-        {
-            venda = await _vendasRepository.ObterVendaPorId(command.VendaId.Value);
-            if (venda is null)
-                return Resultado<ContasReceber>.Falha(new ResultadoErro("VENDA_INEXISTENTE", "A venda informada não existe.", "VendaId"));
         }
 
         return await ExecuteResultAsync(async () =>
@@ -178,8 +138,6 @@ public sealed class ContasReceberService : BaseService
                     command.DataEmissao,
                     null,
                     condicao,
-                    command.NfeId,
-                    command.VendaId,
                     command.Observacao
                 );
 
@@ -261,8 +219,8 @@ public sealed class ContasReceberService : BaseService
         var existente = await _contasRepository.ObterContaReceberPorId(id);
         if (existente is null) return false;
 
-        if (existente.NfeId.HasValue || existente.VendaId.HasValue)
-            throw new Common.Exceptions.DomainException("Não é possível excluir uma conta a receber gerada por Vendas ou Notas Fiscais.");
+        if (existente.OrigemTipo != OrigemTituloFinanceiro.MANUAL)
+            throw new Common.Exceptions.DomainException($"Conta gerada por {existente.OrigemTipo.Nome()} #{existente.OrigemId}. Para cancelá-la, cancele o documento de origem.");
 
         if (existente.ValorSaldo < existente.ValorOriginal || existente.ContasReceberParcelas.Any(p => p.Status != StatusTituloFinanceiro.ABERTO))
             throw new Common.Exceptions.DomainException("Não é possível excluir uma conta a receber que já possui parcelas baixadas ou alteradas.");

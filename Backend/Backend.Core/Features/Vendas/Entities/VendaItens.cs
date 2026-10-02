@@ -11,6 +11,8 @@ public class VendaItens
     public decimal ValorUnitario { get; private set; }
     public decimal ValorDesconto { get; private set; }
     public decimal ValorTotal { get; private set; }
+    public decimal QuantidadeDevolvida { get; private set; }
+    public decimal SaldoDevolvivel => Quantidade - QuantidadeDevolvida;
 
     public Skus Sku { get; private set; }
 

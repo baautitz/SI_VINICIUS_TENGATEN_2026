@@ -27,13 +27,13 @@ public class ContasReceber
     public DateTime CriadoEm { get; private set; }
 
     public Clientes Cliente { get; private set; }
-    public int? NfeId { get; private set; }
+    public OrigemTituloFinanceiro OrigemTipo { get; private set; }
+    public int? OrigemId { get; private set; }
     public CondicoesPagamentos? CondicaoPagamento { get; private set; }
-    public int? VendaId { get; private set; }
 
     public IReadOnlyCollection<ContasReceberParcelas> ContasReceberParcelas => _parcelas.AsReadOnly();
 
-    public ContasReceber(string descricao, decimal valorOriginal, Clientes cliente, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, int? nfeId = null, int? vendaId = null, string? observacao = null)
+    public ContasReceber(string descricao, decimal valorOriginal, Clientes cliente, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, OrigemTituloFinanceiro origemTipo = OrigemTituloFinanceiro.MANUAL, int? origemId = null, string? observacao = null)
     {
         descricao = TextNormalization.Normalize(descricao);
         observacao = TextNormalization.NormalizeOrNull(observacao);
@@ -44,6 +44,12 @@ public class ContasReceber
         if (valorOriginal <= 0)
             throw new DomainException("Valor original deve ser maior que zero.");
 
+        if (origemTipo is OrigemTituloFinanceiro.COMPRA or OrigemTituloFinanceiro.DEVOLUCAO_VENDA)
+            throw new DomainException("Conta a receber não pode ter origem em compra ou devolução.");
+
+        if (origemTipo != OrigemTituloFinanceiro.MANUAL && origemId is null)
+            throw new DomainException("O documento de origem é obrigatório.");
+
         Cliente = cliente ?? throw new DomainException("Cliente é obrigatório para contas a receber.");
 
         Descricao = descricao;
@@ -53,15 +59,15 @@ public class ContasReceber
         DataEmissao = dataEmissao;
         DataVencimento = dataVencimento;
         CondicaoPagamento = condicaoPagamento;
-        NfeId = nfeId;
-        VendaId = vendaId;
+        OrigemTipo = origemTipo;
+        OrigemId = origemId;
         Observacao = observacao;
         CriadoEm = DateTime.UtcNow;
         Status = StatusTituloFinanceiro.ABERTO;
     }
 
-    public ContasReceber(int id, string descricao, decimal valorOriginal, Clientes cliente, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, int? nfeId = null, int? vendaId = null, string? observacao = null, DateTime? criadoEm = null, StatusTituloFinanceiro status = StatusTituloFinanceiro.ABERTO)
-        : this(descricao, valorOriginal, cliente, dataEmissao, dataVencimento, condicaoPagamento, nfeId, vendaId, observacao)
+    public ContasReceber(int id, string descricao, decimal valorOriginal, Clientes cliente, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, OrigemTituloFinanceiro origemTipo = OrigemTituloFinanceiro.MANUAL, int? origemId = null, string? observacao = null, DateTime? criadoEm = null, StatusTituloFinanceiro status = StatusTituloFinanceiro.ABERTO)
+        : this(descricao, valorOriginal, cliente, dataEmissao, dataVencimento, condicaoPagamento, origemTipo, origemId, observacao)
     {
         Id = id;
         CriadoEm = criadoEm ?? DateTime.UtcNow;
@@ -105,7 +111,7 @@ public class ContasReceber
         AtualizarSaldo();
     }
 
-    public void Atualizar(string descricao, decimal valorOriginal, Clientes cliente, IEnumerable<ContasReceberParcelas> parcelas, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, int? nfeId = null, int? vendaId = null, string? observacao = null)
+    public void Atualizar(string descricao, decimal valorOriginal, Clientes cliente, IEnumerable<ContasReceberParcelas> parcelas, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, string? observacao = null)
     {
         descricao = TextNormalization.Normalize(descricao);
         observacao = TextNormalization.NormalizeOrNull(observacao);
@@ -163,8 +169,6 @@ public class ContasReceber
         DataEmissao = dataEmissao;
         DataVencimento = dataVencimento;
         CondicaoPagamento = condicaoPagamento;
-        NfeId = nfeId;
-        VendaId = vendaId;
         Observacao = observacao;
 
         _parcelas.Clear();
@@ -174,6 +178,23 @@ public class ContasReceber
         }
 
         AtualizarSaldo();
+    }
+
+    // Abate o valor do saldo em aberto, da última parcela para a primeira (preserva os vencimentos mais próximos).
+    // Devolve o que excedeu o saldo aberto, isto é, o que já foi recebido.
+    public decimal AbaterSaldoAberto(decimal valor)
+    {
+        var restante = valor;
+        foreach (var p in _parcelas.Where(p => p.Status != StatusTituloFinanceiro.CANCELADO).OrderByDescending(p => p.NumeroParcela))
+        {
+            var abatido = Math.Min(restante, p.ValorParcela - p.ValorRecebido);
+            if (abatido <= 0) continue;
+            p.Abater(abatido);
+            restante -= abatido;
+        }
+
+        AtualizarSaldo();
+        return restante;
     }
 
     public void Cancelar()
@@ -186,7 +207,8 @@ public class ContasReceber
     private void AtualizarSaldo()
     {
         var recebido = _parcelas.Sum(p => p.ValorRecebido);
-        ValorSaldo = Math.Max(0, ValorOriginal - recebido);
+        // Saldo = o que falta nas parcelas não canceladas (ValorOriginal é histórico e não muda com devoluções).
+        ValorSaldo = _parcelas.Where(p => p.Status != StatusTituloFinanceiro.CANCELADO).Sum(p => p.ValorParcela - p.ValorRecebido);
 
         if (ValorSaldo == 0)
             Status = StatusTituloFinanceiro.PAGO;

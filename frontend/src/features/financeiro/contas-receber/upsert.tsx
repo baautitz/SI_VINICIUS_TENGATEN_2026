@@ -117,7 +117,7 @@ export function ContasReceberUpsertForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        {readOnly && editingItem && !!editingItem.vendaId && <RelatedActions actions={[{ id: "cr.venda", hotkey: "Alt+V", label: "Venda", icon: <ShoppingCart className="size-4" />, run: () => related.openView(() => vendasApi.getById(editingItem.vendaId!), VendasUpsertForm, "Detalhes da Venda") }]} />}
+        {readOnly && editingItem && editingItem.origemTipo === "VENDA" && !!editingItem.origemId && <RelatedActions actions={[{ id: "cr.venda", hotkey: "Alt+V", label: "Venda", icon: <ShoppingCart className="size-4" />, run: () => related.openView(() => vendasApi.getById(editingItem.origemId!), VendasUpsertForm, "Detalhes da Venda") }]} />}
         <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>
           {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
         </Button>
@@ -208,8 +208,6 @@ function ContasReceberFormBody({
     defaultValues: {
       descricao: editingItem?.descricao ?? "",
       clienteId: editingItem?.cliente?.id ?? 0,
-      nfeId: editingItem?.nfeId ?? null,
-      vendaId: editingItem?.vendaId ?? null,
       dataEmissao: editingItem?.dataEmissao
         ? editingItem.dataEmissao.split("T")[0]
         : todayLocalISODate(),

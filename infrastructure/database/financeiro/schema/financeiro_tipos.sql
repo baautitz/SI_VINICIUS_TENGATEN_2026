@@ -11,3 +11,15 @@ BEGIN
 EXCEPTION
   WHEN duplicate_object THEN NULL;
 END $$;
+
+DO $$
+BEGIN
+  CREATE TYPE projeto_sistemas.origem_titulo_financeiro_enum AS ENUM (
+    'MANUAL',
+    'VENDA',
+    'COMPRA',
+    'DEVOLUCAO_VENDA'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;

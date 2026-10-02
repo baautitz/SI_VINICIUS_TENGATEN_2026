@@ -30,6 +30,7 @@ export interface Venda {
   emitente: Emitente;
   cliente: Cliente;
   vencimentos?: string;
+  statusDevolucao?: StatusDevolucao;
   itens: Array<{
     id: number;
     sku: Sku;
@@ -37,7 +38,34 @@ export interface Venda {
     valorUnitario: number;
     valorDesconto: number;
     valorTotal: number;
+    quantidadeDevolvida?: number;
+    saldoDevolvivel?: number;
   }>;
+}
+
+export type StatusDevolucao = "NENHUMA" | "PARCIAL" | "TOTAL";
+
+// Imutável: só se cria e consulta.
+export interface Devolucao {
+  id: number;
+  vendaId: number;
+  dataDevolucao: string;
+  motivo: string;
+  valorTotal: number;
+  itens: Array<{
+    id: number;
+    vendaItemId: number;
+    sku: string;
+    quantidade: number;
+    valorUnitario: number;
+    custoUnitario: number;
+    valorTotal: number;
+  }>;
+}
+
+export interface CriarDevolucaoValues {
+  motivo: string;
+  itens: Array<{ vendaItemId: number; quantidade: number }>;
 }
 
 export const vendaItemSchema = z.object({

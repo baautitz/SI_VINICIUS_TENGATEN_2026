@@ -17,7 +17,8 @@ BEGIN
     'VENDA',
     'COMPRA',
     'BALANCO',
-    'ESTORNO'
+    'ESTORNO',
+    'DEVOLUCAO_VENDA'
   );
 EXCEPTION
   WHEN duplicate_object THEN NULL;

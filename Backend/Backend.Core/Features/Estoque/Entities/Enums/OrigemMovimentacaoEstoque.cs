@@ -9,5 +9,6 @@ public enum OrigemMovimentacaoEstoque
     VENDA,
     COMPRA,
     BALANCO,
-    ESTORNO
+    ESTORNO,
+    DEVOLUCAO_VENDA
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { origemTituloLabels } from "../origem";
 import React from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/ui/primitives";
@@ -52,22 +53,24 @@ export function ContasPagarList({
     },
     {
       id: "fornecedor",
-      header: "Fornecedor",
+      header: "Fornecedor / Cliente",
       cell: ({ row }) => {
         const fornecedor = row.original.fornecedor;
         return (
           <span className="text-muted-foreground truncate max-w-xs block">
-            {fornecedor?.nomeRazaosocial || "-"}
+            {fornecedor?.nomeRazaosocial || row.original.clienteNome || "-"}
           </span>
         );
       },
     },
     {
-      id: "nfe",
-      header: "NF-e",
-      accessorFn: (row) => row.nfeId,
-      cell: ({ getValue }) => (
-        <span className="text-muted-foreground">{getValue() ? `#${getValue()}` : "-"}</span>
+      id: "origem",
+      header: "Origem",
+      cell: ({ row }) => (
+        <span>
+          {origemTituloLabels[row.original.origemTipo] ?? row.original.origemTipo}
+          {row.original.origemId ? <span className="text-muted-foreground"> #{row.original.origemId}</span> : null}
+        </span>
       ),
     },
     {

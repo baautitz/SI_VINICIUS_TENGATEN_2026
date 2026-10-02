@@ -15,8 +15,6 @@ public record AtualizarParcelaReceberCommand(
 public record AtualizarContaReceberCommand(
     string Descricao,
     int ClienteId,
-    int? NfeId,
-    int? VendaId,
     DateTime? DataEmissao,
     decimal ValorOriginal,
     int? CondicaoPagamentoId,

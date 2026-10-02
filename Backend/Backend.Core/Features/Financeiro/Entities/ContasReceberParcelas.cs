@@ -93,6 +93,23 @@ public void RegistrarRecebimento(decimal valor)
         }
     }
 
+    // Reduz o valor ainda em aberto (devolução); sem nada recebido a parcela zerada é cancelada, mantendo o valor original.
+    public void Abater(decimal valor)
+    {
+        if (valor <= 0 || valor > ValorParcela - ValorRecebido)
+            throw new DomainException("Valor a abater inválido para o saldo em aberto da parcela.");
+
+        if (valor == ValorParcela)
+        {
+            Status = StatusTituloFinanceiro.CANCELADO;
+            return;
+        }
+
+        ValorParcela -= valor;
+        if (ValorParcela == ValorRecebido)
+            Status = StatusTituloFinanceiro.PAGO;
+    }
+
     public void Cancelar()
     {
         Status = StatusTituloFinanceiro.CANCELADO;

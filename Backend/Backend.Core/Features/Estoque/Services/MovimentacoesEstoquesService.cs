@@ -92,6 +92,9 @@ public sealed class MovimentacoesEstoquesService : BaseService
         if (original.OrigemTipo == OrigemMovimentacaoEstoque.BALANCO)
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_BALANCO", "Esta movimentação foi gerada por um balanço. Cancele o balanço para estornar a movimentação de estoque."));
 
+        if (original.OrigemTipo == OrigemMovimentacaoEstoque.DEVOLUCAO_VENDA)
+            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_DEVOLUCAO", "Esta movimentação foi gerada por uma devolução de venda e não pode ser estornada."));
+
         if (original.OrigemTipo == OrigemMovimentacaoEstoque.ESTORNO)
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_ESTORNO", "Um estorno não pode ser estornado. Lance uma nova movimentação."));
 

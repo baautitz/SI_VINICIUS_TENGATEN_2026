@@ -16,7 +16,6 @@ public class ContasPagar
     protected ContasPagar()
     {
         Descricao = string.Empty;
-        Fornecedor = null!;
     }
     public DateTime? DataEmissao { get; private set; }
     public DateTime? DataVencimento { get; private set; }
@@ -26,13 +25,17 @@ public class ContasPagar
     public string? Observacao { get; private set; }
     public DateTime CriadoEm { get; private set; }
 
-    public Fornecedores Fornecedor { get; private set; }
-    public int? NfeId { get; private set; }
+    // Contraparte: fornecedor (manual/compra) ou cliente (devolução de venda); exatamente um dos dois.
+    public Fornecedores? Fornecedor { get; private set; }
+    public int? ClienteId { get; private set; }
+    public string? ClienteNome { get; private set; }
+    public OrigemTituloFinanceiro OrigemTipo { get; private set; }
+    public int? OrigemId { get; private set; }
     public CondicoesPagamentos? CondicaoPagamento { get; private set; }
 
     public IReadOnlyCollection<ContasPagarParcelas> ContasPagarParcelas => _parcelas.AsReadOnly();
 
-    public ContasPagar(string descricao, decimal valorOriginal, Fornecedores fornecedor, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, int? nfeId = null, string? observacao = null)
+    public ContasPagar(string descricao, decimal valorOriginal, Fornecedores? fornecedor, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, OrigemTituloFinanceiro origemTipo = OrigemTituloFinanceiro.MANUAL, int? origemId = null, string? observacao = null, int? clienteId = null, string? clienteNome = null)
     {
         descricao = TextNormalization.Normalize(descricao);
         observacao = TextNormalization.NormalizeOrNull(observacao);
@@ -43,23 +46,36 @@ public class ContasPagar
         if (valorOriginal <= 0)
             throw new DomainException("Valor original deve ser maior que zero.");
 
-        Fornecedor = fornecedor ?? throw new DomainException("Fornecedor é obrigatório para contas a pagar.");
+        if (origemTipo == OrigemTituloFinanceiro.VENDA)
+            throw new DomainException("Conta a pagar não pode ter origem em venda.");
 
+        if (origemTipo != OrigemTituloFinanceiro.MANUAL && origemId is null)
+            throw new DomainException("O documento de origem é obrigatório.");
+
+        if ((fornecedor is null) == (clienteId is null))
+            throw new DomainException("A conta a pagar deve ter exatamente um fornecedor ou um cliente.");
+
+        if (origemTipo == OrigemTituloFinanceiro.DEVOLUCAO_VENDA ? clienteId is null : fornecedor is null)
+            throw new DomainException(origemTipo == OrigemTituloFinanceiro.DEVOLUCAO_VENDA ? "Reembolso de devolução exige cliente." : "Fornecedor é obrigatório para contas a pagar.");
+
+        Fornecedor = fornecedor;
+        ClienteId = clienteId;
+        ClienteNome = clienteNome;
         Descricao = descricao;
         ValorOriginal = valorOriginal;
         ValorSaldo = valorOriginal;
-        Fornecedor = fornecedor;
         DataEmissao = dataEmissao;
         DataVencimento = dataVencimento;
         CondicaoPagamento = condicaoPagamento;
-        NfeId = nfeId;
+        OrigemTipo = origemTipo;
+        OrigemId = origemId;
         Observacao = observacao;
         CriadoEm = DateTime.UtcNow;
         Status = StatusTituloFinanceiro.ABERTO;
     }
 
-    public ContasPagar(int id, string descricao, decimal valorOriginal, Fornecedores fornecedor, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, int? nfeId = null, string? observacao = null, DateTime? criadoEm = null, StatusTituloFinanceiro status = StatusTituloFinanceiro.ABERTO)
-        : this(descricao, valorOriginal, fornecedor, dataEmissao, dataVencimento, condicaoPagamento, nfeId, observacao)
+    public ContasPagar(int id, string descricao, decimal valorOriginal, Fornecedores? fornecedor, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, OrigemTituloFinanceiro origemTipo = OrigemTituloFinanceiro.MANUAL, int? origemId = null, string? observacao = null, DateTime? criadoEm = null, StatusTituloFinanceiro status = StatusTituloFinanceiro.ABERTO, int? clienteId = null, string? clienteNome = null)
+        : this(descricao, valorOriginal, fornecedor, dataEmissao, dataVencimento, condicaoPagamento, origemTipo, origemId, observacao, clienteId, clienteNome)
     {
         Id = id;
         CriadoEm = criadoEm ?? DateTime.UtcNow;
@@ -103,7 +119,7 @@ public class ContasPagar
         AtualizarSaldo();
     }
 
-    public void Atualizar(string descricao, decimal valorOriginal, Fornecedores fornecedor, IEnumerable<ContasPagarParcelas> parcelas, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, int? nfeId = null, string? observacao = null)
+    public void Atualizar(string descricao, decimal valorOriginal, Fornecedores fornecedor, IEnumerable<ContasPagarParcelas> parcelas, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, string? observacao = null)
     {
         descricao = TextNormalization.Normalize(descricao);
         observacao = TextNormalization.NormalizeOrNull(observacao);
@@ -113,6 +129,9 @@ public class ContasPagar
 
         if (valorOriginal <= 0)
             throw new DomainException("Valor original deve ser maior que zero.");
+
+        if (OrigemTipo != OrigemTituloFinanceiro.MANUAL)
+            throw new DomainException("Conta gerada por outro documento não pode ser editada manualmente.");
 
         Fornecedor = fornecedor ?? throw new DomainException("Fornecedor é obrigatório para contas a pagar.");
 
@@ -161,7 +180,6 @@ public class ContasPagar
         DataEmissao = dataEmissao;
         DataVencimento = dataVencimento;
         CondicaoPagamento = condicaoPagamento;
-        NfeId = nfeId;
         Observacao = observacao;
 
         _parcelas.Clear();

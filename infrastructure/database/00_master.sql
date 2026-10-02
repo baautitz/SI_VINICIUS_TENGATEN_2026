@@ -39,6 +39,8 @@ SET search_path TO projeto_sistemas, public;
 
 \ir vendas/schema/vendas.sql
 \ir vendas/schema/vendas_itens.sql
+\ir vendas/schema/devolucoes.sql
+\ir vendas/schema/devolucoes_itens.sql
 
 \ir nfe/schema/nfe_tipos.sql
 \ir nfe/schema/nfes_table.sql

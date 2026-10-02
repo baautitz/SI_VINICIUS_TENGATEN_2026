@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { FeatureHeader } from "@/ui/composites";
-import { ShoppingBag, Eye, Trash2 } from "lucide-react";
+import { ShoppingBag, Eye, Trash2, Undo2 } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/ui/primitives";
 import { DataTable } from "@/ui/composites";
@@ -15,6 +15,7 @@ import { formatToLocal } from "@/utils/date-utils";
 
 interface VendasListProps extends FeatureListProps<Venda> {
   onView: (item: Venda) => void;
+  onReturn: (item: Venda) => void;
 }
 
 export function VendasList({
@@ -28,6 +29,7 @@ export function VendasList({
   onAdd,
   onDelete,
   onView,
+  onReturn,
   onPageChange,
 }: VendasListProps) {
   const columns: ColumnDef<Venda>[] = [
@@ -93,7 +95,13 @@ export function VendasList({
         const isCanceled = !!row.original.dataCancelamento;
         return (
           <Badge variant={isCanceled ? "destructive" : "outline"}>
-            {isCanceled ? "Cancelada" : "Confirmada"}
+            {isCanceled
+              ? "Cancelada"
+              : row.original.statusDevolucao === "TOTAL"
+                ? "Devolvida"
+                : row.original.statusDevolucao === "PARCIAL"
+                  ? "Devolvida parcialmente"
+                  : "Confirmada"}
           </Badge>
         );
       },
@@ -114,6 +122,16 @@ export function VendasList({
             >
               <Eye className="h-4 w-4" />
             </Button>
+            {!isCanceled && item.statusDevolucao !== "TOTAL" && (
+              <Button
+                size="icon-sm"
+                variant="outline"
+                title="Devolver Itens"
+                onClick={() => fireAndForget(() => onReturn(item))}
+              >
+                <Undo2 className="h-4 w-4" />
+              </Button>
+            )}
             {!isCanceled && (
               <Button
                 size="icon-sm"

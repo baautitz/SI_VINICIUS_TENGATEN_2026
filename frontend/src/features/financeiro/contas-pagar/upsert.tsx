@@ -201,7 +201,6 @@ function ContasPagarFormBody({
     defaultValues: {
       descricao: editingItem?.descricao ?? "",
       fornecedorId: editingItem?.fornecedor?.id ?? 0,
-      nfeId: editingItem?.nfeId ?? null,
       dataEmissao: editingItem?.dataEmissao
         ? editingItem.dataEmissao.split("T")[0]
         : todayLocalISODate(),
@@ -464,6 +463,14 @@ function ContasPagarFormBody({
                   field.name,
                   field.state.meta.errors,
                 );
+                if (editingItem?.clienteId) {
+                  return (
+                    <div className="flex flex-col gap-2">
+                      <FieldLabel htmlFor="clienteNome">Cliente</FieldLabel>
+                      <Input id="clienteNome" value={editingItem.clienteNome ?? ""} disabled />
+                    </div>
+                  );
+                }
                 return (
                   <FornecedorInput
                     name={field.name}
@@ -554,26 +561,6 @@ function ContasPagarFormBody({
                   </div>
                 );
               }}
-            </form.Field>
-
-            <form.Field name="nfeId">
-              {(field) => (
-                <div className="flex flex-col gap-2">
-                  <FieldLabel htmlFor={field.name}>ID Nota Fiscal</FieldLabel>
-                  <NumberInput
-                    id={field.name}
-                    name={field.name}
-                    onBlur={field.handleBlur}
-                    inputSize="full"
-                    value={field.state.value ?? 0}
-                    decimals={0}
-                    inputMode="numeric"
-                    onNumberChange={(num) => field.handleChange(num || null)}
-                    disabled={readOnly}
-                    className="text-right"
-                  />
-                </div>
-              )}
             </form.Field>
           </div>
 

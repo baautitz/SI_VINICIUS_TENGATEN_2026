@@ -43,7 +43,8 @@ import {
   type VendaItem,
   type VendaFormValues,
 } from "./types";
-import { Trash2, Boxes, Receipt, FileText, Ban } from "lucide-react";
+import { Trash2, Boxes, Receipt, FileText, Ban, Undo2 } from "lucide-react";
+import { DevolucoesHistoricoWindow, type DevolucoesHistoricoWindowProps } from "./devolucao";
 import { estoqueApi } from "@/api/estoque";
 import { ContasReceberUpsertForm } from "@/features/financeiro/contas-receber/upsert";
 import { relacionadosApi } from "@/api/relacionados";
@@ -538,7 +539,25 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     );
   };
 
+  const openDevolucoes = () =>
+    ui.windows.open<void, DevolucoesHistoricoWindowProps>({
+      component: DevolucoesHistoricoWindow,
+      props: { vendaId: editingItem!.id },
+      title: `Devoluções da Venda #${editingItem!.id}`,
+      size: "large",
+    });
+
   const commands = [
+    {
+      id: "vendas.view-devolucoes",
+      hotkey: "Alt+D" as const,
+      label: "Visualizar devoluções",
+      enabled: readOnly && !!editingItem,
+      run: (event: KeyboardEvent) => {
+        event.preventDefault();
+        void openDevolucoes();
+      },
+    },
     {
       id: "vendas.view-observacao",
       hotkey: "Alt+O" as const,
@@ -818,6 +837,9 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
             </Button>
             <Button type="button" variant="outline" onClick={openContasReceber}>
               <Receipt /> Contas a Receber <Kbd>Alt+R</Kbd>
+            </Button>
+            <Button type="button" variant="outline" onClick={openDevolucoes}>
+              <Undo2 /> Devoluções <Kbd>Alt+D</Kbd>
             </Button>
             <Button type="button" variant="outline" onClick={openObservacao}>
               <FileText /> Observação <Kbd>Alt+O</Kbd>

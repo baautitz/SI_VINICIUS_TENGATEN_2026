@@ -4,8 +4,9 @@ import React from "react";
 import { WindowActions } from "@/imperative-ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { VendasList } from "./list";
+import { DevolucaoWindow, type DevolucaoWindowProps } from "./devolucao";
 import { VendasUpsertForm, type VendasUpsertProps } from "./upsert";
-import type { Venda } from "./types";
+import type { CriarDevolucaoValues, Venda } from "./types";
 import { useFeatureList } from "@/hooks/use-feature-list";
 import { vendasApi } from "@/api/vendas";
 import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
@@ -41,6 +42,7 @@ export function VendasFeature() {
       queryClient.invalidateQueries({ queryKey: ["skus"] }),
       queryClient.invalidateQueries({ queryKey: ["produtos"] }),
       queryClient.invalidateQueries({ queryKey: ["contas-receber"] }),
+      queryClient.invalidateQueries({ queryKey: ["contas-pagar"] }),
       queryClient.invalidateQueries({ queryKey: ["movimentacoes"] }),
     ]);
   };
@@ -91,6 +93,26 @@ export function VendasFeature() {
     }
   };
 
+  const returnVenda = async (item: Venda) => {
+    const result = await ui.windows.open<CriarDevolucaoValues, DevolucaoWindowProps>({
+      component: DevolucaoWindow,
+      props: { venda: item },
+      title: `Devolver Itens da Venda #${item.id}`,
+      size: "large",
+    });
+    if (result.status !== "confirmed") return;
+
+    try {
+      await vendasApi.createDevolucao(item.id, result.value);
+      await invalidate();
+      ui.feedback.notify({ type: "success", title: "Devolução registrada com sucesso." });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível registrar a devolução.",
+      });
+    }
+  };
+
   return (
     <VendasList
       items={data?.itens ?? []}
@@ -103,6 +125,7 @@ export function VendasFeature() {
       onAdd={() => openVenda(null)}
       onEdit={(item) => openVenda(item, true)}
       onView={(item) => openVenda(item, true)}
+      onReturn={returnVenda}
       onDelete={cancelVenda}
       onPageChange={list.setPage}
       rowSelection={list.rowSelection}

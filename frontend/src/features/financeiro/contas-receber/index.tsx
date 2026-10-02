@@ -1,5 +1,6 @@
 "use client";
 
+import { avisoTituloExterno } from "../origem";
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ContasReceberList } from "./list";
@@ -78,11 +79,8 @@ export function ContasReceberFeature() {
   };
 
   const openDelete = async (item: ContasReceber) => {
-    if (item.vendaId) {
-      ui.feedback.notify({
-        type: "error",
-        title: `Conta gerada pela venda #${item.vendaId} não pode ser excluída manualmente. Cancele a venda.`,
-      });
+    if (item.origemTipo !== "MANUAL") {
+      ui.feedback.notify({ type: "warning", title: avisoTituloExterno(item.origemTipo, item.origemId) });
       return;
     }
     const result = await ui.windows.confirm({

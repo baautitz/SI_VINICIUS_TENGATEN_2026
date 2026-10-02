@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { OrigemTitulo } from "../origem";
 import type { Cliente } from "@/features/parceiros/clientes/types";
 import type { CondicaoPagamento } from "@/features/financeiro/condicoes/types";
 import type { StatusTituloFinanceiro } from "../contas-pagar/types";
@@ -24,8 +25,8 @@ export interface ContasReceber {
   observacao?: string | null;
   criadoEm: string;
   cliente: Cliente;
-  nfeId?: number | null;
-  vendaId?: number | null;
+  origemTipo: OrigemTitulo;
+  origemId?: number | null;
   condicaoPagamento?: CondicaoPagamento | null;
   contasReceberParcelas: ContasReceberParcela[];
 }
@@ -46,8 +47,6 @@ export const contasReceberBaseSchema = z.object({
   clienteId: z
     .number({ required_error: "Cliente é obrigatório." })
     .min(1, "Cliente é obrigatório."),
-  nfeId: z.number().nullable().optional(),
-  vendaId: z.number().nullable().optional(),
   dataEmissao: z.string().nullable().optional(),
   valorOriginal: z.coerce
     .number({ invalid_type_error: "Valor original deve ser um número." })

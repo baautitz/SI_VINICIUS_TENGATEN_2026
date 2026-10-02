@@ -14,7 +14,7 @@ public class RelacionadosRepository : IRelacionadosRepository
         => (await _session.Connection.QueryAsync<RelacionadoItem>(sql, param, _session.Transaction)).ToList();
 
     public Task<IReadOnlyList<RelacionadoItem>> ContasReceberPorVenda(int vendaId) => Consultar(
-        "SELECT id AS Id, descricao AS Descricao, status::text AS Detalhe FROM contas_receber WHERE venda_id = @Id ORDER BY id;",
+        "SELECT id AS Id, descricao AS Descricao, status::text AS Detalhe FROM contas_receber WHERE origem_tipo = 'VENDA' AND origem_id = @Id ORDER BY id;",
         new { Id = vendaId });
 
     public Task<IReadOnlyList<RelacionadoItem>> MovimentacoesPorVenda(int vendaId) => Consultar(

@@ -30,7 +30,7 @@ public class ContasPagarRepository : IContasPagarRepository
         const string querySql = @"
             SELECT cp.id AS Id, cp.descricao AS Descricao, cp.data_emissao AS DataEmissao, cp.data_vencimento AS DataVencimento, cp.valor_original AS ValorOriginal,
                    cp.valor_saldo AS ValorSaldo, cp.status AS Status, cp.observacao AS Observacao, cp.criado_em AS CriadoEm,
-                   cp.nfe_id AS NfeId,
+                   cp.origem_tipo::text AS OrigemTipo, cp.origem_id AS OrigemId, cp.cliente_id AS ClienteId, cli.nome_razaosocial AS ClienteNome,
                    f.id AS Id, f.tipo_pessoa AS TipoPessoa, f.nome_razaosocial AS NomeRazaosocial, f.cpf_cnpj AS CpfCnpj,
                    f.rg_ie AS RgIe, f.apelido_nomefantasia AS ApelidoNomefantasia, f.logradouro AS Logradouro, f.numero AS Numero,
                    f.telefone AS Telefone, f.email AS Email, f.ativo AS Ativo, f.criado_em AS CriadoEm, f.observacao AS Observacao,
@@ -40,8 +40,9 @@ public class ContasPagarRepository : IContasPagarRepository
                    con.multa_percentual AS MultaPercentual, con.taxa_juros_percentual AS TaxaJurosPercentual, con.ativo AS Ativo,
                    mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo
             FROM contas_pagar cp
-            JOIN fornecedores f ON f.id = cp.fornecedor_id
-            JOIN paises p ON p.id = f.nacionalidade_id
+            LEFT JOIN fornecedores f ON f.id = cp.fornecedor_id
+            LEFT JOIN paises p ON p.id = f.nacionalidade_id
+            LEFT JOIN clientes cli ON cli.id = cp.cliente_id
             LEFT JOIN condicoes_pagamentos con ON con.id = cp.condicao_pagamento_id
             LEFT JOIN metodos_pagamento mp ON mp.codigo = con.metodo_pagamento_codigo
             ORDER BY cp.criado_em DESC, cp.id DESC
@@ -54,7 +55,7 @@ public class ContasPagarRepository : IContasPagarRepository
             querySql,
             (conta, fornecedor, pais, condicao, metodo) =>
             {
-                var f = new Fornecedores(
+                var f = fornecedor is null ? null : new Fornecedores(
                     fornecedor.Id,
                     fornecedor.TipoPessoa,
                     fornecedor.NomeRazaosocial,
@@ -85,10 +86,13 @@ public class ContasPagarRepository : IContasPagarRepository
                     conta.DataEmissao,
                     conta.DataVencimento,
                     condicao,
-                    conta.NfeId,
+                    conta.OrigemTipo,
+                    conta.OrigemId,
                     conta.Observacao,
                     conta.CriadoEm,
-                    conta.Status
+                    conta.Status,
+                    conta.ClienteId,
+                    conta.ClienteNome
                 );
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
@@ -134,7 +138,7 @@ public class ContasPagarRepository : IContasPagarRepository
         const string contaSql = @"
             SELECT cp.id AS Id, cp.descricao AS Descricao, cp.data_emissao AS DataEmissao, cp.data_vencimento AS DataVencimento, cp.valor_original AS ValorOriginal,
                    cp.valor_saldo AS ValorSaldo, cp.status AS Status, cp.observacao AS Observacao, cp.criado_em AS CriadoEm,
-                   cp.nfe_id AS NfeId,
+                   cp.origem_tipo::text AS OrigemTipo, cp.origem_id AS OrigemId, cp.cliente_id AS ClienteId, cli.nome_razaosocial AS ClienteNome,
                    f.id AS Id, f.tipo_pessoa AS TipoPessoa, f.nome_razaosocial AS NomeRazaosocial, f.cpf_cnpj AS CpfCnpj,
                    f.rg_ie AS RgIe, f.apelido_nomefantasia AS ApelidoNomefantasia, f.logradouro AS Logradouro, f.numero AS Numero,
                    f.telefone AS Telefone, f.email AS Email, f.ativo AS Ativo, f.criado_em AS CriadoEm, f.observacao AS Observacao,
@@ -144,8 +148,9 @@ public class ContasPagarRepository : IContasPagarRepository
                    con.multa_percentual AS MultaPercentual, con.taxa_juros_percentual AS TaxaJurosPercentual, con.ativo AS Ativo,
                    mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo
             FROM contas_pagar cp
-            JOIN fornecedores f ON f.id = cp.fornecedor_id
-            JOIN paises p ON p.id = f.nacionalidade_id
+            LEFT JOIN fornecedores f ON f.id = cp.fornecedor_id
+            LEFT JOIN paises p ON p.id = f.nacionalidade_id
+            LEFT JOIN clientes cli ON cli.id = cp.cliente_id
             LEFT JOIN condicoes_pagamentos con ON con.id = cp.condicao_pagamento_id
             LEFT JOIN metodos_pagamento mp ON mp.codigo = con.metodo_pagamento_codigo
             WHERE cp.id = @Id;";
@@ -161,7 +166,7 @@ public class ContasPagarRepository : IContasPagarRepository
             contaSql,
             (conta, fornecedor, pais, condicao, metodo) =>
             {
-                var f = new Fornecedores(
+                var f = fornecedor is null ? null : new Fornecedores(
                     fornecedor.Id,
                     fornecedor.TipoPessoa,
                     fornecedor.NomeRazaosocial,
@@ -192,10 +197,13 @@ public class ContasPagarRepository : IContasPagarRepository
                     conta.DataEmissao,
                     conta.DataVencimento,
                     condicao,
-                    conta.NfeId,
+                    conta.OrigemTipo,
+                    conta.OrigemId,
                     conta.Observacao,
                     conta.CriadoEm,
-                    conta.Status
+                    conta.Status,
+                    conta.ClienteId,
+                    conta.ClienteNome
                 );
             },
             new { Id = id },
@@ -220,9 +228,9 @@ public class ContasPagarRepository : IContasPagarRepository
     {
         const string sql = @"
             INSERT INTO contas_pagar (descricao, data_emissao, data_vencimento, valor_original, valor_saldo,
-                                     status, observacao, criado_em, fornecedor_id, nfe_id, condicao_pagamento_id)
+                                     status, observacao, criado_em, fornecedor_id, cliente_id, origem_tipo, condicao_pagamento_id, origem_id)
             VALUES (@Descricao, @DataEmissao, @DataVencimento, @ValorOriginal, @ValorSaldo,
-                    @Status::status_titulo_financeiro_enum, @Observacao, @CriadoEm, @FornecedorId, @NfeId, @CondicaoPagamentoId)
+                    @Status::status_titulo_financeiro_enum, @Observacao, @CriadoEm, @FornecedorId, @ClienteId, @OrigemTipo::origem_titulo_financeiro_enum, @CondicaoPagamentoId, @OrigemId)
             RETURNING id;";
 
         var idGerado = await _session.Connection.ExecuteScalarAsync<int>(
@@ -237,15 +245,17 @@ public class ContasPagarRepository : IContasPagarRepository
                 conta.Status.ToString(),
                 conta.Observacao,
                 DateTime.UtcNow,
-                conta.Fornecedor.Id,
-                conta.NfeId,
-                conta.CondicaoPagamento?.Id
+                conta.Fornecedor?.Id,
+                conta.ClienteId,
+                conta.OrigemTipo.ToString(),
+                conta.CondicaoPagamento?.Id,
+                conta.OrigemId
             ),
             transaction: _session.Transaction);
 
         await InserirParcelas(idGerado, conta.ContasPagarParcelas);
 
-        var created = new ContasPagar(idGerado, conta.Descricao, conta.ValorOriginal, conta.Fornecedor, conta.DataEmissao, conta.DataVencimento, conta.CondicaoPagamento, conta.NfeId, conta.Observacao, conta.CriadoEm, conta.Status);
+        var created = new ContasPagar(idGerado, conta.Descricao, conta.ValorOriginal, conta.Fornecedor, conta.DataEmissao, conta.DataVencimento, conta.CondicaoPagamento, conta.OrigemTipo, conta.OrigemId, conta.Observacao, conta.CriadoEm, conta.Status, conta.ClienteId, conta.ClienteNome);
         foreach (var parcela in conta.ContasPagarParcelas)
         {
             created.AdicionarParcelaExistente(new ContasPagarParcelas(parcela.Id, idGerado, parcela.NumeroParcela, parcela.DataVencimento, parcela.ValorParcela, parcela.ValorPago, parcela.Status));
@@ -261,7 +271,7 @@ public class ContasPagarRepository : IContasPagarRepository
             SET descricao = @Descricao, data_emissao = @DataEmissao, data_vencimento = @DataVencimento,
                 valor_original = @ValorOriginal, valor_saldo = @ValorSaldo, status = @Status::status_titulo_financeiro_enum,
                 observacao = @Observacao,
-                fornecedor_id = @FornecedorId, nfe_id = @NfeId, condicao_pagamento_id = @CondicaoPagamentoId
+                fornecedor_id = @FornecedorId, cliente_id = @ClienteId, condicao_pagamento_id = @CondicaoPagamentoId
             WHERE id = @Id;";
 
         await _session.Connection.ExecuteAsync(
@@ -276,15 +286,17 @@ public class ContasPagarRepository : IContasPagarRepository
                 conta.Status.ToString(),
                 conta.Observacao,
                 conta.CriadoEm,
-                conta.Fornecedor.Id,
-                conta.NfeId,
-                conta.CondicaoPagamento?.Id
+                conta.Fornecedor?.Id,
+                conta.ClienteId,
+                conta.OrigemTipo.ToString(),
+                conta.CondicaoPagamento?.Id,
+                conta.OrigemId
             ),
             transaction: _session.Transaction);
 
         await ReplacerParcelas(id, conta.ContasPagarParcelas);
 
-        var updated = new ContasPagar(id, conta.Descricao, conta.ValorOriginal, conta.Fornecedor, conta.DataEmissao, conta.DataVencimento, conta.CondicaoPagamento, conta.NfeId, conta.Observacao, conta.CriadoEm, conta.Status);
+        var updated = new ContasPagar(id, conta.Descricao, conta.ValorOriginal, conta.Fornecedor, conta.DataEmissao, conta.DataVencimento, conta.CondicaoPagamento, conta.OrigemTipo, conta.OrigemId, conta.Observacao, conta.CriadoEm, conta.Status, conta.ClienteId, conta.ClienteNome);
         foreach (var parcela in conta.ContasPagarParcelas)
         {
             updated.AdicionarParcelaExistente(new ContasPagarParcelas(parcela.Id, id, parcela.NumeroParcela, parcela.DataVencimento, parcela.ValorParcela, parcela.ValorPago, parcela.Status));
@@ -313,13 +325,14 @@ public class ContasPagarRepository : IContasPagarRepository
         const string countSql = @"
             SELECT COUNT(*)
             FROM contas_pagar cp
-            JOIN fornecedores f ON f.id = cp.fornecedor_id
-            WHERE cp.descricao ILIKE @Termo OR f.nome_razaosocial ILIKE @Termo;";
+            LEFT JOIN fornecedores f ON f.id = cp.fornecedor_id
+            LEFT JOIN clientes cli ON cli.id = cp.cliente_id
+            WHERE cp.descricao ILIKE @Termo OR f.nome_razaosocial ILIKE @Termo OR cli.nome_razaosocial ILIKE @Termo;";
 
         const string querySql = @"
             SELECT cp.id AS Id, cp.descricao AS Descricao, cp.data_emissao AS DataEmissao, cp.data_vencimento AS DataVencimento, cp.valor_original AS ValorOriginal,
                    cp.valor_saldo AS ValorSaldo, cp.status AS Status, cp.observacao AS Observacao, cp.criado_em AS CriadoEm,
-                   cp.nfe_id AS NfeId,
+                   cp.origem_tipo::text AS OrigemTipo, cp.origem_id AS OrigemId, cp.cliente_id AS ClienteId, cli.nome_razaosocial AS ClienteNome,
                    f.id AS Id, f.tipo_pessoa AS TipoPessoa, f.nome_razaosocial AS NomeRazaosocial, f.cpf_cnpj AS CpfCnpj,
                    f.rg_ie AS RgIe, f.apelido_nomefantasia AS ApelidoNomefantasia, f.logradouro AS Logradouro, f.numero AS Numero,
                    f.telefone AS Telefone, f.email AS Email, f.ativo AS Ativo, f.criado_em AS CriadoEm, f.observacao AS Observacao,
@@ -329,11 +342,12 @@ public class ContasPagarRepository : IContasPagarRepository
                    con.multa_percentual AS MultaPercentual, con.taxa_juros_percentual AS TaxaJurosPercentual, con.ativo AS Ativo,
                    mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo
             FROM contas_pagar cp
-            JOIN fornecedores f ON f.id = cp.fornecedor_id
-            JOIN paises p ON p.id = f.nacionalidade_id
+            LEFT JOIN fornecedores f ON f.id = cp.fornecedor_id
+            LEFT JOIN paises p ON p.id = f.nacionalidade_id
+            LEFT JOIN clientes cli ON cli.id = cp.cliente_id
             LEFT JOIN condicoes_pagamentos con ON con.id = cp.condicao_pagamento_id
             LEFT JOIN metodos_pagamento mp ON mp.codigo = con.metodo_pagamento_codigo
-            WHERE cp.descricao ILIKE @Termo OR f.nome_razaosocial ILIKE @Termo
+            WHERE cp.descricao ILIKE @Termo OR f.nome_razaosocial ILIKE @Termo OR cli.nome_razaosocial ILIKE @Termo
             ORDER BY cp.criado_em DESC, cp.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
@@ -346,7 +360,7 @@ public class ContasPagarRepository : IContasPagarRepository
             querySql,
             (conta, fornecedor, pais, condicao, metodo) =>
             {
-                var f = new Fornecedores(
+                var f = fornecedor is null ? null : new Fornecedores(
                     fornecedor.Id,
                     fornecedor.TipoPessoa,
                     fornecedor.NomeRazaosocial,
@@ -377,10 +391,13 @@ public class ContasPagarRepository : IContasPagarRepository
                     conta.DataEmissao,
                     conta.DataVencimento,
                     condicao,
-                    conta.NfeId,
+                    conta.OrigemTipo,
+                    conta.OrigemId,
                     conta.Observacao,
                     conta.CriadoEm,
-                    conta.Status
+                    conta.Status,
+                    conta.ClienteId,
+                    conta.ClienteNome
                 );
             },
             new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
@@ -473,9 +490,11 @@ public class ContasPagarRepository : IContasPagarRepository
         string Status,
         string? Observacao,
         DateTime CriadoEm,
-        int FornecedorId,
-        int? NfeId,
-        int? CondicaoPagamentoId);
+        int? FornecedorId,
+        int? ClienteId,
+        string OrigemTipo,
+        int? CondicaoPagamentoId,
+        int? OrigemId);
 
     private sealed record ParcelaPagarDbRow(
         int NumeroParcela,

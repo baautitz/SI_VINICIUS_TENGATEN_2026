@@ -56,6 +56,7 @@ public class VendasRepository : IVendasRepository
 
             const string itensSql = @"
                 SELECT vi.id, vi.venda_id, vi.quantidade, vi.valor_unitario, vi.valor_desconto, vi.valor_total,
+                       (SELECT COALESCE(SUM(di.quantidade), 0) FROM devolucoes_itens di WHERE di.venda_item_id = vi.id) AS quantidade_devolvida,
                        s.sku, s.gtin_ean, s.preco, s.estoque, s.ativo,
                        p.id, p.produto,
                        u.id, u.sigla, u.permite_decimais
@@ -114,6 +115,7 @@ public class VendasRepository : IVendasRepository
 
         const string itensSql = @"
             SELECT vi.id, vi.quantidade, vi.valor_unitario, vi.valor_desconto, vi.valor_total,
+                       (SELECT COALESCE(SUM(di.quantidade), 0) FROM devolucoes_itens di WHERE di.venda_item_id = vi.id) AS quantidade_devolvida,
                    s.sku, s.gtin_ean, s.preco, s.estoque, s.ativo,
                    p.id, p.produto,
                    u.id, u.sigla, u.permite_decimais
@@ -279,6 +281,7 @@ public class VendasRepository : IVendasRepository
 
             const string itensSql = @"
                 SELECT vi.id, vi.venda_id, vi.quantidade, vi.valor_unitario, vi.valor_desconto, vi.valor_total,
+                       (SELECT COALESCE(SUM(di.quantidade), 0) FROM devolucoes_itens di WHERE di.venda_item_id = vi.id) AS quantidade_devolvida,
                        s.sku, s.gtin_ean, s.preco, s.estoque, s.ativo,
                        p.id, p.produto,
                        u.id, u.sigla, u.permite_decimais

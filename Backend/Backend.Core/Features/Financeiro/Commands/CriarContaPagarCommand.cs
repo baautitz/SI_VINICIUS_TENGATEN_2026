@@ -12,7 +12,6 @@ public record CriarParcelaPagarCommand(
 public record CriarContaPagarCommand(
     string Descricao,
     int FornecedorId,
-    int? NfeId,
     DateTime? DataEmissao,
     decimal ValorOriginal,
     int? CondicaoPagamentoId,

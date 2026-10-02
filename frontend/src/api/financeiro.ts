@@ -16,7 +16,6 @@ export interface ParcelaPagarCommand {
 export interface ContaPagarFormValues {
   descricao: string;
   fornecedorId: number;
-  nfeId?: number | null;
   dataEmissao?: string | null;
   dataVencimento?: string | null;
   valorOriginal: number;
@@ -36,8 +35,6 @@ export interface ParcelaReceberCommand {
 export interface ContaReceberFormValues {
   descricao: string;
   clienteId: number;
-  nfeId?: number | null;
-  vendaId?: number | null;
   dataEmissao?: string | null;
   dataVencimento?: string | null;
   valorOriginal: number;

@@ -1,5 +1,6 @@
 "use client";
 
+import { avisoTituloExterno } from "../origem";
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ContasPagarList } from "./list";
@@ -40,6 +41,10 @@ export function ContasPagarFeature() {
   };
 
   const openEditor = async (item: ContasPagar | null, readOnly = false) => {
+    if (item && item.origemTipo !== "MANUAL" && !readOnly) {
+      ui.feedback.notify({ type: "warning", title: avisoTituloExterno(item.origemTipo, item.origemId) });
+      readOnly = true;
+    }
     try {
       const editingItem = item ? await contasPagarApi.getById(item.id) : null;
       const result = await ui.windows.open<true, ContasPagarUpsertProps>({
@@ -75,6 +80,10 @@ export function ContasPagarFeature() {
   };
 
   const openDelete = async (item: ContasPagar) => {
+    if (item.origemTipo !== "MANUAL") {
+      ui.feedback.notify({ type: "warning", title: avisoTituloExterno(item.origemTipo, item.origemId) });
+      return;
+    }
     const result = await ui.windows.confirm({
       title: "Excluir Conta a Pagar",
       description: `Deseja realmente excluir a conta a pagar #${item.id} - ${item.descricao}? Esta ação não poderá ser desfeita.`,

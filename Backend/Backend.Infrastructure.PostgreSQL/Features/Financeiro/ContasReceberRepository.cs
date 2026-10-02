@@ -30,7 +30,7 @@ public class ContasReceberRepository : IContasReceberRepository
         const string querySql = @"
             SELECT cr.id AS Id, cr.descricao AS Descricao, cr.data_emissao AS DataEmissao, cr.data_vencimento AS DataVencimento, cr.valor_original AS ValorOriginal,
                    cr.valor_saldo AS ValorSaldo, cr.status AS Status, cr.observacao AS Observacao, cr.criado_em AS CriadoEm,
-                   cr.nfe_id AS NfeId, cr.venda_id AS VendaId,
+                   cr.origem_tipo::text AS OrigemTipo, cr.origem_id AS OrigemId,
                    c.id AS Id, c.tipo_pessoa AS TipoPessoa, c.nome_razaosocial AS NomeRazaoSocial, c.cpf_cnpj AS CpfCnpj,
                    c.rg_ie AS RgIe, c.apelido_nomefantasia AS ApelidoNomeFantasia, c.logradouro AS Logradouro, c.numero AS Numero,
                    c.telefone AS Telefone, c.email AS Email, c.limite_credito AS LimiteCredito,
@@ -98,8 +98,8 @@ public class ContasReceberRepository : IContasReceberRepository
                     conta.DataEmissao,
                     conta.DataVencimento,
                     condicao,
-                    conta.NfeId,
-                    conta.VendaId,
+                    conta.OrigemTipo,
+                    conta.OrigemId,
                     conta.Observacao,
                     conta.CriadoEm,
                     conta.Status
@@ -150,7 +150,7 @@ public class ContasReceberRepository : IContasReceberRepository
         const string contaSql = @"
             SELECT cr.id AS Id, cr.descricao AS Descricao, cr.data_emissao AS DataEmissao, cr.data_vencimento AS DataVencimento, cr.valor_original AS ValorOriginal,
                    cr.valor_saldo AS ValorSaldo, cr.status AS Status, cr.observacao AS Observacao, cr.criado_em AS CriadoEm,
-                   cr.nfe_id AS NfeId, cr.venda_id AS VendaId,
+                   cr.origem_tipo::text AS OrigemTipo, cr.origem_id AS OrigemId,
                    c.id AS Id, c.tipo_pessoa AS TipoPessoa, c.nome_razaosocial AS NomeRazaoSocial, c.cpf_cnpj AS CpfCnpj,
                    c.rg_ie AS RgIe, c.apelido_nomefantasia AS ApelidoNomeFantasia, c.logradouro AS Logradouro, c.numero AS Numero,
                    c.telefone AS Telefone, c.email AS Email, c.limite_credito AS LimiteCredito,
@@ -221,8 +221,8 @@ public class ContasReceberRepository : IContasReceberRepository
                     conta.DataEmissao,
                     conta.DataVencimento,
                     condicao,
-                    conta.NfeId,
-                    conta.VendaId,
+                    conta.OrigemTipo,
+                    conta.OrigemId,
                     conta.Observacao,
                     conta.CriadoEm,
                     conta.Status
@@ -252,9 +252,9 @@ public class ContasReceberRepository : IContasReceberRepository
     {
         const string sql = @"
             INSERT INTO contas_receber (descricao, data_emissao, data_vencimento, valor_original, valor_saldo,
-                                       status, observacao, criado_em, cliente_id, nfe_id, condicao_pagamento_id, venda_id)
+                                       status, observacao, criado_em, cliente_id, origem_tipo, condicao_pagamento_id, origem_id)
             VALUES (@Descricao, @DataEmissao, @DataVencimento, @ValorOriginal, @ValorSaldo,
-                    @Status::status_titulo_financeiro_enum, @Observacao, @CriadoEm, @ClienteId, @NfeId, @CondicaoPagamentoId, @VendaId)
+                    @Status::status_titulo_financeiro_enum, @Observacao, @CriadoEm, @ClienteId, @OrigemTipo::origem_titulo_financeiro_enum, @CondicaoPagamentoId, @OrigemId)
             RETURNING id;";
 
         var idGerado = await _session.Connection.ExecuteScalarAsync<int>(
@@ -270,15 +270,15 @@ public class ContasReceberRepository : IContasReceberRepository
                 conta.Observacao,
                 DateTime.UtcNow,
                 conta.Cliente.Id,
-                conta.NfeId,
+                conta.OrigemTipo.ToString(),
                 conta.CondicaoPagamento?.Id,
-                conta.VendaId
+                conta.OrigemId
             ),
             transaction: _session.Transaction);
 
         await InserirParcelas(idGerado, conta.ContasReceberParcelas);
 
-        var created = new ContasReceber(idGerado, conta.Descricao, conta.ValorOriginal, conta.Cliente, conta.DataEmissao, conta.DataVencimento, conta.CondicaoPagamento, conta.NfeId, conta.VendaId, conta.Observacao, conta.CriadoEm, conta.Status);
+        var created = new ContasReceber(idGerado, conta.Descricao, conta.ValorOriginal, conta.Cliente, conta.DataEmissao, conta.DataVencimento, conta.CondicaoPagamento, conta.OrigemTipo, conta.OrigemId, conta.Observacao, conta.CriadoEm, conta.Status);
         foreach (var parcela in conta.ContasReceberParcelas)
         {
             created.AdicionarParcelaExistente(new ContasReceberParcelas(parcela.Id, idGerado, parcela.NumeroParcela, parcela.DataVencimento, parcela.ValorParcela, parcela.ValorRecebido, parcela.Status));
@@ -294,7 +294,7 @@ public class ContasReceberRepository : IContasReceberRepository
             SET descricao = @Descricao, data_emissao = @DataEmissao, data_vencimento = @DataVencimento,
                 valor_original = @ValorOriginal, valor_saldo = @ValorSaldo, status = @Status::status_titulo_financeiro_enum,
                 observacao = @Observacao,
-                cliente_id = @ClienteId, nfe_id = @NfeId, condicao_pagamento_id = @CondicaoPagamentoId, venda_id = @VendaId
+                cliente_id = @ClienteId, condicao_pagamento_id = @CondicaoPagamentoId
             WHERE id = @Id;";
 
         await _session.Connection.ExecuteAsync(
@@ -310,15 +310,15 @@ public class ContasReceberRepository : IContasReceberRepository
                 conta.Observacao,
                 conta.CriadoEm,
                 conta.Cliente.Id,
-                conta.NfeId,
+                conta.OrigemTipo.ToString(),
                 conta.CondicaoPagamento?.Id,
-                conta.VendaId
+                conta.OrigemId
             ),
             transaction: _session.Transaction);
 
         await ReplacerParcelas(id, conta.ContasReceberParcelas);
 
-        var updated = new ContasReceber(id, conta.Descricao, conta.ValorOriginal, conta.Cliente, conta.DataEmissao, conta.DataVencimento, conta.CondicaoPagamento, conta.NfeId, conta.VendaId, conta.Observacao, conta.CriadoEm, conta.Status);
+        var updated = new ContasReceber(id, conta.Descricao, conta.ValorOriginal, conta.Cliente, conta.DataEmissao, conta.DataVencimento, conta.CondicaoPagamento, conta.OrigemTipo, conta.OrigemId, conta.Observacao, conta.CriadoEm, conta.Status);
         foreach (var parcela in conta.ContasReceberParcelas)
         {
             updated.AdicionarParcelaExistente(new ContasReceberParcelas(parcela.Id, id, parcela.NumeroParcela, parcela.DataVencimento, parcela.ValorParcela, parcela.ValorRecebido, parcela.Status));
@@ -353,7 +353,7 @@ public class ContasReceberRepository : IContasReceberRepository
         const string querySql = @"
             SELECT cr.id AS Id, cr.descricao AS Descricao, cr.data_emissao AS DataEmissao, cr.data_vencimento AS DataVencimento, cr.valor_original AS ValorOriginal,
                    cr.valor_saldo AS ValorSaldo, cr.status AS Status, cr.observacao AS Observacao, cr.criado_em AS CriadoEm,
-                   cr.nfe_id AS NfeId, cr.venda_id AS VendaId,
+                   cr.origem_tipo::text AS OrigemTipo, cr.origem_id AS OrigemId,
                    c.id AS Id, c.tipo_pessoa AS TipoPessoa, c.nome_razaosocial AS NomeRazaoSocial, c.cpf_cnpj AS CpfCnpj,
                    c.rg_ie AS RgIe, c.apelido_nomefantasia AS ApelidoNomeFantasia, c.logradouro AS Logradouro, c.numero AS Numero,
                    c.telefone AS Telefone, c.email AS Email, c.limite_credito AS LimiteCredito,
@@ -424,8 +424,8 @@ public class ContasReceberRepository : IContasReceberRepository
                     conta.DataEmissao,
                     conta.DataVencimento,
                     condicao,
-                    conta.NfeId,
-                    conta.VendaId,
+                    conta.OrigemTipo,
+                    conta.OrigemId,
                     conta.Observacao,
                     conta.CriadoEm,
                     conta.Status
@@ -524,9 +524,9 @@ public class ContasReceberRepository : IContasReceberRepository
         string? Observacao,
         DateTime CriadoEm,
         int ClienteId,
-        int? NfeId,
+        string OrigemTipo,
         int? CondicaoPagamentoId,
-        int? VendaId);
+        int? OrigemId);
 
     private sealed record ParcelaReceberDbRow(
         int NumeroParcela,

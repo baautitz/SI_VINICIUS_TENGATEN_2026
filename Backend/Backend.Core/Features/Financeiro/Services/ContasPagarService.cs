@@ -19,20 +19,17 @@ public sealed class ContasPagarService : BaseService
 {
     private readonly IContasPagarRepository _contasRepository;
     private readonly IFornecedoresRepository _fornecedoresRepository;
-    private readonly INfesRepository _nfesRepository;
     private readonly ICondicoesPagamentosRepository _condicoesRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public ContasPagarService(
         IContasPagarRepository contasRepository,
         IFornecedoresRepository fornecedoresRepository,
-        INfesRepository nfesRepository,
         ICondicoesPagamentosRepository condicoesRepository,
         IUnitOfWork unitOfWork)
     {
         _contasRepository = contasRepository;
         _fornecedoresRepository = fornecedoresRepository;
-        _nfesRepository = nfesRepository;
         _condicoesRepository = condicoesRepository;
         _unitOfWork = unitOfWork;
     }
@@ -57,14 +54,6 @@ public sealed class ContasPagarService : BaseService
         if (fornecedor is null)
             return Resultado<ContasPagar>.Falha(new ResultadoErro("FORNECEDOR_INEXISTENTE", "O fornecedor informado não existe.", "FornecedorId"));
 
-        Nfes? nfe = null;
-        if (command.NfeId.HasValue)
-        {
-            nfe = await _nfesRepository.ObterNfePorId(command.NfeId.Value);
-            if (nfe is null)
-                return Resultado<ContasPagar>.Falha(new ResultadoErro("NFE_INEXISTENTE", "A nota fiscal informada não existe.", "NfeId"));
-        }
-
         CondicoesPagamentos? condicao = null;
         if (command.CondicaoPagamentoId.HasValue)
         {
@@ -86,8 +75,7 @@ public sealed class ContasPagarService : BaseService
                     command.DataEmissao,
                     null,
                     condicao,
-                    command.NfeId,
-                    command.Observacao
+                    observacao: command.Observacao
                 );
 
                 foreach (var p in command.Parcelas)
@@ -119,17 +107,12 @@ public sealed class ContasPagarService : BaseService
         if (existente is null)
             return Resultado<ContasPagar>.Falha(new ResultadoErro("CONTA_PAGAR_NAO_ENCONTRADA", "Conta a pagar não encontrada."));
 
+        if (existente.OrigemTipo != OrigemTituloFinanceiro.MANUAL)
+            return Resultado<ContasPagar>.Falha(new ResultadoErro("CONTA_PAGAR_EXTERNA", $"Conta gerada por {existente.OrigemTipo.Nome()} #{existente.OrigemId} não pode ser editada manualmente."));
+
         var fornecedor = await _fornecedoresRepository.ObterFornecedorPorId(command.FornecedorId);
         if (fornecedor is null)
             return Resultado<ContasPagar>.Falha(new ResultadoErro("FORNECEDOR_INEXISTENTE", "O fornecedor informado não existe.", "FornecedorId"));
-
-        Nfes? nfe = null;
-        if (command.NfeId.HasValue)
-        {
-            nfe = await _nfesRepository.ObterNfePorId(command.NfeId.Value);
-            if (nfe is null)
-                return Resultado<ContasPagar>.Falha(new ResultadoErro("NFE_INEXISTENTE", "A nota fiscal informada não existe.", "NfeId"));
-        }
 
         CondicoesPagamentos? condicao = null;
         if (command.CondicaoPagamentoId.HasValue)
@@ -156,7 +139,6 @@ public sealed class ContasPagarService : BaseService
                     command.DataEmissao,
                     null,
                     condicao,
-                    command.NfeId,
                     command.Observacao
                 );
 
@@ -238,8 +220,8 @@ public sealed class ContasPagarService : BaseService
         var existente = await _contasRepository.ObterContaPagarPorId(id);
         if (existente is null) return false;
 
-        if (existente.NfeId.HasValue)
-            throw new Common.Exceptions.DomainException("Não é possível excluir uma conta a pagar gerada por Notas Fiscais.");
+        if (existente.OrigemTipo != OrigemTituloFinanceiro.MANUAL)
+            throw new Common.Exceptions.DomainException($"Conta gerada por {existente.OrigemTipo.Nome()} #{existente.OrigemId}. Para cancelá-la, cancele o documento de origem.");
 
         if (existente.ValorSaldo < existente.ValorOriginal || existente.ContasPagarParcelas.Any(p => p.Status != StatusTituloFinanceiro.ABERTO))
             throw new Common.Exceptions.DomainException("Não é possível excluir uma conta a pagar que já possui parcelas pagas ou alteradas.");
