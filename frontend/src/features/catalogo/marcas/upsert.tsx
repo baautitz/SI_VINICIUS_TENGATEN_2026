@@ -112,7 +112,7 @@ function MarcasUpsertForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        {readOnly && editingItem && <RelatedActions actions={[{ id: "marcaId.produtos", hotkey: "Alt+R", label: "Produtos", icon: <Package className="size-4" />, run: () => related.openList(() => relacionadosApi.produtosPor("marcaId", editingItem.id), produtosApi.getById, ProdutosUpsert, "Produtos (marca)", "Nenhum produto nesta marca.") }]} />}
+        {readOnly && editingItem && <RelatedActions actions={[{ id: "marcaId.produtos", hotkey: "Alt+R", label: "Produtos", icon: <Package className="size-4" />, run: () => related.openList(() => relacionadosApi.produtosPor("marcaId", editingItem.id), produtosApi.getById, ProdutosUpsert, "Produtos (marca)", "Nenhum produto nesta marca.", false) }]} />}
         <Button
           type="button"
           variant="outline"

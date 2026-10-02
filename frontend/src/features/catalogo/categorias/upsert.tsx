@@ -114,7 +114,7 @@ function CategoriasUpsertForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        {readOnly && editingItem && <RelatedActions actions={[{ id: "categoriaId.produtos", hotkey: "Alt+R", label: "Produtos", icon: <Package className="size-4" />, run: () => related.openList(() => relacionadosApi.produtosPor("categoriaId", editingItem.id), produtosApi.getById, ProdutosUpsert, "Produtos (categoria)", "Nenhum produto nesta categoria.") }]} />}
+        {readOnly && editingItem && <RelatedActions actions={[{ id: "categoriaId.produtos", hotkey: "Alt+R", label: "Produtos", icon: <Package className="size-4" />, run: () => related.openList(() => relacionadosApi.produtosPor("categoriaId", editingItem.id), produtosApi.getById, ProdutosUpsert, "Produtos (categoria)", "Nenhum produto nesta categoria.", false) }]} />}
         <Button
           type="button"
           variant="outline"

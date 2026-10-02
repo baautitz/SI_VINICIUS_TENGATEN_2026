@@ -169,7 +169,7 @@ function ClientesUpsertForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        {readOnly && editingItem && <RelatedActions actions={[{ id: "cliente.titulos", hotkey: "Alt+T", label: "Títulos", icon: <Receipt className="size-4" />, run: () => related.openList(() => relacionadosApi.contasReceberPorCliente(editingItem.id), contasReceberApi.getById, ContasReceberUpsertForm, "Títulos a receber", "Nenhum título deste cliente.") }, { id: "cliente.vendas", hotkey: "Alt+V", label: "Vendas", icon: <ShoppingCart className="size-4" />, run: () => related.openList(() => relacionadosApi.vendasPorCliente(editingItem.id), vendasApi.getById, VendasUpsertForm, "Vendas", "Nenhuma venda deste cliente.") }]} />}
+        {readOnly && editingItem && <RelatedActions actions={[{ id: "cliente.titulos", hotkey: "Alt+T", label: "Títulos", icon: <Receipt className="size-4" />, run: () => related.openList(() => relacionadosApi.contasReceberPorCliente(editingItem.id), contasReceberApi.getById, ContasReceberUpsertForm, "Títulos a receber", "Nenhum título deste cliente.", false) }, { id: "cliente.vendas", hotkey: "Alt+V", label: "Vendas", icon: <ShoppingCart className="size-4" />, run: () => related.openList(() => relacionadosApi.vendasPorCliente(editingItem.id), vendasApi.getById, VendasUpsertForm, "Vendas", "Nenhuma venda deste cliente.") }]} />}
         <Button type="button" variant="outline" onClick={cancelForm}>
           {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
         </Button>

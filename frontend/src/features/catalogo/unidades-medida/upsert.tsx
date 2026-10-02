@@ -124,7 +124,7 @@ function UnidadesMedidaUpsertForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        {readOnly && editingItem && <RelatedActions actions={[{ id: "unidade.produtos", hotkey: "Alt+R", label: "Produtos", icon: <Package className="size-4" />, run: () => related.openList(() => relacionadosApi.produtosPor("unidadeMedidaId", editingItem.id), produtosApi.getById, ProdutosUpsert, "Produtos (unidade)", "Nenhum produto nesta unidade.") }]} />}
+        {readOnly && editingItem && <RelatedActions actions={[{ id: "unidade.produtos", hotkey: "Alt+R", label: "Produtos", icon: <Package className="size-4" />, run: () => related.openList(() => relacionadosApi.produtosPor("unidadeMedidaId", editingItem.id), produtosApi.getById, ProdutosUpsert, "Produtos (unidade)", "Nenhum produto nesta unidade.", false) }]} />}
         <Button
           type="button"
           variant="outline"

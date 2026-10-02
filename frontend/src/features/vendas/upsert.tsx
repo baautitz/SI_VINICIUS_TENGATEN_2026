@@ -519,6 +519,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
       ContasReceberUpsertForm,
       "Detalhes da Conta a Receber",
       "Venda sem contas a receber.",
+      false,
     );
 
   const openTexto = (title: string, value: string) =>

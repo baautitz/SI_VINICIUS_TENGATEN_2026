@@ -109,7 +109,7 @@ function EstadosUpsertForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        {readOnly && editingItem && <RelatedActions actions={[{ id: "estado.cidades", hotkey: "Alt+L", label: "Cidades", icon: <MapPin className="size-4" />, run: () => related.openList(() => relacionadosApi.localizacaoFilhos("estado", editingItem.id), cidadesApi.getById, CidadesUpsert, "Cidades", "Nenhuma cidade neste estado.") }]} />}
+        {readOnly && editingItem && <RelatedActions actions={[{ id: "estado.cidades", hotkey: "Alt+L", label: "Cidades", icon: <MapPin className="size-4" />, run: () => related.openList(() => relacionadosApi.localizacaoFilhos("estado", editingItem.id), cidadesApi.getById, CidadesUpsert, "Cidades", "Nenhuma cidade neste estado.", false) }]} />}
         <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>
           {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
         </Button>

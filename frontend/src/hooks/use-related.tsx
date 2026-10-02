@@ -25,7 +25,10 @@ function RelacionadosWindow({ itens }: { itens: RelacionadoItem[] }) {
   );
 }
 
-/** Abre um registro relacionado em leitura; ids sob demanda, lista de escolha quando há mais de um. */
+/**
+ * Abre um registro relacionado; ids sob demanda, lista de escolha quando há mais de um.
+ * `readOnly` é true por padrão; passe false quando a entidade de destino permite edição.
+ */
 export function useRelated() {
   const ui = useUi();
 
@@ -33,13 +36,14 @@ export function useRelated() {
     fetchItem: () => Promise<unknown>,
     component: React.ComponentType<any>,
     title: string,
+    readOnly = true,
   ) => {
     try {
       const item = await fetchItem();
       if (!item) return;
       await ui.windows.open({
         component,
-        props: { editingItem: item, readOnly: true },
+        props: { editingItem: item, readOnly },
         title,
         size: "full",
       });
@@ -54,6 +58,7 @@ export function useRelated() {
     component: React.ComponentType<any>,
     title: string,
     vazio: string,
+    readOnly = true,
   ) => {
     try {
       const itens = (await fetchItems()) ?? [];
@@ -69,7 +74,7 @@ export function useRelated() {
         if (r.status !== "confirmed") return;
         id = r.value;
       }
-      await openView(() => fetchById(id), component, title);
+      await openView(() => fetchById(id), component, title, readOnly);
     } catch (error) {
       ui.feedback.notifyError(error, { fallbackTitle: `Não foi possível abrir: ${title}.` });
     }

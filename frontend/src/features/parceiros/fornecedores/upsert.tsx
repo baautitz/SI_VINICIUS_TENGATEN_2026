@@ -159,7 +159,7 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false }: FornecedoresU
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        {readOnly && editingItem && <RelatedActions actions={[{ id: "fornecedor.titulos", hotkey: "Alt+T", label: "Títulos", icon: <Receipt className="size-4" />, run: () => related.openList(() => relacionadosApi.contasPagarPorFornecedor(editingItem.id), contasPagarApi.getById, ContasPagarUpsertForm, "Títulos a pagar", "Nenhum título deste fornecedor.") }]} />}
+        {readOnly && editingItem && <RelatedActions actions={[{ id: "fornecedor.titulos", hotkey: "Alt+T", label: "Títulos", icon: <Receipt className="size-4" />, run: () => related.openList(() => relacionadosApi.contasPagarPorFornecedor(editingItem.id), contasPagarApi.getById, ContasPagarUpsertForm, "Títulos a pagar", "Nenhum título deste fornecedor.", false) }]} />}
         <Button type="button" variant="outline" onClick={cancelForm}>
           {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
         </Button>
