@@ -93,7 +93,7 @@ public sealed class MovimentacoesEstoquesService : BaseService
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_VENDA", "Esta movimentação foi gerada por uma venda. Use a devolução da venda para reentrar o estoque."));
 
         if (original.OrigemTipo == OrigemMovimentacaoEstoque.COMPRA)
-            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_COMPRA", "Esta movimentação foi gerada por uma compra. Compras não têm cancelamento: a correção é feita por nova movimentação manual (ajuste), não por estorno."));
+            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_COMPRA", "Esta movimentação foi gerada por uma compra. Para desfazê-la, estorne a compra."));
 
         if (original.OrigemTipo == OrigemMovimentacaoEstoque.BALANCO)
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_BALANCO", "Esta movimentação foi gerada por um balanço. Cancele o balanço para estornar a movimentação de estoque."));
@@ -109,6 +109,31 @@ public sealed class MovimentacoesEstoquesService : BaseService
 
         var (estorno, custosARestaurar) = MontarEstorno(original, motivo);
         return await ExecutarEmTransacao(estorno, custosARestaurar);
+    }
+
+    // O estorno só devolve o custo médio de antes da entrada se ela foi a última movimentação do SKU, e só
+    // zera o saldo se o item ainda está em estoque. Registrar() não confere a ordem (só impede saldo negativo),
+    // então quem estorna uma entrada de documento deve chamar isto antes. Lista o que impede, vazio se puder.
+    public async Task<IReadOnlyList<ResultadoErro>> ObterBloqueiosDeEstornoDeEntrada(OrigemMovimentacaoEstoque origemTipo, int origemId)
+    {
+        var erros = new List<ResultadoErro>();
+        foreach (var entrada in (await _movimentacoesRepository.ObterMovimentacoesPorOrigem(origemTipo, origemId)).Where(m => !m.Estornada))
+        {
+            var posteriores = await _movimentacoesRepository.ObterMovimentacoesPosteriores(
+                entrada.Id, entrada.MovimentacoesEstoquesItens.Select(i => i.Sku.Sku).ToList());
+
+            foreach (var item in entrada.MovimentacoesEstoquesItens)
+            {
+                var sku = await _skusRepository.ObterSkuPorSku(item.Sku.Sku);
+                if (sku is not null && sku.Estoque < item.Quantidade)
+                    erros.Add(new ResultadoErro("ESTORNO_ESTOQUE_INSUFICIENTE",
+                        $"SKU '{item.Sku.Sku}': estoque atual ({sku.Estoque:0.####}) menor que a quantidade da entrada ({item.Quantidade:0.####}); parte já foi vendida ou baixada. O caminho é a devolução ao fornecedor.", "Itens"));
+                else if (posteriores.Where(p => p.Sku == item.Sku.Sku).ToList() is { Count: > 0 } lista)
+                    erros.Add(new ResultadoErro("ESTORNO_MOVIMENTACAO_POSTERIOR",
+                        $"SKU '{item.Sku.Sku}': há movimentações posteriores à entrada ({string.Join(", ", lista.Select(p => $"#{p.MovimentacaoId} {p.Origem}"))}); estornar agora tornaria o custo médio incorreto.", "Itens"));
+            }
+        }
+        return erros;
     }
 
     // Usado ao cancelar o documento de origem (balanço, compra): estorna todas as movimentações dele

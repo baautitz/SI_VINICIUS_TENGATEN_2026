@@ -20,6 +20,8 @@ public class ComprasRepository : IComprasRepository
     private const string CompraColunas = @"
         c.id AS Id, c.data_compra, c.valor_nota, c.valor_frete, c.valor_seguro, c.valor_outras_despesas,
         c.valor_desconto, c.valor_frete_terceiro, c.transportadora_id, c.condicao_pagamento_id, c.valor_total, c.observacao,
+        c.estornada_em, c.motivo_estorno, c.usuario_estorno_id,
+        (SELECT n.id FROM nfes n WHERE n.compra_id = c.id) AS NfeId,
         e.id AS Id, e.nome_razaosocial, e.cpf_cnpj, e.ativo,
         f.id AS Id, f.nome_razaosocial, f.cpf_cnpj, f.ativo";
 
@@ -102,6 +104,12 @@ public class ComprasRepository : IComprasRepository
 
         return compra;
     }
+
+    public async Task<bool> MarcarEstornada(Compra compra)
+        => await _session.Connection.ExecuteAsync(
+            @"UPDATE compras SET estornada_em = @EstornadaEm, motivo_estorno = @MotivoEstorno, usuario_estorno_id = @UsuarioEstornoId
+              WHERE id = @Id AND estornada_em IS NULL;",
+            new { compra.Id, compra.EstornadaEm, compra.MotivoEstorno, compra.UsuarioEstornoId }, transaction: _session.Transaction) > 0;
 
     public async Task<IReadOnlyDictionary<string, string>> ObterVinculosDoFornecedor(int fornecedorId)
     {

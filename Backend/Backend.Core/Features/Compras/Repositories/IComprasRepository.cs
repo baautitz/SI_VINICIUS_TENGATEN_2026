@@ -8,6 +8,8 @@ public interface IComprasRepository
     public Task<ResultadoPaginado<Compra>> PesquisarCompras(string? termo, int pagina = 1, int tamanhoDaPagina = 20, int? fornecedorId = null);
     public Task<Compra?> ObterCompraPorId(int id);
     public Task<Compra> CriarCompra(Compra compra);
+    // false = a compra já estava estornada (o UPDATE guardado também trava a linha contra estorno concorrente).
+    public Task<bool> MarcarEstornada(Compra compra);
 
     // Vínculos fornecedor-SKU (cProd do fornecedor -> SKU interno).
     public Task<IReadOnlyDictionary<string, string>> ObterVinculosDoFornecedor(int fornecedorId);

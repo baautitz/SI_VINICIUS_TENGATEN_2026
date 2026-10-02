@@ -35,16 +35,16 @@ public class ComprasServiceTests
         private static object? Padrao(Type t) => t.IsValueType ? Activator.CreateInstance(t) : null;
     }
 
-    private static T Criar<T>(Action<Dictionary<string, Func<object?[]?, object?>>>? config = null) where T : class
+    internal static T Criar<T>(Action<Dictionary<string, Func<object?[]?, object?>>>? config = null) where T : class
     {
         var p = DispatchProxy.Create<T, Stub>();
         config?.Invoke(((Stub)(object)p).Handlers);
         return p;
     }
 
-    private static T Instancia<T>() => (T)Activator.CreateInstance(typeof(T), nonPublic: true)!;
+    internal static T Instancia<T>() => (T)Activator.CreateInstance(typeof(T), nonPublic: true)!;
 
-    private class UowFake : IUnitOfWork
+    internal class UowFake : IUnitOfWork
     {
         public int Commits, Rollbacks;
         public void BeginTransaction() { }
@@ -67,6 +67,8 @@ public class ComprasServiceTests
             Criar<ICondicoesPagamentosRepository>(),
             new MovimentacoesEstoquesService(Criar<IMovimentacoesEstoquesRepository>(), Criar<ISkusRepository>(), Criar<IUsuariosRepository>(), uow),
             Criar<IContasPagarRepository>(),
+            Criar<Backend.Core.Features.NFe.Repositories.INfesRepository>(),
+            Criar<IUsuariosRepository>(),
             uow);
 
         var command = new CriarCompraCommand(

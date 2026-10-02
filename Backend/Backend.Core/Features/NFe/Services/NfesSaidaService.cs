@@ -103,7 +103,7 @@ public sealed class NfesSaidaService : BaseService
         if (nfe is null)
             return Falha("NFE_INEXISTENTE", "A NF-e informada não existe.", "Id");
         if (nfe.TipoOperacao != TipoOperacao.SAIDA)
-            return Falha(NfeEntradaNaoCancelavel, "NF-e de entrada não pode ser cancelada.", "Id");
+            return Falha(NfeEntradaNaoCancelavel, "NF-e de entrada não é cancelada diretamente: estorne a compra.", "Id");
         if (nfe.StatusNfe == StatusNfe.CANCELADA)
             return Falha(NfeJaCancelada, "A NF-e já está cancelada.", "Id");
         if (nfe.StatusNfe != StatusNfe.EMITIDA)

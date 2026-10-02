@@ -3,6 +3,7 @@ using Backend.Core.Common.Exceptions;
 using Backend.Core.Common.Extensions;
 using Backend.Core.Common.Interfaces;
 using Backend.Core.Common.Results;
+using Backend.Core.Features.Acesso.Repositories;
 using Backend.Core.Features.Catalogo.Repositories;
 using Backend.Core.Features.Compras.Commands;
 using Backend.Core.Features.Compras.Entities;
@@ -14,6 +15,7 @@ using Backend.Core.Features.Estoque.Services;
 using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.Financeiro.Repositories;
+using Backend.Core.Features.NFe.Repositories;
 using Backend.Core.Features.Parceiros.Repositories;
 
 namespace Backend.Core.Features.Compras.Services;
@@ -28,6 +30,8 @@ public sealed class ComprasService : BaseService
     private readonly ICondicoesPagamentosRepository _condicoesRepository;
     private readonly MovimentacoesEstoquesService _estoqueService;
     private readonly IContasPagarRepository _contasPagarRepository;
+    private readonly INfesRepository _nfesRepository;
+    private readonly IUsuariosRepository _usuariosRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public ComprasService(
@@ -39,6 +43,8 @@ public sealed class ComprasService : BaseService
         ICondicoesPagamentosRepository condicoesRepository,
         MovimentacoesEstoquesService estoqueService,
         IContasPagarRepository contasPagarRepository,
+        INfesRepository nfesRepository,
+        IUsuariosRepository usuariosRepository,
         IUnitOfWork unitOfWork)
     {
         _comprasRepository = comprasRepository;
@@ -49,6 +55,8 @@ public sealed class ComprasService : BaseService
         _condicoesRepository = condicoesRepository;
         _estoqueService = estoqueService;
         _contasPagarRepository = contasPagarRepository;
+        _nfesRepository = nfesRepository;
+        _usuariosRepository = usuariosRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -91,6 +99,86 @@ public sealed class ComprasService : BaseService
                 throw;
             }
         });
+    }
+
+    public const string CompraInexistente = "COMPRA_INEXISTENTE";
+    public const string CompraJaEstornada = "COMPRA_JA_ESTORNADA";
+
+    // Falha por trava de negócio (HTTP 409); COMPRA_INEXISTENTE é 404 e o resto, 400.
+    public static bool EhConflito(IEnumerable<ResultadoErro> erros)
+        => erros.Any(e => e.Code is CompraJaEstornada || e.Code.StartsWith("ESTORNO_"));
+
+    // Desfaz a compra numa transação só: estoque (entrada inversa, custo médio anterior), contas a pagar canceladas
+    // e NF-e de entrada cancelada. Vínculos fornecedor-SKU permanecem. Com qualquer trava, nada é gravado.
+    public async Task<Resultado<Compra>> Estornar(int id, EstornarCompraCommand command)
+    {
+        var motivo = command?.Motivo?.Trim() ?? "";
+        if (motivo.Length < 5 || motivo.Length > 255)
+            return Resultado<Compra>.Falha(new ResultadoErro("MOTIVO_INVALIDO", "O motivo do estorno deve ter entre 5 e 255 caracteres.", "motivo"));
+
+        var compra = await _comprasRepository.ObterCompraPorId(id);
+        if (compra is null)
+            return Resultado<Compra>.Falha(new ResultadoErro(CompraInexistente, "Compra não encontrada."));
+        if (compra.Estornada)
+            return Resultado<Compra>.Falha(new ResultadoErro(CompraJaEstornada, "Esta compra já foi estornada."));
+        if (command!.UsuarioId.HasValue && await _usuariosRepository.ObterUsuarioPorId(command.UsuarioId.Value) is null)
+            return Resultado<Compra>.Falha(new ResultadoErro("USUARIO_INEXISTENTE", "O usuário informado não existe.", "UsuarioId"));
+
+        return await ExecuteResultAsync(async () =>
+        {
+            try
+            {
+                _unitOfWork.BeginTransaction();
+                var resultado = await EstornarNaTransacao(compra, motivo, command.UsuarioId);
+                if (resultado.Success) _unitOfWork.Commit(); else _unitOfWork.Rollback();
+                return resultado;
+            }
+            catch
+            {
+                _unitOfWork.Rollback();
+                throw;
+            }
+        });
+    }
+
+    private async Task<Resultado<Compra>> EstornarNaTransacao(Compra compra, string motivo, int? usuarioId)
+    {
+        // Primeiro o UPDATE guardado: trava a linha, então um estorno concorrente espera e cai em JA_ESTORNADA.
+        var quando = DateTime.UtcNow;
+        compra.Estornar(motivo, usuarioId, quando);
+        if (!await _comprasRepository.MarcarEstornada(compra))
+            return Resultado<Compra>.Falha(new ResultadoErro(CompraJaEstornada, "Esta compra já foi estornada."));
+
+        var contas = (await _contasPagarRepository.PesquisarContasPagar("", 1, 100,
+            new Financeiro.DTOs.FiltroContasPagar(OrigemTipo: OrigemTituloFinanceiro.COMPRA, OrigemId: compra.Id))).Itens
+            .Where(c => c.Status != StatusTituloFinanceiro.CANCELADO).ToList();
+
+        var erros = new List<ResultadoErro>();
+        foreach (var conta in contas)
+            foreach (var p in conta.ContasPagarParcelas.Where(p => p.ValorPago > 0))
+                erros.Add(new ResultadoErro("ESTORNO_PARCELA_PAGA",
+                    $"A parcela {p.NumeroParcela} da conta '{conta.Descricao}' já tem R$ {p.ValorPago:0.00} pago. Estorne o pagamento primeiro.", "ContasPagar"));
+        erros.AddRange(await _estoqueService.ObterBloqueiosDeEstornoDeEntrada(OrigemMovimentacaoEstoque.COMPRA, compra.Id));
+        if (erros.Count > 0)
+            return Resultado<Compra>.Falha(erros);
+
+        await _estoqueService.EstornarPorOrigem(OrigemMovimentacaoEstoque.COMPRA, compra.Id, $"Estorno da compra nº {compra.Id}: {motivo}");
+
+        foreach (var conta in contas)
+        {
+            conta.Cancelar();
+            await _contasPagarRepository.AtualizarContaPagar(conta.Id, conta);
+        }
+
+        var nfe = await _nfesRepository.ObterNfeDaCompra(compra.Id);
+        if (nfe is not null && nfe.StatusNfe == NFe.Entities.Enums.StatusNfe.EMITIDA)
+        {
+            nfe.CancelarPorEstorno(motivo, quando);
+            if (!await _nfesRepository.CancelarNfe(nfe))
+                throw new DomainException("A NF-e de entrada deixou de estar emitida durante o estorno.");
+        }
+
+        return Resultado<Compra>.Sucesso(compra);
     }
 
     // Grava na transação já aberta pelo chamador (ex.: importação de NF-e, que grava a NFe junto).

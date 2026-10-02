@@ -39,6 +39,17 @@ public class ComprasController : ControllerBase
         return CreatedAtAction(nameof(GetCompra), new { id = result.Data!.Id }, result);
     }
 
+    [HttpPost("api/compras/{id:int}/estornar")]
+    public async Task<ActionResult<Resultado<Compra>>> Estornar(int id, [FromBody] EstornarCompraCommand command)
+    {
+        var result = await _comprasService.Estornar(id, command);
+        if (result.Success)
+            return Ok(result);
+        if (result.Errors!.Any(e => e.Code == ComprasService.CompraInexistente))
+            return NotFound(result);
+        return ComprasService.EhConflito(result.Errors!) ? Conflict(result) : BadRequest(result);
+    }
+
     // codigoProduto (cProd do fornecedor) -> sku
     [HttpGet("api/fornecedores/{fornecedorId:int}/skus")]
     public Task<IReadOnlyDictionary<string, string>> GetVinculos(int fornecedorId)

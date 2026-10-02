@@ -49,6 +49,15 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
         return await Montar(rows);
     }
 
+    public async Task<IReadOnlyList<MovimentacaoPosterior>> ObterMovimentacoesPosteriores(int movimentacaoId, IReadOnlyCollection<string> skus)
+        => (await _session.Connection.QueryAsync<MovimentacaoPosterior>(@"
+            SELECT DISTINCT mei.sku AS Sku, me.id AS MovimentacaoId, me.tipo_movimentacao::text AS Tipo, me.origem_tipo::text AS Origem
+            FROM movimentacoes_estoque me
+            JOIN movimentacoes_estoque_itens mei ON mei.movimentacao_estoque_id = me.id
+            WHERE me.id > @MovimentacaoId AND mei.sku = ANY(@Skus)
+            ORDER BY mei.sku, me.id;",
+            new { MovimentacaoId = movimentacaoId, Skus = skus.ToArray() }, transaction: _session.Transaction)).ToList();
+
     public async Task<MovimentacoesEstoques> CriarMovimentacao(MovimentacoesEstoques movimentacao)
     {
         try

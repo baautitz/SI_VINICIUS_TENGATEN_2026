@@ -5,7 +5,7 @@ using Backend.Core.Features.Parceiros.Entities;
 
 namespace Backend.Core.Features.Compras.Entities;
 
-// Compra nasce já recebida: sem status nem cancelamento.
+// Compra nasce já recebida: sem status; o desfazer é o estorno (registro permanece, marcado como estornado).
 public class Compra
 {
     private readonly List<CompraItens> _itens = new();
@@ -23,6 +23,12 @@ public class Compra
     // Custo total da compra: nota + frete de terceiro.
     public decimal ValorTotal { get; private set; }
     public string? Observacao { get; private set; }
+    public DateTime? EstornadaEm { get; private set; }
+    public string? MotivoEstorno { get; private set; }
+    public int? UsuarioEstornoId { get; private set; }
+    public bool Estornada => EstornadaEm.HasValue;
+    // NF-e de entrada ligada à compra (importação de XML), se houver.
+    public int? NfeId { get; private set; }
 
     public Emitentes Emitente { get; private set; } = null!;
     public Fornecedores Fornecedor { get; private set; } = null!;
@@ -66,6 +72,20 @@ public class Compra
             valorFrete + valorSeguro + valorOutrasDespesas + valorFreteTerceiro - valorDesconto);
         for (var i = 0; i < _itens.Count; i++)
             _itens[i].DefinirRateio(rateios[i]);
+    }
+
+    public void Estornar(string? motivo, int? usuarioId, DateTime? quando = null)
+    {
+        if (Estornada)
+            throw new DomainException("A compra já foi estornada.");
+
+        motivo = (motivo ?? "").Trim(); // texto livre: preserva caixa e acentos
+        if (motivo.Length < 5 || motivo.Length > 255)
+            throw new DomainException("O motivo do estorno deve ter entre 5 e 255 caracteres.");
+
+        MotivoEstorno = motivo;
+        UsuarioEstornoId = usuarioId;
+        EstornadaEm = quando ?? DateTime.UtcNow;
     }
 
     public void AtualizarEmitente(Emitentes emitente) => Emitente = emitente;

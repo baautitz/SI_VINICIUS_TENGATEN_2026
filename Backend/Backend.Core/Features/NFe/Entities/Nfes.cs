@@ -242,6 +242,17 @@ public class Nfes
         StatusNfe = StatusNfe.CANCELADA;
     }
 
+    // NF-e de entrada só sai de cena junto com o estorno da compra; a justificativa é o motivo do estorno.
+    public void CancelarPorEstorno(string motivo, DateTime quando)
+    {
+        if (TipoOperacao != TipoOperacao.ENTRADA || StatusNfe != StatusNfe.EMITIDA)
+            throw new DomainException("Somente NF-e de entrada emitida pode ser cancelada pelo estorno da compra.");
+
+        JustificativaCancelamento = motivo;
+        DataCancelamento = quando;
+        StatusNfe = StatusNfe.CANCELADA;
+    }
+
     public void AtualizarStatus(StatusNfe status)
     {
         if (StatusNfe == StatusNfe.CANCELADA)

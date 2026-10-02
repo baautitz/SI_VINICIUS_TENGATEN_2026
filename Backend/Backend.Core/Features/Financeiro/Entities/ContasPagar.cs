@@ -112,6 +112,19 @@ public class ContasPagar
         AtualizarSaldo();
     }
 
+    // Cancela o título inteiro (ex.: estorno da compra de origem); exige que nada tenha sido pago.
+    public void Cancelar()
+    {
+        if (_parcelas.Any(p => p.ValorPago > 0))
+            throw new DomainException("Não é possível cancelar uma conta a pagar com parcelas baixadas.");
+
+        foreach (var p in _parcelas)
+            p.Cancelar();
+        Status = StatusTituloFinanceiro.CANCELADO;
+        ValorSaldo = 0;
+        DataVencimento = null;
+    }
+
     public void EstornarPagamento(int numeroParcela, decimal valorEstornado)
     {
         var parcela = _parcelas.SingleOrDefault(p => p.NumeroParcela == numeroParcela)

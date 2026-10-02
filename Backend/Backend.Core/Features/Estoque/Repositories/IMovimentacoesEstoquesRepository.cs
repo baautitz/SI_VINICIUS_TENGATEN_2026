@@ -4,11 +4,15 @@ using Backend.Core.Features.Estoque.Entities.Enums;
 
 namespace Backend.Core.Features.Estoque.Repositories;
 
+// Movimentação lançada depois de outra, no mesmo SKU.
+public sealed record MovimentacaoPosterior(string Sku, int MovimentacaoId, string Tipo, string Origem);
+
 public interface IMovimentacoesEstoquesRepository
 {
     public Task<ResultadoPaginado<MovimentacoesEstoques>> ObterMovimentacoes(int pagina = 1, int tamanhoDaPagina = 20);
     public Task<MovimentacoesEstoques?> ObterMovimentacaoPorId(int id);
     public Task<IReadOnlyList<MovimentacoesEstoques>> ObterMovimentacoesPorOrigem(OrigemMovimentacaoEstoque origemTipo, int origemId);
+    public Task<IReadOnlyList<MovimentacaoPosterior>> ObterMovimentacoesPosteriores(int movimentacaoId, IReadOnlyCollection<string> skus);
     public Task<MovimentacoesEstoques> CriarMovimentacao(MovimentacoesEstoques movimentacao);
     public Task<ResultadoPaginado<MovimentacoesEstoques>> PesquisarMovimentacoes(string termo, int pagina = 1, int tamanhoDaPagina = 20);
 }

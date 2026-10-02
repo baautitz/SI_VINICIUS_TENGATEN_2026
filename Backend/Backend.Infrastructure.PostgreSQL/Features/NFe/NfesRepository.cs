@@ -474,13 +474,20 @@ public class NfesRepository : INfesRepository
               WHERE id = @Id AND status_nfe = 'EMITIDA';",
             new { nfe.Id, nfe.JustificativaCancelamento, nfe.DataCancelamento, MarcaXml = nfe.MarcaXmlCancelamento() }, transaction: _session.Transaction) > 0;
 
+    public async Task<Nfes?> ObterNfeDaCompra(int compraId)
+    {
+        var id = await _session.Connection.ExecuteScalarAsync<int?>(
+            "SELECT id FROM nfes WHERE compra_id = @CompraId;", new { CompraId = compraId }, transaction: _session.Transaction);
+        return id is null ? null : await ObterNfePorId(id.Value);
+    }
+
     public Task<string?> ObterXmlDocumento(int id)
         => _session.Connection.ExecuteScalarAsync<string?>(
             "SELECT xml_documento FROM nfes WHERE id = @Id;", new { Id = id }, transaction: _session.Transaction);
 
     public async Task<bool> ExisteChaveAcesso(string chaveAcesso)
         => await _session.Connection.ExecuteScalarAsync<bool>(
-            "SELECT EXISTS (SELECT 1 FROM nfes WHERE chave_acesso = @ChaveAcesso);",
+            "SELECT EXISTS (SELECT 1 FROM nfes WHERE chave_acesso = @ChaveAcesso AND status_nfe <> 'CANCELADA');",
             new { ChaveAcesso = chaveAcesso }, transaction: _session.Transaction);
 
     private Task InserirTransporte(int nfeId, NfesTransportes t)

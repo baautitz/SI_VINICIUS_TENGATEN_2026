@@ -9,6 +9,7 @@ public interface INfesRepository
 {
     public Task<ResultadoPaginado<Nfes>> ObterNfes(int pagina = 1, int tamanhoDaPagina = 20);
     public Task<Nfes?> ObterNfePorId(int id);
+    public Task<Nfes?> ObterNfeDaCompra(int compraId);
     public Task<string?> ObterXmlDocumento(int id);
     public Task<NfeAtiva?> ObterNfeEmitidaDaVenda(int vendaId);
     // Próximo número da série para o emitente; exige transação aberta (advisory lock até o commit).
