@@ -1,4 +1,10 @@
 "use client";
+import { ProdutosUpsert } from "@/features/catalogo/produtos/upsert";
+import { produtosApi } from "@/api/catalogo";
+import { relacionadosApi } from "@/api/relacionados";
+import { useRelated } from "@/hooks/use-related";
+import { RelatedActions } from "@/components/related-actions";
+import { Package } from "lucide-react";
 
 import { Kbd, KbdGroup } from "@/ui/primitives";
 import { WindowActions } from "@/imperative-ui";
@@ -104,9 +110,11 @@ function CategoriasUpsertForm({
 
   useWindowCommands(commands);
 
+  const related = useRelated();
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
+        {readOnly && editingItem && <RelatedActions actions={[{ id: "categoriaId.produtos", hotkey: "Alt+R", label: "Produtos", icon: <Package className="size-4" />, run: () => related.openList(() => relacionadosApi.produtosPor("categoriaId", editingItem.id), produtosApi.getById, ProdutosUpsert, "Produtos (categoria)", "Nenhum produto nesta categoria.") }]} />}
         <Button
           type="button"
           variant="outline"

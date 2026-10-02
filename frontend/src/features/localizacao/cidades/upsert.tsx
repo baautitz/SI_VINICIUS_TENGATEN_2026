@@ -1,4 +1,10 @@
 "use client";
+import { BairrosUpsert } from "@/features/localizacao/bairros/upsert";
+import { bairrosApi } from "@/api/localizacao";
+import { relacionadosApi } from "@/api/relacionados";
+import { useRelated } from "@/hooks/use-related";
+import { RelatedActions } from "@/components/related-actions";
+import { MapPin } from "lucide-react";
 
 import React from "react";
 import { WindowActions } from "@/imperative-ui";
@@ -100,9 +106,11 @@ function CidadesUpsertForm({
     },
   ]);
 
+  const related = useRelated();
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
+        {readOnly && editingItem && <RelatedActions actions={[{ id: "cidade.bairros", hotkey: "Alt+L", label: "Bairros", icon: <MapPin className="size-4" />, run: () => related.openList(() => relacionadosApi.localizacaoFilhos("cidade", editingItem.id), bairrosApi.getById, BairrosUpsert, "Bairros", "Nenhum bairro nesta cidade.") }]} />}
         <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>
           {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
         </Button>

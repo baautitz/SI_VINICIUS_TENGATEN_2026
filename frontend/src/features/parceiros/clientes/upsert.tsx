@@ -1,4 +1,12 @@
 "use client";
+import { ContasReceberUpsertForm } from "@/features/financeiro/contas-receber/upsert";
+import { contasReceberApi } from "@/api/financeiro";
+import { VendasUpsertForm } from "@/features/vendas/upsert";
+import { vendasApi } from "@/api/vendas";
+import { relacionadosApi } from "@/api/relacionados";
+import { useRelated } from "@/hooks/use-related";
+import { RelatedActions } from "@/components/related-actions";
+import { Receipt, ShoppingCart } from "lucide-react";
 
 import { Kbd, KbdGroup } from "@/ui/primitives";
 import { WindowActions } from "@/imperative-ui";
@@ -157,9 +165,11 @@ function ClientesUpsertForm({
     selectedPais?.codigoIsoPais === "BRA" ||
     (!selectedPais && nacionalidadeId === 1);
 
+  const related = useRelated();
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
+        {readOnly && editingItem && <RelatedActions actions={[{ id: "cliente.titulos", hotkey: "Alt+T", label: "Títulos", icon: <Receipt className="size-4" />, run: () => related.openList(() => relacionadosApi.contasReceberPorCliente(editingItem.id), contasReceberApi.getById, ContasReceberUpsertForm, "Títulos a receber", "Nenhum título deste cliente.") }, { id: "cliente.vendas", hotkey: "Alt+V", label: "Vendas", icon: <ShoppingCart className="size-4" />, run: () => related.openList(() => relacionadosApi.vendasPorCliente(editingItem.id), vendasApi.getById, VendasUpsertForm, "Vendas", "Nenhuma venda deste cliente.") }]} />}
         <Button type="button" variant="outline" onClick={cancelForm}>
           {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
         </Button>
