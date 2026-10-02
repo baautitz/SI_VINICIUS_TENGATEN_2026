@@ -17,6 +17,8 @@ import {
 } from "@/ui/primitives";
 import type { ImportacaoXml } from "./upsert";
 
+const MAX_BYTES = 2 * 1024 * 1024;
+
 /** Cole ou escolha o XML da NF-e; devolve a prévia (nada é gravado ainda). */
 export function ImportarXmlWindow() {
   const activeWindow = useWindow<ImportacaoXml>();
@@ -24,19 +26,26 @@ export function ImportarXmlWindow() {
   const [xml, setXml] = React.useState("");
   const [emitente, setEmitente] = React.useState<Emitente | null>(null);
   const [busy, setBusy] = React.useState(false);
+  const [erroEmitente, setErroEmitente] = React.useState<string>();
+  const [arquivo, setArquivo] = React.useState<string>();
+  const emitenteRef = React.useRef<HTMLDivElement>(null);
+  const foco = React.useCallback((el: HTMLDivElement | null) => {
+    el?.querySelector("input")?.focus();
+  }, []);
 
   const ler = async () => {
     if (busy) return;
-    if (!emitente)
-      return void ui.feedback.notify({
-        type: "error",
-        title: "Selecione o emitente (sua empresa).",
-      });
+    if (!emitente) {
+      setErroEmitente("Selecione o emitente (sua empresa).");
+      return void foco(emitenteRef.current);
+    }
     if (!xml.trim())
       return void ui.feedback.notify({
         type: "error",
         title: "Cole o XML ou escolha um arquivo.",
       });
+    if (new Blob([xml]).size > MAX_BYTES)
+      return void ui.feedback.notify({ type: "error", title: "XML maior que 2 MB." });
     setBusy(true);
     try {
       const res = await comprasApi.previaNfe(xml, emitente.id);
@@ -64,12 +73,15 @@ export function ImportarXmlWindow() {
 
   return (
     <div className="flex flex-col gap-4 py-2">
-      <EmitenteInput
-        name="xml-emitente"
-        initialItem={emitente}
-        onSelectItem={setEmitente}
-        onSelectId={() => {}}
-      />
+      <div ref={(el) => { if (el && !emitenteRef.current) foco(el); emitenteRef.current = el; }}>
+        <EmitenteInput
+          name="xml-emitente"
+          initialItem={emitente}
+          error={erroEmitente}
+          onSelectItem={(e) => { setEmitente(e); setErroEmitente(undefined); }}
+          onSelectId={() => {}}
+        />
+      </div>
       <Field>
         <FieldLabel htmlFor="xml-arquivo">Arquivo XML</FieldLabel>
         <input
@@ -79,9 +91,17 @@ export function ImportarXmlWindow() {
           className="text-sm"
           onChange={async (e) => {
             const f = e.target.files?.[0];
-            if (f) setXml(await f.text());
+            if (!f) return;
+            if (f.size > MAX_BYTES) {
+              e.target.value = "";
+              setArquivo(undefined);
+              return void ui.feedback.notify({ type: "error", title: "Arquivo maior que 2 MB." });
+            }
+            setArquivo(f.name);
+            setXml(await f.text());
           }}
         />
+        {arquivo && <span className="text-muted-foreground text-xs">Arquivo: {arquivo}</span>}
       </Field>
       <Field>
         <FieldLabel htmlFor="xml-texto">ou cole o conteúdo</FieldLabel>
