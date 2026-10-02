@@ -282,7 +282,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
   const activeWindow = useWindow<true>();
   const ui = useUi();
 
-  const { openView, openList } = useRelated();
+  const { openList } = useRelated();
   const {
     mutation,
     getFieldError: originalGetFieldError,
