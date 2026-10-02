@@ -85,26 +85,38 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
         }
     }
 
-    // Linhas do razão de um SKU, da mais recente para a mais antiga, com saldo antes/depois.
-    public async Task<ResultadoPaginado<KardexLinha>> ObterKardex(string sku, int pagina = 1, int tamanhoDaPagina = 20)
+    // Linhas do razão por SKU (da mais recente para a mais antiga), com saldo antes/depois. Termo filtra por SKU ou produto.
+    public async Task<ResultadoPaginado<KardexLinha>> ObterKardex(string? termo, int pagina = 1, int tamanhoDaPagina = 20)
     {
-        const string sql = @"
-            SELECT COUNT(*) FROM movimentacoes_estoque_itens WHERE sku = @Sku;
+        const string filtro = @"
+            FROM movimentacoes_estoque_itens mei
+            JOIN movimentacoes_estoque me ON me.id = mei.movimentacao_estoque_id
+            JOIN skus s ON s.sku = mei.sku
+            JOIN produtos p ON p.id = s.produto_id
+            WHERE @Termo IS NULL OR mei.sku ILIKE @Termo OR p.produto ILIKE @Termo";
 
-            SELECT me.id AS MovimentacaoId, me.data_movimentacao AS DataMovimentacao, me.tipo_movimentacao AS TipoMovimentacao,
+        const string sql = @"
+            SELECT COUNT(*) " + filtro + @";
+
+            SELECT me.id AS MovimentacaoId, mei.sku AS Sku, p.produto AS ProdutoNome,
+                   me.data_movimentacao AS DataMovimentacao, me.tipo_movimentacao AS TipoMovimentacao,
                    me.origem_tipo AS OrigemTipo, me.origem_id AS OrigemId, me.motivo AS Motivo,
                    mei.quantidade AS Quantidade, mei.custo_unitario AS CustoUnitario,
                    COALESCE(mei.quantidade_anterior, 0) AS QuantidadeAnterior,
                    COALESCE(mei.quantidade_anterior, 0)
                      + CASE WHEN me.tipo_movimentacao = 'ENTRADA' THEN mei.quantidade ELSE -mei.quantidade END AS QuantidadePosterior
-            FROM movimentacoes_estoque_itens mei
-            JOIN movimentacoes_estoque me ON me.id = mei.movimentacao_estoque_id
-            WHERE mei.sku = @Sku
-            ORDER BY me.data_movimentacao DESC, me.id DESC
+            " + filtro + @"
+            ORDER BY me.data_movimentacao DESC, me.id DESC, mei.sku
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(
-            sql, new { Sku = sku, TamanhoDaPagina = tamanhoDaPagina, Offset = (pagina - 1) * tamanhoDaPagina },
+            sql,
+            new
+            {
+                Termo = string.IsNullOrWhiteSpace(termo) ? null : $"%{termo.Trim()}%",
+                TamanhoDaPagina = tamanhoDaPagina,
+                Offset = (pagina - 1) * tamanhoDaPagina
+            },
             transaction: _session.Transaction);
 
         var total = await multi.ReadSingleAsync<int>();

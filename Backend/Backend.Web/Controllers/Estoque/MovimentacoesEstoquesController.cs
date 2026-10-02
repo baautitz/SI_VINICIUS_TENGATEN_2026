@@ -32,9 +32,9 @@ public class MovimentacoesEstoquesController : ControllerBase
         return movimentacao is null ? NotFound() : Ok(movimentacao);
     }
 
-    [HttpGet("kardex/{sku}")]
-    public Task<ResultadoPaginado<KardexLinha>> GetKardex(string sku, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-        => _movimentacoesService.ObterKardex(sku, page, pageSize);
+    [HttpGet("kardex")]
+    public Task<ResultadoPaginado<KardexLinha>> GetKardex([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        => _movimentacoesService.ObterKardex(search, page, pageSize);
 
     [HttpPost]
     [ProducesResponseType(typeof(Resultado<MovimentacoesEstoques>), StatusCodes.Status201Created)]

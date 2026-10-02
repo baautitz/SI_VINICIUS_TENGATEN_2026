@@ -4,6 +4,8 @@ namespace Backend.Core.Features.Estoque.DTOs;
 
 public record KardexLinha(
     int MovimentacaoId,
+    string Sku,
+    string ProdutoNome,
     DateTime DataMovimentacao,
     TipoMovimentacaoEstoque TipoMovimentacao,
     OrigemMovimentacaoEstoque OrigemTipo,

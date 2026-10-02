@@ -11,8 +11,10 @@ export const estoqueApi = {
   getById: (id: number) => http.get<MovimentacaoEstoque>(`/api/estoque/movimentacoes/${id}`),
   create: (data: MovimentacaoEstoqueFormValues) => http.post<Resultado<MovimentacaoEstoque>>("/api/estoque/movimentacoes", data),
   estornar: (id: number, motivo: string) => http.post<Resultado<MovimentacaoEstoque>>(`/api/estoque/movimentacoes/${id}/estornar`, { motivo }),
-  kardex: (sku: string, page = 1, pageSize = 20) =>
-    http.get<PaginatedResult<KardexLinha>>(`/api/estoque/movimentacoes/kardex/${encodeURIComponent(sku)}?page=${page}&pageSize=${pageSize}`),
+  kardex: (search?: string, page = 1, pageSize = 20) =>
+    http.get<PaginatedResult<KardexLinha>>(
+      `/api/estoque/movimentacoes/kardex?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`
+    ),
 };
 
 export const balancosApi = {

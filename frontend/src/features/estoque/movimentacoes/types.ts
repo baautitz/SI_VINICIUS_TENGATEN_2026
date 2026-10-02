@@ -32,6 +32,8 @@ export interface MovimentacaoEstoque {
 
 export interface KardexLinha {
   movimentacaoId: number;
+  sku: string;
+  produtoNome: string;
   dataMovimentacao: string;
   tipoMovimentacao: TipoMovimentacao;
   origemTipo: OrigemMovimentacao;

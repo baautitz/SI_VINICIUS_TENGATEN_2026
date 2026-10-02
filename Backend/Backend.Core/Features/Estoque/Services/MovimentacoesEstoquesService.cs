@@ -46,8 +46,8 @@ public sealed class MovimentacoesEstoquesService : BaseService
     public Task<MovimentacoesEstoques?> ObterMovimentacaoPorId(int id)
         => _movimentacoesRepository.ObterMovimentacaoPorId(id);
 
-    public Task<ResultadoPaginado<KardexLinha>> ObterKardex(string sku, int pagina = 1, int tamanhoPagina = 20)
-        => _movimentacoesRepository.ObterKardex(sku, pagina, tamanhoPagina);
+    public Task<ResultadoPaginado<KardexLinha>> ObterKardex(string? search, int pagina = 1, int tamanhoPagina = 20)
+        => _movimentacoesRepository.ObterKardex(search, pagina, tamanhoPagina);
 
     // Lançamento manual (perda, avaria, uso interno, acerto...). Efetiva na hora; correção só por estorno.
     public async Task<Resultado<MovimentacoesEstoques>> CriarMovimentacao(CriarMovimentacaoCommand command)
