@@ -1,12 +1,12 @@
 using Backend.Core.Common.Results;
 using Backend.Core.Features.Estoque.Commands;
+using Backend.Core.Features.Estoque.DTOs;
 using Backend.Core.Features.Estoque.Entities;
 using Backend.Core.Features.Estoque.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using System.Linq;
 using System.Threading.Tasks;
-using System;
 
 namespace Backend.Web.Controllers.Estoque;
 
@@ -29,11 +29,12 @@ public class MovimentacoesEstoquesController : ControllerBase
     public async Task<ActionResult<MovimentacoesEstoques>> GetMovimentacao(int id)
     {
         var movimentacao = await _movimentacoesService.ObterMovimentacaoPorId(id);
-        if (movimentacao is null)
-            return NotFound();
-
-        return Ok(movimentacao);
+        return movimentacao is null ? NotFound() : Ok(movimentacao);
     }
+
+    [HttpGet("kardex/{sku}")]
+    public Task<ResultadoPaginado<KardexLinha>> GetKardex(string sku, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        => _movimentacoesService.ObterKardex(sku, page, pageSize);
 
     [HttpPost]
     [ProducesResponseType(typeof(Resultado<MovimentacoesEstoques>), StatusCodes.Status201Created)]
@@ -46,56 +47,10 @@ public class MovimentacoesEstoquesController : ControllerBase
         return CreatedAtAction(nameof(GetMovimentacao), new { id = result.Data!.Id }, result);
     }
 
-    [HttpPut("{id:int}")]
-    public async Task<ActionResult<Resultado<MovimentacoesEstoques>>> UpdateMovimentacao(int id, [FromBody] AtualizarMovimentacaoCommand command)
+    [HttpPost("{id:int}/estornar")]
+    public async Task<ActionResult<Resultado<MovimentacoesEstoques>>> EstornarMovimentacao(int id, [FromBody] EstornarMovimentacaoCommand command)
     {
-        var result = await _movimentacoesService.AtualizarMovimentacao(id, command);
-        if (!result.Success)
-        {
-            if (result.Errors is not null && result.Errors.Any(error => error.Code == "MOVIMENTACAO_INEXISTENTE"))
-                return NotFound(result);
-
-            return BadRequest(result);
-        }
-
-        return Ok(result);
-    }
-
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> DeleteMovimentacao(int id)
-    {
-        var movimentacao = await _movimentacoesService.ObterMovimentacaoPorId(id);
-        if (movimentacao is null)
-            return NotFound();
-
-        if (movimentacao.Status != Backend.Core.Features.Estoque.Entities.Enums.StatusMovimentacaoEstoque.RASCUNHO)
-        {
-            return BadRequest(Resultado<bool>.Falha(new ResultadoErro("MOVIMENTACAO_BLOQUEADA", "Apenas movimentações em rascunho podem ser excluídas.")));
-        }
-
-        var deleted = await _movimentacoesService.DeletarMovimentacao(id);
-        return deleted ? NoContent() : NotFound();
-    }
-
-    [HttpPost("{id:int}/confirmar")]
-    public async Task<ActionResult<Resultado<MovimentacoesEstoques>>> ConfirmarMovimentacao(int id)
-    {
-        var result = await _movimentacoesService.ConfirmarMovimentacao(id);
-        if (!result.Success)
-        {
-            if (result.Errors is not null && result.Errors.Any(error => error.Code == "MOVIMENTACAO_INEXISTENTE"))
-                return NotFound(result);
-
-            return BadRequest(result);
-        }
-
-        return Ok(result);
-    }
-
-    [HttpPost("{id:int}/cancelar")]
-    public async Task<ActionResult<Resultado<MovimentacoesEstoques>>> CancelarMovimentacao(int id, [FromBody] CancelarMovimentacaoCommand command)
-    {
-        var result = await _movimentacoesService.CancelarMovimentacao(id, command);
+        var result = await _movimentacoesService.Estornar(id, command);
         if (!result.Success)
         {
             if (result.Errors is not null && result.Errors.Any(error => error.Code == "MOVIMENTACAO_INEXISTENTE"))

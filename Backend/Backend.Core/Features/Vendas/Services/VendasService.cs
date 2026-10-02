@@ -9,7 +9,7 @@ using Backend.Core.Common.Interfaces;
 using Backend.Core.Common.Exceptions;
 using Backend.Core.Features.Parceiros.Repositories;
 using Backend.Core.Features.Catalogo.Repositories;
-using Backend.Core.Features.Estoque.Repositories;
+using Backend.Core.Features.Estoque.Services;
 using Backend.Core.Features.Estoque.Entities;
 using Backend.Core.Features.Estoque.Entities.Enums;
 using Backend.Core.Features.Financeiro.Repositories;
@@ -30,7 +30,7 @@ public sealed class VendasService : BaseService
     private readonly IEmitentesRepository _emitentesRepository;
     private readonly ISkusRepository _skusRepository;
     private readonly ICondicoesPagamentosRepository _condicoesRepository;
-    private readonly IMovimentacoesEstoquesRepository _movimentacoesRepository;
+    private readonly MovimentacoesEstoquesService _estoqueService;
     private readonly IContasReceberRepository _contasRepository;
     private readonly IRelacionadosRepository _relacionadosRepository;
     private readonly IUnitOfWork _unitOfWork;
@@ -41,7 +41,7 @@ public sealed class VendasService : BaseService
         IEmitentesRepository emitentesRepository,
         ISkusRepository skusRepository,
         ICondicoesPagamentosRepository condicoesRepository,
-        IMovimentacoesEstoquesRepository movimentacoesRepository,
+        MovimentacoesEstoquesService estoqueService,
         IContasReceberRepository contasRepository,
         IRelacionadosRepository relacionadosRepository,
         IUnitOfWork unitOfWork)
@@ -51,7 +51,7 @@ public sealed class VendasService : BaseService
         _emitentesRepository = emitentesRepository;
         _skusRepository = skusRepository;
         _condicoesRepository = condicoesRepository;
-        _movimentacoesRepository = movimentacoesRepository;
+        _estoqueService = estoqueService;
         _contasRepository = contasRepository;
         _relacionadosRepository = relacionadosRepository;
         _unitOfWork = unitOfWork;
@@ -130,37 +130,22 @@ public sealed class VendasService : BaseService
 
                 var criada = await _vendasRepository.CriarVenda(venda);
 
-                // Create Stock Movement (VENDA)
+                // Baixa de estoque: saída com origem VENDA
                 var movimentacao = new MovimentacoesEstoques(
-                    TipoMovimentacaoEstoque.VENDA,
-                    usuario: null,
-                    nfeId: null,
-                    vendaId: criada.Id,
-                    observacao: $"Venda nº {criada.Id}",
-                    status: StatusMovimentacaoEstoque.RASCUNHO
-                );
+                    TipoMovimentacaoEstoque.SAIDA,
+                    OrigemMovimentacaoEstoque.VENDA,
+                    criada.Id,
+                    observacao: $"Venda nº {criada.Id}");
 
                 foreach (var itemCommand in command.Itens)
                 {
                     var sku = await _skusRepository.ObterSkuPorSku(itemCommand.Sku);
-                    if (sku != null)
-                    {
-                        var produtoNome = sku.NomeExibicao;
-                        var unidadeMedidaSigla = sku.Produto!.UnidadeMedida.Sigla;
-
-                        // Add item to stock movement
-                        movimentacao.AdicionarItem(sku, itemCommand.Quantidade, sku.CustoMedio, produtoNome, unidadeMedidaSigla);
-
-                        // Update physical SKU stock
-                        var itemMov = movimentacao.MovimentacoesEstoquesItens.Last();
-                        itemMov.DefinirQuantidadesECustosAnteriores(sku.Estoque, sku.CustoMedio);
-                        sku.AjustarEstoque(-itemCommand.Quantidade);
-                        await _skusRepository.AtualizarSku(sku.Sku, sku);
-                    }
+                    movimentacao.AdicionarItem(sku!, itemCommand.Quantidade, sku!.CustoMedio);
                 }
 
-                movimentacao.Confirmar();
-                await _movimentacoesRepository.CriarMovimentacao(movimentacao);
+                var baixa = await _estoqueService.Registrar(movimentacao);
+                if (!baixa.Success)
+                    throw new DomainException(baixa.Errors!.First().Message);
 
                 // Create Accounts Receivable (ContasReceber)
                 if (condicao != null && command.Parcelas != null && command.Parcelas.Any())
@@ -205,16 +190,6 @@ public sealed class VendasService : BaseService
     private static bool TemRecebimentoManual(ContasReceberParcelas p, CondicoesPagamentos? condicao)
         => p.ValorRecebido > 0 && !(EhAVista(condicao) && p.Status == StatusTituloFinanceiro.PAGO);
 
-    private async Task<MovimentacoesEstoques?> ObterMovimentacaoConfirmada(int vendaId)
-    {
-        foreach (var r in await _relacionadosRepository.MovimentacoesPorVenda(vendaId))
-        {
-            var mov = await _movimentacoesRepository.ObterMovimentacaoPorId(r.Id);
-            if (mov?.Status == StatusMovimentacaoEstoque.CONFIRMADA) return mov;
-        }
-        return null;
-    }
-
     private async Task<ContasReceber?> ObterContaDaVenda(int vendaId)
     {
         var contas = await _relacionadosRepository.ContasReceberPorVenda(vendaId);
@@ -231,23 +206,8 @@ public sealed class VendasService : BaseService
         {
             _unitOfWork.BeginTransaction();
 
-            // Reverse Stock Movements related to this Venda
-            var movVenda = await ObterMovimentacaoConfirmada(id);
-            if (movVenda != null)
-            {
-                foreach (var item in movVenda.MovimentacoesEstoquesItens)
-                {
-                    var sku = await _skusRepository.ObterSkuPorSku(item.Sku.Sku);
-                    if (sku != null)
-                    {
-                        // Return the items to physical stock
-                        sku.AjustarEstoque(item.Quantidade);
-                        await _skusRepository.AtualizarSku(sku.Sku, sku);
-                    }
-                }
-                movVenda.Cancelar("Venda excluída.");
-                await _movimentacoesRepository.AtualizarMovimentacao(movVenda.Id, movVenda);
-            }
+            // Estorna a baixa de estoque da venda (movimentação inversa no razão)
+            await _estoqueService.EstornarVenda(id, "Venda excluída.");
 
             // Cancel Accounts Receivable related to this Venda
             var contaVenda = await ObterContaDaVenda(id);
@@ -284,23 +244,8 @@ public sealed class VendasService : BaseService
         {
             _unitOfWork.BeginTransaction();
 
-            // Reverse Stock Movements related to this Venda
-            var movVenda = await ObterMovimentacaoConfirmada(id);
-            if (movVenda != null)
-            {
-                foreach (var item in movVenda.MovimentacoesEstoquesItens)
-                {
-                    var sku = await _skusRepository.ObterSkuPorSku(item.Sku.Sku);
-                    if (sku != null)
-                    {
-                        // Return the items to physical stock
-                        sku.AjustarEstoque(item.Quantidade);
-                        await _skusRepository.AtualizarSku(sku.Sku, sku);
-                    }
-                }
-                movVenda.Cancelar(command.Motivo);
-                await _movimentacoesRepository.AtualizarMovimentacao(movVenda.Id, movVenda);
-            }
+            // Estorna a baixa de estoque da venda (movimentação inversa no razão)
+            await _estoqueService.EstornarVenda(id, command.Motivo);
 
             // Cancel Accounts Receivable related to this Venda
             var contaVenda = await ObterContaDaVenda(id);

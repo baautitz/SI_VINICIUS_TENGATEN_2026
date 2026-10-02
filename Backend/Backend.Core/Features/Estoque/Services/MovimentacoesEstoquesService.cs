@@ -8,15 +8,14 @@ using Backend.Core.Common.Extensions;
 using Backend.Core.Common.Results;
 using Backend.Core.Common.Interfaces;
 using Backend.Core.Features.Acesso.Repositories;
+using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Catalogo.Repositories;
 using Backend.Core.Features.Estoque.Commands;
+using Backend.Core.Features.Estoque.DTOs;
 using Backend.Core.Features.Estoque.Entities;
 using Backend.Core.Features.Estoque.Entities.Enums;
 using Backend.Core.Features.Estoque.Repositories;
 using Backend.Core.Features.Estoque.Validators.Commands;
-using Backend.Core.Features.NFe.Repositories;
-using Backend.Core.Features.Vendas.Repositories;
-using FluentValidation;
 
 namespace Backend.Core.Features.Estoque.Services;
 
@@ -25,38 +24,32 @@ public sealed class MovimentacoesEstoquesService : BaseService
     private readonly IMovimentacoesEstoquesRepository _movimentacoesRepository;
     private readonly ISkusRepository _skusRepository;
     private readonly IUsuariosRepository _usuariosRepository;
-    private readonly INfesRepository _nfesRepository;
-    private readonly IVendasRepository _vendasRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public MovimentacoesEstoquesService(
         IMovimentacoesEstoquesRepository movimentacoesRepository,
         ISkusRepository skusRepository,
         IUsuariosRepository usuariosRepository,
-        INfesRepository nfesRepository,
-        IVendasRepository vendasRepository,
         IUnitOfWork unitOfWork)
     {
         _movimentacoesRepository = movimentacoesRepository;
         _skusRepository = skusRepository;
         _usuariosRepository = usuariosRepository;
-        _nfesRepository = nfesRepository;
-        _vendasRepository = vendasRepository;
         _unitOfWork = unitOfWork;
     }
 
     public Task<ResultadoPaginado<MovimentacoesEstoques>> ObterMovimentacoes(string? search, int pagina = 1, int tamanhoPagina = 20)
-    {
-        if (string.IsNullOrWhiteSpace(search))
-        {
-            return _movimentacoesRepository.ObterMovimentacoes(pagina, tamanhoPagina);
-        }
-        return _movimentacoesRepository.PesquisarMovimentacoes(search, pagina, tamanhoPagina);
-    }
+        => string.IsNullOrWhiteSpace(search)
+            ? _movimentacoesRepository.ObterMovimentacoes(pagina, tamanhoPagina)
+            : _movimentacoesRepository.PesquisarMovimentacoes(search, pagina, tamanhoPagina);
 
     public Task<MovimentacoesEstoques?> ObterMovimentacaoPorId(int id)
         => _movimentacoesRepository.ObterMovimentacaoPorId(id);
 
+    public Task<ResultadoPaginado<KardexLinha>> ObterKardex(string sku, int pagina = 1, int tamanhoPagina = 20)
+        => _movimentacoesRepository.ObterKardex(sku, pagina, tamanhoPagina);
+
+    // Lançamento manual (perda, avaria, uso interno, acerto...). Efetiva na hora; correção só por estorno.
     public async Task<Resultado<MovimentacoesEstoques>> CriarMovimentacao(CriarMovimentacaoCommand command)
     {
         var validation = new CriarMovimentacaoCommandValidator().Validate(command);
@@ -67,16 +60,8 @@ public sealed class MovimentacoesEstoquesService : BaseService
         if (command.UsuarioId.HasValue && usuario == null)
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("USUARIO_INEXISTENTE", "O usuário informado não existe.", "UsuarioId"));
 
-        if (command.NfeId.HasValue)
-            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("NFE_NAO_PERMITIDA", "A NF-e não pode ser vinculada por movimentação manual; ela é vinculada pelo módulo de compras.", "NfeId"));
-
-        var venda = command.VendaId.HasValue ? await _vendasRepository.ObterVendaPorId(command.VendaId.Value) : null;
-        if (command.VendaId.HasValue && venda == null)
-            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("VENDA_INEXISTENTE", "A venda informada não existe.", "VendaId"));
-
-        Enum.TryParse<TipoMovimentacaoEstoque>(command.TipoMovimentacao, true, out var tipoMovimentacao);
-
-        var movimentacao = new MovimentacoesEstoques(tipoMovimentacao, usuario, command.NfeId, command.VendaId, command.Observacao, StatusMovimentacaoEstoque.RASCUNHO);
+        Enum.TryParse<TipoMovimentacaoEstoque>(command.TipoMovimentacao, true, out var tipo);
+        var movimentacao = new MovimentacoesEstoques(tipo, OrigemMovimentacaoEstoque.MANUAL, null, command.Motivo, command.Observacao, usuario);
 
         foreach (var itemCommand in command.Itens)
         {
@@ -84,160 +69,13 @@ public sealed class MovimentacoesEstoquesService : BaseService
             if (sku == null)
                 return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("SKU_INEXISTENTE", $"O SKU '{itemCommand.Sku}' não existe.", "Itens"));
 
-            var produtoNome = sku.NomeExibicao;
-            var unidadeMedidaSigla = sku.Produto!.UnidadeMedida.Sigla;
-            movimentacao.AdicionarItem(sku, itemCommand.Quantidade, itemCommand.CustoUnitario ?? 0, produtoNome, unidadeMedidaSigla);
+            movimentacao.AdicionarItem(sku, itemCommand.Quantidade, itemCommand.CustoUnitario ?? 0);
         }
 
-        return await ExecuteResultAsync(async () =>
-        {
-            try
-            {
-                _unitOfWork.BeginTransaction();
-                var criado = await _movimentacoesRepository.CriarMovimentacao(movimentacao);
-                _unitOfWork.Commit();
-                return Resultado<MovimentacoesEstoques>.Sucesso(criado);
-            }
-            catch
-            {
-                _unitOfWork.Rollback();
-                throw;
-            }
-        });
-    }
-    
-    
-    public async Task<Resultado<MovimentacoesEstoques>> AtualizarMovimentacao(int id, AtualizarMovimentacaoCommand command)
-    {
-        var existente = await _movimentacoesRepository.ObterMovimentacaoPorId(id);
-        if (existente == null)
-            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_INEXISTENTE", "Movimentação não encontrada."));
-
-        if (existente.Status != StatusMovimentacaoEstoque.RASCUNHO)
-            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_BLOQUEADA", "Apenas movimentações em rascunho podem ser editadas."));
-
-        var validation = new AtualizarMovimentacaoCommandValidator().Validate(command);
-        if (!validation.IsValid)
-            return Resultado<MovimentacoesEstoques>.Falha(validation.ToResultadoErros());
-
-        var usuario = command.UsuarioId.HasValue ? await _usuariosRepository.ObterUsuarioPorId(command.UsuarioId.Value) : null;
-        if (command.UsuarioId.HasValue && usuario == null)
-            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("USUARIO_INEXISTENTE", "O usuário informado não existe.", "UsuarioId"));
-
-        if (command.NfeId.HasValue && command.NfeId != existente.NfeId)
-            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("NFE_NAO_PERMITIDA", "A NF-e não pode ser vinculada por movimentação manual; ela é vinculada pelo módulo de compras.", "NfeId"));
-
-        var venda = command.VendaId.HasValue ? await _vendasRepository.ObterVendaPorId(command.VendaId.Value) : null;
-        if (command.VendaId.HasValue && venda == null)
-            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("VENDA_INEXISTENTE", "A venda informada não existe.", "VendaId"));
-
-        Enum.TryParse<TipoMovimentacaoEstoque>(command.TipoMovimentacao, true, out var tipoMovimentacao);
-
-        existente.AtualizarObservacao(command.Observacao);
-        
-        var itensAtuais = existente.MovimentacoesEstoquesItens.ToList();
-        foreach (var item in itensAtuais)
-        {
-            existente.RemoverItem(item);
-        }
-
-        foreach (var itemCommand in command.Itens)
-        {
-            var sku = await _skusRepository.ObterSkuPorSku(itemCommand.Sku);
-            if (sku == null)
-                return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("SKU_INEXISTENTE", $"O SKU '{itemCommand.Sku}' não existe.", "Itens"));
-
-            var produtoNome = sku.NomeExibicao;
-            var unidadeMedidaSigla = sku.Produto!.UnidadeMedida.Sigla;
-            existente.AdicionarItem(sku, itemCommand.Quantidade, itemCommand.CustoUnitario ?? 0, produtoNome, unidadeMedidaSigla);
-        }
-
-        return await ExecuteResultAsync(async () =>
-        {
-            try
-            {
-                _unitOfWork.BeginTransaction();
-                var atualizado = await _movimentacoesRepository.AtualizarMovimentacao(id, existente);
-                _unitOfWork.Commit();
-                return Resultado<MovimentacoesEstoques>.Sucesso(atualizado);
-            }
-            catch
-            {
-                _unitOfWork.Rollback();
-                throw;
-            }
-        });
+        return await ExecutarEmTransacao(movimentacao, null);
     }
 
-    public async Task<Resultado<MovimentacoesEstoques>> ConfirmarMovimentacao(int id)
-    {
-        var existente = await _movimentacoesRepository.ObterMovimentacaoPorId(id);
-        if (existente == null)
-            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_INEXISTENTE", "Movimentação não encontrada."));
-
-        if (existente.Status != StatusMovimentacaoEstoque.RASCUNHO)
-            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_STATUS_INVALIDO", $"Apenas movimentações em rascunho podem ser efetivadas. Status atual: {existente.Status}"));
-
-        if (existente.TipoMovimentacao == TipoMovimentacaoEstoque.SAIDA || existente.TipoMovimentacao == TipoMovimentacaoEstoque.VENDA)
-        {
-            var itensLista = existente.MovimentacoesEstoquesItens.ToList();
-            for (int i = 0; i < itensLista.Count; i++)
-            {
-                var item = itensLista[i];
-                var sku = await _skusRepository.ObterSkuPorSku(item.Sku.Sku);
-                if (sku == null)
-                    return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("SKU_INEXISTENTE", $"O SKU '{item.Sku.Sku}' não existe.", $"itens.{i}.sku"));
-
-                if (sku.Estoque < item.Quantidade)
-                    return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("ESTOQUE_INSUFICIENTE", $"Estoque insuficiente para o SKU '{sku.Sku}'. Disponível: {sku.Estoque:0.####}, Solicitado: {item.Quantidade:0.####}", $"itens.{i}.quantidade"));
-            }
-        }
-
-        return await ExecuteResultAsync(async () =>
-        {
-            try
-            {
-                _unitOfWork.BeginTransaction();
-
-                foreach (var item in existente.MovimentacoesEstoquesItens)
-                {
-                    var sku = await _skusRepository.ObterSkuPorSku(item.Sku.Sku);
-                    if (sku != null)
-                    {
-                        item.DefinirQuantidadesECustosAnteriores(sku.Estoque, sku.CustoMedio);
-
-                        if (existente.TipoMovimentacao == TipoMovimentacaoEstoque.ENTRADA)
-                        {
-                            sku.RegistrarEntradaDeEstoque(item.Quantidade, item.CustoUnitario);
-                        }
-                        else if (existente.TipoMovimentacao == TipoMovimentacaoEstoque.SAIDA || existente.TipoMovimentacao == TipoMovimentacaoEstoque.VENDA)
-                        {
-                            sku.AjustarEstoque(-item.Quantidade);
-                        }
-                        else if (existente.TipoMovimentacao == TipoMovimentacaoEstoque.BALANCO)
-                        {
-                            sku.AjustarEstoque(item.Quantidade - sku.Estoque);
-                        }
-
-                        await _skusRepository.AtualizarSku(sku.Sku, sku);
-                    }
-                }
-
-                existente.Confirmar();
-                var atualizado = await _movimentacoesRepository.AtualizarMovimentacao(id, existente);
-                
-                _unitOfWork.Commit();
-                return Resultado<MovimentacoesEstoques>.Sucesso(atualizado);
-            }
-            catch
-            {
-                _unitOfWork.Rollback();
-                throw;
-            }
-        });
-    }
-
-    public async Task<Resultado<MovimentacoesEstoques>> CancelarMovimentacao(int id, CancelarMovimentacaoCommand command)
+    public async Task<Resultado<MovimentacoesEstoques>> Estornar(int id, EstornarMovimentacaoCommand command)
     {
         var motivo = command?.Motivo?.Trim();
         if (string.IsNullOrEmpty(motivo))
@@ -245,67 +83,108 @@ public sealed class MovimentacoesEstoquesService : BaseService
         if (motivo.Length < 5 || motivo.Length > 500)
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOTIVO_INVALIDO", "Motivo do estorno deve ter entre 5 e 500 caracteres.", "motivo"));
 
-        var existente = await _movimentacoesRepository.ObterMovimentacaoPorId(id);
-        if (existente == null)
+        var original = await _movimentacoesRepository.ObterMovimentacaoPorId(id);
+        if (original == null)
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_INEXISTENTE", "Movimentação não encontrada."));
 
-        if (existente.Status != StatusMovimentacaoEstoque.CONFIRMADA)
-            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_STATUS_INVALIDO", $"Apenas movimentações confirmadas podem ser canceladas. Status atual: {existente.Status}"));
-
-        if (existente.VendaId.HasValue)
+        if (original.OrigemTipo == OrigemMovimentacaoEstoque.VENDA)
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_VENDA", "Esta movimentação foi gerada por uma venda. Cancele a venda para estornar a movimentação de estoque."));
 
-        if (existente.NfeId.HasValue)
-            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_NFE", "Esta movimentação foi gerada por uma nota fiscal. Cancele a nota fiscal para estornar a movimentação de estoque."));
+        if (original.OrigemTipo == OrigemMovimentacaoEstoque.COMPRA)
+            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_COMPRA", "Esta movimentação foi gerada por uma compra. Cancele a compra para estornar a movimentação de estoque."));
 
-        if (existente.TipoMovimentacao == TipoMovimentacaoEstoque.ENTRADA)
+        if (original.OrigemTipo == OrigemMovimentacaoEstoque.ESTORNO)
+            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_ESTORNO", "Um estorno não pode ser estornado. Lance uma nova movimentação."));
+
+        if (original.Estornada)
+            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_JA_ESTORNADA", "Esta movimentação já foi estornada."));
+
+        var (estorno, custosARestaurar) = MontarEstorno(original, motivo);
+        return await ExecutarEmTransacao(estorno, custosARestaurar);
+    }
+
+    // Usado pelo cancelamento/exclusão de venda: não faz nada se não houver movimentação ou se já foi estornada.
+    // O chamador controla a transação.
+    public async Task EstornarVenda(int vendaId, string motivo)
+    {
+        var original = await _movimentacoesRepository.ObterMovimentacaoPorOrigem(OrigemMovimentacaoEstoque.VENDA, vendaId);
+        if (original == null || original.Estornada)
+            return;
+
+        var (estorno, custosARestaurar) = MontarEstorno(original, motivo);
+        var resultado = await Registrar(estorno, custosARestaurar);
+        if (!resultado.Success)
+            throw new DomainException(resultado.Errors!.First().Message);
+    }
+
+    // Aplica a movimentação ao saldo dos SKUs e grava no razão. O chamador controla a transação.
+    public async Task<Resultado<MovimentacoesEstoques>> Registrar(MovimentacoesEstoques movimentacao, IReadOnlyDictionary<string, decimal>? custoMedioARestaurar = null)
+    {
+        var skus = new Dictionary<string, Skus>();
+        foreach (var item in movimentacao.MovimentacoesEstoquesItens)
         {
-            var itensLista = existente.MovimentacoesEstoquesItens.ToList();
-            for (int i = 0; i < itensLista.Count; i++)
-            {
-                var item = itensLista[i];
-                var sku = await _skusRepository.ObterSkuPorSku(item.Sku.Sku);
-                if (sku == null)
-                    return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("SKU_INEXISTENTE", $"O SKU '{item.Sku.Sku}' não existe.", $"itens.{i}.sku"));
+            var sku = await _skusRepository.ObterSkuPorSku(item.Sku.Sku);
+            if (sku == null)
+                return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("SKU_INEXISTENTE", $"O SKU '{item.Sku.Sku}' não existe.", "Itens"));
 
-                if (sku.Estoque < item.Quantidade)
-                    return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("ESTOQUE_INSUFICIENTE", $"Não é possível estornar esta entrada. A dedução das mercadorias deixaria o SKU '{sku.Sku}' com saldo negativo. Disponível: {sku.Estoque:0.####}, Necessário deduzir: {item.Quantidade:0.####}", $"itens.{i}.quantidade"));
-            }
+            if (movimentacao.TipoMovimentacao == TipoMovimentacaoEstoque.SAIDA && sku.Estoque < item.Quantidade)
+                return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("ESTOQUE_INSUFICIENTE", $"Estoque insuficiente para o SKU '{sku.Sku}'. Disponível: {sku.Estoque:0.####}, Solicitado: {item.Quantidade:0.####}", "Itens"));
+
+            skus[sku.Sku] = sku;
         }
 
+        foreach (var item in movimentacao.MovimentacoesEstoquesItens)
+        {
+            var sku = skus[item.Sku.Sku];
+            item.DefinirQuantidadesECustosAnteriores(sku.Estoque, sku.CustoMedio);
+
+            if (movimentacao.TipoMovimentacao == TipoMovimentacaoEstoque.ENTRADA)
+            {
+                sku.RegistrarEntradaDeEstoque(item.Quantidade, item.CustoUnitario);
+            }
+            else
+            {
+                // Saída é valorizada ao custo médio vigente.
+                item.AtualizarCustoUnitario(sku.CustoMedio);
+                if (custoMedioARestaurar != null && custoMedioARestaurar.TryGetValue(sku.Sku, out var custoMedio))
+                    sku.ReverterEntradaDeEstoque(item.Quantidade, custoMedio);
+                else
+                    sku.AjustarEstoque(-item.Quantidade);
+            }
+
+            await _skusRepository.AtualizarSku(sku.Sku, sku);
+        }
+
+        return Resultado<MovimentacoesEstoques>.Sucesso(await _movimentacoesRepository.CriarMovimentacao(movimentacao));
+    }
+
+    // Estorno = movimentação inversa apontando para a original.
+    private static (MovimentacoesEstoques Estorno, Dictionary<string, decimal>? CustosARestaurar) MontarEstorno(MovimentacoesEstoques original, string motivo)
+    {
+        var inverso = original.TipoMovimentacao == TipoMovimentacaoEstoque.ENTRADA ? TipoMovimentacaoEstoque.SAIDA : TipoMovimentacaoEstoque.ENTRADA;
+        var estorno = new MovimentacoesEstoques(inverso, OrigemMovimentacaoEstoque.ESTORNO, original.Id, motivo, $"Estorno da movimentação #{original.Id}");
+
+        foreach (var item in original.MovimentacoesEstoquesItens)
+            estorno.AdicionarItem(item.Sku, item.Quantidade, item.CustoUnitario);
+
+        // Reverter uma entrada devolve também o custo médio de antes dela.
+        var custos = original.TipoMovimentacao == TipoMovimentacaoEstoque.ENTRADA
+            ? original.MovimentacoesEstoquesItens.ToDictionary(i => i.Sku.Sku, i => i.CustoMedioAnterior ?? 0)
+            : null;
+
+        return (estorno, custos);
+    }
+
+    private async Task<Resultado<MovimentacoesEstoques>> ExecutarEmTransacao(MovimentacoesEstoques movimentacao, IReadOnlyDictionary<string, decimal>? custosARestaurar)
+    {
         return await ExecuteResultAsync(async () =>
         {
             try
             {
                 _unitOfWork.BeginTransaction();
-
-                foreach (var item in existente.MovimentacoesEstoquesItens)
-                {
-                    var sku = await _skusRepository.ObterSkuPorSku(item.Sku.Sku);
-                    if (sku != null)
-                    {
-                        if (existente.TipoMovimentacao == TipoMovimentacaoEstoque.ENTRADA)
-                        {
-                            sku.ReverterEntradaDeEstoque(item.Quantidade, item.CustoMedioAnterior ?? 0);
-                        }
-                        else if (existente.TipoMovimentacao == TipoMovimentacaoEstoque.SAIDA || existente.TipoMovimentacao == TipoMovimentacaoEstoque.VENDA)
-                        {
-                            sku.AjustarEstoque(item.Quantidade);
-                        }
-                        else if (existente.TipoMovimentacao == TipoMovimentacaoEstoque.BALANCO)
-                        {
-                            sku.AjustarEstoque((item.QuantidadeAnterior ?? 0) - sku.Estoque);
-                        }
-
-                        await _skusRepository.AtualizarSku(sku.Sku, sku);
-                    }
-                }
-
-                existente.Cancelar(motivo);
-                var atualizado = await _movimentacoesRepository.AtualizarMovimentacao(id, existente);
-                
-                _unitOfWork.Commit();
-                return Resultado<MovimentacoesEstoques>.Sucesso(atualizado);
+                var resultado = await Registrar(movimentacao, custosARestaurar);
+                if (resultado.Success) _unitOfWork.Commit(); else _unitOfWork.Rollback();
+                return resultado;
             }
             catch
             {
@@ -313,16 +192,5 @@ public sealed class MovimentacoesEstoquesService : BaseService
                 throw;
             }
         });
-    }
-
-    public async Task<bool> DeletarMovimentacao(int id)
-    {
-        var existente = await _movimentacoesRepository.ObterMovimentacaoPorId(id);
-        if (existente == null) return false;
-
-        if (existente.Status != StatusMovimentacaoEstoque.RASCUNHO)
-            throw new DomainException("Movimentações efetivadas não podem ser excluídas, apenas estornadas.");
-
-        return await _movimentacoesRepository.DeletarMovimentacao(id);
     }
 }

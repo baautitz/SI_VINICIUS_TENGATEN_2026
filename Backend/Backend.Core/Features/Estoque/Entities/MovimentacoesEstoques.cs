@@ -6,6 +6,7 @@ using Backend.Core.Features.Estoque.Entities.Enums;
 
 namespace Backend.Core.Features.Estoque.Entities;
 
+// Linha imutável do razão de estoque: depois de lançada nunca é alterada; o estorno é outra movimentação.
 public class MovimentacoesEstoques
 {
     private readonly List<MovimentacoesEstoquesItens> _itens = new();
@@ -13,49 +14,56 @@ public class MovimentacoesEstoques
     public int Id { get; private set; }
     public DateTime DataMovimentacao { get; private set; }
     public TipoMovimentacaoEstoque TipoMovimentacao { get; private set; }
-    public StatusMovimentacaoEstoque Status { get; private set; }
+    public OrigemMovimentacaoEstoque OrigemTipo { get; private set; }
+    public int? OrigemId { get; private set; }
+    public string? Motivo { get; private set; }
     public string? Observacao { get; private set; }
-    public string? MotivoEstorno { get; private set; }
     public Usuarios? Usuario { get; private set; }
-    public int? NfeId { get; private set; }
-    public int? VendaId { get; private set; }
+    public bool Estornada { get; private set; }
     public IReadOnlyCollection<MovimentacoesEstoquesItens> MovimentacoesEstoquesItens => _itens.AsReadOnly();
 
     protected MovimentacoesEstoques() { }
 
     public MovimentacoesEstoques(
         TipoMovimentacaoEstoque tipoMovimentacao,
-        Usuarios? usuario = null,
-        int? nfeId = null,
-        int? vendaId = null,
+        OrigemMovimentacaoEstoque origemTipo,
+        int? origemId = null,
+        string? motivo = null,
         string? observacao = null,
-        StatusMovimentacaoEstoque status = StatusMovimentacaoEstoque.RASCUNHO,
-        string? motivoEstorno = null)
+        Usuarios? usuario = null)
     {
+        if (origemTipo != OrigemMovimentacaoEstoque.MANUAL && origemId is null)
+            throw new DomainException("A origem da movimentação é obrigatória.");
+
+        motivo = string.IsNullOrWhiteSpace(motivo) ? null : motivo.Trim();
+        if (origemTipo is OrigemMovimentacaoEstoque.MANUAL or OrigemMovimentacaoEstoque.ESTORNO
+            && (motivo is null || motivo.Length < 5))
+            throw new DomainException("Motivo é obrigatório e deve ter pelo menos 5 caracteres.");
+
         TipoMovimentacao = tipoMovimentacao;
-        Usuario = usuario;
-        NfeId = nfeId;
-        VendaId = vendaId;
+        OrigemTipo = origemTipo;
+        OrigemId = origemId;
+        Motivo = motivo;
         Observacao = TextNormalization.NormalizeOrNull(observacao);
+        Usuario = usuario;
         DataMovimentacao = DateTime.UtcNow;
-        Status = status;
-        MotivoEstorno = motivoEstorno;
     }
 
     public MovimentacoesEstoques(
         int id,
         DateTime dataMovimentacao,
         TipoMovimentacaoEstoque tipoMovimentacao,
-        Usuarios? usuario = null,
-        int? nfeId = null,
-        int? vendaId = null,
-        string? observacao = null,
-        StatusMovimentacaoEstoque status = StatusMovimentacaoEstoque.RASCUNHO,
-        string? motivoEstorno = null)
-        : this(tipoMovimentacao, usuario, nfeId, vendaId, observacao, status, motivoEstorno)
+        OrigemMovimentacaoEstoque origemTipo,
+        int? origemId,
+        string? motivo,
+        string? observacao,
+        Usuarios? usuario,
+        bool estornada)
+        : this(tipoMovimentacao, origemTipo, origemId, motivo, observacao, usuario)
     {
         Id = id;
         DataMovimentacao = dataMovimentacao;
+        Estornada = estornada;
     }
 
     public void AdicionarItemExistente(MovimentacoesEstoquesItens item)
@@ -68,69 +76,14 @@ public class MovimentacoesEstoques
 
     public decimal TotalCusto => _itens.Sum(item => item.Quantidade * item.CustoUnitario);
 
-    public void AdicionarItem(Skus sku, decimal quantidade, decimal custoUnitario, string produtoNome, string unidadeMedidaSigla)
+    public void AdicionarItem(Skus sku, decimal quantidade, decimal custoUnitario)
     {
         if (sku == null)
             throw new DomainException("SKU é obrigatório para item de movimentação de estoque.");
 
-        if (string.IsNullOrWhiteSpace(produtoNome))
-            throw new DomainException("Nome do produto é obrigatório.");
-
-        if (string.IsNullOrWhiteSpace(unidadeMedidaSigla))
-            throw new DomainException("Unidade de medida é obrigatória.");
-
-        if (quantidade <= 0)
-            throw new DomainException("Quantidade deve ser maior que zero.");
-
-        if (custoUnitario < 0)
-            throw new DomainException("Custo unitário não pode ser negativo.");
-
         if (_itens.Any(x => x.Sku.Sku == sku.Sku))
             throw new DomainException("Já existe um item com este SKU na movimentação.");
 
-        _itens.Add(new MovimentacoesEstoquesItens(sku, quantidade, custoUnitario, produtoNome, unidadeMedidaSigla));
-    }
-
-    public void RemoverItem(MovimentacoesEstoquesItens item)
-    {
-        if (item == null)
-            throw new DomainException("Item de movimentação é obrigatório.");
-
-        if (!_itens.Contains(item))
-            throw new DomainException("Item não pertence a esta movimentação.");
-
-        _itens.Remove(item);
-    }
-
-    public void AtualizarObservacao(string? observacao)
-    {
-        Observacao = TextNormalization.NormalizeOrNull(observacao);
-    }
-
-    public void Confirmar()
-    {
-        if (Status != StatusMovimentacaoEstoque.RASCUNHO)
-            throw new DomainException($"Apenas movimentações em rascunho podem ser confirmadas. Status atual: {Status}");
-
-        if (!_itens.Any())
-            throw new DomainException("A movimentação deve conter pelo menos um item para ser confirmada.");
-
-        Status = StatusMovimentacaoEstoque.CONFIRMADA;
-        DataMovimentacao = DateTime.UtcNow;
-    }
-
-    public void Cancelar(string? motivo)
-    {
-        if (string.IsNullOrWhiteSpace(motivo))
-            throw new DomainException("Motivo do estorno é obrigatório.");
-
-        if (motivo.Trim().Length < 5)
-            throw new DomainException("Motivo do estorno deve ter pelo menos 5 caracteres.");
-
-        if (Status != StatusMovimentacaoEstoque.CONFIRMADA)
-            throw new DomainException($"Apenas movimentações confirmadas podem ser canceladas. Status atual: {Status}");
-
-        MotivoEstorno = motivo.Trim();
-        Status = StatusMovimentacaoEstoque.CANCELADA;
+        _itens.Add(new MovimentacoesEstoquesItens(sku, quantidade, custoUnitario, sku.NomeExibicao, sku.Produto!.UnidadeMedida.Sigla));
     }
 }

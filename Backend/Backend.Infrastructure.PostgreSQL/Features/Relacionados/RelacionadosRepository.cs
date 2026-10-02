@@ -18,7 +18,7 @@ public class RelacionadosRepository : IRelacionadosRepository
         new { Id = vendaId });
 
     public Task<IReadOnlyList<RelacionadoItem>> MovimentacoesPorVenda(int vendaId) => Consultar(
-        "SELECT id AS Id, 'Movimentação #' || id AS Descricao, status::text AS Detalhe FROM movimentacoes_estoque WHERE venda_id = @Id ORDER BY id;",
+        "SELECT id AS Id, 'Movimentação #' || id AS Descricao, tipo_movimentacao::text AS Detalhe FROM movimentacoes_estoque WHERE origem_tipo = 'VENDA' AND origem_id = @Id ORDER BY id;",
         new { Id = vendaId });
 
     public Task<IReadOnlyList<RelacionadoItem>> ContasReceberPorCliente(int clienteId) => Consultar(
