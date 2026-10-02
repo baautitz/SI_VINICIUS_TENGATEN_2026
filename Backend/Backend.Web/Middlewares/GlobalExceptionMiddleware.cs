@@ -62,6 +62,15 @@ public class GlobalExceptionMiddleware
                 mensagem = exception.Message;
                 _logger.LogWarning("Regra de domínio violada: {Message}", exception.Message);
             }
+            else if (exception is BadHttpRequestException badRequest)
+            {
+                statusCode = (HttpStatusCode)badRequest.StatusCode; // ex.: 413 corpo maior que o limite
+                erroCode = statusCode == HttpStatusCode.RequestEntityTooLarge ? "CORPO_MUITO_GRANDE" : "REQUISICAO_INVALIDA";
+                mensagem = statusCode == HttpStatusCode.RequestEntityTooLarge
+                    ? "O corpo da requisição excede o tamanho máximo permitido."
+                    : "Requisição inválida.";
+                _logger.LogWarning("Requisição rejeitada: {Message}", badRequest.Message);
+            }
             else
             {
                 _logger.LogError(exception, "Ocorreu uma exceção não tratada: {Message}", exception.Message);
