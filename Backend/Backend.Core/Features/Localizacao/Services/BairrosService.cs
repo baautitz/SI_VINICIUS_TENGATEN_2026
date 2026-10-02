@@ -20,11 +20,11 @@ public sealed class BairrosService : BaseService
         _cidadesRepository = cidadesRepository;
     }
 
-    public Task<ResultadoPaginado<Bairros>> ObterBairros(string? search, int pagina = 1, int tamanhoPagina = 20)
+    public Task<ResultadoPaginado<Bairros>> ObterBairros(string? search, int pagina = 1, int tamanhoPagina = 20, int? cidadeId = null)
     {
         if (string.IsNullOrWhiteSpace(search))
-            return _bairrosRepository.ObterBairros(pagina, tamanhoPagina);
-        return _bairrosRepository.PesquisarBairros(search, pagina, tamanhoPagina);
+            return _bairrosRepository.ObterBairros(pagina, tamanhoPagina, cidadeId);
+        return _bairrosRepository.PesquisarBairros(search, pagina, tamanhoPagina, cidadeId);
     }
 
     public Task<Bairros?> ObterBairroPorId(int id)

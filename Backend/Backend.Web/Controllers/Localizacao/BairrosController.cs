@@ -21,8 +21,8 @@ public class BairrosController : ControllerBase
     }
 
     [HttpGet]
-    public Task<ResultadoPaginado<Bairros>> GetBairros([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-        => _bairrosService.ObterBairros(search, page, pageSize);
+    public Task<ResultadoPaginado<Bairros>> GetBairros([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] int? cidadeId = null)
+        => _bairrosService.ObterBairros(search, page, pageSize, cidadeId);
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<Bairros>> GetBairro(int id)

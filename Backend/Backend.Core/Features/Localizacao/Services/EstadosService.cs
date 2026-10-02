@@ -20,11 +20,11 @@ public sealed class EstadosService : BaseService
         _paisesRepository = paisesRepository;
     }
 
-    public Task<ResultadoPaginado<Estados>> ObterEstados(string? search, int pagina = 1, int tamanhoPagina = 20)
+    public Task<ResultadoPaginado<Estados>> ObterEstados(string? search, int pagina = 1, int tamanhoPagina = 20, int? paisId = null)
     {
         if (string.IsNullOrWhiteSpace(search))
-            return _estadosRepository.ObterEstados(pagina, tamanhoPagina);
-        return _estadosRepository.PesquisarEstados(search, pagina, tamanhoPagina);
+            return _estadosRepository.ObterEstados(pagina, tamanhoPagina, paisId);
+        return _estadosRepository.PesquisarEstados(search, pagina, tamanhoPagina, paisId);
     }
 
     public Task<Estados?> ObterEstadoPorId(int id)

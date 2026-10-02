@@ -20,11 +20,11 @@ public sealed class CidadesService : BaseService
         _estadosRepository = estadosRepository;
     }
 
-    public Task<ResultadoPaginado<Cidades>> ObterCidades(string? search, int pagina = 1, int tamanhoPagina = 20)
+    public Task<ResultadoPaginado<Cidades>> ObterCidades(string? search, int pagina = 1, int tamanhoPagina = 20, int? estadoId = null)
     {
         if (string.IsNullOrWhiteSpace(search))
-            return _cidadesRepository.ObterCidades(pagina, tamanhoPagina);
-        return _cidadesRepository.PesquisarCidades(search, pagina, tamanhoPagina);
+            return _cidadesRepository.ObterCidades(pagina, tamanhoPagina, estadoId);
+        return _cidadesRepository.PesquisarCidades(search, pagina, tamanhoPagina, estadoId);
     }
 
     public Task<Cidades?> ObterCidadePorId(int id)

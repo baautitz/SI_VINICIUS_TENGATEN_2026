@@ -17,6 +17,8 @@ export const paisesApi = {
 export const estadosApi = {
   list: (search?: string, page = 1, pageSize = 20) =>
     http.get<PaginatedResult<Estado>>(`/api/localizacao/estados?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`),
+  listByPais: (paisId: number, search?: string, page = 1, pageSize = 100) =>
+    http.get<PaginatedResult<Estado>>(`/api/localizacao/estados?paisId=${paisId}&search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`),
   getById: (id: number) => http.get<Estado>(`/api/localizacao/estados/${id}`),
   create: (data: EstadoFormValues) => http.post<Resultado<Estado>>("/api/localizacao/estados", data),
   update: (id: number, data: EstadoFormValues) => http.put<Resultado<Estado>>(`/api/localizacao/estados/${id}`, data),
@@ -26,6 +28,8 @@ export const estadosApi = {
 export const cidadesApi = {
   list: (search?: string, page = 1, pageSize = 20) =>
     http.get<PaginatedResult<Cidade>>(`/api/localizacao/cidades?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`),
+  listByEstado: (estadoId: number, search?: string, page = 1, pageSize = 100) =>
+    http.get<PaginatedResult<Cidade>>(`/api/localizacao/cidades?estadoId=${estadoId}&search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`),
   getById: (id: number) => http.get<Cidade>(`/api/localizacao/cidades/${id}`),
   create: (data: CidadeFormValues) => http.post<Resultado<Cidade>>("/api/localizacao/cidades", data),
   update: (id: number, data: CidadeFormValues) => http.put<Resultado<Cidade>>(`/api/localizacao/cidades/${id}`, data),
@@ -35,6 +39,8 @@ export const cidadesApi = {
 export const bairrosApi = {
   list: (search?: string, page = 1, pageSize = 20) =>
     http.get<PaginatedResult<Bairro>>(`/api/localizacao/bairros?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`),
+  listByCidade: (cidadeId: number, search?: string, page = 1, pageSize = 100) =>
+    http.get<PaginatedResult<Bairro>>(`/api/localizacao/bairros?cidadeId=${cidadeId}&search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`),
   getById: (id: number) => http.get<Bairro>(`/api/localizacao/bairros/${id}`),
   create: (data: BairroFormValues) => http.post<Resultado<Bairro>>("/api/localizacao/bairros", data),
   update: (id: number, data: BairroFormValues) => http.put<Resultado<Bairro>>(`/api/localizacao/bairros/${id}`, data),

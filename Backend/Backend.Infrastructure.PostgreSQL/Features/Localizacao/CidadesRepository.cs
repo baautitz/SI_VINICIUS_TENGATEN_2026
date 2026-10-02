@@ -13,23 +13,24 @@ public class CidadesRepository : ICidadesRepository
 
     public CidadesRepository(DbSession session) => _session = session;
 
-    public async Task<ResultadoPaginado<Cidades>> ObterCidades(int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<Cidades>> ObterCidades(int pagina = 1, int tamanhoDaPagina = 20, int? estadoId = null)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
-        const string sqlCount = "SELECT COUNT(*) FROM cidades;";
+        const string sqlCount = "SELECT COUNT(*) FROM cidades WHERE (@EstadoId::int IS NULL OR estado_id = @EstadoId);";
         const string sqlData = @"
             SELECT ci.id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM cidades ci
             INNER JOIN estados st ON st.id = ci.estado_id
             INNER JOIN paises p ON p.id = st.pais_id
+            WHERE (@EstadoId::int IS NULL OR ci.estado_id = @EstadoId)
             ORDER BY ci.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
-        var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
+        var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { EstadoId = estadoId }, transaction: _session.Transaction);
         var itens = await _session.Connection.QueryAsync<Cidades, Estados, Paises, Cidades>(
             sqlData,
             (cidade, estado, pais) => { estado.AtualizarResultado(estado.Estado, estado.Uf, pais); cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado); return cidade; },
-            new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
+            new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset, EstadoId = estadoId },
             transaction: _session.Transaction,
             splitOn: "EstadoId,PaisId"
         );
@@ -75,24 +76,24 @@ public class CidadesRepository : ICidadesRepository
         return await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction) > 0;
     }
 
-    public async Task<ResultadoPaginado<Cidades>> PesquisarCidades(string termo, int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<Cidades>> PesquisarCidades(string termo, int pagina = 1, int tamanhoDaPagina = 20, int? estadoId = null)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
-        const string sqlCount = "SELECT COUNT(*) FROM cidades WHERE cidade ILIKE @Termo OR ddd ILIKE @Termo;";
+        const string sqlCount = "SELECT COUNT(*) FROM cidades WHERE (cidade ILIKE @Termo OR ddd ILIKE @Termo) AND (@EstadoId::int IS NULL OR estado_id = @EstadoId);";
         const string sqlData = @"
             SELECT ci.id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM cidades ci
             INNER JOIN estados st ON st.id = ci.estado_id
             INNER JOIN paises p ON p.id = st.pais_id
-            WHERE ci.cidade ILIKE @Termo OR ci.ddd ILIKE @Termo
+            WHERE (ci.cidade ILIKE @Termo OR ci.ddd ILIKE @Termo) AND (@EstadoId::int IS NULL OR ci.estado_id = @EstadoId)
             ORDER BY ci.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
-        var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
+        var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%", EstadoId = estadoId }, transaction: _session.Transaction);
         var itens = await _session.Connection.QueryAsync<Cidades, Estados, Paises, Cidades>(
             sqlData,
             (cidade, estado, pais) => { estado.AtualizarResultado(estado.Estado, estado.Uf, pais); cidade.AtualizarResultado(cidade.Cidade, cidade.Ddd, estado); return cidade; },
-            new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
+            new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset, EstadoId = estadoId },
             transaction: _session.Transaction,
             splitOn: "EstadoId,PaisId"
         );

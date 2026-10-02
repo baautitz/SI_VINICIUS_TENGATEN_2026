@@ -21,8 +21,8 @@ public class EstadosController : ControllerBase
     }
 
     [HttpGet]
-    public Task<ResultadoPaginado<Estados>> GetEstados([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-        => _estadosService.ObterEstados(search, page, pageSize);
+    public Task<ResultadoPaginado<Estados>> GetEstados([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] int? paisId = null)
+        => _estadosService.ObterEstados(search, page, pageSize, paisId);
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<Estados>> GetEstado(int id)

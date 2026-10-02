@@ -13,22 +13,23 @@ public class EstadosRepository : IEstadosRepository
 
     public EstadosRepository(DbSession session) => _session = session;
 
-    public async Task<ResultadoPaginado<Estados>> ObterEstados(int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<Estados>> ObterEstados(int pagina = 1, int tamanhoDaPagina = 20, int? paisId = null)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
-        const string sqlCount = "SELECT COUNT(*) FROM estados;";
+        const string sqlCount = "SELECT COUNT(*) FROM estados WHERE (@PaisId::int IS NULL OR pais_id = @PaisId);";
         const string sqlData = @"
             SELECT e.id, e.estado, e.uf, p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM estados e
             INNER JOIN paises p ON p.id = e.pais_id
+            WHERE (@PaisId::int IS NULL OR e.pais_id = @PaisId)
             ORDER BY e.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
-        var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
+        var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { PaisId = paisId }, transaction: _session.Transaction);
         var itens = await _session.Connection.QueryAsync<Estados, Paises, Estados>(
             sqlData,
             (estado, pais) => { estado.AtualizarResultado(estado.Estado, estado.Uf, pais); return estado; },
-            new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
+            new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset, PaisId = paisId },
             transaction: _session.Transaction,
             splitOn: "PaisId"
         );
@@ -73,23 +74,23 @@ public class EstadosRepository : IEstadosRepository
         return await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction) > 0;
     }
 
-    public async Task<ResultadoPaginado<Estados>> PesquisarEstados(string termo, int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<Estados>> PesquisarEstados(string termo, int pagina = 1, int tamanhoDaPagina = 20, int? paisId = null)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
-        const string sqlCount = "SELECT COUNT(*) FROM estados WHERE estado ILIKE @Termo OR uf ILIKE @Termo;";
+        const string sqlCount = "SELECT COUNT(*) FROM estados WHERE (estado ILIKE @Termo OR uf ILIKE @Termo) AND (@PaisId::int IS NULL OR pais_id = @PaisId);";
         const string sqlData = @"
             SELECT e.id, e.estado, e.uf, p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM estados e
             INNER JOIN paises p ON p.id = e.pais_id
-            WHERE e.estado ILIKE @Termo OR e.uf ILIKE @Termo
+            WHERE (e.estado ILIKE @Termo OR e.uf ILIKE @Termo) AND (@PaisId::int IS NULL OR e.pais_id = @PaisId)
             ORDER BY e.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
-        var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
+        var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%", PaisId = paisId }, transaction: _session.Transaction);
         var itens = await _session.Connection.QueryAsync<Estados, Paises, Estados>(
             sqlData,
             (estado, pais) => { estado.AtualizarResultado(estado.Estado, estado.Uf, pais); return estado; },
-            new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
+            new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset, PaisId = paisId },
             transaction: _session.Transaction,
             splitOn: "PaisId"
         );
