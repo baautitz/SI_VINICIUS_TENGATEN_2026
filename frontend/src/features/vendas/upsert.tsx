@@ -713,7 +713,9 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
   };
 
   const registerDirty = () => {
-    activeWindow.setDirtyCheck(() => form.state.isDirty || itens.length > 0);
+    activeWindow.setDirtyCheck(
+      () => !readOnly && (!editingItem || form.state.isDirty || itens.length > 0),
+    );
     return () => activeWindow.setDirtyCheck(null);
   };
 
