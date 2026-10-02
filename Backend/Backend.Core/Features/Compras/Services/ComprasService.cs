@@ -180,6 +180,8 @@ public sealed class ComprasService : BaseService
                 dataEmissao: criada.DataCompra, origemTipo: OrigemTituloFinanceiro.COMPRA, origemId: criada.Id,
                 transportadoraId: transportadora!.Id);
             frete.AdicionarParcela(1, command.VencimentoFreteTerceiro!.Value, criada.ValorFreteTerceiro);
+            if (aVista)
+                frete.RegistrarPagamento(1, criada.ValorFreteTerceiro);
             await _contasPagarRepository.CriarContaPagar(frete);
         }
 
