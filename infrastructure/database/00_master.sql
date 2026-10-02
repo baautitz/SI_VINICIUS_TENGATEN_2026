@@ -49,6 +49,7 @@ SET search_path TO projeto_sistemas, public;
 
 \ir estoque/schema/movimentacoes_estoque.sql
 \ir estoque/schema/movimentacoes_estoque_itens.sql
+\ir estoque/schema/balancos.sql
 
 \ir financeiro/schema/financeiro_tipos.sql
 \ir financeiro/schema/contas_pagar.sql
