@@ -19,6 +19,7 @@ public interface INfesRepository
     public Task<Nfes> CriarNfe(Nfes nfe);
     public Task<Nfes> AtualizarNfe(int id, Nfes nfe);
     public Task<bool> DeletarNfe(int id);
-    public Task<ResultadoPaginado<NfesResumo>> ObterNfesResumo(int pagina = 1, int tamanhoDaPagina = 20);
-    public Task<ResultadoPaginado<NfesResumo>> PesquisarNfes(string termo, int pagina = 1, int tamanhoDaPagina = 20);
+    // Resumos sem xml_documento; tipoOperacao/statusNfe filtram pelo nome do enum (ex.: "SAIDA", "EMITIDA").
+    public Task<ResultadoPaginado<NfesResumo>> ObterNfesResumo(int pagina = 1, int tamanhoDaPagina = 20, string? tipoOperacao = null, string? statusNfe = null);
+    public Task<ResultadoPaginado<NfesResumo>> PesquisarNfes(string termo, int pagina = 1, int tamanhoDaPagina = 20, string? tipoOperacao = null, string? statusNfe = null);
 }

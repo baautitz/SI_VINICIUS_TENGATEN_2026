@@ -385,52 +385,37 @@ public class NfesRepository : INfesRepository
         return linhasAfetadas > 0;
     }
 
-    public async Task<ResultadoPaginado<NfesResumo>> ObterNfesResumo(int pagina = 1, int tamanhoDaPagina = 20)
-    {
-        var offset = (pagina - 1) * tamanhoDaPagina;
+    public Task<ResultadoPaginado<NfesResumo>> ObterNfesResumo(int pagina = 1, int tamanhoDaPagina = 20, string? tipoOperacao = null, string? statusNfe = null)
+        => ListarResumo(null, pagina, tamanhoDaPagina, tipoOperacao, statusNfe);
 
-        const string sql = @"
-            SELECT COUNT(*) FROM nfes;
+    public Task<ResultadoPaginado<NfesResumo>> PesquisarNfes(string termo, int pagina = 1, int tamanhoDaPagina = 20, string? tipoOperacao = null, string? statusNfe = null)
+        => ListarResumo(termo, pagina, tamanhoDaPagina, tipoOperacao, statusNfe);
+
+    // cliente_nome_razaosocial guarda o snapshot da contraparte (cliente na saída, fornecedor na entrada).
+    private async Task<ResultadoPaginado<NfesResumo>> ListarResumo(string? termo, int pagina, int tamanhoDaPagina, string? tipoOperacao, string? statusNfe)
+    {
+        const string where = @"
+            WHERE (@Termo IS NULL OR chave_acesso ILIKE @Termo OR cliente_nome_razaosocial ILIKE @Termo
+                   OR emitente_nome_razaosocial ILIKE @Termo OR numero::text ILIKE @Termo)
+              AND (@TipoOperacao IS NULL OR tipo_operacao::text = @TipoOperacao)
+              AND (@StatusNfe IS NULL OR status_nfe::text = @StatusNfe)";
+
+        var sql = $@"
+            SELECT COUNT(*) FROM nfes {where};
 
             SELECT id, chave_acesso, tipo_operacao, numero, serie, data_emissao, valor_total, status_nfe
-            FROM nfes
-            ORDER BY data_emissao DESC
-            LIMIT @TamanhoDaPagina OFFSET @Offset;";
-
-        using var multi = await _session.Connection.QueryMultipleAsync(
-            sql, new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
-            transaction: _session.Transaction);
-
-        var total = await multi.ReadSingleAsync<int>();
-        var itens = await multi.ReadAsync<NfesResumo>();
-
-        return new ResultadoPaginado<NfesResumo>(itens, total, pagina, tamanhoDaPagina);
-    }
-
-    public async Task<ResultadoPaginado<NfesResumo>> PesquisarNfes(string termo, int pagina = 1, int tamanhoDaPagina = 20)
-    {
-        var offset = (pagina - 1) * tamanhoDaPagina;
-
-        const string sql = @"
-            SELECT COUNT(*)
-            FROM nfes
-            WHERE chave_acesso ILIKE @Termo
-               OR cliente_nome_razaosocial ILIKE @Termo
-               OR emitente_nome_razaosocial ILIKE @Termo
-               OR numero::text ILIKE @Termo;
-
-            SELECT id, chave_acesso, tipo_operacao, numero, serie, data_emissao, valor_total, status_nfe
-            FROM nfes
-            WHERE chave_acesso ILIKE @Termo
-               OR cliente_nome_razaosocial ILIKE @Termo
-               OR emitente_nome_razaosocial ILIKE @Termo
-               OR numero::text ILIKE @Termo
-            ORDER BY data_emissao DESC
+            FROM nfes {where}
+            ORDER BY data_emissao DESC, id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(
             sql,
-            new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
+            new
+            {
+                Termo = string.IsNullOrWhiteSpace(termo) ? null : $"%{termo.Trim()}%",
+                TipoOperacao = tipoOperacao, StatusNfe = statusNfe,
+                TamanhoDaPagina = tamanhoDaPagina, Offset = (pagina - 1) * tamanhoDaPagina
+            },
             transaction: _session.Transaction);
 
         var total = await multi.ReadSingleAsync<int>();

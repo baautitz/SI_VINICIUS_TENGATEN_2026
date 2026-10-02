@@ -2,6 +2,7 @@ using Backend.Core.Common.Results;
 using Backend.Core.Features.NFe.Commands;
 using Backend.Core.Features.NFe.DTOs;
 using Backend.Core.Features.NFe.Entities;
+using Backend.Core.Features.NFe.Entities.Enums;
 using Backend.Core.Features.NFe.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -20,6 +21,13 @@ public class NfesController : ControllerBase
         _importacaoService = importacaoService;
         _saidaService = saidaService;
     }
+
+    // Listagem paginada de resumos (sem xml_documento). Filtros: tipoOperacao (ENTRADA/SAIDA), statusNfe, search.
+    [HttpGet("api/nfes")]
+    public Task<ResultadoPaginado<NfesResumo>> GetNfes(
+        [FromQuery] string? search, [FromQuery] TipoOperacao? tipoOperacao, [FromQuery] StatusNfe? statusNfe,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        => _importacaoService.PesquisarNfes(search, Math.Max(page, 1), Math.Clamp(pageSize, 1, 100), tipoOperacao, statusNfe);
 
     [HttpGet("api/nfes/{id:int}")]
     public async Task<ActionResult<Nfes>> GetNfe(int id)

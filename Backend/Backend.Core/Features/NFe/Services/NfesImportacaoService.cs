@@ -54,6 +54,9 @@ public sealed class NfesImportacaoService : BaseService
         _unitOfWork = unitOfWork;
     }
 
+    public Task<ResultadoPaginado<NfesResumo>> PesquisarNfes(string? termo, int pagina, int tamanhoDaPagina, TipoOperacao? tipoOperacao, StatusNfe? statusNfe)
+        => _nfesRepository.PesquisarNfes(termo ?? "", pagina, tamanhoDaPagina, tipoOperacao?.ToString(), statusNfe?.ToString());
+
     public Task<Nfes?> ObterNfePorId(int id) => _nfesRepository.ObterNfePorId(id);
     public Task<string?> ObterXmlDocumento(int id) => _nfesRepository.ObterXmlDocumento(id);
 
