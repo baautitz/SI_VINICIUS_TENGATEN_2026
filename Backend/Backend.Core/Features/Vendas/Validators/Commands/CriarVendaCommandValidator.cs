@@ -30,7 +30,7 @@ public class CriarVendaCommandValidator : AbstractValidator<CriarVendaCommand>
                 .GreaterThan(0).WithMessage("Quantidade do item deve ser maior que zero.");
 
             item.RuleFor(i => i.ValorUnitario)
-                .GreaterThanOrEqualTo(0).WithMessage("Valor unitário do item não pode ser negativo.");
+                .GreaterThan(0).WithMessage("Valor unitário do item deve ser maior que zero.");
 
             item.RuleFor(i => i)
                 .Must(i => i.ValorDesconto <= i.Quantidade * i.ValorUnitario)

@@ -24,8 +24,8 @@ public class VendaItens
         if (quantidade <= 0)
             throw new DomainException("Quantidade deve ser maior que zero.");
 
-        if (valorUnitario < 0)
-            throw new DomainException("Valor unitário não pode ser negativo.");
+        if (valorUnitario <= 0)
+            throw new DomainException("Valor unitário deve ser maior que zero.");
 
         if (sku == null)
             throw new DomainException("SKU é obrigatório.");
@@ -48,8 +48,8 @@ public class VendaItens
 
     public void AtualizarValorUnitario(decimal valorUnitario)
     {
-        if (valorUnitario < 0)
-            throw new DomainException("Valor unitário não pode ser negativo.");
+        if (valorUnitario <= 0)
+            throw new DomainException("Valor unitário deve ser maior que zero.");
 
         ValorUnitario = valorUnitario;
         AtualizarValorTotal();
