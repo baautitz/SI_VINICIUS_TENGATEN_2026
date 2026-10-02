@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS nfes (
   compra_id INTEGER,
   justificativa_cancelamento VARCHAR(255),
   data_cancelamento TIMESTAMP WITH TIME ZONE,
+  -- XML original da NF-e de entrada importada, guardado sem alteração.
+  xml_documento TEXT,
   valor_produtos NUMERIC(14, 2) NOT NULL DEFAULT 0,
   valor_desconto NUMERIC(14, 2) NOT NULL DEFAULT 0,
   valor_frete NUMERIC(14, 2) NOT NULL DEFAULT 0,
@@ -80,6 +82,7 @@ ALTER TABLE nfes ADD COLUMN IF NOT EXISTS fornecedor_id INTEGER;
 ALTER TABLE nfes ADD COLUMN IF NOT EXISTS compra_id INTEGER;
 ALTER TABLE nfes ADD COLUMN IF NOT EXISTS justificativa_cancelamento VARCHAR(255);
 ALTER TABLE nfes ADD COLUMN IF NOT EXISTS data_cancelamento TIMESTAMP WITH TIME ZONE;
+ALTER TABLE nfes ADD COLUMN IF NOT EXISTS xml_documento TEXT;
 ALTER TABLE nfes ALTER COLUMN cliente_id DROP NOT NULL;
 ALTER TABLE nfes DROP CONSTRAINT IF EXISTS nfes_emitente_serie_numero_unique;
 DO $$
