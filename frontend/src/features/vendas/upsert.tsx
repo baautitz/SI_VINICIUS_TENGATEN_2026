@@ -4,7 +4,11 @@ import type React from "react";
 import { useState, useRef, useMemo, useCallback } from "react";
 import { WindowActions } from "@/imperative-ui";
 import { useForm, useStore } from "@tanstack/react-form";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { FilePlus2 } from "lucide-react";
+import { nfesApi } from "@/api/nfes";
+import { abrirNfe } from "@/features/nfes";
+import { ApiRequestError } from "@/utils/api-error";
 import { cn } from "@/lib/utils";
 import { Button } from "@/ui/primitives";
 import { Kbd, KbdGroup } from "@/ui/primitives";
@@ -281,6 +285,37 @@ function formatCurrency(value: number) {
 function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
   const activeWindow = useWindow<true>();
   const ui = useUi();
+  const queryClient = useQueryClient();
+  const [gerandoNfe, setGerandoNfe] = useState(false);
+
+  const gerarNfe = async () => {
+    if (gerandoNfe || !editingItem) return;
+    setGerandoNfe(true);
+    try {
+      const r = await nfesApi.emitirDeVenda(editingItem.id);
+      await queryClient.invalidateQueries({ queryKey: ["nfes"] });
+      ui.feedback.notify({ type: "success", title: "NF-e gerada com sucesso." });
+      if (r.data) await abrirNfe(ui, r.data.id, r.data.numero);
+    } catch (error) {
+      const e = error instanceof ApiRequestError ? error : null;
+      if (e?.status === 409) {
+        // Venda já tem NF-e ativa: a mensagem do backend traz o id; leva o usuário até ela.
+        ui.feedback.notify({ type: "info", title: "Esta venda já possui uma NF-e ativa." });
+        const id = /NF-e (\d+)/.exec(e.message)?.[1];
+        if (id) await abrirNfe(ui, Number(id));
+      } else if (e?.errors.some((x) => x.code === "EMITENTE_SEM_UF")) {
+        ui.feedback.notify({
+          type: "error",
+          title: "Emitente sem UF.",
+          description: "Cadastre bairro, cidade e estado no emitente da venda antes de gerar a NF-e.",
+        });
+      } else {
+        ui.feedback.notifyError(error, { fallbackTitle: "Não foi possível gerar a NF-e." });
+      }
+    } finally {
+      setGerandoNfe(false);
+    }
+  };
 
   const { openList } = useRelated();
   const {
@@ -539,6 +574,16 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     });
 
   const commands = [
+    {
+      id: "vendas.gerar-nfe",
+      hotkey: "Alt+G" as const,
+      label: "Gerar NF-e",
+      enabled: readOnly && !!editingItem,
+      run: (event: KeyboardEvent) => {
+        event.preventDefault();
+        void gerarNfe();
+      },
+    },
     {
       id: "vendas.view-devolucoes",
       hotkey: "Alt+D" as const,
@@ -824,6 +869,9 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
             </Button>
             <Button type="button" variant="outline" onClick={openObservacao}>
               <FileText /> Observação <Kbd>Alt+O</Kbd>
+            </Button>
+            <Button type="button" variant="outline" disabled={gerandoNfe} onClick={gerarNfe}>
+              <FilePlus2 /> {gerandoNfe ? "Gerando..." : "Gerar NF-e"} <Kbd>Alt+G</Kbd>
             </Button>
           </div>
         )}

@@ -50,6 +50,7 @@ export interface Devolucao {
   dataDevolucao: string;
   motivo: string;
   valorTotal: number;
+  nfeAtiva?: { nfeId: number; chaveAcesso: string } | null;
   itens: Array<{
     id: number;
     vendaItemId: number;

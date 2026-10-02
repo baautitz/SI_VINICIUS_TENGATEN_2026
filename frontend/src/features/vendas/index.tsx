@@ -13,6 +13,7 @@ import type { CriarDevolucaoValues, Venda } from "./types";
 import { useFeatureList } from "@/hooks/use-feature-list";
 import { vendasApi } from "@/api/vendas";
 import { useUi } from "@/ui/imperative";
+import { abrirNfe } from "@/features/nfes";
 
 export * from "./types";
 
@@ -88,9 +89,19 @@ export function VendasFeature() {
     if (result.status !== "confirmed") return;
 
     try {
-      await vendasApi.createDevolucao(item.id, result.value);
+      const res = await vendasApi.createDevolucao(item.id, result.value);
       await invalidate();
       ui.feedback.notify({ type: "success", title: "Devolução registrada com sucesso." });
+      const nfe = res?.data?.nfeAtiva;
+      if (nfe) {
+        // A devolução não gera NF-e de devolução nem cancela a nota: só avisa.
+        const r = await ui.windows.confirm({
+          title: "Esta venda possui NF-e ativa",
+          description: `A devolução não altera a NF-e (chave ${nfe.chaveAcesso}). Se necessário, cancele-a manualmente. Deseja abrir a NF-e?`,
+          confirmLabel: "Abrir NF-e",
+        });
+        if (r) await abrirNfe(ui, nfe.nfeId);
+      }
     } catch (error) {
       ui.feedback.notifyError(error, {
         fallbackTitle: "Não foi possível registrar a devolução.",
