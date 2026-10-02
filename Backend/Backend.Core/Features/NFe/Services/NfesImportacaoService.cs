@@ -69,7 +69,7 @@ public sealed class NfesImportacaoService : BaseService
         var avisos = new List<string>();
         var t = dados.Totais;
         if (Math.Abs(t.Nota - (t.Produtos - t.Desconto + t.Frete + t.Seguro + t.Outras)) > 0.01m)
-            avisos.Add("vNF não confere com vProd - vDesc + vFrete + vSeg + vOutro.");
+            avisos.Add("vNF não confere com vProd - vDesc + vFrete + vSeg + vOutro (IPI/ST etc.): a diferença entra no custo como outras despesas.");
         if (dados.Parcelas.Count > 0 && Math.Abs(dados.Parcelas.Sum(p => p.Valor) - t.Nota) > 0.01m)
             avisos.Add("A soma das parcelas (cobr/dup) não confere com vNF.");
         if (dados.ModalidadeFrete == 1)
@@ -161,10 +161,13 @@ public sealed class NfesImportacaoService : BaseService
 
             var t = dados.Totais;
             var descontoItens = dados.Itens.Sum(i => i.ValorDesconto);
+            // IPI, ST, II, FCP ST, ICMS desonerado etc. não são lidos: a diferença até o vNF entra como despesa (ou desconto),
+            // integra o custo e fecha as parcelas com o vNF. Créditos recuperáveis ficam fora do escopo.
+            var diferenca = t.Nota - (dados.Itens.Sum(i => i.ValorProdutos - i.ValorDesconto) + t.Frete + t.Seguro + t.Outras);
             var compraCommand = new CriarCompraCommand(
                 DateTime.UtcNow, command.EmitenteId, fornecedor.Id,
-                t.Frete, t.Seguro, t.Outras,
-                Math.Max(0m, t.Desconto - descontoItens), // vDesc da nota já inclui o desconto dos itens
+                t.Frete, t.Seguro, t.Outras + Math.Max(diferenca, 0m),
+                Math.Max(0m, t.Desconto - descontoItens) + Math.Max(-diferenca, 0m), // vDesc da nota já inclui o desconto dos itens
                 command.ValorFreteTerceiro, transportadora.Data?.Id, command.VencimentoFreteTerceiro,
                 dados.InformacoesComplementares,
                 dados.Itens.Select(i => new CriarCompraItemCommand(skus[i.NumeroItem].Sku, i.Quantidade, i.ValorUnitario, i.ValorDesconto, i.CodigoProduto, i.ValorProdutos)).ToList(),
