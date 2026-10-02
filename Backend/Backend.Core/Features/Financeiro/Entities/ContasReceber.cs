@@ -176,6 +176,13 @@ public class ContasReceber
         AtualizarSaldo();
     }
 
+    public void Cancelar()
+    {
+        foreach (var parcela in _parcelas)
+            parcela.Cancelar();
+        AtualizarSaldo();
+    }
+
     private void AtualizarSaldo()
     {
         var recebido = _parcelas.Sum(p => p.ValorRecebido);

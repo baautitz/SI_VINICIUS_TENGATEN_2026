@@ -295,8 +295,8 @@ public sealed class VendasService : BaseService
                 if (temPagas)
                     throw new DomainException("Não é possível cancelar uma venda com parcelas financeiras já pagas ou parciais.");
 
-                // Delete or cancel the title
-                await _contasRepository.DeletarContaReceber(contaVenda.Id);
+                contaVenda.Cancelar();
+                await _contasRepository.AtualizarContaReceber(contaVenda.Id, contaVenda);
             }
 
             var venda = await _vendasRepository.ObterVendaPorId(id);

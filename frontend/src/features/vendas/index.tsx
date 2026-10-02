@@ -168,7 +168,7 @@ function VendasCancelWindow({ venda }: VendasCancelWindowProps) {
     <div className="flex flex-col gap-4">
       <p className="text-destructive text-xs font-semibold">
         Esta ação reverterá as movimentações de estoque físicas dos itens e
-        excluirá a conta a receber gerada. Se alguma parcela já tiver
+        cancelará a conta a receber gerada. Se alguma parcela já tiver
         recebimento (total ou parcial), o cancelamento será recusado.
       </p>
       <p className="text-sm">
