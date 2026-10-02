@@ -314,7 +314,8 @@ public class Nfes
     {
         if (TipoOperacao == TipoOperacao.ENTRADA) return; // totais da entrada são os declarados no XML
 
-        ValorProdutos = _itens.Sum(item => item.Quantidade * item.ValorUnitario);
+        // vProd = soma dos itens já arredondados (mesmo valor que o XML mostra em cada det).
+        ValorProdutos = _itens.Sum(item => Math.Round(item.Quantidade * item.ValorUnitario, 2, MidpointRounding.AwayFromZero));
         ValorTotal = ValorProdutos - ValorDesconto + ValorFrete + ValorSeguro + ValorOutrasDespesas;
 
         if (ValorTotal < 0)

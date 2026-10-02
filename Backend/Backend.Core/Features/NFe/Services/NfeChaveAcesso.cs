@@ -15,6 +15,9 @@ public static class NfeChaveAcesso
         ["MS"] = "50", ["MT"] = "51", ["GO"] = "52", ["DF"] = "53"
     };
 
+    // Brasília (-03:00, sem horário de verão desde 2019): AAMM da chave e dhEmi usam o horário local, não UTC.
+    public static readonly TimeSpan FusoBrasilia = TimeSpan.FromHours(-3);
+
     public static string Gerar(string uf, DateTime emissao, string cnpj, short serie, int numero, int codigoNumerico)
     {
         if (!CodigoUf.TryGetValue(uf.Trim().ToUpperInvariant(), out var cUf))

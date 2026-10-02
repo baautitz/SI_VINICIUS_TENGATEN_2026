@@ -83,4 +83,18 @@ public class NfeSaidaTests
         Assert.Equal("CANCELAMENTO POR ERRO DE DIGITACAO", nfe.JustificativaCancelamento);
         Assert.Throws<DomainException>(() => nfe.Cancelar("Cancelamento por erro de digitacao"));
     }
+
+    [Fact]
+    public void Xml_usa_horario_local_e_soma_de_vprod_dos_itens_arredondados()
+    {
+        // 2026-10-01 23:30 em Brasília = 2026-10-02 02:30 UTC.
+        var nfe = NfeDeSaida();
+        var local = new DateTime(2026, 10, 1, 23, 30, 0);
+        Assert.Equal("2610", NfeChaveAcesso.Gerar("SP", local, Cnpj, 1, 21, 1).Substring(2, 4));
+
+        var xml = NfeXmlGerador.Gerar(nfe);
+        Assert.Contains("<dhEmi>2026-10-02T09:00:00-03:00</dhEmi>", xml);
+        // 2,5 x 10,00 = 25,00 (vProd do item) e vProd total = 25,00
+        Assert.Equal(25m, nfe.ValorProdutos);
+    }
 }

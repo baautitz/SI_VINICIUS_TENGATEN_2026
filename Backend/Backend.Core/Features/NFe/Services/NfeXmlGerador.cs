@@ -33,7 +33,7 @@ public static partial class NfeXmlGerador
             E("ide",
                 E("cUF", chave[..2]), E("cNF", chave.Substring(35, 8)), E("natOp", "VENDA"), E("mod", "55"),
                 E("serie", nfe.Serie.ToString(CultureInfo.InvariantCulture)), E("nNF", nfe.Numero.ToString(CultureInfo.InvariantCulture)),
-                E("dhEmi", new DateTimeOffset(nfe.DataEmissao.ToUniversalTime()).ToString("yyyy-MM-dd'T'HH:mm:sszzz", CultureInfo.InvariantCulture)),
+                E("dhEmi", new DateTimeOffset(nfe.DataEmissao.ToUniversalTime()).ToOffset(NfeChaveAcesso.FusoBrasilia).ToString("yyyy-MM-dd'T'HH:mm:sszzz", CultureInfo.InvariantCulture)),
                 E("tpNF", "1"), E("idDest", "1"), E("tpImp", "1"), E("tpEmis", "1"), E("cDV", chave[43].ToString()),
                 E("tpAmb", "2"), E("finNFe", "1"), E("indFinal", "1"), E("indPres", "1"), E("procEmi", "0"), E("verProc", "TCC-1.0")),
             E("emit",
@@ -72,7 +72,7 @@ public static partial class NfeXmlGerador
     }
 
     private static XElement? Doc(string documento) => E(documento.Length == 11 ? "CPF" : "CNPJ", documento);
-    private static string N(decimal v, int casas) => Math.Round(v, casas).ToString("F" + casas, CultureInfo.InvariantCulture);
+    private static string N(decimal v, int casas) => Math.Round(v, casas, MidpointRounding.AwayFromZero).ToString("F" + casas, CultureInfo.InvariantCulture);
     private static string? Digitos(string? v) => v is null ? null : new string(v.Where(char.IsAsciiDigit).ToArray());
 
     [GeneratedRegex(@"^\d{2}$")]

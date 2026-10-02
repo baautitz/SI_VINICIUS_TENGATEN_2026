@@ -73,10 +73,10 @@ public sealed class NfesSaidaService : BaseService
             _unitOfWork.BeginTransaction();
 
             var numero = await _nfesRepository.ProximoNumeroSaida(emitente.Id, SeriePadrao);
-            var emissao = DateTime.UtcNow;
-            var chave = NfeChaveAcesso.Gerar(uf, emissao, emitente.CpfCnpj.Valor, SeriePadrao, numero, RandomNumberGenerator.GetInt32(1, 100_000_000));
+            var emissao = DateTimeOffset.UtcNow;
+            var chave = NfeChaveAcesso.Gerar(uf, emissao.ToOffset(NfeChaveAcesso.FusoBrasilia).DateTime, emitente.CpfCnpj.Valor, SeriePadrao, numero, RandomNumberGenerator.GetInt32(1, 100_000_000));
 
-            var nfe = new Nfes(numero, SeriePadrao, emissao, emitente, venda.Cliente, TipoOperacao.SAIDA, itens, pagamentos,
+            var nfe = new Nfes(numero, SeriePadrao, emissao.UtcDateTime, emitente, venda.Cliente, TipoOperacao.SAIDA, itens, pagamentos,
                 chave, valorDesconto: itens.Sum(i => i.ValorDesconto), vendaId: vendaId);
             nfe.Emitir(NfeXmlGerador.Gerar(nfe));
 
