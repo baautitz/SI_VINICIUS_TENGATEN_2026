@@ -43,9 +43,19 @@ export const origemMovimentacaoLabels: Record<string, string> = {
   ESTORNO: "Estorno",
 };
 
-// Só lançamentos manuais e de balanço podem ser estornados direto; venda se estorna cancelando a venda.
+// Só lançamento manual se estorna direto; venda, compra e balanço se estornam cancelando o documento de origem.
 export function podeEstornar(m: MovimentacaoEstoque): boolean {
-  return !m.estornada && (m.origemTipo === "MANUAL" || m.origemTipo === "BALANCO");
+  return !m.estornada && m.origemTipo === "MANUAL";
+}
+
+// Aviso para uma movimentação que não se cancela direto: ela segue o documento de origem.
+export function avisoNaoEstornavel(m: MovimentacaoEstoque): string {
+  if (m.origemTipo === "ESTORNO")
+    return "Esta movimentação é um estorno e não pode ser cancelada. Para corrigir, faça um novo lançamento manual.";
+  if (m.origemTipo === "MANUAL") return "Esta movimentação já foi estornada.";
+
+  const documento = `${origemMovimentacaoLabels[m.origemTipo]}${m.origemId ? ` #${m.origemId}` : ""}`;
+  return `Movimentação gerada por ${documento}. Para cancelá-la, cancele o documento de origem.`;
 }
 
 export const movimentacaoEstoqueItemSchema = z.object({

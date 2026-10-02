@@ -167,9 +167,7 @@ export function MovimentacoesList({
           searchPlaceholder="Pesquisar movimentações..."
           getRowId={(row) => row.id.toString()}
           onEditRow={onView}
-          onDeleteRow={(item) => {
-            if (podeEstornar(item)) onEstornar(item);
-          }}
+          onDeleteRow={onEstornar}
         />
       </FeatureLayout>
     </div>

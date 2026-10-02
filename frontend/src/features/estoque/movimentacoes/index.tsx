@@ -9,7 +9,7 @@ import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
 import { Button, Field, FieldError, FieldLabel, Kbd, KbdGroup, Textarea } from "@/ui/primitives";
 import { MovimentacoesList } from "./list";
 import { MovimentacoesUpsert } from "./upsert";
-import { MovimentacaoEstoque } from "./types";
+import { MovimentacaoEstoque, avisoNaoEstornavel, podeEstornar } from "./types";
 
 export * from "./types";
 
@@ -64,9 +64,16 @@ export function MovimentacoesFeature() {
   };
 
   const estornar = async (item: MovimentacaoEstoque) => {
+    if (!podeEstornar(item)) {
+      ui.feedback.notify({ type: "warning", title: avisoNaoEstornavel(item) });
+      return;
+    }
     const result = await ui.windows.open<string, EstornoWindowProps>({
       component: EstornoWindow,
-      props: { movimentacao: item },
+      props: {
+        pergunta: `Deseja realmente estornar a movimentação #${item.id}?`,
+        aviso: "Será lançada uma movimentação inversa; a original permanece no histórico.",
+      },
       title: "Estornar Movimentação",
       size: "small",
     });
@@ -114,11 +121,13 @@ export interface MovimentacoesUpsertProps {
   readOnly?: boolean;
 }
 
-interface EstornoWindowProps {
-  movimentacao: MovimentacaoEstoque;
+export interface EstornoWindowProps {
+  pergunta: string;
+  aviso: string;
 }
 
-function EstornoWindow({ movimentacao }: EstornoWindowProps) {
+/** Pede o motivo (mínimo 5 caracteres) de um estorno ou cancelamento que lança movimentações inversas. */
+export function EstornoWindow({ pergunta, aviso }: EstornoWindowProps) {
   const activeWindow = useWindow<string>();
   const [error, setError] = React.useState("");
   const motivoRef = React.useRef<HTMLTextAreaElement | null>(null);
@@ -164,12 +173,8 @@ function EstornoWindow({ movimentacao }: EstornoWindowProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-destructive text-xs font-semibold">
-        Será lançada uma movimentação inversa; a original permanece no histórico.
-      </p>
-      <p className="text-sm">
-        Deseja realmente estornar a movimentação <strong>#{movimentacao.id}</strong>?
-      </p>
+      <p className="text-destructive text-xs font-semibold">{aviso}</p>
+      <p className="text-sm">{pergunta}</p>
       <Field data-invalid={!!error}>
         <FieldLabel htmlFor="motivo-estorno">Motivo do Estorno</FieldLabel>
         <Textarea
