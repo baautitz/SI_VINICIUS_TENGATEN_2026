@@ -20,6 +20,7 @@ import {
   CreditCard,
   Landmark,
   Receipt,
+  PackagePlus,
 } from "lucide-react";
 import React from "react";
 
@@ -44,6 +45,13 @@ export const navigationConfig: NavGroup[] = [
     icon: CreditCard,
     urlPrefix: "/vendas",
     items: [{ title: "Registrar Venda", url: "/vendas", icon: CreditCard }],
+  },
+  {
+    id: "compras",
+    title: "Compras",
+    icon: PackagePlus,
+    urlPrefix: "/compras",
+    items: [{ title: "Compras e Importar XML", url: "/compras", icon: PackagePlus }],
   },
   {
     id: "catalogo",
