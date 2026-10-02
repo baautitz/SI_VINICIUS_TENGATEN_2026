@@ -3,7 +3,7 @@
 import * as React from "react";
 
 import { StatusBadge } from "@/ui/composites";
-import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
+import { getActionsColumn } from "@/utils/table-columns";
 import { FeatureHeader } from "@/ui/composites";
 import { Car } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
@@ -36,7 +36,6 @@ export function VeiculosList({
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<Veiculo>) {
   const columns: ColumnDef<Veiculo>[] = [
-    getSelectColumn<Veiculo>(),
     {
       accessorKey: "id",
       header: "ID",

@@ -1,6 +1,6 @@
 "use client";
 
-import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
+import { getActionsColumn } from "@/utils/table-columns";
 import { FeatureHeader } from "@/ui/composites";
 import { Milestone } from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table";
@@ -33,7 +33,6 @@ export function BairrosList({
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<Bairro>) {
   const columns: ColumnDef<Bairro>[] = [
-    getSelectColumn<Bairro>(),
     {
       accessorKey: "id",
       header: "ID",

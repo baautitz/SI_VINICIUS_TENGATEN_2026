@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
+import { getActionsColumn } from "@/utils/table-columns";
 import { FeatureHeader } from "@/ui/composites";
 import { SlidersHorizontal } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
@@ -30,7 +30,6 @@ export function AtributosList({
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<SkuAtributoChave>) {
   const columns: ColumnDef<SkuAtributoChave>[] = [
-    getSelectColumn<SkuAtributoChave>(),
     {
       accessorKey: "id",
       header: "ID",

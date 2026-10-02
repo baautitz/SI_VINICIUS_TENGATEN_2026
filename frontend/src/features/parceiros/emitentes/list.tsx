@@ -1,6 +1,6 @@
 "use client";
 
-import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
+import { getActionsColumn } from "@/utils/table-columns";
 import { FeatureHeader } from "@/ui/composites";
 
 import { UserCircle } from "lucide-react";
@@ -36,7 +36,6 @@ export function EmitentesList({
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<Emitente>) {
   const columns: ColumnDef<Emitente>[] = [
-    getSelectColumn<Emitente>(),
     {
       accessorKey: "id",
       header: "ID",

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
+import { getActionsColumn } from "@/utils/table-columns";
 import { FeatureHeader } from "@/ui/composites";
 import { Landmark } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
@@ -32,7 +32,6 @@ export function MetodosList({
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<MetodoPagamento>) {
   const columns: ColumnDef<MetodoPagamento>[] = [
-    getSelectColumn<MetodoPagamento>(),
     {
       accessorKey: "codigo",
       header: "Código",

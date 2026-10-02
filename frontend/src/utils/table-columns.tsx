@@ -1,34 +1,8 @@
 import React from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Checkbox } from "@/ui/primitives";
 import { Button } from "@/ui/primitives";
 import { Check, Eye, Pencil, Trash2 } from "lucide-react";
 import { fireAndForget } from "@/lib/utils";
-
-export function getSelectColumn<T>(): ColumnDef<T> {
-  return {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Selecionar tudo"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Selecionar linha"
-      />
-    ),
-    enableHiding: false,
-    size: 50,
-  };
-}
 
 interface ActionColumnOptions<T> {
   onEdit?: (item: T) => void;

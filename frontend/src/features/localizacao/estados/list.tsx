@@ -1,6 +1,6 @@
 "use client";
 
-import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
+import { getActionsColumn } from "@/utils/table-columns";
 import { FeatureHeader } from "@/ui/composites";
 import { Map } from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table";
@@ -33,7 +33,6 @@ export function EstadosList({
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<Estado>) {
   const columns: ColumnDef<Estado>[] = [
-    getSelectColumn<Estado>(),
     {
       accessorKey: "id",
       header: "ID",

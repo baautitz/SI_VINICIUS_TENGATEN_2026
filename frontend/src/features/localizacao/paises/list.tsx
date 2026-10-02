@@ -1,6 +1,6 @@
 "use client";
 
-import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
+import { getActionsColumn } from "@/utils/table-columns";
 import { FeatureHeader } from "@/ui/composites";
 import { Globe } from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table";
@@ -33,7 +33,6 @@ export function PaisesList({
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<Pais>) {
   const columns: ColumnDef<Pais>[] = [
-    getSelectColumn<Pais>(),
     {
       accessorKey: "id",
       header: "ID",

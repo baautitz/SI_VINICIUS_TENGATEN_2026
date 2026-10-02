@@ -3,7 +3,7 @@
 import * as React from "react";
 
 import { StatusBadge } from "@/ui/composites";
-import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
+import { getActionsColumn } from "@/utils/table-columns";
 import { FeatureHeader } from "@/ui/composites";
 import { Truck } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
@@ -38,7 +38,6 @@ export function TransportadorasList({
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<Transportadora>) {
   const columns: ColumnDef<Transportadora>[] = [
-    getSelectColumn<Transportadora>(),
     {
       accessorKey: "id",
       header: "ID",

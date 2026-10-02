@@ -1,6 +1,6 @@
 "use client";
 
-import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
+import { getActionsColumn } from "@/utils/table-columns";
 import { FeatureHeader } from "@/ui/composites";
 import { Truck } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
@@ -35,7 +35,6 @@ export function FornecedoresList({
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<Fornecedor>) {
   const columns: ColumnDef<Fornecedor>[] = [
-    getSelectColumn<Fornecedor>(),
     {
       accessorKey: "id",
       header: "ID",

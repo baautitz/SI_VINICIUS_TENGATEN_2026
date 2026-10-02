@@ -1,6 +1,6 @@
 "use client";
 
-import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
+import { getActionsColumn } from "@/utils/table-columns";
 import { FeatureHeader } from "@/ui/composites";
 import { Receipt } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
@@ -31,7 +31,6 @@ export function CondicoesList({
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<CondicaoPagamento>) {
   const columns: ColumnDef<CondicaoPagamento>[] = [
-    getSelectColumn<CondicaoPagamento>(),
     {
       accessorKey: "id",
       header: "ID",

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
+import { getActionsColumn } from "@/utils/table-columns";
 import { FeatureHeader } from "@/ui/composites";
 import { Package } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
@@ -32,7 +32,6 @@ export function SkusList({
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<Sku>) {
   const columns: ColumnDef<Sku>[] = [
-    getSelectColumn<Sku>(),
     {
       accessorKey: "sku",
       header: "SKU",

@@ -1,6 +1,6 @@
 "use client";
 
-import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
+import { getActionsColumn } from "@/utils/table-columns";
 import { FeatureHeader } from "@/ui/composites";
 import { Scale } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
@@ -30,7 +30,6 @@ export function UnidadesMedidaList({
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<UnidadeMedida>) {
   const columns: ColumnDef<UnidadeMedida>[] = [
-    getSelectColumn<UnidadeMedida>(),
     {
       accessorKey: "id",
       header: "ID",

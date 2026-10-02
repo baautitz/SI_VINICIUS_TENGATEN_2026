@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { getSelectColumn, getActionsColumn } from "@/utils/table-columns";
+import { getActionsColumn } from "@/utils/table-columns";
 import { FeatureHeader } from "@/ui/composites";
 import { Tag } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
@@ -31,7 +31,6 @@ export function CategoriasList({
   onSelectAllAcrossPagesChange,
 }: FeatureListProps<Categoria>) {
   const columns: ColumnDef<Categoria>[] = [
-    getSelectColumn<Categoria>(),
     {
       accessorKey: "id",
       header: "ID",
