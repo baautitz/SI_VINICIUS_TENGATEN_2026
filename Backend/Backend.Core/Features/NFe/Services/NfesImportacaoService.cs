@@ -118,6 +118,10 @@ public sealed class NfesImportacaoService : BaseService
         if (emitente is null)
             return Falha("EMITENTE_INEXISTENTE", "O emitente informado não existe.", "EmitenteId");
 
+        // Frete por conta do emitente (CIF), transporte próprio ou sem transporte: frete de terceiro seria pagar duas vezes.
+        if (command.ValorFreteTerceiro > 0 && dados.ModalidadeFrete is 0 or 3 or 9)
+            return Falha("FRETE_DUPLICADO", $"A NF-e tem modFrete={dados.ModalidadeFrete} (frete não é do destinatário): não informe frete de terceiro.", "ValorFreteTerceiro");
+
         var parcelas = command.Parcelas?.Any() == true
             ? command.Parcelas
             : dados.Parcelas.Select(p => new CriarParcelaPagarCommand(p.Numero, p.Vencimento, p.Valor)).ToList();
