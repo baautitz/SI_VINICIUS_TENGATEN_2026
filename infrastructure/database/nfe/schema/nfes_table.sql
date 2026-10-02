@@ -16,7 +16,9 @@ CREATE TABLE IF NOT EXISTS nfes (
   emitente_bairro VARCHAR(100),
   emitente_telefone VARCHAR(20),
   emitente_email VARCHAR(254),
-  cliente_id INTEGER NOT NULL,
+  -- Contraparte: cliente (SAIDA) ou fornecedor (ENTRADA); os snapshots cliente_* guardam os dados de quem for.
+  cliente_id INTEGER,
+  fornecedor_id INTEGER,
   cliente_nome_razaosocial VARCHAR(150) NOT NULL,
   cliente_cpf_cnpj VARCHAR(14) NOT NULL,
   cliente_rg_ie VARCHAR(15),
@@ -29,6 +31,7 @@ CREATE TABLE IF NOT EXISTS nfes (
   status_nfe status_nfe_enum NOT NULL DEFAULT 'RASCUNHO',
   transportadora_id INTEGER,
   venda_id INTEGER,
+  compra_id INTEGER,
   valor_produtos NUMERIC(14, 2) NOT NULL DEFAULT 0,
   valor_desconto NUMERIC(14, 2) NOT NULL DEFAULT 0,
   valor_frete NUMERIC(14, 2) NOT NULL DEFAULT 0,
@@ -37,6 +40,7 @@ CREATE TABLE IF NOT EXISTS nfes (
   valor_total NUMERIC(14, 2) NOT NULL DEFAULT 0,
   CONSTRAINT nfes_emitente_fk FOREIGN KEY (emitente_id) REFERENCES emitentes (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT nfes_cliente_fk FOREIGN KEY (cliente_id) REFERENCES clientes (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT nfes_fornecedor_fk FOREIGN KEY (fornecedor_id) REFERENCES fornecedores (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT nfes_transportadora_fk FOREIGN KEY (transportadora_id) REFERENCES transportadoras (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT nfes_emitente_serie_numero_unique UNIQUE (emitente_id, serie, numero),
   CONSTRAINT nfes_emitente_nome_not_empty_ck CHECK (LENGTH(TRIM(emitente_nome_razaosocial)) > 0),
@@ -53,5 +57,10 @@ CREATE TABLE IF NOT EXISTS nfes (
   CONSTRAINT nfes_valor_seguro_ck CHECK (valor_seguro >= 0),
   CONSTRAINT nfes_valor_outras_ck CHECK (valor_outras_despesas >= 0),
   CONSTRAINT nfes_valor_total_ck CHECK (valor_total >= 0),
-  CONSTRAINT nfes_venda_fk FOREIGN KEY (venda_id) REFERENCES vendas (id) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT nfes_venda_fk FOREIGN KEY (venda_id) REFERENCES vendas (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT nfes_compra_fk FOREIGN KEY (compra_id) REFERENCES compras (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT nfes_origem_ck CHECK (
+    (tipo_operacao = 'SAIDA' AND venda_id IS NOT NULL AND compra_id IS NULL)
+    OR (tipo_operacao = 'ENTRADA' AND compra_id IS NOT NULL AND venda_id IS NULL)
+  )
 );

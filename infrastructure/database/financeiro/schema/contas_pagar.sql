@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS contas_pagar (
   id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   fornecedor_id INTEGER,
   cliente_id INTEGER,
+  transportadora_id INTEGER,
   origem_tipo origem_titulo_financeiro_enum NOT NULL DEFAULT 'MANUAL',
   origem_id INTEGER,
   descricao VARCHAR(150) NOT NULL,
@@ -26,9 +27,14 @@ CREATE TABLE IF NOT EXISTS contas_pagar (
     REFERENCES clientes (id)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
-  -- Contraparte: fornecedor (manual/compra) ou cliente (reembolso de devolução), nunca ambos.
+  CONSTRAINT contas_pagar_transportadora_fk
+    FOREIGN KEY (transportadora_id)
+    REFERENCES transportadoras (id)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  -- Contraparte: fornecedor (manual/compra), cliente (reembolso de devolução) ou transportadora (frete de terceiro); exatamente um.
   CONSTRAINT contas_pagar_contraparte_ck
-    CHECK ((fornecedor_id IS NULL) <> (cliente_id IS NULL)),
+    CHECK (num_nonnulls(fornecedor_id, cliente_id, transportadora_id) = 1),
   CONSTRAINT contas_pagar_condicao_pagamento_fk
     FOREIGN KEY (condicao_pagamento_id)
     REFERENCES condicoes_pagamentos (id)
