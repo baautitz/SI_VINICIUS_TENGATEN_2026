@@ -406,7 +406,7 @@ export function DataTable<TData, TValue>({
         <div className="flex flex-1 flex-col gap-0.5">
           {isSelectionMode ? (
             <span className="text-muted-foreground text-xs font-medium">
-              ↑↓ para navegar · Enter para selecionar
+              ↑↓ para navegar · Enter para selecionar{onEditRow && " · Alt+E para editar"}
             </span>
           ) : (
             <span className="text-muted-foreground text-xs font-medium">
