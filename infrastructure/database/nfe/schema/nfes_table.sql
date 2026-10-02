@@ -62,14 +62,14 @@ CREATE TABLE IF NOT EXISTS nfes (
   CONSTRAINT nfes_valor_total_ck CHECK (valor_total >= 0),
   CONSTRAINT nfes_venda_fk FOREIGN KEY (venda_id) REFERENCES vendas (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT nfes_compra_fk FOREIGN KEY (compra_id) REFERENCES compras (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  -- SAIDA antiga pode não ter venda_id (legado): venda_id é opcional na SAIDA.
   CONSTRAINT nfes_origem_ck CHECK (
-    (tipo_operacao = 'SAIDA' AND venda_id IS NOT NULL AND compra_id IS NULL AND cliente_id IS NOT NULL AND fornecedor_id IS NULL)
+    (tipo_operacao = 'SAIDA' AND compra_id IS NULL AND cliente_id IS NOT NULL AND fornecedor_id IS NULL)
     OR (tipo_operacao = 'ENTRADA' AND compra_id IS NOT NULL AND venda_id IS NULL AND fornecedor_id IS NOT NULL AND cliente_id IS NULL)
   )
 );
 
 -- Migração de bancos já criados (CREATE TABLE IF NOT EXISTS não altera tabela existente).
--- Os CHECKs entram NOT VALID para tolerar SAIDA antigas sem venda_id.
 ALTER TABLE nfes ADD COLUMN IF NOT EXISTS fornecedor_id INTEGER;
 ALTER TABLE nfes ADD COLUMN IF NOT EXISTS compra_id INTEGER;
 ALTER TABLE nfes ADD COLUMN IF NOT EXISTS justificativa_cancelamento VARCHAR(255);
@@ -85,13 +85,14 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'nfes_compra_fk') THEN
     ALTER TABLE nfes ADD CONSTRAINT nfes_compra_fk FOREIGN KEY (compra_id) REFERENCES compras (id);
   END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'nfes_origem_ck') THEN
-    ALTER TABLE nfes ADD CONSTRAINT nfes_origem_ck CHECK (
-      (tipo_operacao = 'SAIDA' AND venda_id IS NOT NULL AND compra_id IS NULL AND cliente_id IS NOT NULL AND fornecedor_id IS NULL)
-      OR (tipo_operacao = 'ENTRADA' AND compra_id IS NOT NULL AND venda_id IS NULL AND fornecedor_id IS NOT NULL AND cliente_id IS NULL)
-    ) NOT VALID;
-  END IF;
 END $$;
+
+-- Recriado a cada carga: o CHECK antigo exigia venda_id na SAIDA (e era NOT VALID, reavaliado no UPDATE de cancelar).
+ALTER TABLE nfes DROP CONSTRAINT IF EXISTS nfes_origem_ck;
+ALTER TABLE nfes ADD CONSTRAINT nfes_origem_ck CHECK (
+  (tipo_operacao = 'SAIDA' AND compra_id IS NULL AND cliente_id IS NOT NULL AND fornecedor_id IS NULL)
+  OR (tipo_operacao = 'ENTRADA' AND compra_id IS NOT NULL AND venda_id IS NULL AND fornecedor_id IS NOT NULL AND cliente_id IS NULL)
+);
 
 -- Numeração é nossa só na SAIDA; na ENTRADA vale a chave de acesso original (UNIQUE).
 CREATE UNIQUE INDEX IF NOT EXISTS nfes_saida_emitente_serie_numero_uq
