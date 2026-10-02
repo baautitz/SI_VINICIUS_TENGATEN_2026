@@ -14,6 +14,8 @@ import {
   Layers,
   Sliders,
   ClipboardList,
+  ListChecks,
+  BookOpen,
   MapPinned,
   LayoutDashboard,
   CreditCard,
@@ -72,6 +74,8 @@ export const navigationConfig: NavGroup[] = [
         url: "/estoque/movimentacoes",
         icon: ClipboardList,
       },
+      { title: "Balanços", url: "/estoque/balancos", icon: ListChecks },
+      { title: "Kardex", url: "/estoque/kardex", icon: BookOpen },
     ],
   },
   {
