@@ -89,6 +89,9 @@ public sealed class MovimentacoesEstoquesService : BaseService
         if (original.OrigemTipo == OrigemMovimentacaoEstoque.COMPRA)
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_COMPRA", "Esta movimentação foi gerada por uma compra. Cancele a compra para estornar a movimentação de estoque."));
 
+        if (original.OrigemTipo == OrigemMovimentacaoEstoque.BALANCO)
+            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_BALANCO", "Esta movimentação foi gerada por um balanço. Cancele o balanço para estornar a movimentação de estoque."));
+
         if (original.OrigemTipo == OrigemMovimentacaoEstoque.ESTORNO)
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_ESTORNO", "Um estorno não pode ser estornado. Lance uma nova movimentação."));
 
@@ -99,18 +102,20 @@ public sealed class MovimentacoesEstoquesService : BaseService
         return await ExecutarEmTransacao(estorno, custosARestaurar);
     }
 
-    // Usado pelo cancelamento/exclusão de venda: não faz nada se não houver movimentação ou se já foi estornada.
-    // O chamador controla a transação.
-    public async Task EstornarVenda(int vendaId, string motivo)
+    // Usado ao cancelar o documento de origem (venda, balanço, compra): estorna todas as movimentações dele
+    // que ainda não foram estornadas. O chamador controla a transação.
+    public async Task EstornarPorOrigem(OrigemMovimentacaoEstoque origemTipo, int origemId, string motivo)
     {
-        var original = await _movimentacoesRepository.ObterMovimentacaoPorOrigem(OrigemMovimentacaoEstoque.VENDA, vendaId);
-        if (original == null || original.Estornada)
-            return;
+        foreach (var original in await _movimentacoesRepository.ObterMovimentacoesPorOrigem(origemTipo, origemId))
+        {
+            if (original.Estornada)
+                continue;
 
-        var (estorno, custosARestaurar) = MontarEstorno(original, motivo);
-        var resultado = await Registrar(estorno, custosARestaurar);
-        if (!resultado.Success)
-            throw new DomainException(resultado.Errors!.First().Message);
+            var (estorno, custosARestaurar) = MontarEstorno(original, motivo);
+            var resultado = await Registrar(estorno, custosARestaurar);
+            if (!resultado.Success)
+                throw new DomainException(resultado.Errors!.First().Message);
+        }
     }
 
     // Aplica a movimentação ao saldo dos SKUs e grava no razão. O chamador controla a transação.

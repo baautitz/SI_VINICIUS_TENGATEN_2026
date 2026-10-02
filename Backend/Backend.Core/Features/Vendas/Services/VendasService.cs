@@ -207,7 +207,7 @@ public sealed class VendasService : BaseService
             _unitOfWork.BeginTransaction();
 
             // Estorna a baixa de estoque da venda (movimentação inversa no razão)
-            await _estoqueService.EstornarVenda(id, "Venda excluída.");
+            await _estoqueService.EstornarPorOrigem(OrigemMovimentacaoEstoque.VENDA, id, "Venda excluída.");
 
             // Cancel Accounts Receivable related to this Venda
             var contaVenda = await ObterContaDaVenda(id);
@@ -245,7 +245,7 @@ public sealed class VendasService : BaseService
             _unitOfWork.BeginTransaction();
 
             // Estorna a baixa de estoque da venda (movimentação inversa no razão)
-            await _estoqueService.EstornarVenda(id, command.Motivo);
+            await _estoqueService.EstornarPorOrigem(OrigemMovimentacaoEstoque.VENDA, id, command.Motivo);
 
             // Cancel Accounts Receivable related to this Venda
             var contaVenda = await ObterContaDaVenda(id);

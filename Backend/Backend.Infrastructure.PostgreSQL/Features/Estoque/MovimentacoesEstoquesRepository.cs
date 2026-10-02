@@ -41,9 +41,13 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
     public async Task<MovimentacoesEstoques?> ObterMovimentacaoPorId(int id)
         => await ObterUma("me.id = @Id", new { Id = id });
 
-    public async Task<MovimentacoesEstoques?> ObterMovimentacaoPorOrigem(OrigemMovimentacaoEstoque origemTipo, int origemId)
-        => await ObterUma("me.origem_tipo = @Origem::origem_movimentacao_estoque_enum AND me.origem_id = @OrigemId",
-            new { Origem = origemTipo.ToString(), OrigemId = origemId });
+    public async Task<IReadOnlyList<MovimentacoesEstoques>> ObterMovimentacoesPorOrigem(OrigemMovimentacaoEstoque origemTipo, int origemId)
+    {
+        var rows = (await _session.Connection.QueryAsync<MovimentacaoDbRow>(
+            $"{SelecaoMovimentacao} WHERE me.origem_tipo = @Origem::origem_movimentacao_estoque_enum AND me.origem_id = @OrigemId ORDER BY me.id;",
+            new { Origem = origemTipo.ToString(), OrigemId = origemId }, transaction: _session.Transaction)).ToList();
+        return await Montar(rows);
+    }
 
     public async Task<MovimentacoesEstoques> CriarMovimentacao(MovimentacoesEstoques movimentacao)
     {

@@ -8,7 +8,7 @@ public interface IMovimentacoesEstoquesRepository
 {
     public Task<ResultadoPaginado<MovimentacoesEstoques>> ObterMovimentacoes(int pagina = 1, int tamanhoDaPagina = 20);
     public Task<MovimentacoesEstoques?> ObterMovimentacaoPorId(int id);
-    public Task<MovimentacoesEstoques?> ObterMovimentacaoPorOrigem(OrigemMovimentacaoEstoque origemTipo, int origemId);
+    public Task<IReadOnlyList<MovimentacoesEstoques>> ObterMovimentacoesPorOrigem(OrigemMovimentacaoEstoque origemTipo, int origemId);
     public Task<MovimentacoesEstoques> CriarMovimentacao(MovimentacoesEstoques movimentacao);
     public Task<ResultadoPaginado<MovimentacoesEstoques>> PesquisarMovimentacoes(string termo, int pagina = 1, int tamanhoDaPagina = 20);
 }
