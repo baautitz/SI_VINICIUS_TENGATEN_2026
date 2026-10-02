@@ -68,14 +68,6 @@ CREATE TABLE IF NOT EXISTS nfes (
   )
 );
 
--- Numeração é nossa só na SAIDA; na ENTRADA vale a chave de acesso original (UNIQUE).
-CREATE UNIQUE INDEX IF NOT EXISTS nfes_saida_emitente_serie_numero_uq
-  ON nfes (emitente_id, serie, numero) WHERE tipo_operacao = 'SAIDA';
-CREATE UNIQUE INDEX IF NOT EXISTS nfes_venda_emitida_uq
-  ON nfes (venda_id) WHERE status_nfe = 'EMITIDA';
-CREATE UNIQUE INDEX IF NOT EXISTS nfes_compra_uq
-  ON nfes (compra_id) WHERE compra_id IS NOT NULL;
-
 -- Migração de bancos já criados (CREATE TABLE IF NOT EXISTS não altera tabela existente).
 -- Os CHECKs entram NOT VALID para tolerar SAIDA antigas sem venda_id.
 ALTER TABLE nfes ADD COLUMN IF NOT EXISTS fornecedor_id INTEGER;
@@ -100,3 +92,11 @@ BEGIN
     ) NOT VALID;
   END IF;
 END $$;
+
+-- Numeração é nossa só na SAIDA; na ENTRADA vale a chave de acesso original (UNIQUE).
+CREATE UNIQUE INDEX IF NOT EXISTS nfes_saida_emitente_serie_numero_uq
+  ON nfes (emitente_id, serie, numero) WHERE tipo_operacao = 'SAIDA';
+CREATE UNIQUE INDEX IF NOT EXISTS nfes_venda_emitida_uq
+  ON nfes (venda_id) WHERE status_nfe = 'EMITIDA';
+CREATE UNIQUE INDEX IF NOT EXISTS nfes_compra_uq
+  ON nfes (compra_id) WHERE compra_id IS NOT NULL;
