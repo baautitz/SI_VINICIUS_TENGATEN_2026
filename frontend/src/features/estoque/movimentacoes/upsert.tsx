@@ -22,8 +22,6 @@ export interface ItemLinha {
 export interface MovimentacoesUpsertProps {
   editingItem: MovimentacaoEstoque | null;
   readOnly?: boolean;
-  initialItems?: ItemLinha[];
-  fixedTipo?: "ENTRADA" | "SAIDA" | "BALANCO" | "VENDA";
 }
 
 export function MovimentacoesUpsert(props: MovimentacoesUpsertProps) {

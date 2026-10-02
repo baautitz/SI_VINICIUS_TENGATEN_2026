@@ -3,7 +3,7 @@
 import * as React from "react";
 
 import { FeatureHeader } from "@/ui/composites";
-import { Check, ClipboardList, Pencil, Trash2, Eye, Ban } from "lucide-react";
+import { ClipboardList, Eye, Ban } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/ui/primitives";
 import { DataTable } from "@/ui/composites";
@@ -11,16 +11,16 @@ import { FeatureLayout } from "@/ui/composites";
 import { Badge } from "@/ui/primitives";
 import {
   MovimentacaoEstoque,
+  origemMovimentacaoLabels,
+  podeEstornar,
   tipoMovimentacaoLabels,
-  statusLabels,
 } from "./types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 import { formatToLocal } from "@/utils/date-utils";
 import { fireAndForget } from "@/lib/utils";
 
-interface MovimentacoesListProps extends FeatureListProps<MovimentacaoEstoque> {
-  onConfirm: (item: MovimentacaoEstoque) => void;
-  onCancel: (item: MovimentacaoEstoque) => void;
+interface MovimentacoesListProps extends Omit<FeatureListProps<MovimentacaoEstoque>, "onEdit" | "onDelete"> {
+  onEstornar: (item: MovimentacaoEstoque) => void;
   onView: (item: MovimentacaoEstoque) => void;
 }
 
@@ -33,11 +33,8 @@ export function MovimentacoesList({
   totalItems,
   onSearchChange,
   onAdd,
-  onEdit,
-  onDelete,
-  onConfirm,
-  onCancel,
   onView,
+  onEstornar,
   onPageChange,
 }: MovimentacoesListProps) {
   const columns: ColumnDef<MovimentacaoEstoque>[] = [
@@ -69,51 +66,27 @@ export function MovimentacoesList({
       },
     },
     {
-      accessorKey: "status",
-      header: "Status",
+      id: "origem",
+      header: "Origem",
       cell: ({ row }) => {
-        const status = row.getValue("status") as string;
-        let variant: "default" | "secondary" | "destructive" | "outline" =
-          "secondary";
-        let className = "";
-
-        if (status === "CONFIRMADA") {
-          className =
-            "bg-emerald-500 hover:bg-emerald-600 text-white border-none";
-          variant = "default";
-        } else if (status === "CANCELADA") {
-          variant = "destructive";
-        }
-
+        const item = row.original;
         return (
-          <Badge variant={variant} className={className}>
-            {statusLabels[status] || status}
-          </Badge>
+          <span className="flex items-center gap-2">
+            {origemMovimentacaoLabels[item.origemTipo] ?? item.origemTipo}
+            {item.origemId ? (
+              <span className="text-muted-foreground">#{item.origemId}</span>
+            ) : null}
+            {item.estornada && <Badge variant="destructive">Estornada</Badge>}
+          </span>
         );
       },
     },
     {
-      id: "venda",
-      header: "Venda",
-      accessorFn: (row) => row.vendaId,
-      cell: ({ getValue }) => (
-        <span className="text-muted-foreground">{getValue() ? `#${getValue()}` : "-"}</span>
-      ),
-    },
-    {
-      id: "nfe",
-      header: "NF-e",
-      accessorFn: (row) => row.nfeId,
-      cell: ({ getValue }) => (
-        <span className="text-muted-foreground">{getValue() ? `#${getValue()}` : "-"}</span>
-      ),
-    },
-    {
-      accessorKey: "observacao",
-      header: "Observação",
+      accessorKey: "motivo",
+      header: "Motivo / Observação",
       cell: ({ row }) => (
         <span className="text-muted-foreground block max-w-xs truncate">
-          {row.getValue("observacao") || "-"}
+          {row.original.motivo || row.original.observacao || "-"}
         </span>
       ),
     },
@@ -123,7 +96,7 @@ export function MovimentacoesList({
       cell: ({ row }) => {
         const item = row.original;
         const total =
-          item.valorTotal ??
+          item.totalCusto ??
           item.movimentacoesEstoquesItens?.reduce(
             (sum, i) => sum + Number(i.quantidade) * Number(i.custoUnitario),
             0,
@@ -144,61 +117,26 @@ export function MovimentacoesList({
       header: () => <div className="px-4 text-right">Ações</div>,
       cell: ({ row }) => {
         const item = row.original;
-        const isRascunho = item.status === "RASCUNHO";
-        const isConfirmada = item.status === "CONFIRMADA";
-
         return (
           <div className="flex justify-end gap-2 px-4">
-            {isRascunho ? (
-              <>
-                <Button
-                  size="icon-sm"
-                  variant="outline"
-                  title="Editar Rascunho"
-                  onClick={() => fireAndForget(() => onEdit(item))}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="icon-sm"
-                  variant="outline"
-                  className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
-                  title="Efetivar Movimentação"
-                  onClick={() => fireAndForget(() => onConfirm(item))}
-                >
-                  <Check className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="icon-sm"
-                  variant="destructive"
-                  title="Excluir Rascunho"
-                  onClick={() => fireAndForget(() => onDelete(item))}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  size="icon-sm"
-                  variant="outline"
-                  title="Visualizar Detalhes"
-                  onClick={() => fireAndForget(() => onView(item))}
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
-                {isConfirmada && (
-                  <Button
-                    size="icon-sm"
-                    variant="outline"
-                    className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                    title="Estornar/Cancelar"
-                    onClick={() => fireAndForget(() => onCancel(item))}
-                  >
-                    <Ban className="h-4 w-4" />
-                  </Button>
-                )}
-              </>
+            <Button
+              size="icon-sm"
+              variant="outline"
+              title="Visualizar Detalhes"
+              onClick={() => fireAndForget(() => onView(item))}
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+            {podeEstornar(item) && (
+              <Button
+                size="icon-sm"
+                variant="outline"
+                className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                title="Estornar"
+                onClick={() => fireAndForget(() => onEstornar(item))}
+              >
+                <Ban className="h-4 w-4" />
+              </Button>
             )}
           </div>
         );
@@ -213,7 +151,7 @@ export function MovimentacoesList({
           title="Movimentações de Estoque"
           icon={<ClipboardList />}
           onAdd={onAdd}
-          addButtonLabel="Nova Movimentação"
+          addButtonLabel="Lançamento Manual"
         />
 
         <DataTable
@@ -228,19 +166,9 @@ export function MovimentacoesList({
           onGlobalFilterChange={onSearchChange}
           searchPlaceholder="Pesquisar movimentações..."
           getRowId={(row) => row.id.toString()}
-          onEditRow={(item) => {
-            if (item.status === "RASCUNHO") {
-              onEdit(item);
-            } else {
-              onView(item);
-            }
-          }}
+          onEditRow={onView}
           onDeleteRow={(item) => {
-            if (item.status === "CONFIRMADA") {
-              onCancel(item);
-            } else if (item.status === "RASCUNHO") {
-              onDelete(item);
-            }
+            if (podeEstornar(item)) onEstornar(item);
           }}
         />
       </FeatureLayout>

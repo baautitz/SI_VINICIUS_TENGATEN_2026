@@ -12,37 +12,53 @@ export interface MovimentacaoEstoqueItem {
   custoMedioAnterior?: number | null;
 }
 
+export type TipoMovimentacao = "ENTRADA" | "SAIDA";
+export type OrigemMovimentacao = "MANUAL" | "VENDA" | "COMPRA" | "BALANCO" | "ESTORNO";
+
+// Linha imutável do razão de estoque: o estorno é uma nova movimentação (origem ESTORNO).
 export interface MovimentacaoEstoque {
   id: number;
   dataMovimentacao: string;
-  tipoMovimentacao: "ENTRADA" | "SAIDA" | "VENDA" | "BALANCO";
-  status: "RASCUNHO" | "CONFIRMADA" | "CANCELADA";
+  tipoMovimentacao: TipoMovimentacao;
+  origemTipo: OrigemMovimentacao;
+  origemId?: number | null;
+  motivo?: string | null;
   observacao?: string | null;
-  motivoEstorno?: string | null;
+  estornada: boolean;
   usuario?: { id: number; nome: string } | null;
-  nfeId?: number | null;
-  vendaId?: number | null;
   movimentacoesEstoquesItens: MovimentacaoEstoqueItem[];
-  valorTotal?: number; // Opcional, calculado ou enviado pelo backend
+  totalCusto?: number;
+}
+
+export interface KardexLinha {
+  movimentacaoId: number;
+  dataMovimentacao: string;
+  tipoMovimentacao: TipoMovimentacao;
+  origemTipo: OrigemMovimentacao;
+  origemId?: number | null;
+  motivo?: string | null;
+  quantidade: number;
+  custoUnitario: number;
+  quantidadeAnterior: number;
+  quantidadePosterior: number;
 }
 
 export const tipoMovimentacaoLabels: Record<string, string> = {
   ENTRADA: "Entrada",
   SAIDA: "Saída",
+};
+
+export const origemMovimentacaoLabels: Record<string, string> = {
+  MANUAL: "Manual",
   VENDA: "Venda",
+  COMPRA: "Compra",
   BALANCO: "Balanço",
+  ESTORNO: "Estorno",
 };
 
-export const statusLabels: Record<string, string> = {
-  RASCUNHO: "Rascunho",
-  CONFIRMADA: "Efetivada",
-  CANCELADA: "Estornada",
-};
-
-export const TIPOS_SEM_CUSTO = ["BALANCO"] as const;
-
-export function tipoPrecisaDeCusto(tipo: string): boolean {
-  return !TIPOS_SEM_CUSTO.includes(tipo as (typeof TIPOS_SEM_CUSTO)[number]);
+// Só lançamentos manuais e de balanço podem ser estornados direto; venda se estorna cancelando a venda.
+export function podeEstornar(m: MovimentacaoEstoque): boolean {
+  return !m.estornada && (m.origemTipo === "MANUAL" || m.origemTipo === "BALANCO");
 }
 
 export const movimentacaoEstoqueItemSchema = z.object({
@@ -57,13 +73,16 @@ export const movimentacaoEstoqueItemSchema = z.object({
     .default(0),
 });
 
-export const movimentacaoEstoqueBaseSchema = z.object({
-  tipoMovimentacao: z.enum(["ENTRADA", "SAIDA", "VENDA", "BALANCO"], {
+export const movimentacaoEstoqueSchema = z.object({
+  tipoMovimentacao: z.enum(["ENTRADA", "SAIDA"], {
     required_error: "Selecione o tipo de movimentação.",
   }),
   usuarioId: z.number().nullable().optional(),
-  nfeId: z.number().nullable().optional(),
-  vendaId: z.number().nullable().optional(),
+  motivo: z
+    .string({ required_error: "Motivo é obrigatório." })
+    .trim()
+    .min(5, "Motivo deve ter pelo menos 5 caracteres.")
+    .max(500, "Motivo deve ter no máximo 500 caracteres."),
   observacao: z
     .string()
     .max(500, "Observação deve ter no máximo 500 caracteres.")
@@ -73,19 +92,6 @@ export const movimentacaoEstoqueBaseSchema = z.object({
     .array(movimentacaoEstoqueItemSchema)
     .min(1, "A movimentação deve conter pelo menos um produto."),
 });
-
-export const movimentacaoEstoqueSchema = movimentacaoEstoqueBaseSchema.refine(
-  (data) => {
-    if (data.tipoMovimentacao === "VENDA") {
-      return data.vendaId !== null && data.vendaId !== undefined;
-    }
-    return true;
-  },
-  {
-    message: "A venda correspondente é obrigatória para movimentação de venda.",
-    path: ["vendaId"],
-  },
-);
 
 export type MovimentacaoEstoqueItemFormValues = z.infer<
   typeof movimentacaoEstoqueItemSchema

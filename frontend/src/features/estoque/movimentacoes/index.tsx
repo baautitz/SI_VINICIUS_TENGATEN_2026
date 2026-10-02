@@ -45,26 +45,12 @@ export function MovimentacoesFeature() {
     const result = await ui.windows.open<true, MovimentacoesUpsertProps>({
       component: MovimentacoesUpsert,
       props: { editingItem: null },
-      title: "Nova Movimentação de Estoque",
+      title: "Lançamento Manual de Estoque",
       size: "full",
     });
     if (result.status === "confirmed") {
       await invalidate();
-      ui.feedback.notify({ type: "success", title: "Movimentação salva com sucesso." });
-    }
-  };
-
-  const openEdit = async (item: MovimentacaoEstoque) => {
-    if (item.status !== "RASCUNHO") return openView(item);
-    const result = await ui.windows.open<true, MovimentacoesUpsertProps>({
-      component: MovimentacoesUpsert,
-      props: { editingItem: item },
-      title: `Editar Movimentação #${item.id}`,
-      size: "full",
-    });
-    if (result.status === "confirmed") {
-      await invalidate();
-      ui.feedback.notify({ type: "success", title: "Movimentação atualizada com sucesso." });
+      ui.feedback.notify({ type: "success", title: "Movimentação lançada com sucesso." });
     }
   };
 
@@ -77,50 +63,7 @@ export function MovimentacoesFeature() {
     });
   };
 
-  const deleteItem = async (item: MovimentacaoEstoque) => {
-    const result = await ui.windows.confirm({
-      title: "Excluir Rascunho de Movimentação",
-      description: `Deseja realmente excluir o rascunho de movimentação #${item.id}? Esta ação não poderá ser desfeita.`,
-      confirmLabel: "Excluir",
-      confirmVariant: "destructive",
-    });
-    if (!result) return;
-    try {
-      await estoqueApi.delete(item.id);
-      await invalidate();
-      ui.feedback.notify({ type: "success", title: "Rascunho excluído com sucesso." });
-    } catch (error) {
-      ui.feedback.notifyError(error, {
-        fallbackTitle: "Não foi possível excluir o rascunho de movimentação.",
-      });
-    }
-  };
-
-  const confirmAction = async (item: MovimentacaoEstoque) => {
-    const result = await ui.windows.confirm({
-      title: "Efetivar Movimentação?",
-      description: `Deseja realmente efetivar a movimentação de estoque #${item.id}? Isso alterará de forma definitiva o saldo físico dos produtos no catálogo.`,
-      confirmLabel: "Efetivar",
-    });
-    if (!result) return;
-    try {
-      const response = await estoqueApi.confirmar(item.id);
-      if (response.success === false) {
-        ui.feedback.notifyError(response, {
-          fallbackTitle: "Não foi possível efetivar a movimentação.",
-        });
-        return;
-      }
-      await invalidate();
-      ui.feedback.notify({ type: "success", title: "Movimentação efetivada com sucesso!" });
-    } catch (error) {
-      ui.feedback.notifyError(error, {
-        fallbackTitle: "Não foi possível efetivar a movimentação.",
-      });
-    }
-  };
-
-  const cancelAction = async (item: MovimentacaoEstoque) => {
+  const estornar = async (item: MovimentacaoEstoque) => {
     const result = await ui.windows.open<string, EstornoWindowProps>({
       component: EstornoWindow,
       props: { movimentacao: item },
@@ -129,7 +72,7 @@ export function MovimentacoesFeature() {
     });
     if (result.status !== "confirmed") return;
     try {
-      const response = await estoqueApi.cancelar(item.id, result.value);
+      const response = await estoqueApi.estornar(item.id, result.value);
       if (response.success === false) {
         ui.feedback.notifyError(response, {
           fallbackTitle: "Não foi possível estornar a movimentação.",
@@ -155,11 +98,8 @@ export function MovimentacoesFeature() {
       totalItems={data?.totalItems ?? 0}
       onSearchChange={list.handleSearchChange}
       onAdd={openCreate}
-      onEdit={openEdit}
       onView={openView}
-      onDelete={deleteItem}
-      onConfirm={confirmAction}
-      onCancel={cancelAction}
+      onEstornar={estornar}
       onPageChange={list.setPage}
       rowSelection={list.rowSelection}
       onRowSelectionChange={list.setRowSelection}
@@ -172,8 +112,6 @@ export function MovimentacoesFeature() {
 export interface MovimentacoesUpsertProps {
   editingItem: MovimentacaoEstoque | null;
   readOnly?: boolean;
-  initialItems?: import("./upsert").ItemLinha[];
-  fixedTipo?: "ENTRADA" | "SAIDA" | "BALANCO" | "VENDA";
 }
 
 interface EstornoWindowProps {
@@ -227,7 +165,7 @@ function EstornoWindow({ movimentacao }: EstornoWindowProps) {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-destructive text-xs font-semibold">
-        Isso reverterá o impacto das quantidades no saldo físico dos produtos.
+        Será lançada uma movimentação inversa; a original permanece no histórico.
       </p>
       <p className="text-sm">
         Deseja realmente estornar a movimentação <strong>#{movimentacao.id}</strong>?

@@ -9,7 +9,7 @@ import { Kbd, KbdGroup } from "@/ui/primitives";
 import { WindowActions } from "@/imperative-ui";
 import React, { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { AlertDialogFooter, Button } from "@/ui/primitives";
+import { Button } from "@/ui/primitives";
 import { Field, FieldGroup, FieldLabel } from "@/ui/primitives";
 import { NumberInput } from "@/ui/composites";
 import { Alert, AlertDescription } from "@/ui/primitives";
@@ -45,8 +45,7 @@ import {
   MovimentacaoEstoqueFormValues,
   MovimentacaoEstoqueItemFormValues,
   movimentacaoEstoqueSchema,
-  tipoPrecisaDeCusto,
-  statusLabels,
+  origemMovimentacaoLabels,
 } from "./types";
 import { ItemLinha } from "./upsert";
 import { navigationCell } from "@/ui/keyboard-navigation";
@@ -54,28 +53,16 @@ import { navigationCell } from "@/ui/keyboard-navigation";
 interface MovimentacoesUpsertFormProps {
   editingItem: MovimentacaoEstoque | null;
   readOnly: boolean;
-  initialItems?: ItemLinha[];
-  fixedTipo?: "ENTRADA" | "SAIDA" | "BALANCO" | "VENDA";
-}
-
-type SaveAction = "draft" | "effect";
-
-interface SaveConfirmationProps {
-  onSelect?: never;
 }
 
 export function MovimentacoesUpsertForm({
   editingItem,
   readOnly,
-  initialItems,
-  fixedTipo,
 }: MovimentacoesUpsertFormProps) {
-  const isEditMode = !!editingItem;
   const activeWindow = useWindow<true>();
   const ui = useUi();
 
   const [itens, setItens] = useState<ItemLinha[]>(() => {
-    if (initialItems) return initialItems;
     return (
       editingItem?.movimentacoesEstoquesItens.map((i) => {
         const fullSkuName = getFullSkuName(i.sku);
@@ -103,7 +90,6 @@ export function MovimentacoesUpsertForm({
 
   const queryClient = useQueryClient();
 
-  const createdIdRef = useRef<number | null>(null);
   const skuInputRef = useRef<HTMLInputElement>(null);
 
   // Adding an item intentionally remounts SkuInput (new key) to reset its
@@ -121,46 +107,23 @@ export function MovimentacoesUpsertForm({
 
   const { mutation, getFieldError, resetErrors, backendFieldErrors } =
     useUpsertMutation<
-      { values: MovimentacaoEstoqueFormValues; efetivar: boolean },
+      MovimentacaoEstoqueFormValues,
       Resultado<MovimentacaoEstoque>
     >({
-      mutationFn: async ({ values, efetivar }) => {
-        const existingId = editingItem?.id ?? createdIdRef.current;
-
-        const saveRes = existingId
-          ? await estoqueApi.update(existingId, values)
-          : await estoqueApi.create(values);
-
-        if (!saveRes.success || !saveRes.data) {
-          return saveRes;
-        }
-
-        if (!editingItem) {
-          createdIdRef.current = saveRes.data.id;
-        }
-
-        if (efetivar) {
-          const confirmRes = await estoqueApi.confirmar(saveRes.data.id);
-          return confirmRes;
-        }
-
-        return saveRes;
-      },
+      mutationFn: (values) => estoqueApi.create(values),
       queryKey: ["movimentacoes"],
       onSuccessCallback: () => {
         queryClient.invalidateQueries({ queryKey: ["skus"] });
         queryClient.invalidateQueries({ queryKey: ["produtos"] });
-        createdIdRef.current = null;
         activeWindow.resolve(true);
       },
     });
 
   const form = useForm({
     defaultValues: {
-      tipoMovimentacao: editingItem?.tipoMovimentacao ?? fixedTipo ?? "ENTRADA",
+      tipoMovimentacao: editingItem?.tipoMovimentacao ?? "ENTRADA",
       usuarioId: editingItem?.usuario?.id ?? null,
-      nfeId: editingItem?.nfeId ?? null,
-      vendaId: editingItem?.vendaId ?? null,
+      motivo: editingItem?.motivo ?? "",
       observacao: editingItem?.observacao ?? "",
       itens: [] as MovimentacaoEstoqueItemFormValues[],
     } as MovimentacaoEstoqueFormValues,
@@ -192,24 +155,10 @@ export function MovimentacoesUpsertForm({
         return;
       }
 
-      const result = await ui.windows.open<SaveAction, SaveConfirmationProps>({
-        component: SaveConfirmationWindow,
-        props: {},
-        title: "Salvar Movimentação?",
-        description:
-          "Deseja salvar a movimentação como rascunho ou efetivar imediatamente para atualizar o estoque físico?",
-        surface: "confirmation",
-        size: "small",
-      });
-      if (result.status === "confirmed") {
-        try {
-          await mutation.mutateAsync({
-            values: payload,
-            efetivar: result.value === "effect",
-          });
-        } catch {
-          // O hook central já apresenta o erro operacional em um toast.
-        }
+      try {
+        await mutation.mutateAsync(payload);
+      } catch {
+        // O hook central já apresenta o erro operacional em um toast.
       }
     },
   });
@@ -232,7 +181,7 @@ export function MovimentacoesUpsertForm({
     if (!readOnly) {
       setItens((prev) =>
         prev.map((item) => {
-          if (val === "SAIDA" || val === "VENDA") {
+          if (val === "SAIDA") {
             return { ...item, custoUnitario: item.custoMedio ?? 0 };
           }
           if (val === "ENTRADA") {
@@ -267,7 +216,7 @@ export function MovimentacoesUpsertForm({
         {
           id: "movimentacoes.submit",
           hotkey: "Alt+Enter" as const,
-          label: "Salvar movimentação",
+          label: "Lançar movimentação",
           enabled: !readOnly && !mutation.isPending,
           run: async (event: KeyboardEvent) => {
             event.preventDefault();
@@ -310,7 +259,7 @@ export function MovimentacoesUpsertForm({
 
     const tipoMov = form.getFieldValue("tipoMovimentacao");
     const custoInicial =
-      tipoMov === "SAIDA" || tipoMov === "VENDA"
+      tipoMov === "SAIDA"
         ? Number(Number(skuRes.custoMedio || 0).toFixed(2))
         : Number(Number(skuRes.custoUltimaCompra || 0).toFixed(2));
 
@@ -398,19 +347,15 @@ export function MovimentacoesUpsertForm({
     setItens(updated);
   };
 
-  let title = isEditMode
-    ? `Editar Movimentação #${editingItem?.id}`
-    : "Nova Movimentação de Estoque";
-
-  if (readOnly && editingItem) {
-    title = `Visualizar Movimentação #${editingItem.id} [${statusLabels[editingItem.status]}]`;
-  }
+  const title = editingItem
+    ? `Visualizar Movimentação #${editingItem.id} [${origemMovimentacaoLabels[editingItem.origemTipo]}]`
+    : "Lançamento Manual de Estoque";
 
   const related = useRelated();
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        {readOnly && editingItem && !!editingItem.vendaId && <RelatedActions actions={[{ id: "mov.venda", hotkey: "Alt+V", label: "Venda", icon: <ShoppingCart className="size-4" />, run: () => related.openView(() => vendasApi.getById(editingItem.vendaId!), VendasUpsertForm, "Detalhes da Venda") }]} />}
+        {readOnly && editingItem?.origemTipo === "VENDA" && !!editingItem.origemId && <RelatedActions actions={[{ id: "mov.venda", hotkey: "Alt+V", label: "Venda", icon: <ShoppingCart className="size-4" />, run: () => related.openView(() => vendasApi.getById(editingItem.origemId!), VendasUpsertForm, "Detalhes da Venda") }]} />}
         <Button type="button" variant="outline" onClick={handleCancel}>
           <span className="flex items-center gap-2">
             {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
@@ -430,7 +375,7 @@ export function MovimentacoesUpsertForm({
                   "Salvando..."
                 ) : (
                   <span className="flex items-center gap-2">
-                    Salvar{" "}
+                    Lançar{" "}
                     <KbdGroup>
                       <Kbd>Alt</Kbd>
                       <Kbd>Enter</Kbd>
@@ -462,7 +407,7 @@ export function MovimentacoesUpsertForm({
             <form.Subscribe
               selector={(state) => [state.values.tipoMovimentacao]}
             >
-              {([tipoMovimentacao]) => (
+              {() => (
                 <>
                   <div className="flex w-48 flex-col gap-2">
                     <form.Field name="tipoMovimentacao">
@@ -474,7 +419,7 @@ export function MovimentacoesUpsertForm({
                           <Select
                             value={field.state.value}
                             onValueChange={handleTipoMovimentacaoChange}
-                            disabled={readOnly || isEditMode || !!fixedTipo}
+                            disabled={readOnly}
                           >
                             <SelectTrigger
                               id={field.name}
@@ -485,10 +430,6 @@ export function MovimentacoesUpsertForm({
                             <SelectContent>
                               <SelectItem value="ENTRADA">Entrada</SelectItem>
                               <SelectItem value="SAIDA">Saída</SelectItem>
-                              <SelectItem value="BALANCO">Balanço</SelectItem>
-                              {field.state.value === "VENDA" && (
-                                <SelectItem value="VENDA">Venda</SelectItem>
-                              )}
                             </SelectContent>
                           </Select>
                         </Field>
@@ -496,36 +437,27 @@ export function MovimentacoesUpsertForm({
                     </form.Field>
                   </div>
 
-                  {tipoMovimentacao === "VENDA" && !isEditMode && !readOnly && (
-                    <div className="flex w-48 flex-col gap-2">
-                      <form.Field name="vendaId">
-                        {(field) => {
-                          const err =
-                            validationErrors["vendaId"] ||
-                            getFieldError(field.name, field.state.meta.errors);
-                          return (
-                            <FormFieldUI
-                              field={field}
-                              label="ID da Venda"
-                              inputSize="full"
-                              type="number"
-                              decimals={0}
-                              disabled={readOnly || isEditMode}
-                              placeholder="ID da Venda..."
-                              getFieldError={() => err}
-                            />
-                          );
-                        }}
-                      </form.Field>
-                    </div>
-                  )}
-
                 </>
               )}
             </form.Subscribe>
           </FieldGroup>
 
           <FieldGroup className="grid grid-cols-1 gap-4">
+            <form.Field name="motivo">
+              {(field) => (
+                <FormFieldUI
+                  field={field}
+                  label="Motivo"
+                  inputSize="full"
+                  disabled={readOnly}
+                  placeholder="Perda, avaria, uso interno, acerto..."
+                  getFieldError={(name, errors) =>
+                    validationErrors["motivo"] || getFieldError(name, errors)
+                  }
+                  maxLength={500}
+                />
+              )}
+            </form.Field>
             <form.Field name="observacao">
               {(field) => (
                 <FormFieldUI
@@ -533,7 +465,7 @@ export function MovimentacoesUpsertForm({
                   label="Observação"
                   inputSize="full"
                   disabled={readOnly}
-                  placeholder="Justificativa da movimentação..."
+                  placeholder="Detalhes adicionais..."
                   getFieldError={getFieldError}
                   maxLength={500}
                 />
@@ -543,7 +475,7 @@ export function MovimentacoesUpsertForm({
 
           <form.Subscribe selector={(state) => [state.values.tipoMovimentacao]}>
             {([tipoMovimentacao]) => {
-              const comCusto = tipoPrecisaDeCusto(tipoMovimentacao);
+              const comCusto = true;
 
               return (
                 <div className="flex flex-col gap-3 border-t pt-4">
@@ -626,11 +558,8 @@ export function MovimentacoesUpsertForm({
                                 tipoMovimentacao === "ENTRADA"
                                   ? (item.estoqueAtual || 0) +
                                     (item.quantidade || 0)
-                                  : tipoMovimentacao === "SAIDA" ||
-                                      tipoMovimentacao === "VENDA"
-                                    ? (item.estoqueAtual || 0) -
-                                      (item.quantidade || 0)
-                                    : item.quantidade || 0;
+                                  : (item.estoqueAtual || 0) -
+                                    (item.quantidade || 0);
                               return Number(rawApos.toFixed(4));
                             })();
 
@@ -762,8 +691,7 @@ export function MovimentacoesUpsertForm({
                                         aria-invalid={!!custoErr}
                                         disabled={
                                           readOnly ||
-                                          tipoMovimentacao === "SAIDA" ||
-                                          tipoMovimentacao === "VENDA"
+                                          tipoMovimentacao === "SAIDA"
                                         }
                                         onNumberChange={(num) => {
                                           updateItemRow(
@@ -847,61 +775,5 @@ export function MovimentacoesUpsertForm({
         </form>
       </div>
     </div>
-  );
-}
-
-function SaveConfirmationWindow() {
-  const activeWindow = useWindow<SaveAction>();
-  const handleCancel = React.useCallback(async () => {
-    activeWindow.dismiss("cancel");
-  }, [activeWindow]);
-  const handleDraft = React.useCallback(async () => {
-    activeWindow.resolve("draft");
-  }, [activeWindow]);
-  const handleEffect = React.useCallback(async () => {
-    activeWindow.resolve("effect");
-  }, [activeWindow]);
-  const commands = React.useMemo(
-    () => [
-      {
-        id: "movimentacoes.save-draft",
-        hotkey: "Alt+S" as const,
-        label: "Salvar rascunho",
-        run: handleDraft,
-      },
-      {
-        id: "movimentacoes.effect",
-        hotkey: "Alt+Enter" as const,
-        label: "Efetivar movimentação",
-        run: handleEffect,
-      },
-    ],
-    [handleDraft, handleEffect],
-  );
-  useWindowCommands(commands);
-
-  return (
-    <AlertDialogFooter
-      data-window-actions
-      className="flex-row flex-wrap items-center justify-end gap-2"
-    >
-      <Button type="button" variant="outline" onClick={handleCancel}>
-        Cancelar <Kbd>Esc</Kbd>
-      </Button>
-      <Button type="button" variant="secondary" onClick={handleDraft}>
-        Salvar Rascunho{" "}
-        <KbdGroup>
-          <Kbd>Alt</Kbd>
-          <Kbd>S</Kbd>
-        </KbdGroup>
-      </Button>
-      <Button type="button" onClick={handleEffect}>
-        Efetivar{" "}
-        <KbdGroup>
-          <Kbd>Alt</Kbd>
-          <Kbd>Enter</Kbd>
-        </KbdGroup>
-      </Button>
-    </AlertDialogFooter>
   );
 }
