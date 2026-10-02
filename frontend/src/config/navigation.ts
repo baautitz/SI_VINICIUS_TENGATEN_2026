@@ -21,6 +21,7 @@ import {
   Landmark,
   Receipt,
   PackagePlus,
+  FileText,
 } from "lucide-react";
 import React from "react";
 
@@ -52,6 +53,13 @@ export const navigationConfig: NavGroup[] = [
     icon: PackagePlus,
     urlPrefix: "/compras",
     items: [{ title: "Compras e Importar XML", url: "/compras", icon: PackagePlus }],
+  },
+  {
+    id: "nfes",
+    title: "Notas Fiscais",
+    icon: FileText,
+    urlPrefix: "/nfes",
+    items: [{ title: "NF-e", url: "/nfes", icon: FileText }],
   },
   {
     id: "catalogo",

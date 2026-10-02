@@ -130,3 +130,20 @@
     @apply font-sans;
     }
 }
+/* DANFE: ao imprimir, só o documento aparece (esconde sidebar, janelas e toasts). */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #danfe,
+  #danfe * {
+    visibility: visible;
+  }
+  #danfe {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: none;
+  }
+}
