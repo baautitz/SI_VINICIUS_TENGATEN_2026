@@ -105,7 +105,8 @@ public static class NfeXmlParser
             transp is null || Texto(transp, "modFrete") is not { } mod ? null : int.Parse(mod, CultureInfo.InvariantCulture),
             transp is null || Filho(transp, "transporta") is not { } t ? null : Parte(t, null),
             parcelas,
-            Texto(Filho(inf, "infAdic"), "infCpl"));
+            Texto(Filho(inf, "infAdic"), "infCpl"),
+            DateTimeOffset.Parse(emissao, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal).DateTime);
     }
 
     // 44 dígitos; DV = módulo 11 (pesos 2..9 da direita para a esquerda).

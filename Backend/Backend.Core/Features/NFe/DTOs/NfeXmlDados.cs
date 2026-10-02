@@ -18,4 +18,6 @@ public record NfeXmlDados(
     NfeXmlParte Emitente, NfeXmlParte? Destinatario,
     IReadOnlyList<NfeXmlItem> Itens, NfeXmlTotais Totais,
     int? ModalidadeFrete, NfeXmlParte? Transportadora,
-    IReadOnlyList<NfeXmlParcela> Parcelas, string? InformacoesComplementares);
+    IReadOnlyList<NfeXmlParcela> Parcelas, string? InformacoesComplementares,
+    // Data de emissão no fuso do próprio XML (sem converter para UTC), para não deslocar o dia.
+    DateTime DataEmissaoLocal = default);

@@ -44,6 +44,7 @@ public class NfeXmlParserTests
         Assert.Equal(1234, d.Numero);
         Assert.Equal((short)1, d.Serie);
         Assert.Equal(new DateTime(2026, 5, 10, 13, 0, 0, DateTimeKind.Utc), d.DataEmissao);
+        Assert.Equal(new DateTime(2026, 5, 10, 10, 0, 0), d.DataEmissaoLocal);
         Assert.Equal(CnpjEmit, d.Emitente.Documento);
         Assert.Equal("Rua A", d.Emitente.Logradouro);
         Assert.Equal("1133334444", d.Emitente.Telefone);

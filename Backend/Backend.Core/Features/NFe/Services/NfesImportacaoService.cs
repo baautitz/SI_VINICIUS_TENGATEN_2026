@@ -169,7 +169,8 @@ public sealed class NfesImportacaoService : BaseService
             // integra o custo e fecha as parcelas com o vNF. Créditos recuperáveis ficam fora do escopo.
             var diferenca = t.Nota - (dados.Itens.Sum(i => i.ValorProdutos - i.ValorDesconto) + t.Frete + t.Seguro + t.Outras);
             var compraCommand = new CriarCompraCommand(
-                DateTime.UtcNow, command.EmitenteId, fornecedor.Id,
+                // Dia da emissão preservado (meio-dia UTC não muda de dia em nenhum fuso do Brasil).
+                DateTime.SpecifyKind(dados.DataEmissaoLocal.Date.AddHours(12), DateTimeKind.Utc), command.EmitenteId, fornecedor.Id,
                 t.Frete, t.Seguro, t.Outras + Math.Max(diferenca, 0m),
                 Math.Max(0m, t.Desconto - descontoItens) + Math.Max(-diferenca, 0m), // vDesc da nota já inclui o desconto dos itens
                 command.ValorFreteTerceiro, transportadora.Data?.Id, command.VencimentoFreteTerceiro,
