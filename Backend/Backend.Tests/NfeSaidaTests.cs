@@ -97,4 +97,14 @@ public class NfeSaidaTests
         // 2,5 x 10,00 = 25,00 (vProd do item) e vProd total = 25,00
         Assert.Equal(25m, nfe.ValorProdutos);
     }
+
+    [Fact]
+    public void Marca_de_cancelamento_mantem_o_xml_bem_formado()
+    {
+        var nfe = NfeDeSaida();
+        nfe.Cancelar("Venda lancada -- por engano", new DateTime(2026, 10, 3, 0, 0, 0, DateTimeKind.Utc));
+
+        var doc = System.Xml.Linq.XDocument.Parse(nfe.XmlDocumento! + nfe.MarcaXmlCancelamento());
+        Assert.Contains(doc.Nodes(), n => n is System.Xml.Linq.XComment c && c.Value.Contains("CANCELADA"));
+    }
 }

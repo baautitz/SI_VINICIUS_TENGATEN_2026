@@ -13,7 +13,8 @@ public interface INfesRepository
     public Task<NfeAtiva?> ObterNfeEmitidaDaVenda(int vendaId);
     // Próximo número da série para o emitente; exige transação aberta (advisory lock até o commit).
     public Task<int> ProximoNumeroSaida(int emitenteId, short serie);
-    public Task CancelarNfe(Nfes nfe);
+    // false = nada atualizado (a NF-e deixou de estar EMITIDA entre a leitura e o UPDATE).
+    public Task<bool> CancelarNfe(Nfes nfe);
     public Task<bool> ExisteChaveAcesso(string chaveAcesso);
     public Task<Nfes> CriarNfe(Nfes nfe);
     public Task<Nfes> AtualizarNfe(int id, Nfes nfe);

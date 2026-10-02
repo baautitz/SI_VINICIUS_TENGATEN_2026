@@ -221,6 +221,10 @@ public class Nfes
         StatusNfe = StatusNfe.EMITIDA;
     }
 
+    // Comentário XML (válido após a raiz) anexado ao documento guardado: indica que a nota foi cancelada.
+    public string MarcaXmlCancelamento()
+        => $"<!-- NF-e CANCELADA em {DataCancelamento:yyyy-MM-ddTHH:mm:ssZ}: {JustificativaCancelamento?.Replace("--", "- -")} -->";
+
     // Cancelamento fiscal: não desfaz a venda, o estoque nem o financeiro.
     public void Cancelar(string justificativa, DateTime? quando = null)
     {

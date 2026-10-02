@@ -479,10 +479,13 @@ public class NfesRepository : INfesRepository
             new { EmitenteId = emitenteId, Serie = (int)serie }, transaction: _session.Transaction);
     }
 
-    public Task CancelarNfe(Nfes nfe)
-        => _session.Connection.ExecuteAsync(
-            "UPDATE nfes SET status_nfe = 'CANCELADA', justificativa_cancelamento = @JustificativaCancelamento, data_cancelamento = @DataCancelamento WHERE id = @Id;",
-            new { nfe.Id, nfe.JustificativaCancelamento, nfe.DataCancelamento }, transaction: _session.Transaction);
+    // Guarda no UPDATE (status EMITIDA) contra cancelamento concorrente; o XML guardado ganha um comentário de cancelamento.
+    public async Task<bool> CancelarNfe(Nfes nfe)
+        => await _session.Connection.ExecuteAsync(
+            @"UPDATE nfes SET status_nfe = 'CANCELADA', justificativa_cancelamento = @JustificativaCancelamento, data_cancelamento = @DataCancelamento,
+                     xml_documento = xml_documento || @MarcaXml
+              WHERE id = @Id AND status_nfe = 'EMITIDA';",
+            new { nfe.Id, nfe.JustificativaCancelamento, nfe.DataCancelamento, MarcaXml = nfe.MarcaXmlCancelamento() }, transaction: _session.Transaction) > 0;
 
     public Task<string?> ObterXmlDocumento(int id)
         => _session.Connection.ExecuteScalarAsync<string?>(

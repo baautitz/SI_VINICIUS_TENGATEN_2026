@@ -112,7 +112,8 @@ public sealed class NfesSaidaService : BaseService
         try { nfe.Cancelar(command.Justificativa); }
         catch (DomainException ex) { return Falha("JUSTIFICATIVA_INVALIDA", ex.Message, "Justificativa"); }
 
-        await _nfesRepository.CancelarNfe(nfe);
+        if (!await _nfesRepository.CancelarNfe(nfe))
+            return Falha(NfeJaCancelada, "A NF-e já foi cancelada ou deixou de estar emitida.", "Id");
         return Resultado<Nfes>.Sucesso(nfe);
     }
 
