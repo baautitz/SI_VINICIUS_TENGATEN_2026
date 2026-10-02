@@ -16,6 +16,7 @@ import { SexoSelect } from "@/components/sexo-select";
 import { DatePicker } from "@/ui/composites";
 import { cn } from "@/lib/utils";
 import { BairroInput } from "@/components/entity-inputs/bairro-input";
+import { CondicaoPagamentoInput } from "@/components/entity-inputs/condicao-pagamento-input";
 import { PaisInput } from "@/components/entity-inputs/pais-input";
 import { TipoPessoaSelect } from "@/components/tipo-pessoa-select";
 import { useForm } from "@tanstack/react-form";
@@ -99,6 +100,7 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false }: FornecedoresU
       sexo: editingItem?.sexo ?? "",
       dataNascimento: editingItem?.dataNascimento ? editingItem.dataNascimento.split("T")[0] : "",
       observacao: editingItem?.observacao ?? "",
+      condicaoPagamentoId: editingItem?.condicaoPagamento?.id ?? null,
       ativo: editingItem?.ativo ?? true,
     } as FornecedorFormValues,
     onSubmit: async ({ value }) => {
@@ -106,6 +108,7 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false }: FornecedoresU
       const payload = {
         ...value,
         bairroId: value.bairroId || null,
+        condicaoPagamentoId: value.condicaoPagamentoId || null,
         rgIe: isBrasil ? value.rgIe : "",
         sexo: value.tipoPessoa === TipoPessoa.FISICA ? value.sexo : "",
         dataNascimento: value.dataNascimento || null,
@@ -490,6 +493,19 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false }: FornecedoresU
             </div>
           </div>
         </div>
+
+        <form.Field name="condicaoPagamentoId">
+          {(field) => (
+            <CondicaoPagamentoInput
+              name={field.name}
+              label="Condição de pagamento padrão"
+              error={getFieldError(field.name, field.state.meta.errors)}
+              initialItem={editingItem?.condicaoPagamento}
+              onSelectId={(id) => field.handleChange(id)}
+              disabled={readOnly}
+            />
+          )}
+        </form.Field>
 
         <form.Field
           name="observacao"

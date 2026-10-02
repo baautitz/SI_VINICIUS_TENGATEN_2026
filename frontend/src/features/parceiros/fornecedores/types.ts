@@ -1,6 +1,7 @@
 import { z } from "zod"
 import type { Bairro } from "@/features/localizacao/bairros/types"
 import type { Pais } from "@/features/localizacao/paises/types"
+import type { CondicaoPagamento } from "@/features/financeiro/condicoes/types"
 import { TipoPessoa } from "@/api/types"
 
 export interface Fornecedor {
@@ -20,6 +21,7 @@ export interface Fornecedor {
   sexo?: string
   dataNascimento?: string
   observacao?: string
+  condicaoPagamento?: CondicaoPagamento | null
 }
 
 export const fornecedorSchema = z.object({
@@ -37,6 +39,7 @@ export const fornecedorSchema = z.object({
   telefone: z.string().optional(),
   email: z.string().email("E-mail inválido").or(z.literal("")).optional(),
   observacao: z.string().optional(),
+  condicaoPagamentoId: z.number().nullable().optional(),
   ativo: z.boolean().default(true),
 })
 
