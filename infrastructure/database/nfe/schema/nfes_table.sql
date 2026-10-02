@@ -2,7 +2,7 @@ SET search_path TO projeto_sistemas;
 
 CREATE TABLE IF NOT EXISTS nfes (
   id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  chave_acesso VARCHAR(44) UNIQUE,
+  chave_acesso VARCHAR(44),
   numero INTEGER NOT NULL,
   serie SMALLINT NOT NULL,
   data_emissao TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -94,7 +94,11 @@ ALTER TABLE nfes ADD CONSTRAINT nfes_origem_ck CHECK (
   OR (tipo_operacao = 'ENTRADA' AND compra_id IS NOT NULL AND venda_id IS NULL AND fornecedor_id IS NOT NULL AND cliente_id IS NULL)
 );
 
--- Numeração é nossa só na SAIDA; na ENTRADA vale a chave de acesso original (UNIQUE).
+-- Numeração é nossa só na SAIDA; na ENTRADA vale a chave de acesso original, única entre as notas não canceladas
+-- (compra estornada cancela a NF-e de entrada e libera a reimportação do mesmo XML).
+ALTER TABLE nfes DROP CONSTRAINT IF EXISTS nfes_chave_acesso_key;
+CREATE UNIQUE INDEX IF NOT EXISTS nfes_chave_acesso_ativa_uq
+  ON nfes (chave_acesso) WHERE status_nfe <> 'CANCELADA';
 CREATE UNIQUE INDEX IF NOT EXISTS nfes_saida_emitente_serie_numero_uq
   ON nfes (emitente_id, serie, numero) WHERE tipo_operacao = 'SAIDA';
 CREATE UNIQUE INDEX IF NOT EXISTS nfes_venda_emitida_uq

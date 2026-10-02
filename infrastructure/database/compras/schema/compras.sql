@@ -26,3 +26,19 @@ CREATE TABLE IF NOT EXISTS compras (
   ),
   CONSTRAINT compras_frete_terceiro_transportadora_ck CHECK (valor_frete_terceiro = 0 OR transportadora_id IS NOT NULL)
 );
+
+-- Estorno: a compra permanece como registro, marcada como estornada (motivo, data e quem).
+ALTER TABLE compras ADD COLUMN IF NOT EXISTS estornada_em TIMESTAMP WITH TIME ZONE;
+ALTER TABLE compras ADD COLUMN IF NOT EXISTS motivo_estorno VARCHAR(255);
+ALTER TABLE compras ADD COLUMN IF NOT EXISTS usuario_estorno_id INTEGER;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'compras_usuario_estorno_fk') THEN
+    ALTER TABLE compras ADD CONSTRAINT compras_usuario_estorno_fk FOREIGN KEY (usuario_estorno_id) REFERENCES usuarios (id);
+  END IF;
+END $$;
+ALTER TABLE compras DROP CONSTRAINT IF EXISTS compras_estorno_ck;
+ALTER TABLE compras ADD CONSTRAINT compras_estorno_ck CHECK (
+  (estornada_em IS NULL AND motivo_estorno IS NULL AND usuario_estorno_id IS NULL)
+  OR (estornada_em IS NOT NULL AND LENGTH(TRIM(COALESCE(motivo_estorno, ''))) >= 5)
+);
