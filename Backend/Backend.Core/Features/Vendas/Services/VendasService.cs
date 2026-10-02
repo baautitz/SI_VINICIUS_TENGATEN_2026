@@ -176,6 +176,9 @@ public sealed class VendasService : BaseService
                     foreach (var p in command.Parcelas)
                     {
                         conta.AdicionarParcela(p.NumeroParcela, p.DataVencimento, p.ValorParcela);
+                        // Condição à vista (entrada mínima de 100%): a parcela nasce recebida.
+                        if (EhAVista(condicao))
+                            conta.RegistrarRecebimento(p.NumeroParcela, p.ValorParcela);
                     }
 
                     await _contasRepository.CriarContaReceber(conta);
@@ -191,6 +194,12 @@ public sealed class VendasService : BaseService
             }
         });
     }
+
+    private static bool EhAVista(CondicoesPagamentos? condicao) => condicao?.EntradaMinimaPercentual >= 100;
+
+    // O recebimento automático da condição à vista não impede cancelar/deletar a venda.
+    private static bool TemRecebimentoManual(ContasReceberParcelas p, CondicoesPagamentos? condicao)
+        => p.ValorRecebido > 0 && !(EhAVista(condicao) && p.Status == StatusTituloFinanceiro.PAGO);
 
     public async Task<bool> DeletarVenda(int id)
     {
@@ -227,7 +236,7 @@ public sealed class VendasService : BaseService
             if (contaVenda != null)
             {
                 // Check if any installments were already paid
-                var temPagas = contaVenda.ContasReceberParcelas.Any(p => p.Status == StatusTituloFinanceiro.PAGO || p.Status == StatusTituloFinanceiro.PARCIAL || p.ValorRecebido > 0);
+                var temPagas = contaVenda.ContasReceberParcelas.Any(p => TemRecebimentoManual(p, contaVenda.CondicaoPagamento));
                 if (temPagas)
                     throw new DomainException("Não é possível deletar uma venda com parcelas financeiras já pagas ou parciais.");
 
@@ -282,7 +291,7 @@ public sealed class VendasService : BaseService
             if (contaVenda != null)
             {
                 // Check if any installments were already paid
-                var temPagas = contaVenda.ContasReceberParcelas.Any(p => p.Status == StatusTituloFinanceiro.PAGO || p.Status == StatusTituloFinanceiro.PARCIAL || p.ValorRecebido > 0);
+                var temPagas = contaVenda.ContasReceberParcelas.Any(p => TemRecebimentoManual(p, contaVenda.CondicaoPagamento));
                 if (temPagas)
                     throw new DomainException("Não é possível cancelar uma venda com parcelas financeiras já pagas ou parciais.");
 
