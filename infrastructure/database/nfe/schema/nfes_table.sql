@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS nfes (
   transportadora_id INTEGER,
   venda_id INTEGER,
   compra_id INTEGER,
+  justificativa_cancelamento VARCHAR(255),
+  data_cancelamento TIMESTAMP WITH TIME ZONE,
   valor_produtos NUMERIC(14, 2) NOT NULL DEFAULT 0,
   valor_desconto NUMERIC(14, 2) NOT NULL DEFAULT 0,
   valor_frete NUMERIC(14, 2) NOT NULL DEFAULT 0,
@@ -42,7 +44,6 @@ CREATE TABLE IF NOT EXISTS nfes (
   CONSTRAINT nfes_cliente_fk FOREIGN KEY (cliente_id) REFERENCES clientes (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT nfes_fornecedor_fk FOREIGN KEY (fornecedor_id) REFERENCES fornecedores (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT nfes_transportadora_fk FOREIGN KEY (transportadora_id) REFERENCES transportadoras (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT nfes_emitente_serie_numero_unique UNIQUE (emitente_id, serie, numero),
   CONSTRAINT nfes_emitente_nome_not_empty_ck CHECK (LENGTH(TRIM(emitente_nome_razaosocial)) > 0),
   CONSTRAINT nfes_emitente_cpf_cnpj_not_empty_ck CHECK (LENGTH(TRIM(emitente_cpf_cnpj)) > 0),
   CONSTRAINT nfes_cliente_nome_not_empty_ck CHECK (LENGTH(TRIM(cliente_nome_razaosocial)) > 0),
@@ -60,7 +61,39 @@ CREATE TABLE IF NOT EXISTS nfes (
   CONSTRAINT nfes_venda_fk FOREIGN KEY (venda_id) REFERENCES vendas (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT nfes_compra_fk FOREIGN KEY (compra_id) REFERENCES compras (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT nfes_origem_ck CHECK (
-    (tipo_operacao = 'SAIDA' AND venda_id IS NOT NULL AND compra_id IS NULL)
-    OR (tipo_operacao = 'ENTRADA' AND compra_id IS NOT NULL AND venda_id IS NULL)
+    (tipo_operacao = 'SAIDA' AND venda_id IS NOT NULL AND compra_id IS NULL AND cliente_id IS NOT NULL AND fornecedor_id IS NULL)
+    OR (tipo_operacao = 'ENTRADA' AND compra_id IS NOT NULL AND venda_id IS NULL AND fornecedor_id IS NOT NULL AND cliente_id IS NULL)
   )
 );
+
+-- Numeração é nossa só na SAIDA; na ENTRADA vale a chave de acesso original (UNIQUE).
+CREATE UNIQUE INDEX IF NOT EXISTS nfes_saida_emitente_serie_numero_uq
+  ON nfes (emitente_id, serie, numero) WHERE tipo_operacao = 'SAIDA';
+CREATE UNIQUE INDEX IF NOT EXISTS nfes_venda_emitida_uq
+  ON nfes (venda_id) WHERE status_nfe = 'EMITIDA';
+CREATE UNIQUE INDEX IF NOT EXISTS nfes_compra_uq
+  ON nfes (compra_id) WHERE compra_id IS NOT NULL;
+
+-- Migração de bancos já criados (CREATE TABLE IF NOT EXISTS não altera tabela existente).
+-- Os CHECKs entram NOT VALID para tolerar SAIDA antigas sem venda_id.
+ALTER TABLE nfes ADD COLUMN IF NOT EXISTS fornecedor_id INTEGER;
+ALTER TABLE nfes ADD COLUMN IF NOT EXISTS compra_id INTEGER;
+ALTER TABLE nfes ADD COLUMN IF NOT EXISTS justificativa_cancelamento VARCHAR(255);
+ALTER TABLE nfes ADD COLUMN IF NOT EXISTS data_cancelamento TIMESTAMP WITH TIME ZONE;
+ALTER TABLE nfes ALTER COLUMN cliente_id DROP NOT NULL;
+ALTER TABLE nfes DROP CONSTRAINT IF EXISTS nfes_emitente_serie_numero_unique;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'nfes_fornecedor_fk') THEN
+    ALTER TABLE nfes ADD CONSTRAINT nfes_fornecedor_fk FOREIGN KEY (fornecedor_id) REFERENCES fornecedores (id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'nfes_compra_fk') THEN
+    ALTER TABLE nfes ADD CONSTRAINT nfes_compra_fk FOREIGN KEY (compra_id) REFERENCES compras (id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'nfes_origem_ck') THEN
+    ALTER TABLE nfes ADD CONSTRAINT nfes_origem_ck CHECK (
+      (tipo_operacao = 'SAIDA' AND venda_id IS NOT NULL AND compra_id IS NULL AND cliente_id IS NOT NULL AND fornecedor_id IS NULL)
+      OR (tipo_operacao = 'ENTRADA' AND compra_id IS NOT NULL AND venda_id IS NULL AND fornecedor_id IS NOT NULL AND cliente_id IS NULL)
+    ) NOT VALID;
+  END IF;
+END $$;

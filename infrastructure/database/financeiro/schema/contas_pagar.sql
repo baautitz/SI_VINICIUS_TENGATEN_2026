@@ -48,3 +48,15 @@ CREATE TABLE IF NOT EXISTS contas_pagar (
   CONSTRAINT contas_pagar_valor_saldo_ck
     CHECK (valor_saldo >= 0)
 );
+
+-- Migração de bancos já criados.
+ALTER TABLE contas_pagar ADD COLUMN IF NOT EXISTS transportadora_id INTEGER;
+ALTER TABLE contas_pagar DROP CONSTRAINT IF EXISTS contas_pagar_contraparte_ck;
+ALTER TABLE contas_pagar ADD CONSTRAINT contas_pagar_contraparte_ck
+  CHECK (num_nonnulls(fornecedor_id, cliente_id, transportadora_id) = 1);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'contas_pagar_transportadora_fk') THEN
+    ALTER TABLE contas_pagar ADD CONSTRAINT contas_pagar_transportadora_fk FOREIGN KEY (transportadora_id) REFERENCES transportadoras (id);
+  END IF;
+END $$;
