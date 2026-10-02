@@ -80,7 +80,7 @@ public class NfeSaidaTests
         nfe.Cancelar("Cancelamento por erro de digitacao");
         Assert.Equal(StatusNfe.CANCELADA, nfe.StatusNfe);
         Assert.NotNull(nfe.DataCancelamento);
-        Assert.Equal("CANCELAMENTO POR ERRO DE DIGITACAO", nfe.JustificativaCancelamento);
+        Assert.Equal("Cancelamento por erro de digitacao", nfe.JustificativaCancelamento);
         Assert.Throws<DomainException>(() => nfe.Cancelar("Cancelamento por erro de digitacao"));
     }
 
