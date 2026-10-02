@@ -35,8 +35,8 @@ export function FornecedorInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
-      onView={(item) =>
-        ui.windows.open({ component: FornecedoresUpsert, props: { editingItem: item, readOnly: true }, title: "Visualizar Fornecedor", size: "full" })}
+      onView={(item, readOnly) =>
+        ui.windows.open({ component: FornecedoresUpsert, props: { editingItem: item, readOnly }, title: readOnly ? "Visualizar Fornecedor" : "Editar Fornecedor", size: "full" })}
       modalTitle="Selecionar Fornecedor"
       getDisplayLabel={(item) => item?.nomeRazaosocial ?? ""}
       getSearchTerm={(item) => item.nomeRazaosocial}

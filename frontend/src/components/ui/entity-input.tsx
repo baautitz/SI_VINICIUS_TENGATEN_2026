@@ -17,8 +17,12 @@ interface EntityInputProps<T, TResumo = T, TId extends string | number = number>
 
   onSelectId: (id: TId | null) => void;
   onSelectItem?: (item: T | null) => void;
-  /** Com o campo desabilitado, mantém-no focável e abre a visualização com Enter ou clique. */
-  onView?: (item: T) => unknown;
+  /**
+   * Abre a entidade selecionada (Enter ou clique, só com o campo desabilitado).
+   * A edição depende da natureza da entidade, não do formulário pai: abre editável mesmo com
+   * o campo desabilitado. `readOnly` permite a um input forçar visualização.
+   */
+  onView?: (item: T, readOnly: boolean) => unknown;
 
   fetchById: (id: TId) => Promise<T | null>;
   fetchList: (term: string) => Promise<{ itens?: TResumo[] } | null>;
@@ -116,17 +120,22 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
 
   const viewable = disabled && !!onView && !!selectedItem;
 
-  const openView = async () => {
-    if (!viewable) return;
+  const openEntity = async (readOnly: boolean) => {
+    if (!onView || !selectedItem) return;
     try {
-      const full = await fetchById(getId(selectedItem!));
-      if (full) await onView!(full);
+      const full = await fetchById(getId(selectedItem));
+      if (!full) return;
+      await onView(full, readOnly);
+      // Edição pode ter alterado a entidade: atualiza o rótulo exibido.
+      if (!readOnly) await applySelection(selectedItem, true);
     } catch (error) {
       ui.feedback.notifyError(error, {
         fallbackTitle: `Não foi possível abrir ${modalTitle.toLowerCase()}.`,
       });
     }
   };
+
+  const openView = () => (viewable ? openEntity(false) : undefined);
 
   const openSelection = async () => {
     // Enter, blur and the search button can converge while the lookup request

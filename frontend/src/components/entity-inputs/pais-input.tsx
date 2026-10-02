@@ -35,8 +35,8 @@ export function PaisInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
-      onView={(item) =>
-        ui.windows.open({ component: PaisesUpsert, props: { editingItem: item, readOnly: true }, title: "Visualizar País", size: "full" })}
+      onView={(item, readOnly) =>
+        ui.windows.open({ component: PaisesUpsert, props: { editingItem: item, readOnly }, title: readOnly ? "Visualizar País" : "Editar País", size: "full" })}
       modalTitle="Selecionar País"
       getDisplayLabel={formatPaisLabel}
       getSearchTerm={(item) => item.pais}

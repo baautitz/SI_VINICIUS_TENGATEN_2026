@@ -35,8 +35,8 @@ export function AtributoChaveInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
-      onView={(item) =>
-        ui.windows.open({ component: AtributosUpsert, props: { editingItem: item, readOnly: true }, title: "Visualizar Atributo", size: "full" })}
+      onView={(item, readOnly) =>
+        ui.windows.open({ component: AtributosUpsert, props: { editingItem: item, readOnly }, title: readOnly ? "Visualizar Atributo" : "Editar Atributo", size: "full" })}
       modalTitle="Selecionar Atributo"
       getDisplayLabel={(item) => item?.chave ?? ""}
       getSearchTerm={(item) => item.chave}

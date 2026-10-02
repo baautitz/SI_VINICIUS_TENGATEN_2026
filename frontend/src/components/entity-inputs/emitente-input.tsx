@@ -40,11 +40,11 @@ export function EmitenteInput({
       getSearchTerm={(item) => item.nomeRazaoSocial}
       getId={(item) => item.id}
       disabled={disabled}
-      onView={(item) =>
+      onView={(item, readOnly) =>
         ui.windows.open({
           component: EmitentesUpsert,
-          props: { editingItem: item, readOnly: true },
-          title: "Visualizar Emitente",
+          props: { editingItem: item, readOnly },
+          title: readOnly ? "Visualizar Emitente" : "Editar Emitente",
           size: "full",
         })
       }

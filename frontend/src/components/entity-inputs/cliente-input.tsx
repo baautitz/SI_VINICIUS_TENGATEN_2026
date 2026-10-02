@@ -42,11 +42,11 @@ export function ClienteInput({
       getSearchTerm={(item) => item.nomeRazaoSocial}
       getId={(item) => item.id}
       disabled={disabled}
-      onView={(item) =>
+      onView={(item, readOnly) =>
         ui.windows.open({
           component: ClientesUpsert,
-          props: { editingItem: item, readOnly: true },
-          title: "Visualizar Cliente",
+          props: { editingItem: item, readOnly },
+          title: readOnly ? "Visualizar Cliente" : "Editar Cliente",
           size: "full",
         })
       }

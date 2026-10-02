@@ -38,8 +38,8 @@ export function EstadoInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
-      onView={(item) =>
-        ui.windows.open({ component: EstadosUpsert, props: { editingItem: item, readOnly: true }, title: "Visualizar Estado", size: "full" })}
+      onView={(item, readOnly) =>
+        ui.windows.open({ component: EstadosUpsert, props: { editingItem: item, readOnly }, title: readOnly ? "Visualizar Estado" : "Editar Estado", size: "full" })}
       modalTitle="Selecionar Estado"
       getDisplayLabel={(item) => item?.estado ?? ""}
       getSearchTerm={(item) => item.estado}

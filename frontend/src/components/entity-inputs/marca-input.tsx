@@ -35,8 +35,8 @@ export function MarcaInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
-      onView={(item) =>
-        ui.windows.open({ component: MarcasUpsert, props: { editingItem: item, readOnly: true }, title: "Visualizar Marca", size: "full" })}
+      onView={(item, readOnly) =>
+        ui.windows.open({ component: MarcasUpsert, props: { editingItem: item, readOnly }, title: readOnly ? "Visualizar Marca" : "Editar Marca", size: "full" })}
       modalTitle="Selecionar Marca"
       getDisplayLabel={(item) => item?.marca ?? ""}
       getSearchTerm={(item) => item.marca}

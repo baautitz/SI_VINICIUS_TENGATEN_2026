@@ -51,11 +51,11 @@ export function CondicaoPagamentoInput({
       getSearchTerm={(item) => item.descricao}
       getId={(item) => item.id}
       disabled={disabled}
-      onView={(item) =>
+      onView={(item, readOnly) =>
         ui.windows.open({
           component: CondicoesUpsert,
-          props: { editingItem: item, readOnly: true },
-          title: "Visualizar Condição de Pagamento",
+          props: { editingItem: item, readOnly },
+          title: readOnly ? "Visualizar Condição de Pagamento" : "Editar Condição de Pagamento",
           size: "full",
         })
       }

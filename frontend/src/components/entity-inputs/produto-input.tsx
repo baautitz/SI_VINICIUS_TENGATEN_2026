@@ -35,8 +35,8 @@ export function ProdutoInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
-      onView={(item) =>
-        ui.windows.open({ component: ProdutosUpsert, props: { editingItem: item, readOnly: true }, title: "Visualizar Produto", size: "full" })}
+      onView={(item, readOnly) =>
+        ui.windows.open({ component: ProdutosUpsert, props: { editingItem: item, readOnly }, title: readOnly ? "Visualizar Produto" : "Editar Produto", size: "full" })}
       modalTitle="Selecionar Produto"
       getDisplayLabel={(item) => item?.produto ?? ""}
       getSearchTerm={(item) => item.produto}

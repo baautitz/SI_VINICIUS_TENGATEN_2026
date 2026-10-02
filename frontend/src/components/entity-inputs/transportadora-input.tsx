@@ -32,8 +32,8 @@ export function TransportadoraInput({
       disabled={disabled}
       initialItem={initialItem}
       onSelectId={onSelectId}
-      onView={(item) =>
-        ui.windows.open({ component: TransportadorasUpsert, props: { editingItem: item, readOnly: true }, title: "Visualizar Transportadora", size: "full" })}
+      onView={(item, readOnly) =>
+        ui.windows.open({ component: TransportadorasUpsert, props: { editingItem: item, readOnly }, title: readOnly ? "Visualizar Transportadora" : "Editar Transportadora", size: "full" })}
       modalTitle="Selecionar Transportadora"
       getDisplayLabel={(item) => item.nomeRazaosocial}
       getSearchTerm={(item) => item.nomeRazaosocial}

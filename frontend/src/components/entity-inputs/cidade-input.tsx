@@ -38,8 +38,8 @@ export function CidadeInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
-      onView={(item) =>
-        ui.windows.open({ component: CidadesUpsert, props: { editingItem: item, readOnly: true }, title: "Visualizar Cidade", size: "full" })}
+      onView={(item, readOnly) =>
+        ui.windows.open({ component: CidadesUpsert, props: { editingItem: item, readOnly }, title: readOnly ? "Visualizar Cidade" : "Editar Cidade", size: "full" })}
       modalTitle="Selecionar Cidade"
       getDisplayLabel={(item) => item?.cidade ?? ""}
       getSearchTerm={(item) => item.cidade}

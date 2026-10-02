@@ -35,8 +35,8 @@ export function CategoriaInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
-      onView={(item) =>
-        ui.windows.open({ component: CategoriasUpsert, props: { editingItem: item, readOnly: true }, title: "Visualizar Categoria", size: "full" })}
+      onView={(item, readOnly) =>
+        ui.windows.open({ component: CategoriasUpsert, props: { editingItem: item, readOnly }, title: readOnly ? "Visualizar Categoria" : "Editar Categoria", size: "full" })}
       modalTitle="Selecionar Categoria"
       getDisplayLabel={(item) => item?.categoria ?? ""}
       getSearchTerm={(item) => item.categoria}

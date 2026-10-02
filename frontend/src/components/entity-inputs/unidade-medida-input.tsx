@@ -35,8 +35,8 @@ export function UnidadeMedidaInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
-      onView={(item) =>
-        ui.windows.open({ component: UnidadesMedidaUpsert, props: { editingItem: item, readOnly: true }, title: "Visualizar Unidade de Medida", size: "full" })}
+      onView={(item, readOnly) =>
+        ui.windows.open({ component: UnidadesMedidaUpsert, props: { editingItem: item, readOnly }, title: readOnly ? "Visualizar Unidade de Medida" : "Editar Unidade de Medida", size: "full" })}
       modalTitle="Selecionar Unidade de Medida"
       getDisplayLabel={(item) => item?.descricao ?? ""}
       getSearchTerm={(item) => item.descricao}

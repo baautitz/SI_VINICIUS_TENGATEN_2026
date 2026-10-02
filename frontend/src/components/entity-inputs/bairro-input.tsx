@@ -38,8 +38,8 @@ export function BairroInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
-      onView={(item) =>
-        ui.windows.open({ component: BairrosUpsert, props: { editingItem: item, readOnly: true }, title: "Visualizar Bairro", size: "full" })}
+      onView={(item, readOnly) =>
+        ui.windows.open({ component: BairrosUpsert, props: { editingItem: item, readOnly }, title: readOnly ? "Visualizar Bairro" : "Editar Bairro", size: "full" })}
       modalTitle="Selecionar Bairro"
       getDisplayLabel={(item) => item?.bairro ?? ""}
       getSearchTerm={(item) => item.bairro}
