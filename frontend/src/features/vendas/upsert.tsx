@@ -14,7 +14,7 @@ import { DatePicker } from "@/ui/composites";
 import { Textarea } from "@/ui/primitives";
 import { Card, CardContent } from "@/ui/primitives";
 import { Separator } from "@/ui/primitives";
-import { Alert, AlertDescription } from "@/ui/primitives";
+import { TextoWindow, type TextoWindowProps } from "@/components/texto-window";
 import {
   Table,
   TableHeader,
@@ -43,7 +43,7 @@ import {
   type VendaItem,
   type VendaFormValues,
 } from "./types";
-import { Trash2, Boxes, Receipt } from "lucide-react";
+import { Trash2, Boxes, Receipt, FileText, Ban } from "lucide-react";
 import { estoqueApi } from "@/api/estoque";
 import { ContasReceberUpsertForm } from "@/features/financeiro/contas-receber/upsert";
 import { relacionadosApi } from "@/api/relacionados";
@@ -521,7 +521,43 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
       "Venda sem contas a receber.",
     );
 
+  const openTexto = (title: string, value: string) =>
+    ui.windows.open<string, TextoWindowProps>({
+      component: TextoWindow,
+      props: { label: title, value },
+      title,
+      size: "large",
+    });
+  const openObservacao = () => openTexto("Observação da Venda", editingItem!.observacao ?? "");
+  const openCancelamento = () => {
+    const d = new Date(editingItem!.dataCancelamento!);
+    return openTexto(
+      `Venda Cancelada em ${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR")}`,
+      editingItem!.motivoCancelamento ?? "",
+    );
+  };
+
   const commands = [
+    {
+      id: "vendas.view-observacao",
+      hotkey: "Alt+O" as const,
+      label: "Visualizar observação",
+      enabled: readOnly && !!editingItem,
+      run: (event: KeyboardEvent) => {
+        event.preventDefault();
+        void openObservacao();
+      },
+    },
+    {
+      id: "vendas.view-cancelamento",
+      hotkey: "Alt+C" as const,
+      label: "Visualizar cancelamento",
+      enabled: readOnly && !!editingItem?.dataCancelamento,
+      run: (event: KeyboardEvent) => {
+        event.preventDefault();
+        void openCancelamento();
+      },
+    },
     {
       id: "vendas.view-contas-receber",
       hotkey: "Alt+R" as const,
@@ -782,6 +818,14 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
             <Button type="button" variant="outline" onClick={openContasReceber}>
               <Receipt /> Contas a Receber <Kbd>Alt+R</Kbd>
             </Button>
+            <Button type="button" variant="outline" onClick={openObservacao}>
+              <FileText /> Observação <Kbd>Alt+O</Kbd>
+            </Button>
+            {editingItem.dataCancelamento && (
+              <Button type="button" variant="destructive" onClick={openCancelamento}>
+                <Ban /> Cancelamento <Kbd>Alt+C</Kbd>
+              </Button>
+            )}
           </div>
         )}
         <Button
@@ -821,23 +865,6 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
           form.handleSubmit();
         }}
       >
-        {editingItem?.dataCancelamento && (
-          <Alert variant="destructive" className="mb-2">
-            <AlertDescription className="text-sm font-semibold">
-              Venda Cancelada em{" "}
-              {new Date(editingItem.dataCancelamento).toLocaleDateString(
-                "pt-BR",
-              )}{" "}
-              às{" "}
-              {new Date(editingItem.dataCancelamento).toLocaleTimeString(
-                "pt-BR",
-              )}
-              .<br />
-              Motivo: {editingItem.motivoCancelamento ?? "-"}
-            </AlertDescription>
-          </Alert>
-        )}
-
         <div className="flex min-h-0 w-full flex-1 flex-col gap-4">
           <div className="flex w-full flex-row gap-2">
             <div className="w-[20%]">
@@ -1149,31 +1176,6 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
               </CardContent>
             </Card>
           </div>
-
-          {readOnly && (
-            <div className="w-full">
-              <Card>
-                <CardContent className="flex flex-col gap-2">
-                  <form.Field name="observacao">
-                    {(field) => (
-                      <Field>
-                        <FieldLabel htmlFor={field.name}>
-                          Observação da Venda
-                        </FieldLabel>
-                        <Textarea
-                          id={field.name}
-                          name={field.name}
-                          value={field.state.value ?? ""}
-                          disabled={true}
-                          rows={2}
-                        />
-                      </Field>
-                    )}
-                  </form.Field>
-                </CardContent>
-              </Card>
-            </div>
-          )}
         </div>
       </form>
     </div>

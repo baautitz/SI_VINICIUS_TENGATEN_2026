@@ -10,7 +10,7 @@ import { FieldLabel, FieldError } from "@/ui/primitives";
 import { Input } from "@/ui/primitives";
 import { NumberInput } from "@/ui/composites";
 import { DatePicker } from "@/ui/composites";
-import { Textarea } from "@/ui/primitives";
+import { TextoWindow, type TextoWindowProps } from "@/components/texto-window";
 import { Card, CardContent } from "@/ui/primitives";
 import { Separator } from "@/ui/primitives";
 import { Alert, AlertDescription } from "@/ui/primitives";
@@ -46,7 +46,7 @@ import {
   ContasPagarParcela,
   ContasPagarFormValues,
 } from "./types";
-import { Plus, Trash2, Coins, RotateCcw } from "lucide-react";
+import { FileText, Plus, Trash2, Coins, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUi, useWindow, useWindowCommands } from "@/ui/imperative";
 import { navigationCell } from "@/ui/keyboard-navigation";
@@ -608,16 +608,24 @@ function ContasPagarFormBody({
             {(field) => (
               <div className="flex flex-col gap-2">
                 <FieldLabel htmlFor={field.name}>Observações</FieldLabel>
-                <Textarea
+                <Button
                   id={field.name}
-                  name={field.name}
-                  onBlur={field.handleBlur}
-                  value={field.state.value ?? ""}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  disabled={readOnly}
-                  maxLength={500}
-                  className="h-20"
-                />
+                  type="button"
+                  variant="outline"
+                  className="justify-start font-normal"
+                  onClick={async () => {
+                    const r = await ui.windows.open<string, TextoWindowProps>({
+                      component: TextoWindow,
+                      props: { label: "Observações", value: field.state.value ?? "", readOnly },
+                      title: "Observações",
+                      size: "large",
+                    });
+                    if (r.status === "confirmed") field.handleChange(r.value);
+                  }}
+                >
+                  <FileText />
+                  <span className="truncate">{field.state.value || (readOnly ? "Sem observações" : "Adicionar observações")}</span>
+                </Button>
               </div>
             )}
           </form.Field>

@@ -3,7 +3,7 @@ import { VendasUpsertForm } from "@/features/vendas/upsert";
 import { vendasApi } from "@/api/vendas";
 import { useRelated } from "@/hooks/use-related";
 import { RelatedActions } from "@/components/related-actions";
-import { ShoppingCart } from "lucide-react";
+import { FileText, ShoppingCart } from "lucide-react";
 
 import React, { useState, useCallback } from "react";
 import { WindowActions } from "@/imperative-ui";
@@ -15,7 +15,7 @@ import { FieldLabel, FieldError } from "@/ui/primitives";
 import { Input } from "@/ui/primitives";
 import { NumberInput } from "@/ui/composites";
 import { DatePicker } from "@/ui/composites";
-import { Textarea } from "@/ui/primitives";
+import { TextoWindow, type TextoWindowProps } from "@/components/texto-window";
 import { Card, CardContent } from "@/ui/primitives";
 import { Separator } from "@/ui/primitives";
 import { Alert, AlertDescription } from "@/ui/primitives";
@@ -589,16 +589,24 @@ function ContasReceberFormBody({
             {(field) => (
               <div className="flex flex-col gap-2">
                 <FieldLabel htmlFor={field.name}>Observações</FieldLabel>
-                <Textarea
+                <Button
                   id={field.name}
-                  name={field.name}
-                  onBlur={field.handleBlur}
-                  value={field.state.value ?? ""}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  disabled={readOnly}
-                  maxLength={500}
-                  className="h-20"
-                />
+                  type="button"
+                  variant="outline"
+                  className="justify-start font-normal"
+                  onClick={async () => {
+                    const r = await ui.windows.open<string, TextoWindowProps>({
+                      component: TextoWindow,
+                      props: { label: "Observações", value: field.state.value ?? "", readOnly },
+                      title: "Observações",
+                      size: "large",
+                    });
+                    if (r.status === "confirmed") field.handleChange(r.value);
+                  }}
+                >
+                  <FileText />
+                  <span className="truncate">{field.state.value || (readOnly ? "Sem observações" : "Adicionar observações")}</span>
+                </Button>
               </div>
             )}
           </form.Field>
