@@ -9,6 +9,8 @@ public interface INfesRepository
 {
     public Task<ResultadoPaginado<Nfes>> ObterNfes(int pagina = 1, int tamanhoDaPagina = 20);
     public Task<Nfes?> ObterNfePorId(int id);
+    public Task<string?> ObterXmlDocumento(int id);
+    public Task<bool> ExisteChaveAcesso(string chaveAcesso);
     public Task<Nfes> CriarNfe(Nfes nfe);
     public Task<Nfes> AtualizarNfe(int id, Nfes nfe);
     public Task<bool> DeletarNfe(int id);

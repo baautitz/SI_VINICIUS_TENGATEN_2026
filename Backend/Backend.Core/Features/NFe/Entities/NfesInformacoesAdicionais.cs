@@ -7,6 +7,8 @@ public class NfesInformacoesAdicionais
     public string? InformacoesFisco { get; private set; }
     public string? InformacoesComplementares { get; private set; }
 
+    protected NfesInformacoesAdicionais() { }
+
     public NfesInformacoesAdicionais(string? informacoesFisco = null, string? informacoesComplementares = null)
     {
         InformacoesFisco = TextNormalization.NormalizeOrNull(informacoesFisco);

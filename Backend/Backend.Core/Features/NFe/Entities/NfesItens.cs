@@ -18,6 +18,8 @@ public class NfesItens
     public Skus Sku { get; private set; }
     public UnidadesMedida UnidadeMedida { get; private set; }
 
+    protected NfesItens() { DescricaoItem = null!; Sku = null!; UnidadeMedida = null!; }
+
     public NfesItens(
         int numeroItem,
         string descricaoItem,

@@ -1,3 +1,4 @@
+using Backend.Core.Common.Exceptions;
 using Backend.Core.Common.Results;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.NFe.DTOs;
@@ -35,31 +36,34 @@ public class NfesRepository : INfesRepository
                    n.cliente_telefone, n.cliente_email,
                    n.tipo_operacao, n.status_nfe,
                    n.valor_produtos, n.valor_desconto, n.valor_frete, n.valor_seguro,
-                   n.valor_outras_despesas, n.valor_total,
-                   e.id AS EmitenteId, e.nome_razaosocial, e.cpf_cnpj, e.ativo,
-                   c.id AS ClienteId, c.nome_razaosocial, c.cpf_cnpj, c.ativo
+                   n.valor_outras_despesas, n.valor_total, n.venda_id, n.compra_id,
+                   e.id AS EmitenteId, e.id AS Id, e.nome_razaosocial, e.cpf_cnpj, e.ativo,
+                   c.id AS ClienteId, c.id AS Id, c.nome_razaosocial, c.cpf_cnpj, c.ativo,
+                   f.id AS FornecedorId, f.id AS Id, f.nome_razaosocial, f.cpf_cnpj, f.ativo
             FROM nfes n
             JOIN emitentes e ON e.id = n.emitente_id
             LEFT JOIN clientes c ON c.id = n.cliente_id
+            LEFT JOIN fornecedores f ON f.id = n.fornecedor_id
             ORDER BY n.data_emissao DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(
             countSql, transaction: _session.Transaction);
 
-        var nfes = (await _session.Connection.QueryAsync<Nfes, Emitentes, Clientes, Nfes>(
+        var nfes = (await _session.Connection.QueryAsync<Nfes, Emitentes, Clientes, Fornecedores, Nfes>(
             querySql,
-            (nfe, emitente, cliente) =>
+            (nfe, emitente, cliente, fornecedor) =>
             {
                 nfe.AtualizarEmitente(emitente);
                 if (cliente is not null) nfe.AtualizarCliente(cliente);
+                if (fornecedor is not null) nfe.AtualizarFornecedor(fornecedor);
                 nfe.DefinirItens(new List<NfesItens>());
                 nfe.DefinirPagamentos(new List<NfesPagamentos>());
                 return nfe;
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "EmitenteId,ClienteId")).ToList();
+            splitOn: "EmitenteId,ClienteId,FornecedorId")).ToList();
 
         if (nfes.Count > 0)
         {
@@ -69,7 +73,7 @@ public class NfesRepository : INfesRepository
                 SELECT ni.id AS Id, ni.numero_item, ni.descricao_item, ni.quantidade, ni.valor_unitario,
                        ni.valor_desconto, ni.valor_total, ni.nfe_id,
                        s.sku AS Sku, s.gtin_ean, s.preco, s.estoque, s.ativo,
-                       u.id AS UnidadeMedidaId, u.sigla, u.descricao, u.categoria, u.ativo
+                       u.id AS UnidadeMedidaId, u.id AS Id, u.sigla, u.descricao, u.categoria, u.ativo
                 FROM nfes_itens ni
                 JOIN skus s ON s.sku = ni.sku
                 JOIN unidades_medida u ON u.id = ni.unidade_medida_id
@@ -132,23 +136,26 @@ public class NfesRepository : INfesRepository
                    n.cliente_telefone, n.cliente_email,
                    n.tipo_operacao, n.status_nfe,
                    n.valor_produtos, n.valor_desconto, n.valor_frete, n.valor_seguro,
-                   n.valor_outras_despesas, n.valor_total,
-                    e.id AS EmitenteId, e.nome_razaosocial, e.cpf_cnpj, e.apelido_nomefantasia, e.logradouro, e.numero,
+                   n.valor_outras_despesas, n.valor_total, n.venda_id, n.compra_id,
+                    e.id AS EmitenteId, e.id AS Id, e.nome_razaosocial, e.cpf_cnpj, e.apelido_nomefantasia, e.logradouro, e.numero,
                     e.telefone, e.email, e.rg_ie, e.inscricao_municipal, e.regime_tributario,
                     e.ativo, e.criado_em, e.observacao,
-                    c.id AS ClienteId, c.nome_razaosocial, c.cpf_cnpj, c.rg_ie, c.apelido_nomefantasia,
+                    c.id AS ClienteId, c.id AS Id, c.nome_razaosocial, c.cpf_cnpj, c.rg_ie, c.apelido_nomefantasia,
                     c.logradouro, c.numero, c.telefone, c.email, c.limite_credito, c.ativo, c.criado_em,
-                    c.observacao
+                    c.observacao,
+                    f.id AS FornecedorId, f.id AS Id, f.nome_razaosocial, f.cpf_cnpj, f.rg_ie, f.apelido_nomefantasia,
+                    f.logradouro, f.numero, f.telefone, f.email, f.ativo, f.criado_em, f.observacao
             FROM nfes n
             JOIN emitentes e ON e.id = n.emitente_id
             LEFT JOIN clientes c ON c.id = n.cliente_id
+            LEFT JOIN fornecedores f ON f.id = n.fornecedor_id
             WHERE n.id = @Id;";
 
         const string itensSql = @"
             SELECT ni.id AS Id, ni.numero_item, ni.descricao_item, ni.quantidade, ni.valor_unitario,
                    ni.valor_desconto, ni.valor_total,
                    s.sku AS Sku, s.gtin_ean, s.preco, s.estoque, s.ativo,
-                   u.id AS UnidadeMedidaId, u.sigla, u.descricao, u.categoria, u.ativo
+                   u.id AS UnidadeMedidaId, u.id AS Id, u.sigla, u.descricao, u.categoria, u.ativo
             FROM nfes_itens ni
             JOIN skus s ON s.sku = ni.sku
             JOIN unidades_medida u ON u.id = ni.unidade_medida_id
@@ -167,19 +174,20 @@ public class NfesRepository : INfesRepository
             FROM nfes_informacoes_adicionais
             WHERE nfe_id = @Id;";
 
-        var nfe = (await _session.Connection.QueryAsync<Nfes, Emitentes, Clientes, Nfes>(
+        var nfe = (await _session.Connection.QueryAsync<Nfes, Emitentes, Clientes, Fornecedores, Nfes>(
             nfeSql,
-            (n, emitente, cliente) =>
+            (n, emitente, cliente, fornecedor) =>
             {
                 n.AtualizarEmitente(emitente);
                 if (cliente is not null) n.AtualizarCliente(cliente);
+                if (fornecedor is not null) n.AtualizarFornecedor(fornecedor);
                 n.DefinirItens(new List<NfesItens>());
                 n.DefinirPagamentos(new List<NfesPagamentos>());
                 return n;
             },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "EmitenteId,ClienteId")).SingleOrDefault();
+            splitOn: "EmitenteId,ClienteId,FornecedorId")).SingleOrDefault();
 
         if (nfe is null) return null;
 
@@ -207,6 +215,10 @@ public class NfesRepository : INfesRepository
 
         nfe.DefinirPagamentos(pagamentos.ToList());
 
+        var transportes = await _session.Connection.QuerySingleOrDefaultAsync<NfesTransportes>(
+            "SELECT * FROM nfes_transportes WHERE nfe_id = @Id;", new { Id = id }, transaction: _session.Transaction);
+        if (transportes is not null) nfe.AtualizarTransportes(transportes);
+
         var informacoesAdicionais = await _session.Connection.QuerySingleOrDefaultAsync<NfesInformacoesAdicionais>(
             infoSql, new { Id = id }, transaction: _session.Transaction);
 
@@ -230,7 +242,7 @@ public class NfesRepository : INfesRepository
                 tipo_operacao, status_nfe,
                 valor_produtos, valor_desconto, valor_frete, valor_seguro,
                 valor_outras_despesas, valor_total,
-                emitente_id, cliente_id)
+                emitente_id, cliente_id, fornecedor_id, venda_id, compra_id, xml_documento)
             VALUES (
                 @ChaveAcesso, @Numero, @Serie, @DataEmissao, @DataSaida,
                 @EmitenteNomeRazaosocial, @EmitenteCpfCnpj, @EmitenteRgIe,
@@ -239,13 +251,16 @@ public class NfesRepository : INfesRepository
                 @ClienteNomeRazaosocial, @ClienteCpfCnpj, @ClienteRgIe,
                 @ClienteApelidoNomefantasia, @ClienteEndereco, @ClienteBairro,
                 @ClienteTelefone, @ClienteEmail,
-                @TipoOperacao, @StatusNfe,
+                @TipoOperacao::tipo_operacao_enum, @StatusNfe::status_nfe_enum,
                 @ValorProdutos, @ValorDesconto, @ValorFrete, @ValorSeguro,
                 @ValorOutrasDespesas, @ValorTotal,
-                @EmitenteId, @ClienteId)
+                @EmitenteId, @ClienteId, @FornecedorId, @VendaId, @CompraId, @XmlDocumento)
             RETURNING id;";
 
-        var idGerado = await _session.Connection.ExecuteScalarAsync<int>(
+        int idGerado;
+        try
+        {
+            idGerado = await _session.Connection.ExecuteScalarAsync<int>(
             sql,
             new
             {
@@ -270,8 +285,8 @@ public class NfesRepository : INfesRepository
                 nfe.ClienteBairro,
                 nfe.ClienteTelefone,
                 nfe.ClienteEmail,
-                nfe.TipoOperacao,
-                nfe.StatusNfe,
+                TipoOperacao = nfe.TipoOperacao.ToString(),
+                StatusNfe = nfe.StatusNfe.ToString(),
                 nfe.ValorProdutos,
                 nfe.ValorDesconto,
                 nfe.ValorFrete,
@@ -279,14 +294,26 @@ public class NfesRepository : INfesRepository
                 nfe.ValorOutrasDespesas,
                 nfe.ValorTotal,
                 EmitenteId = nfe.Emitente.Id,
-                ClienteId = nfe.Cliente?.Id
+                ClienteId = nfe.Cliente?.Id,
+                FornecedorId = nfe.Fornecedor?.Id,
+                nfe.VendaId,
+                nfe.CompraId,
+                nfe.XmlDocumento
             },
             transaction: _session.Transaction);
+        }
+        catch (Npgsql.PostgresException ex) when (ex.SqlState == "23505")
+        {
+            throw new UniqueConstraintException("NF-e já cadastrada (chave de acesso, venda ou compra).", ex);
+        }
 
         nfe.Id = idGerado;
 
         await InserirItens(idGerado, nfe.NfesItens);
         await InserirPagamentos(idGerado, nfe.NfesPagamentos);
+
+        if (nfe.NfesTransportes is not null)
+            await InserirTransporte(idGerado, nfe.NfesTransportes);
 
         if (nfe.NfesInformacoesAdicionais is not null)
             await InserirInformacoesAdicionais(idGerado, nfe.NfesInformacoesAdicionais);
@@ -365,7 +392,7 @@ public class NfesRepository : INfesRepository
         const string sql = @"
             SELECT COUNT(*) FROM nfes;
 
-            SELECT id, numero, serie, data_emissao, valor_total, status_nfe
+            SELECT id, chave_acesso, tipo_operacao, numero, serie, data_emissao, valor_total, status_nfe
             FROM nfes
             ORDER BY data_emissao DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
@@ -392,7 +419,7 @@ public class NfesRepository : INfesRepository
                OR emitente_nome_razaosocial ILIKE @Termo
                OR numero::text ILIKE @Termo;
 
-            SELECT id, numero, serie, data_emissao, valor_total, status_nfe
+            SELECT id, chave_acesso, tipo_operacao, numero, serie, data_emissao, valor_total, status_nfe
             FROM nfes
             WHERE chave_acesso ILIKE @Termo
                OR cliente_nome_razaosocial ILIKE @Termo
@@ -436,6 +463,31 @@ public class NfesRepository : INfesRepository
             }),
             transaction: _session.Transaction);
     }
+
+    public Task<string?> ObterXmlDocumento(int id)
+        => _session.Connection.ExecuteScalarAsync<string?>(
+            "SELECT xml_documento FROM nfes WHERE id = @Id;", new { Id = id }, transaction: _session.Transaction);
+
+    public async Task<bool> ExisteChaveAcesso(string chaveAcesso)
+        => await _session.Connection.ExecuteScalarAsync<bool>(
+            "SELECT EXISTS (SELECT 1 FROM nfes WHERE chave_acesso = @ChaveAcesso);",
+            new { ChaveAcesso = chaveAcesso }, transaction: _session.Transaction);
+
+    private Task InserirTransporte(int nfeId, NfesTransportes t)
+        => _session.Connection.ExecuteAsync(@"
+            INSERT INTO nfes_transportes (nfe_id, modalidade_frete, transportadora_nome_razaosocial, transportadora_cpf_cnpj, transportadora_rg_ie,
+                                          veiculo_placa, veiculo_uf, veiculo_rntrc, quantidade_volumes, especie_volume, marca_volume,
+                                          numeracao_volume, peso_bruto, peso_liquido)
+            VALUES (@NfeId, @ModalidadeFrete::modalidade_frete_enum, @TransportadoraNomeRazaosocial, @TransportadoraCpfCnpj, @TransportadoraRgIe,
+                    @VeiculoPlaca, @VeiculoUf, @VeiculoRntrc, @QuantidadeVolumes, @EspecieVolume, @MarcaVolume,
+                    @NumeracaoVolume, @PesoBruto, @PesoLiquido);",
+            new
+            {
+                NfeId = nfeId, ModalidadeFrete = t.ModalidadeFrete.ToString(),
+                t.TransportadoraNomeRazaosocial, t.TransportadoraCpfCnpj, t.TransportadoraRgIe,
+                t.VeiculoPlaca, t.VeiculoUf, t.VeiculoRntrc, t.QuantidadeVolumes, t.EspecieVolume, t.MarcaVolume,
+                t.NumeracaoVolume, t.PesoBruto, t.PesoLiquido
+            }, transaction: _session.Transaction);
 
     private async Task InserirPagamentos(int nfeId, IEnumerable<NfesPagamentos> pagamentos)
     {

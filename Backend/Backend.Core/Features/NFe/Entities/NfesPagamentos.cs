@@ -12,6 +12,8 @@ public class NfesPagamentos
     public decimal ValorPagamento { get; private set; }
     public MetodosPagamentos MetodosPagamento { get; private set; }
 
+    protected NfesPagamentos() { MetodosPagamento = null!; }
+
     public NfesPagamentos(
         IndicadorPagamento indicadorPagamento,
         decimal valorPagamento,

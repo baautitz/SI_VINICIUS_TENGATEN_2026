@@ -24,7 +24,7 @@ public class Nfes
     public Documento? EmitenteRgIe { get; private set; }
     public string? EmitenteApelidoNomefantasia { get; private set; }
     public string? EmitenteEndereco { get; private set; }
-    public Bairros? EmitenteBairro { get; private set; }
+    public string? EmitenteBairro { get; private set; }
     public string? EmitenteTelefone { get; private set; }
     public string? EmitenteEmail { get; private set; }
 
@@ -33,12 +33,18 @@ public class Nfes
     public Documento? ClienteRgIe { get; private set; }
     public string? ClienteApelidoNomefantasia { get; private set; }
     public string? ClienteEndereco { get; private set; }
-    public Bairros? ClienteBairro { get; private set; }
+    public string? ClienteBairro { get; private set; }
     public string? ClienteTelefone { get; private set; }
     public string? ClienteEmail { get; private set; }
 
     public Emitentes Emitente { get; private set; }
-    public Clientes Cliente { get; private set; }
+    public Clientes? Cliente { get; private set; }
+    public Fornecedores? Fornecedor { get; private set; }
+    public int? VendaId { get; private set; }
+    public int? CompraId { get; private set; }
+    // Só preenchido na criação; as consultas não carregam a coluna (use ObterXmlDocumento).
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string? XmlDocumento { get; private set; }
     public NfesTransportes? NfesTransportes { get; private set; }
     public NfesInformacoesAdicionais? NfesInformacoesAdicionais { get; private set; }
 
@@ -62,7 +68,6 @@ public class Nfes
         ClienteNomeRazaosocial = null!;
         ClienteCpfCnpj = null!;
         Emitente = null!;
-        Cliente = null!;
     }
 
     public Nfes(
@@ -81,7 +86,8 @@ public class Nfes
         decimal valorSeguro = 0m,
         decimal valorOutrasDespesas = 0m,
         NfesTransportes? nfesTransportes = null,
-        NfesInformacoesAdicionais? nfesInformacoesAdicionais = null)
+        NfesInformacoesAdicionais? nfesInformacoesAdicionais = null,
+        int? vendaId = null)
     {
         if (numero <= 0)
             throw new DomainException("Número da nota fiscal é obrigatório.");
@@ -98,6 +104,7 @@ public class Nfes
         Emitente = emitente ?? throw new DomainException("Emitente é obrigatório.");
         Cliente = cliente ?? throw new DomainException("Cliente é obrigatório.");
         TipoOperacao = tipoOperacao;
+        VendaId = vendaId;
 
         if (itens == null || !itens.Any())
             throw new DomainException("A nota fiscal deve conter ao menos um item.");
@@ -115,7 +122,7 @@ public class Nfes
         EmitenteRgIe = emitente.RgIe;
         EmitenteApelidoNomefantasia = TextNormalization.NormalizeOrNull(emitente.ApelidoNomeFantasia);
         EmitenteEndereco = TextNormalization.NormalizeOrNull(emitente.Logradouro + (string.IsNullOrWhiteSpace(emitente.Numero) ? "" : $", {emitente.Numero}"));
-        EmitenteBairro = emitente.Bairro;
+        EmitenteBairro = TextNormalization.Truncate(emitente.Bairro?.Bairro, 100);
         EmitenteTelefone = TextNormalization.NormalizeOrNull(emitente.Telefone);
         EmitenteEmail = TextNormalization.NormalizeOrNull(emitente.Email);
         ClienteNomeRazaosocial = TextNormalization.Normalize(cliente.NomeRazaoSocial);
@@ -123,7 +130,7 @@ public class Nfes
         ClienteRgIe = cliente.RgIe;
         ClienteApelidoNomefantasia = TextNormalization.NormalizeOrNull(cliente.ApelidoNomeFantasia);
         ClienteEndereco = TextNormalization.NormalizeOrNull(cliente.Logradouro + (string.IsNullOrWhiteSpace(cliente.Numero) ? "" : $", {cliente.Numero}"));
-        ClienteBairro = cliente.Bairro;
+        ClienteBairro = TextNormalization.Truncate(cliente.Bairro?.Bairro, 100);
         ClienteTelefone = TextNormalization.NormalizeOrNull(cliente.Telefone);
         ClienteEmail = TextNormalization.NormalizeOrNull(cliente.Email);
         ValorDesconto = valorDesconto;
@@ -139,6 +146,63 @@ public class Nfes
         AtualizarTotais();
         ValidarPagamentos();
         StatusNfe = StatusNfe.RASCUNHO;
+    }
+
+    // NF-e de entrada importada do XML do fornecedor: números, chave e totais são os declarados na nota;
+    // o fornecedor ocupa os snapshots cliente_* e não há pagamentos.
+    public static Nfes CriarEntrada(
+        string chaveAcesso, int numero, short serie, DateTime dataEmissao,
+        Emitentes emitente, Fornecedores fornecedor, int compraId,
+        IEnumerable<NfesItens> itens,
+        decimal valorProdutos, decimal valorDesconto, decimal valorFrete, decimal valorSeguro, decimal valorOutrasDespesas, decimal valorTotal,
+        NfesTransportes? transportes = null, NfesInformacoesAdicionais? informacoesAdicionais = null, string? xmlDocumento = null)
+    {
+        if (string.IsNullOrWhiteSpace(chaveAcesso) || chaveAcesso.Length != 44)
+            throw new DomainException("Chave de acesso deve ter 44 dígitos.");
+        if (numero <= 0)
+            throw new DomainException("Número da nota fiscal é obrigatório.");
+        if (itens == null || !itens.Any())
+            throw new DomainException("A nota fiscal deve conter ao menos um item.");
+
+        var nfe = new Nfes
+        {
+            TipoOperacao = TipoOperacao.ENTRADA,
+            StatusNfe = StatusNfe.EMITIDA,
+            ChaveAcesso = chaveAcesso,
+            Numero = numero,
+            Serie = serie,
+            DataEmissao = dataEmissao,
+            Emitente = emitente ?? throw new DomainException("Emitente é obrigatório."),
+            Fornecedor = fornecedor ?? throw new DomainException("Fornecedor é obrigatório."),
+            CompraId = compraId,
+            XmlDocumento = xmlDocumento,
+            ValorProdutos = valorProdutos,
+            ValorDesconto = valorDesconto,
+            ValorFrete = valorFrete,
+            ValorSeguro = valorSeguro,
+            ValorOutrasDespesas = valorOutrasDespesas,
+            ValorTotal = valorTotal,
+            NfesTransportes = transportes,
+            NfesInformacoesAdicionais = informacoesAdicionais,
+            EmitenteNomeRazaosocial = TextNormalization.Truncate(TextNormalization.Normalize(emitente.NomeRazaoSocial), 150)!,
+            EmitenteCpfCnpj = emitente.CpfCnpj,
+            EmitenteRgIe = emitente.RgIe,
+            EmitenteApelidoNomefantasia = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(emitente.ApelidoNomeFantasia), 100),
+            EmitenteEndereco = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(emitente.Logradouro + (string.IsNullOrWhiteSpace(emitente.Numero) ? "" : $", {emitente.Numero}")), 150),
+            EmitenteBairro = TextNormalization.Truncate(emitente.Bairro?.Bairro, 100),
+            EmitenteTelefone = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(emitente.Telefone), 20),
+            EmitenteEmail = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(emitente.Email), 254),
+            ClienteNomeRazaosocial = TextNormalization.Truncate(TextNormalization.Normalize(fornecedor.NomeRazaosocial), 150)!,
+            ClienteCpfCnpj = fornecedor.CpfCnpj,
+            ClienteRgIe = fornecedor.RgIe,
+            ClienteApelidoNomefantasia = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(fornecedor.ApelidoNomefantasia), 100),
+            ClienteEndereco = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(fornecedor.Logradouro + (string.IsNullOrWhiteSpace(fornecedor.Numero) ? "" : $", {fornecedor.Numero}")), 150),
+            ClienteBairro = TextNormalization.Truncate(fornecedor.Bairro?.Bairro, 100),
+            ClienteTelefone = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(fornecedor.Telefone), 20),
+            ClienteEmail = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(fornecedor.Email), 254),
+        };
+        nfe._itens.AddRange(itens);
+        return nfe;
     }
 
     public void AtualizarStatus(StatusNfe status)
@@ -157,6 +221,11 @@ public class Nfes
     public void AtualizarCliente(Clientes cliente)
     {
         Cliente = cliente ?? throw new DomainException("Cliente é obrigatório.");
+    }
+
+    public void AtualizarFornecedor(Fornecedores fornecedor)
+    {
+        Fornecedor = fornecedor ?? throw new DomainException("Fornecedor é obrigatório.");
     }
 
     public void AdicionarItem(NfesItens item)
@@ -211,6 +280,8 @@ public class Nfes
     }
     private void AtualizarTotais()
     {
+        if (TipoOperacao == TipoOperacao.ENTRADA) return; // totais da entrada são os declarados no XML
+
         ValorProdutos = _itens.Sum(item => item.Quantidade * item.ValorUnitario);
         ValorTotal = ValorProdutos - ValorDesconto + ValorFrete + ValorSeguro + ValorOutrasDespesas;
 
@@ -220,6 +291,8 @@ public class Nfes
 
     private void ValidarPagamentos()
     {
+        if (TipoOperacao == TipoOperacao.ENTRADA) return; // XML de entrada: pag é ignorado
+
         var totalPagamentos = _pagamentos.Sum(p => p.ValorPagamento);
 
         if (totalPagamentos != ValorTotal)

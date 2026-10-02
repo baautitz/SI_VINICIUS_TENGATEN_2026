@@ -40,7 +40,8 @@ public class NfesTransportes
         string? numeracaoVolume = null,
         decimal? pesoBruto = null,
         decimal? pesoLiquido = null,
-        Veiculos? veiculo = null)
+        Veiculos? veiculo = null,
+        bool exigirTransportadora = true)
     {
         TransportadoraNomeRazaosocial = TextNormalization.NormalizeOrNull(transportadoraNomeRazaosocial);
         TransportadoraCpfCnpj = transportadoraCpfCnpj;
@@ -57,7 +58,7 @@ public class NfesTransportes
         Veiculo = veiculo;
         ModalidadeFrete = modalidadeFrete;
 
-        if (modalidadeFrete != ModalidadeFrete.SEM_TRANSPORTE)
+        if (exigirTransportadora && modalidadeFrete != ModalidadeFrete.SEM_TRANSPORTE)
         {
             if (string.IsNullOrWhiteSpace(TransportadoraNomeRazaosocial) || string.IsNullOrWhiteSpace(TransportadoraCpfCnpj?.Valor))
                 throw new DomainException("Transportadora é obrigatória para modalidade de frete.");
