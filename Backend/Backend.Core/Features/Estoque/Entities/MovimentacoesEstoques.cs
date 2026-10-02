@@ -15,6 +15,7 @@ public class MovimentacoesEstoques
     public TipoMovimentacaoEstoque TipoMovimentacao { get; private set; }
     public StatusMovimentacaoEstoque Status { get; private set; }
     public string? Observacao { get; private set; }
+    public string? MotivoEstorno { get; private set; }
     public Usuarios? Usuario { get; private set; }
     public int? NfeId { get; private set; }
     public int? VendaId { get; private set; }
@@ -28,7 +29,8 @@ public class MovimentacoesEstoques
         int? nfeId = null,
         int? vendaId = null,
         string? observacao = null,
-        StatusMovimentacaoEstoque status = StatusMovimentacaoEstoque.RASCUNHO)
+        StatusMovimentacaoEstoque status = StatusMovimentacaoEstoque.RASCUNHO,
+        string? motivoEstorno = null)
     {
         TipoMovimentacao = tipoMovimentacao;
         Usuario = usuario;
@@ -37,6 +39,7 @@ public class MovimentacoesEstoques
         Observacao = TextNormalization.NormalizeOrNull(observacao);
         DataMovimentacao = DateTime.UtcNow;
         Status = status;
+        MotivoEstorno = motivoEstorno;
     }
 
     public MovimentacoesEstoques(
@@ -47,8 +50,9 @@ public class MovimentacoesEstoques
         int? nfeId = null,
         int? vendaId = null,
         string? observacao = null,
-        StatusMovimentacaoEstoque status = StatusMovimentacaoEstoque.RASCUNHO)
-        : this(tipoMovimentacao, usuario, nfeId, vendaId, observacao, status)
+        StatusMovimentacaoEstoque status = StatusMovimentacaoEstoque.RASCUNHO,
+        string? motivoEstorno = null)
+        : this(tipoMovimentacao, usuario, nfeId, vendaId, observacao, status, motivoEstorno)
     {
         Id = id;
         DataMovimentacao = dataMovimentacao;
@@ -115,11 +119,18 @@ public class MovimentacoesEstoques
         DataMovimentacao = DateTime.UtcNow;
     }
 
-    public void Cancelar()
+    public void Cancelar(string? motivo)
     {
+        if (string.IsNullOrWhiteSpace(motivo))
+            throw new DomainException("Motivo do estorno é obrigatório.");
+
+        if (motivo.Trim().Length < 5)
+            throw new DomainException("Motivo do estorno deve ter pelo menos 5 caracteres.");
+
         if (Status != StatusMovimentacaoEstoque.CONFIRMADA)
             throw new DomainException($"Apenas movimentações confirmadas podem ser canceladas. Status atual: {Status}");
 
+        MotivoEstorno = motivo.Trim();
         Status = StatusMovimentacaoEstoque.CANCELADA;
     }
 }

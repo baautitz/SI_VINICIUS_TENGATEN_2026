@@ -12,5 +12,5 @@ export const estoqueApi = {
   update: (id: number, data: MovimentacaoEstoqueFormValues) => http.put<Resultado<MovimentacaoEstoque>>(`/api/estoque/movimentacoes/${id}`, data),
   delete: (id: number) => http.delete(`/api/estoque/movimentacoes/${id}`),
   confirmar: (id: number) => http.post<Resultado<MovimentacaoEstoque>>(`/api/estoque/movimentacoes/${id}/confirmar`, {}),
-  cancelar: (id: number) => http.post<Resultado<MovimentacaoEstoque>>(`/api/estoque/movimentacoes/${id}/cancelar`, {}),
+  cancelar: (id: number, motivo: string) => http.post<Resultado<MovimentacaoEstoque>>(`/api/estoque/movimentacoes/${id}/cancelar`, { motivo }),
 };

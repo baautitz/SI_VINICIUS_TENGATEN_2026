@@ -18,6 +18,7 @@ export interface MovimentacaoEstoque {
   tipoMovimentacao: "ENTRADA" | "SAIDA" | "VENDA" | "BALANCO";
   status: "RASCUNHO" | "CONFIRMADA" | "CANCELADA";
   observacao?: string | null;
+  motivoEstorno?: string | null;
   usuario?: { id: number; nome: string } | null;
   nfeId?: number | null;
   vendaId?: number | null;

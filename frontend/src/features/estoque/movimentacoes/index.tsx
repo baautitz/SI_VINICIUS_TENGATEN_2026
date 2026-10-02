@@ -4,7 +4,9 @@ import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { estoqueApi } from "@/api/estoque";
 import { useFeatureList } from "@/hooks/use-feature-list";
-import { useUi } from "@/ui/imperative";
+import { WindowActions } from "@/imperative-ui";
+import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
+import { Button, Field, FieldError, FieldLabel, Kbd, KbdGroup, Textarea } from "@/ui/primitives";
 import { MovimentacoesList } from "./list";
 import { MovimentacoesUpsert } from "./upsert";
 import { MovimentacaoEstoque } from "./types";
@@ -119,15 +121,15 @@ export function MovimentacoesFeature() {
   };
 
   const cancelAction = async (item: MovimentacaoEstoque) => {
-    const result = await ui.windows.confirm({
-      title: "Estornar Movimentação?",
-      description: `Deseja realmente estornar/cancelar a movimentação #${item.id}? Isso reverterá o impacto das quantidades no saldo físico dos produtos.`,
-      confirmLabel: "Confirmar Estorno",
-      confirmVariant: "destructive",
+    const result = await ui.windows.open<string, EstornoWindowProps>({
+      component: EstornoWindow,
+      props: { movimentacao: item },
+      title: "Estornar Movimentação",
+      size: "small",
     });
-    if (!result) return;
+    if (result.status !== "confirmed") return;
     try {
-      const response = await estoqueApi.cancelar(item.id);
+      const response = await estoqueApi.cancelar(item.id, result.value);
       if (response.success === false) {
         ui.feedback.notifyError(response, {
           fallbackTitle: "Não foi possível estornar a movimentação.",
@@ -172,4 +174,90 @@ export interface MovimentacoesUpsertProps {
   readOnly?: boolean;
   initialItems?: import("./upsert").ItemLinha[];
   fixedTipo?: "ENTRADA" | "SAIDA" | "BALANCO" | "VENDA";
+}
+
+interface EstornoWindowProps {
+  movimentacao: MovimentacaoEstoque;
+}
+
+function EstornoWindow({ movimentacao }: EstornoWindowProps) {
+  const activeWindow = useWindow<string>();
+  const [error, setError] = React.useState("");
+  const motivoRef = React.useRef<HTMLTextAreaElement | null>(null);
+  const registerMotivo = React.useCallback(
+    (element: HTMLTextAreaElement | null) => {
+      motivoRef.current = element;
+      if (!element) return;
+      activeWindow.setDirtyCheck(() => element.value.trim().length > 0);
+      return () => activeWindow.setDirtyCheck(null);
+    },
+    [activeWindow],
+  );
+
+  const confirm = React.useCallback(() => {
+    const value = (motivoRef.current?.value ?? "").trim();
+    if (!value) {
+      setError("Motivo do estorno é obrigatório.");
+      return;
+    }
+    if (value.length < 5) {
+      setError("O motivo deve ter pelo menos 5 caracteres.");
+      return;
+    }
+    activeWindow.resolve(value);
+  }, [activeWindow]);
+
+  useWindowCommands(
+    React.useMemo(
+      () => [
+        {
+          id: "movimentacoes.estorno.confirm",
+          hotkey: "Alt+Enter" as const,
+          label: "Confirmar estorno",
+          run: (event: KeyboardEvent) => {
+            event.preventDefault();
+            confirm();
+          },
+        },
+      ],
+      [confirm],
+    ),
+  );
+
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-destructive text-xs font-semibold">
+        Isso reverterá o impacto das quantidades no saldo físico dos produtos.
+      </p>
+      <p className="text-sm">
+        Deseja realmente estornar a movimentação <strong>#{movimentacao.id}</strong>?
+      </p>
+      <Field data-invalid={!!error}>
+        <FieldLabel htmlFor="motivo-estorno">Motivo do Estorno</FieldLabel>
+        <Textarea
+          id="motivo-estorno"
+          ref={registerMotivo}
+          onChange={(event) => {
+            if (error && event.target.value.trim().length >= 5) setError("");
+          }}
+          placeholder="Informe o motivo (mínimo de 5 caracteres)..."
+          rows={3}
+          maxLength={500}
+        />
+        {error && <FieldError>{error}</FieldError>}
+      </Field>
+      <WindowActions>
+        <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>
+          Cancelar <Kbd>Esc</Kbd>
+        </Button>
+        <Button type="button" variant="destructive" onClick={confirm}>
+          Confirmar Estorno
+          <KbdGroup className="ml-2">
+            <Kbd>Alt</Kbd>
+            <Kbd>Enter</Kbd>
+          </KbdGroup>
+        </Button>
+      </WindowActions>
+    </div>
+  );
 }

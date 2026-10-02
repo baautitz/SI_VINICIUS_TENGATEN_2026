@@ -237,8 +237,14 @@ public sealed class MovimentacoesEstoquesService : BaseService
         });
     }
 
-    public async Task<Resultado<MovimentacoesEstoques>> CancelarMovimentacao(int id)
+    public async Task<Resultado<MovimentacoesEstoques>> CancelarMovimentacao(int id, CancelarMovimentacaoCommand command)
     {
+        var motivo = command?.Motivo?.Trim();
+        if (string.IsNullOrEmpty(motivo))
+            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOTIVO_OBRIGATORIO", "Motivo do estorno é obrigatório.", "motivo"));
+        if (motivo.Length < 5 || motivo.Length > 500)
+            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOTIVO_INVALIDO", "Motivo do estorno deve ter entre 5 e 500 caracteres.", "motivo"));
+
         var existente = await _movimentacoesRepository.ObterMovimentacaoPorId(id);
         if (existente == null)
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_INEXISTENTE", "Movimentação não encontrada."));
@@ -295,7 +301,7 @@ public sealed class MovimentacoesEstoquesService : BaseService
                     }
                 }
 
-                existente.Cancelar();
+                existente.Cancelar(motivo);
                 var atualizado = await _movimentacoesRepository.AtualizarMovimentacao(id, existente);
                 
                 _unitOfWork.Commit();

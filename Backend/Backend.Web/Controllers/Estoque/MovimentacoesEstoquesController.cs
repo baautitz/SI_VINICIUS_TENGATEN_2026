@@ -93,9 +93,9 @@ public class MovimentacoesEstoquesController : ControllerBase
     }
 
     [HttpPost("{id:int}/cancelar")]
-    public async Task<ActionResult<Resultado<MovimentacoesEstoques>>> CancelarMovimentacao(int id)
+    public async Task<ActionResult<Resultado<MovimentacoesEstoques>>> CancelarMovimentacao(int id, [FromBody] CancelarMovimentacaoCommand command)
     {
-        var result = await _movimentacoesService.CancelarMovimentacao(id);
+        var result = await _movimentacoesService.CancelarMovimentacao(id, command);
         if (!result.Success)
         {
             if (result.Errors is not null && result.Errors.Any(error => error.Code == "MOVIMENTACAO_INEXISTENTE"))

@@ -245,7 +245,7 @@ public sealed class VendasService : BaseService
                         await _skusRepository.AtualizarSku(sku.Sku, sku);
                     }
                 }
-                movVenda.Cancelar();
+                movVenda.Cancelar("Venda excluída.");
                 await _movimentacoesRepository.AtualizarMovimentacao(movVenda.Id, movVenda);
             }
 
@@ -298,7 +298,7 @@ public sealed class VendasService : BaseService
                         await _skusRepository.AtualizarSku(sku.Sku, sku);
                     }
                 }
-                movVenda.Cancelar();
+                movVenda.Cancelar(command.Motivo);
                 await _movimentacoesRepository.AtualizarMovimentacao(movVenda.Id, movVenda);
             }
 

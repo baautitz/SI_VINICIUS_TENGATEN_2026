@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS movimentacoes_estoque (
   nfe_id INTEGER,
   venda_id INTEGER,
   observacao TEXT,
+  motivo_estorno VARCHAR(500),
   CONSTRAINT movimentacoes_estoque_usuario_fk
     FOREIGN KEY (usuario_id)
     REFERENCES usuarios (id)
