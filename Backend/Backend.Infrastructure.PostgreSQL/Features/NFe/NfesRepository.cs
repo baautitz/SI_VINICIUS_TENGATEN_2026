@@ -37,6 +37,7 @@ public class NfesRepository : INfesRepository
                    n.tipo_operacao, n.status_nfe,
                    n.valor_produtos, n.valor_desconto, n.valor_frete, n.valor_seguro,
                    n.valor_outras_despesas, n.valor_total, n.venda_id, n.compra_id,
+                   n.justificativa_cancelamento, n.data_cancelamento,
                    e.id AS EmitenteId, e.id AS Id, e.nome_razaosocial, e.cpf_cnpj, e.ativo,
                    c.id AS ClienteId, c.id AS Id, c.nome_razaosocial, c.cpf_cnpj, c.ativo,
                    f.id AS FornecedorId, f.id AS Id, f.nome_razaosocial, f.cpf_cnpj, f.ativo
@@ -137,6 +138,7 @@ public class NfesRepository : INfesRepository
                    n.tipo_operacao, n.status_nfe,
                    n.valor_produtos, n.valor_desconto, n.valor_frete, n.valor_seguro,
                    n.valor_outras_despesas, n.valor_total, n.venda_id, n.compra_id,
+                   n.justificativa_cancelamento, n.data_cancelamento,
                     e.id AS EmitenteId, e.id AS Id, e.nome_razaosocial, e.cpf_cnpj, e.apelido_nomefantasia, e.logradouro, e.numero,
                     e.telefone, e.email, e.rg_ie, e.inscricao_municipal, e.regime_tributario,
                     e.ativo, e.criado_em, e.observacao,
