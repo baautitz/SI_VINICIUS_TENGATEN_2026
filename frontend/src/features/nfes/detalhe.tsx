@@ -15,7 +15,12 @@ import { CancelarNfeWindow } from "./cancelar";
 import { NfeStatusBadge } from "./status-badge";
 import { brl, chaveFormatada, modalidadeFreteLabels, tipoLabels, type Nfe } from "./types";
 
-export const abrirDanfe = (id: number) => window.open(`/nfes/${id}/danfe`, "_blank");
+export const abrirDanfe = (id: number) => {
+  // Sem a feature "noopener" (retornaria sempre null) para poder detectar bloqueio de popup; o opener é zerado em seguida.
+  const w = window.open(`/nfes/${id}/danfe`, "_blank");
+  if (w) w.opener = null;
+  return w;
+};
 
 export function baixarXml(xml: string, nome: string) {
   const url = URL.createObjectURL(new Blob([xml], { type: "application/xml" }));
@@ -49,7 +54,7 @@ export function NfeDetalheWindow({ nfeId }: { nfeId: number }) {
   const queryClient = useQueryClient();
   const activeWindow = useWindow<true>();
   const [alterada, setAlterada] = React.useState(false);
-  const { data: nfe, isLoading, error } = useQuery({
+  const { data: nfe, isLoading, error, refetch } = useQuery({
     queryKey: ["nfes", nfeId],
     queryFn: () => nfesApi.getById(nfeId),
   });
@@ -60,7 +65,10 @@ export function NfeDetalheWindow({ nfeId }: { nfeId: number }) {
     return (
       <div className="flex flex-col items-center gap-3 py-10 text-sm">
         <p className="text-destructive">Não foi possível carregar a NF-e.</p>
-        <Button variant="outline" onClick={() => activeWindow.dismiss("cancel")}>Fechar <Kbd>Esc</Kbd></Button>
+        <div className="flex gap-2">
+          <Button onClick={() => void refetch()}>Tentar novamente</Button>
+          <Button variant="outline" onClick={() => activeWindow.dismiss("cancel")}>Fechar <Kbd>Esc</Kbd></Button>
+        </div>
       </div>
     );
 
@@ -117,15 +125,21 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
   acoes: Record<"copiarChave" | "verXml" | "baixar" | "cancelar", () => Promise<void>>;
 }) {
   const activeWindow = useWindow<true>();
+  const ui = useUi();
   const entrada = nfe.tipoOperacao === "ENTRADA";
   const t = nfe.nfesTransportes;
   const fechar = () => (alterada ? activeWindow.resolve(true) : activeWindow.dismiss("cancel"));
 
+  const imprimir = () => {
+    if (!abrirDanfe(nfe.id))
+      ui.feedback.notify({ type: "error", title: "O navegador bloqueou a janela do DANFE. Libere pop-ups para este site." });
+  };
+
   useWindowCommands([
     { id: "nfe.xml", hotkey: "Alt+X", label: "Ver XML", run: (e) => { e.preventDefault(); void acoes.verXml(); } },
-    { id: "nfe.baixar", hotkey: "Alt+D", label: "Baixar XML", run: (e) => { e.preventDefault(); void acoes.baixar(); } },
-    { id: "nfe.imprimir", hotkey: "Alt+P", label: "Imprimir DANFE", run: (e) => { e.preventDefault(); abrirDanfe(nfe.id); } },
-    { id: "nfe.cancelar", hotkey: "Alt+C", label: "Cancelar NF-e", enabled: podeCancelar, run: (e) => { e.preventDefault(); void acoes.cancelar(); } },
+    { id: "nfe.baixar", hotkey: "Alt+B", label: "Baixar XML", run: (e) => { e.preventDefault(); void acoes.baixar(); } },
+    { id: "nfe.imprimir", hotkey: "Alt+I", label: "Imprimir DANFE", run: (e) => { e.preventDefault(); imprimir(); } },
+    { id: "nfe.cancelar", hotkey: "Alt+K", label: "Cancelar NF-e", enabled: podeCancelar, run: (e) => { e.preventDefault(); void acoes.cancelar(); } },
   ]);
 
   return (
@@ -133,11 +147,12 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
       <WindowActions>
         <div className="mr-auto flex gap-2">
           <Button type="button" variant="outline" onClick={() => void acoes.verXml()}><FileCode /> Ver XML <Kbd>Alt+X</Kbd></Button>
-          <Button type="button" variant="outline" onClick={() => void acoes.baixar()}><Download /> Baixar XML <Kbd>Alt+D</Kbd></Button>
-          <Button type="button" variant="outline" onClick={() => abrirDanfe(nfe.id)}><Printer /> Imprimir DANFE <Kbd>Alt+P</Kbd></Button>
+          <Button type="button" variant="outline" onClick={() => void acoes.baixar()}><Download /> Baixar XML <Kbd>Alt+B</Kbd></Button>
+          <Button type="button" variant="outline" onClick={imprimir}><Printer /> Imprimir DANFE <Kbd>Alt+I</Kbd></Button>
           <Button type="button" variant="destructive" disabled={!podeCancelar} title={podeCancelar ? undefined : motivo} onClick={() => void acoes.cancelar()}>
-            <Ban /> Cancelar NF-e <Kbd>Alt+C</Kbd>
+            <Ban /> Cancelar NF-e <Kbd>Alt+K</Kbd>
           </Button>
+          {!podeCancelar && <span role="status" className="text-muted-foreground self-center text-xs">{motivo}</span>}
         </div>
         <Button type="button" variant="outline" onClick={fechar}>Fechar <Kbd>Esc</Kbd></Button>
       </WindowActions>
