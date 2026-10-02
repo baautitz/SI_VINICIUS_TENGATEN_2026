@@ -67,9 +67,8 @@ public sealed class MovimentacoesEstoquesService : BaseService
         if (command.UsuarioId.HasValue && usuario == null)
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("USUARIO_INEXISTENTE", "O usuário informado não existe.", "UsuarioId"));
 
-        var nfe = command.NfeId.HasValue ? await _nfesRepository.ObterNfePorId(command.NfeId.Value) : null;
-        if (command.NfeId.HasValue && nfe == null)
-            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("NFE_INEXISTENTE", "A NF-e informada não existe.", "NfeId"));
+        if (command.NfeId.HasValue)
+            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("NFE_NAO_PERMITIDA", "A NF-e não pode ser vinculada por movimentação manual; ela é vinculada pelo módulo de compras.", "NfeId"));
 
         var venda = command.VendaId.HasValue ? await _vendasRepository.ObterVendaPorId(command.VendaId.Value) : null;
         if (command.VendaId.HasValue && venda == null)
@@ -125,9 +124,8 @@ public sealed class MovimentacoesEstoquesService : BaseService
         if (command.UsuarioId.HasValue && usuario == null)
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("USUARIO_INEXISTENTE", "O usuário informado não existe.", "UsuarioId"));
 
-        var nfe = command.NfeId.HasValue ? await _nfesRepository.ObterNfePorId(command.NfeId.Value) : null;
-        if (command.NfeId.HasValue && nfe == null)
-            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("NFE_INEXISTENTE", "A NF-e informada não existe.", "NfeId"));
+        if (command.NfeId.HasValue && command.NfeId != existente.NfeId)
+            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("NFE_NAO_PERMITIDA", "A NF-e não pode ser vinculada por movimentação manual; ela é vinculada pelo módulo de compras.", "NfeId"));
 
         var venda = command.VendaId.HasValue ? await _vendasRepository.ObterVendaPorId(command.VendaId.Value) : null;
         if (command.VendaId.HasValue && venda == null)
