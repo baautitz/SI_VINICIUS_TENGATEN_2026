@@ -830,7 +830,7 @@ export function MovimentacoesUpsertForm({
                         <TableFooter className="bg-muted/30 border-t font-semibold">
                           <TableRow>
                             <TableCell
-                              colSpan={readOnly ? 4 : 5}
+                              colSpan={5}
                               className="px-4 py-3 text-left text-sm font-bold uppercase"
                             >
                               Total Geral
@@ -841,6 +841,7 @@ export function MovimentacoesUpsertForm({
                                 currency: "BRL",
                               })}
                             </TableCell>
+                            {!readOnly && <TableCell />}
                           </TableRow>
                         </TableFooter>
                       )}
