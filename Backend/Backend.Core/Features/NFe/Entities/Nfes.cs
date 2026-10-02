@@ -233,7 +233,7 @@ public class Nfes
         if (StatusNfe != StatusNfe.EMITIDA)
             throw new DomainException("Somente NF-e emitida pode ser cancelada.");
 
-        justificativa = TextNormalization.Normalize(justificativa);
+        justificativa = (justificativa ?? "").Trim(); // texto livre: preserva caixa e acentos (Normalize poria em maiúsculas sem acento)
         if (justificativa.Length < 15 || justificativa.Length > 255)
             throw new DomainException("A justificativa do cancelamento deve ter entre 15 e 255 caracteres.");
 
