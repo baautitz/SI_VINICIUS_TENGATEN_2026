@@ -1,6 +1,5 @@
 using Backend.Core.Common.Results;
 using Backend.Core.Features.Estoque.Commands;
-using Backend.Core.Features.Estoque.DTOs;
 using Backend.Core.Features.Estoque.Entities;
 using Backend.Core.Features.Estoque.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -31,10 +30,6 @@ public class MovimentacoesEstoquesController : ControllerBase
         var movimentacao = await _movimentacoesService.ObterMovimentacaoPorId(id);
         return movimentacao is null ? NotFound() : Ok(movimentacao);
     }
-
-    [HttpGet("kardex")]
-    public Task<ResultadoPaginado<KardexLinha>> GetKardex([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-        => _movimentacoesService.ObterKardex(search, page, pageSize);
 
     [HttpPost]
     [ProducesResponseType(typeof(Resultado<MovimentacoesEstoques>), StatusCodes.Status201Created)]

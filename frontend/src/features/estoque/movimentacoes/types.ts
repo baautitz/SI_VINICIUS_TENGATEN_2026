@@ -30,21 +30,6 @@ export interface MovimentacaoEstoque {
   totalCusto?: number;
 }
 
-export interface KardexLinha {
-  movimentacaoId: number;
-  sku: string;
-  produtoNome: string;
-  dataMovimentacao: string;
-  tipoMovimentacao: TipoMovimentacao;
-  origemTipo: OrigemMovimentacao;
-  origemId?: number | null;
-  motivo?: string | null;
-  quantidade: number;
-  custoUnitario: number;
-  quantidadeAnterior: number;
-  quantidadePosterior: number;
-}
-
 export const tipoMovimentacaoLabels: Record<string, string> = {
   ENTRADA: "Entrada",
   SAIDA: "Saída",

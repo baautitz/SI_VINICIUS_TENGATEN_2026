@@ -11,7 +11,6 @@ using Backend.Core.Features.Acesso.Repositories;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Catalogo.Repositories;
 using Backend.Core.Features.Estoque.Commands;
-using Backend.Core.Features.Estoque.DTOs;
 using Backend.Core.Features.Estoque.Entities;
 using Backend.Core.Features.Estoque.Entities.Enums;
 using Backend.Core.Features.Estoque.Repositories;
@@ -45,9 +44,6 @@ public sealed class MovimentacoesEstoquesService : BaseService
 
     public Task<MovimentacoesEstoques?> ObterMovimentacaoPorId(int id)
         => _movimentacoesRepository.ObterMovimentacaoPorId(id);
-
-    public Task<ResultadoPaginado<KardexLinha>> ObterKardex(string? search, int pagina = 1, int tamanhoPagina = 20)
-        => _movimentacoesRepository.ObterKardex(search, pagina, tamanhoPagina);
 
     // Lançamento manual (perda, avaria, uso interno, acerto...). Efetiva na hora; correção só por estorno.
     public async Task<Resultado<MovimentacoesEstoques>> CriarMovimentacao(CriarMovimentacaoCommand command)

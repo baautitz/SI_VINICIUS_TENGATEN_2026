@@ -1,6 +1,6 @@
 import { http } from "./http";
 import type { PaginatedResult, Resultado } from "./types";
-import type { KardexLinha, MovimentacaoEstoque, MovimentacaoEstoqueFormValues } from "@/features/estoque/movimentacoes/types";
+import type { MovimentacaoEstoque, MovimentacaoEstoqueFormValues } from "@/features/estoque/movimentacoes/types";
 import type { Balanco } from "@/features/estoque/balancos/types";
 
 export const estoqueApi = {
@@ -11,10 +11,6 @@ export const estoqueApi = {
   getById: (id: number) => http.get<MovimentacaoEstoque>(`/api/estoque/movimentacoes/${id}`),
   create: (data: MovimentacaoEstoqueFormValues) => http.post<Resultado<MovimentacaoEstoque>>("/api/estoque/movimentacoes", data),
   estornar: (id: number, motivo: string) => http.post<Resultado<MovimentacaoEstoque>>(`/api/estoque/movimentacoes/${id}/estornar`, { motivo }),
-  kardex: (search?: string, page = 1, pageSize = 20) =>
-    http.get<PaginatedResult<KardexLinha>>(
-      `/api/estoque/movimentacoes/kardex?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`
-    ),
 };
 
 export const balancosApi = {
