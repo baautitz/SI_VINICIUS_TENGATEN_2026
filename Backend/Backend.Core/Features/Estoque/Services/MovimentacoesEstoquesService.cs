@@ -93,7 +93,7 @@ public sealed class MovimentacoesEstoquesService : BaseService
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_VENDA", "Esta movimentação foi gerada por uma venda. Use a devolução da venda para reentrar o estoque."));
 
         if (original.OrigemTipo == OrigemMovimentacaoEstoque.COMPRA)
-            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_COMPRA", "Esta movimentação foi gerada por uma compra. Cancele a compra para estornar a movimentação de estoque."));
+            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_COMPRA", "Esta movimentação foi gerada por uma compra. Compras não têm cancelamento: a correção é feita por nova movimentação manual (ajuste), não por estorno."));
 
         if (original.OrigemTipo == OrigemMovimentacaoEstoque.BALANCO)
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_BALANCO", "Esta movimentação foi gerada por um balanço. Cancele o balanço para estornar a movimentação de estoque."));
