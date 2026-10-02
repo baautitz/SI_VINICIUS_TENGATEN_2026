@@ -15,6 +15,7 @@ public class CriarProdutoCommandValidator : AbstractValidator<CriarProdutoComman
         {
             sku.RuleFor(s => s.Sku).MaximumLength(50);
             sku.RuleFor(s => s.Preco).GreaterThanOrEqualTo(0);
+            sku.RuleFor(s => s.Preco).GreaterThan(0).When(s => s.Ativo).WithMessage("Preço deve ser maior que zero para SKU ativo.");
         });
     }
 }
