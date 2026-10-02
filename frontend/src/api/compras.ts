@@ -16,6 +16,8 @@ export const comprasApi = {
   getById: (id: number) => http.get<Compra>(`/api/compras/${id}`),
   create: (data: CriarCompraPayload) =>
     http.post<Resultado<Compra>>("/api/compras", data),
+  estornar: (id: number, motivo: string) =>
+    http.postQuietly<Resultado<Compra>>(`/api/compras/${id}/estornar`, { motivo }),
   previaNfe: (xml: string, emitenteId?: number) =>
     http.post<Resultado<PreviaNfe>>("/api/nfes/importar/previa", {
       xml,

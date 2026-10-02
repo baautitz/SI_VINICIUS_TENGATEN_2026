@@ -60,6 +60,9 @@ export const http = {
   getQuietly: <T>(path: string, silentStatuses: readonly number[] = [404]) =>
     request<T>(path, undefined, silentStatuses),
   post: <T>(path: string, data: unknown) => request<T>(path, { method: "POST", body: JSON.stringify(data) }),
+  // Quem chama mostra os erros (ex.: travas de negócio 409) no próprio diálogo, sem toast global.
+  postQuietly: <T>(path: string, data: unknown, silentStatuses: readonly number[] = [400, 404, 409]) =>
+    request<T>(path, { method: "POST", body: JSON.stringify(data) }, silentStatuses),
   put: <T>(path: string, data: unknown) => request<T>(path, { method: "PUT", body: JSON.stringify(data) }),
   delete: (path: string) => request<void>(path, { method: "DELETE" }),
 };

@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Plus, RefreshCw, Trash2, TriangleAlert } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus, RefreshCw, Trash2, TriangleAlert, Undo2 } from "lucide-react";
 import { WindowActions } from "@/imperative-ui";
 import { comprasApi } from "@/api/compras";
 import { condicoesApi } from "@/api/financeiro";
@@ -20,6 +20,8 @@ import {
   type BackendResult,
 } from "@/hooks/use-upsert-mutation";
 import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
+import { formatToLocal } from "@/utils/date-utils";
+import { EstornarCompraWindow, type EstornarCompraWindowProps } from "./estornar";
 import {
   Alert,
   AlertDescription,
@@ -149,7 +151,9 @@ function CompraForm({
 }) {
   const activeWindow = useWindow<true>();
   const ui = useUi();
+  const queryClient = useQueryClient();
   const readOnly = !!compra;
+  const podeEstornar = !!compra && !compra.estornada;
   const previa = importacao?.previa;
   const dados = previa?.dados;
   const modoXml = !!importacao;
@@ -526,7 +530,35 @@ function CompraForm({
     }
   };
 
+  const estornar = async () => {
+    if (!compra || !podeEstornar) return;
+    const r = await ui.windows.open<true, EstornarCompraWindowProps>({
+      component: EstornarCompraWindow,
+      props: { compraId: compra.id, temNfe: !!compra.nfeId },
+      title: `Estornar compra #${compra.id}`,
+      size: "small",
+    });
+    if (r.status !== "confirmed") return;
+    await Promise.all(
+      ["compras", "skus", "produtos", "movimentacoes", "contas-pagar", "nfes"].map((k) =>
+        queryClient.invalidateQueries({ queryKey: [k] }),
+      ),
+    );
+    ui.feedback.notify({ type: "success", title: `Compra #${compra.id} estornada.` });
+    activeWindow.dismiss("cancel");
+  };
+
   useWindowCommands([
+    {
+      id: "compras.estornar",
+      hotkey: "Alt+Z" as const,
+      label: "Estornar compra",
+      enabled: podeEstornar,
+      run: (e: KeyboardEvent) => {
+        e.preventDefault();
+        void estornar();
+      },
+    },
     {
       id: "compras.next",
       hotkey: "Alt+Enter" as const,
@@ -589,7 +621,28 @@ function CompraForm({
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
+      {compra?.estornada && (
+        <Alert variant="destructive" role="status">
+          <AlertDescription>
+            <Badge variant="destructive" className="mr-2">
+              ESTORNADA
+            </Badge>
+            em {formatToLocal(compra.estornadaEm)}: {compra.motivoEstorno}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <WindowActions>
+        {podeEstornar && (
+          <Button
+            type="button"
+            variant="destructive"
+            className="mr-auto"
+            onClick={() => void estornar()}
+          >
+            <Undo2 /> Estornar compra <Kbd>Alt+Z</Kbd>
+          </Button>
+        )}
         <Button
           type="button"
           variant="outline"

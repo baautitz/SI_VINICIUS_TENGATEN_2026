@@ -11,6 +11,7 @@ import {
 } from "@/ui/primitives";
 import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
 import { formatToLocal } from "@/utils/date-utils";
+import { CompraWindow, type CompraWindowProps } from "@/features/compras/upsert";
 import { CancelarNfeWindow } from "./cancelar";
 import { NfeStatusBadge } from "./status-badge";
 import { brl, chaveFormatada, modalidadeFreteLabels, tipoLabels, type Nfe } from "./types";
@@ -75,7 +76,7 @@ export function NfeDetalheWindow({ nfeId }: { nfeId: number }) {
   const podeCancelar = nfe.tipoOperacao === "SAIDA" && nfe.statusNfe === "EMITIDA";
   const motivoSemCancelar =
     nfe.tipoOperacao === "ENTRADA"
-      ? "NF-e de entrada não pode ser cancelada."
+      ? nfe.statusNfe === "CANCELADA" ? "NF-e de entrada cancelada pelo estorno da compra." : "NF-e de entrada não é cancelada diretamente: estorne a compra."
       : nfe.statusNfe === "CANCELADA" ? "A NF-e já está cancelada." : "Somente NF-e emitida pode ser cancelada.";
 
   const copiarChave = async () => {
@@ -128,6 +129,12 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
   const ui = useUi();
   const entrada = nfe.tipoOperacao === "ENTRADA";
   const t = nfe.nfesTransportes;
+  const abrirCompra = async () => {
+    if (!nfe.compraId) return;
+    await ui.windows.open<true, CompraWindowProps>({
+      component: CompraWindow, props: { compraId: nfe.compraId }, title: `Compra #${nfe.compraId}`, size: "full",
+    });
+  };
   const fechar = () => (alterada ? activeWindow.resolve(true) : activeWindow.dismiss("cancel"));
 
   const imprimir = () => {
@@ -153,6 +160,11 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
             <Ban /> Cancelar NF-e <Kbd>Alt+K</Kbd>
           </Button>
           {!podeCancelar && <span role="status" className="text-muted-foreground self-center text-xs">{motivo}</span>}
+          {!podeCancelar && entrada && nfe.compraId && (
+            <Button type="button" variant="link" className="self-center px-0 text-xs" onClick={() => void abrirCompra()}>
+              Abrir compra #{nfe.compraId}
+            </Button>
+          )}
         </div>
         <Button type="button" variant="outline" onClick={fechar}>Fechar <Kbd>Esc</Kbd></Button>
       </WindowActions>
@@ -163,7 +175,11 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
             <NfeStatusBadge status={nfe.statusNfe} />
             <span>Emissão: {formatToLocal(nfe.dataEmissao)}</span>
             {nfe.vendaId && <span>Venda #{nfe.vendaId}</span>}
-            {nfe.compraId && <span>Compra #{nfe.compraId}</span>}
+            {nfe.compraId && (
+              <Button type="button" variant="link" className="h-auto p-0" onClick={() => void abrirCompra()}>
+                Compra #{nfe.compraId}
+              </Button>
+            )}
           </div>
           <div className="mt-2 flex items-center gap-2">
             <code className="break-all rounded bg-muted px-2 py-1 text-xs">{chaveFormatada(nfe.chaveAcesso) || "Sem chave de acesso"}</code>

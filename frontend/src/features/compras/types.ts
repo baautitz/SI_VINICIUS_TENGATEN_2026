@@ -13,6 +13,10 @@ export interface Compra {
   valorFreteTerceiro: number;
   valorTotal: number;
   observacao?: string | null;
+  estornada: boolean;
+  estornadaEm?: string | null;
+  motivoEstorno?: string | null;
+  nfeId?: number | null;
   emitente: Emitente;
   fornecedor: Fornecedor;
   itens: Array<{

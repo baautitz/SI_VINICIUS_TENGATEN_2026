@@ -3,7 +3,7 @@
 import React from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Eye, FileUp, PackagePlus } from "lucide-react";
-import { Button, Kbd } from "@/ui/primitives";
+import { Badge, Button, Kbd } from "@/ui/primitives";
 import { DataTable, FeatureLayout } from "@/ui/composites";
 import { FeatureHeader } from "@/ui/composites";
 import { useWindowCommands } from "@/ui/imperative";
@@ -50,6 +50,15 @@ export function ComprasList({
       cell: ({ row }) => (
         <span className="font-semibold">#{row.original.id}</span>
       ),
+    },
+    {
+      id: "status",
+      header: "Situação",
+      size: 110,
+      cell: ({ row }) =>
+        row.original.estornada ? (
+          <Badge variant="destructive">ESTORNADA</Badge>
+        ) : null,
     },
     {
       accessorKey: "dataCompra",
