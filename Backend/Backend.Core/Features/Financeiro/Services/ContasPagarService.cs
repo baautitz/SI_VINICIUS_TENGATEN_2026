@@ -3,6 +3,7 @@ using Backend.Core.Common.Results;
 using Backend.Core.Common.Extensions;
 using Backend.Core.Common.Interfaces;
 using Backend.Core.Features.Financeiro.Commands;
+using Backend.Core.Features.Financeiro.DTOs;
 using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.Financeiro.Repositories;
@@ -40,8 +41,8 @@ public sealed class ContasPagarService : BaseService
     public Task<ContasPagar?> ObterContaPagarPorId(int id)
         => _contasRepository.ObterContaPagarPorId(id);
 
-    public Task<ResultadoPaginado<ContasPagar>> PesquisarContasPagar(string termo, int pagina = 1, int tamanhoDaPagina = 20)
-        => _contasRepository.PesquisarContasPagar(termo, pagina, tamanhoDaPagina);
+    public Task<ResultadoPaginado<ContasPagar>> PesquisarContasPagar(string termo, int pagina = 1, int tamanhoDaPagina = 20, FiltroContasPagar? filtro = null)
+        => _contasRepository.PesquisarContasPagar(termo, pagina, tamanhoDaPagina, filtro);
 
     public async Task<Resultado<ContasPagar>> CriarContaPagar(CriarContaPagarCommand command)
     {

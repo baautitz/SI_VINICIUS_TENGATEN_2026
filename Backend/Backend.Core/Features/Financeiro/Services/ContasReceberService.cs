@@ -3,6 +3,7 @@ using Backend.Core.Common.Results;
 using Backend.Core.Common.Extensions;
 using Backend.Core.Common.Interfaces;
 using Backend.Core.Features.Financeiro.Commands;
+using Backend.Core.Features.Financeiro.DTOs;
 using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.Financeiro.Repositories;
@@ -42,8 +43,8 @@ public sealed class ContasReceberService : BaseService
     public Task<ContasReceber?> ObterContaReceberPorId(int id)
         => _contasRepository.ObterContaReceberPorId(id);
 
-    public Task<ResultadoPaginado<ContasReceber>> PesquisarContasReceber(string termo, int pagina = 1, int tamanhoDaPagina = 20)
-        => _contasRepository.PesquisarContasReceber(termo, pagina, tamanhoDaPagina);
+    public Task<ResultadoPaginado<ContasReceber>> PesquisarContasReceber(string termo, int pagina = 1, int tamanhoDaPagina = 20, FiltroContasReceber? filtro = null)
+        => _contasRepository.PesquisarContasReceber(termo, pagina, tamanhoDaPagina, filtro);
 
     public async Task<Resultado<ContasReceber>> CriarContaReceber(CriarContaReceberCommand command)
     {

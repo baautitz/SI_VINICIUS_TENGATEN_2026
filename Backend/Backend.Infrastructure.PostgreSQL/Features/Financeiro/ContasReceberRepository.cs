@@ -3,6 +3,7 @@ using Backend.Core.Common.Results;
 using Backend.Core.Features.Parceiros.Enums;
 using Backend.Core.Common.ValueObjects;
 using Backend.Core.Features.Localizacao.Entities;
+using Backend.Core.Features.Financeiro.DTOs;
 using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.Financeiro.Repositories;
@@ -340,15 +341,19 @@ public class ContasReceberRepository : IContasReceberRepository
         return linhasAfetadas > 0;
     }
 
-    public async Task<ResultadoPaginado<ContasReceber>> PesquisarContasReceber(string termo, int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<ContasReceber>> PesquisarContasReceber(string termo, int pagina = 1, int tamanhoDaPagina = 20, FiltroContasReceber? filtro = null)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
+        var f0 = new { Termo = $"%{termo}%", filtro?.ClienteId, OrigemTipo = filtro?.OrigemTipo?.ToString(), filtro?.OrigemId };
 
         const string countSql = @"
             SELECT COUNT(*)
             FROM contas_receber cr
             JOIN clientes c ON c.id = cr.cliente_id
-            WHERE cr.descricao ILIKE @Termo OR c.nome_razaosocial ILIKE @Termo;";
+            WHERE (cr.descricao ILIKE @Termo OR c.nome_razaosocial ILIKE @Termo)
+              AND (@ClienteId::int IS NULL OR cr.cliente_id = @ClienteId)
+              AND (@OrigemTipo::text IS NULL OR cr.origem_tipo::text = @OrigemTipo)
+              AND (@OrigemId::int IS NULL OR cr.origem_id = @OrigemId);";
 
         const string querySql = @"
             SELECT cr.id AS Id, cr.descricao AS Descricao, cr.data_emissao AS DataEmissao, cr.data_vencimento AS DataVencimento, cr.valor_original AS ValorOriginal,
@@ -368,13 +373,16 @@ public class ContasReceberRepository : IContasReceberRepository
             JOIN paises p ON p.id = c.nacionalidade_id
             LEFT JOIN condicoes_pagamentos con ON con.id = cr.condicao_pagamento_id
             LEFT JOIN metodos_pagamento mp ON mp.codigo = con.metodo_pagamento_codigo
-            WHERE cr.descricao ILIKE @Termo OR c.nome_razaosocial ILIKE @Termo
+            WHERE (cr.descricao ILIKE @Termo OR c.nome_razaosocial ILIKE @Termo)
+              AND (@ClienteId::int IS NULL OR cr.cliente_id = @ClienteId)
+              AND (@OrigemTipo::text IS NULL OR cr.origem_tipo::text = @OrigemTipo)
+              AND (@OrigemId::int IS NULL OR cr.origem_id = @OrigemId)
             ORDER BY cr.criado_em DESC, cr.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(
             countSql,
-            new { Termo = $"%{termo}%" },
+            f0,
             transaction: _session.Transaction);
 
         var types = new[] { typeof(ContasReceber), typeof(Clientes), typeof(Paises), typeof(CondicoesPagamentos), typeof(MetodosPagamentos) };
@@ -431,7 +439,7 @@ public class ContasReceberRepository : IContasReceberRepository
                     conta.Status
                 );
             },
-            new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
+            new { f0.Termo, f0.ClienteId, f0.OrigemTipo, f0.OrigemId, TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
             splitOn: "Id,Id,Id,Codigo"
         );

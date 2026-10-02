@@ -3,6 +3,7 @@ using Backend.Core.Common.Results;
 using Backend.Core.Features.Parceiros.Enums;
 using Backend.Core.Common.ValueObjects;
 using Backend.Core.Features.Localizacao.Entities;
+using Backend.Core.Features.Financeiro.DTOs;
 using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.Financeiro.Repositories;
@@ -318,16 +319,21 @@ public class ContasPagarRepository : IContasPagarRepository
         return linhasAfetadas > 0;
     }
 
-    public async Task<ResultadoPaginado<ContasPagar>> PesquisarContasPagar(string termo, int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<ContasPagar>> PesquisarContasPagar(string termo, int pagina = 1, int tamanhoDaPagina = 20, FiltroContasPagar? filtro = null)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
+        var f0 = new { Termo = $"%{termo}%", filtro?.FornecedorId, filtro?.ClienteId, OrigemTipo = filtro?.OrigemTipo?.ToString(), filtro?.OrigemId };
 
         const string countSql = @"
             SELECT COUNT(*)
             FROM contas_pagar cp
             LEFT JOIN fornecedores f ON f.id = cp.fornecedor_id
             LEFT JOIN clientes cli ON cli.id = cp.cliente_id
-            WHERE cp.descricao ILIKE @Termo OR f.nome_razaosocial ILIKE @Termo OR cli.nome_razaosocial ILIKE @Termo;";
+            WHERE (cp.descricao ILIKE @Termo OR f.nome_razaosocial ILIKE @Termo OR cli.nome_razaosocial ILIKE @Termo)
+              AND (@FornecedorId::int IS NULL OR cp.fornecedor_id = @FornecedorId)
+              AND (@ClienteId::int IS NULL OR cp.cliente_id = @ClienteId)
+              AND (@OrigemTipo::text IS NULL OR cp.origem_tipo::text = @OrigemTipo)
+              AND (@OrigemId::int IS NULL OR cp.origem_id = @OrigemId);";
 
         const string querySql = @"
             SELECT cp.id AS Id, cp.descricao AS Descricao, cp.data_emissao AS DataEmissao, cp.data_vencimento AS DataVencimento, cp.valor_original AS ValorOriginal,
@@ -347,13 +353,17 @@ public class ContasPagarRepository : IContasPagarRepository
             LEFT JOIN clientes cli ON cli.id = cp.cliente_id
             LEFT JOIN condicoes_pagamentos con ON con.id = cp.condicao_pagamento_id
             LEFT JOIN metodos_pagamento mp ON mp.codigo = con.metodo_pagamento_codigo
-            WHERE cp.descricao ILIKE @Termo OR f.nome_razaosocial ILIKE @Termo OR cli.nome_razaosocial ILIKE @Termo
+            WHERE (cp.descricao ILIKE @Termo OR f.nome_razaosocial ILIKE @Termo OR cli.nome_razaosocial ILIKE @Termo)
+              AND (@FornecedorId::int IS NULL OR cp.fornecedor_id = @FornecedorId)
+              AND (@ClienteId::int IS NULL OR cp.cliente_id = @ClienteId)
+              AND (@OrigemTipo::text IS NULL OR cp.origem_tipo::text = @OrigemTipo)
+              AND (@OrigemId::int IS NULL OR cp.origem_id = @OrigemId)
             ORDER BY cp.criado_em DESC, cp.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(
             countSql,
-            new { Termo = $"%{termo}%" },
+            f0,
             transaction: _session.Transaction);
 
         var contas = (await _session.Connection.QueryAsync<ContasPagar, Fornecedores, Paises, CondicoesPagamentos, MetodosPagamentos, ContasPagar>(
@@ -400,7 +410,7 @@ public class ContasPagarRepository : IContasPagarRepository
                     conta.ClienteNome
                 );
             },
-            new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
+            new { f0.Termo, f0.FornecedorId, f0.ClienteId, f0.OrigemTipo, f0.OrigemId, TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
             splitOn: "Id,Id,Id,Codigo"
         )).ToList();

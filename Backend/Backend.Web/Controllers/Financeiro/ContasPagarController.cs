@@ -1,6 +1,8 @@
 using Backend.Core.Common.Results;
 using Backend.Core.Features.Financeiro.Commands;
+using Backend.Core.Features.Financeiro.DTOs;
 using Backend.Core.Features.Financeiro.Entities;
+using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.Financeiro.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -21,10 +23,11 @@ public class ContasPagarController : ControllerBase
     }
 
     [HttpGet]
-    public Task<ResultadoPaginado<ContasPagar>> GetContas([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public Task<ResultadoPaginado<ContasPagar>> GetContas([FromQuery] string? search, [FromQuery] int? fornecedorId, [FromQuery] int? clienteId, [FromQuery] OrigemTituloFinanceiro? origemTipo, [FromQuery] int? origemId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        if (!string.IsNullOrWhiteSpace(search))
-            return _service.PesquisarContasPagar(search, page, pageSize);
+        var filtro = new FiltroContasPagar(fornecedorId, clienteId, origemTipo, origemId);
+        if (!string.IsNullOrWhiteSpace(search) || filtro != new FiltroContasPagar())
+            return _service.PesquisarContasPagar(search ?? "", page, pageSize, filtro);
 
         return _service.ObterContasPagar(page, pageSize);
     }

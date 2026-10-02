@@ -43,7 +43,21 @@ export interface ContaReceberFormValues {
   parcelas: ParcelaReceberCommand[];
 }
 
+export type OrigemTituloFinanceiro = "MANUAL" | "VENDA" | "COMPRA" | "DEVOLUCAO_VENDA";
+
+const queryFiltro = (f: Record<string, string | number | undefined>) =>
+  Object.entries(f)
+    .filter(([, v]) => v !== undefined)
+    .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
+    .join("&");
+
 export const contasPagarApi = {
+  listByFornecedor: (fornecedorId: number, pageSize = 100) =>
+    http.get<PaginatedResult<ContasPagar>>(`/api/financeiro/contas-pagar?${queryFiltro({ fornecedorId, pageSize })}`),
+  listByCliente: (clienteId: number, pageSize = 100) =>
+    http.get<PaginatedResult<ContasPagar>>(`/api/financeiro/contas-pagar?${queryFiltro({ clienteId, pageSize })}`),
+  listByOrigem: (origemTipo: OrigemTituloFinanceiro, origemId: number, pageSize = 100) =>
+    http.get<PaginatedResult<ContasPagar>>(`/api/financeiro/contas-pagar?${queryFiltro({ origemTipo, origemId, pageSize })}`),
   list: (search?: string, page = 1, pageSize = 20) =>
     http.get<PaginatedResult<ContasPagar>>(
       `/api/financeiro/contas-pagar?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`
@@ -67,6 +81,10 @@ export const contasPagarApi = {
 };
 
 export const contasReceberApi = {
+  listByCliente: (clienteId: number, pageSize = 100) =>
+    http.get<PaginatedResult<ContasReceber>>(`/api/financeiro/contas-receber?${queryFiltro({ clienteId, pageSize })}`),
+  listByOrigem: (origemTipo: OrigemTituloFinanceiro, origemId: number, pageSize = 100) =>
+    http.get<PaginatedResult<ContasReceber>>(`/api/financeiro/contas-receber?${queryFiltro({ origemTipo, origemId, pageSize })}`),
   list: (search?: string, page = 1, pageSize = 20) =>
     http.get<PaginatedResult<ContasReceber>>(
       `/api/financeiro/contas-receber?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`
