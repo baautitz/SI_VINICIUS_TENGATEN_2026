@@ -8,8 +8,8 @@ import { fireAndForget } from "@/lib/utils";
 interface FeatureHeaderProps {
   title: string;
   icon?: React.ReactNode;
-  onAdd: () => void | Promise<void>;
-  addButtonLabel: string;
+  onAdd?: () => void | Promise<void>;
+  addButtonLabel?: string;
 }
 
 export function FeatureHeader({
@@ -22,10 +22,11 @@ export function FeatureHeader({
     {
       id: `feature.header.${title}.create`,
       hotkey: "Alt+N",
-      label: addButtonLabel,
+      label: addButtonLabel ?? "Novo",
+      enabled: !!onAdd,
       run: (event) => {
         event.preventDefault();
-        fireAndForget(onAdd);
+        if (onAdd) fireAndForget(onAdd);
       },
     },
   ]);
@@ -41,14 +42,16 @@ export function FeatureHeader({
         </h1>
       </div>
 
-      <Button onClick={() => fireAndForget(onAdd)} className="gap-2 rounded-lg shadow-sm">
-        <Plus className="h-4 w-4" />
-        {addButtonLabel}{" "}
-        <KbdGroup>
-          <Kbd>Alt</Kbd>
-          <Kbd>N</Kbd>
-        </KbdGroup>
-      </Button>
+      {onAdd && (
+        <Button onClick={() => fireAndForget(onAdd)} className="gap-2 rounded-lg shadow-sm">
+          <Plus className="h-4 w-4" />
+          {addButtonLabel}{" "}
+          <KbdGroup>
+            <Kbd>Alt</Kbd>
+            <Kbd>N</Kbd>
+          </KbdGroup>
+        </Button>
+      )}
     </div>
   );
 }
