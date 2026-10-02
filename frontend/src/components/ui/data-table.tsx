@@ -361,6 +361,13 @@ export function DataTable<TData, TValue>({
                       : "",
                   ].join(" ")}
                   onFocus={() => hasKeyboardNav && setFocusedRowIndex(index)}
+                  onBlur={(event) => {
+                    if (!event.currentTarget.contains(event.relatedTarget)) {
+                      setFocusedRowIndex((current) =>
+                        current === index ? null : current,
+                      )
+                    }
+                  }}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
