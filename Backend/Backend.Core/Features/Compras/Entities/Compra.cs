@@ -59,8 +59,8 @@ public class Compra
         Observacao = TextNormalization.NormalizeOrNull(observacao);
 
         var produtos = _itens.Sum(i => i.ValorTotal);
-        ValorNota = produtos + valorFrete + valorSeguro + valorOutrasDespesas - valorDesconto;
-        ValorTotal = ValorNota + valorFreteTerceiro;
+        ValorNota = Math.Round(produtos + valorFrete + valorSeguro + valorOutrasDespesas - valorDesconto, 2, MidpointRounding.AwayFromZero);
+        ValorTotal = Math.Round(ValorNota + valorFreteTerceiro, 2, MidpointRounding.AwayFromZero);
 
         var rateios = RateioCompra.Ratear(_itens.Select(i => i.ValorTotal).ToList(),
             valorFrete + valorSeguro + valorOutrasDespesas + valorFreteTerceiro - valorDesconto);

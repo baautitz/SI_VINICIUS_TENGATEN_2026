@@ -167,7 +167,7 @@ public sealed class NfesImportacaoService : BaseService
                 Math.Max(0m, t.Desconto - descontoItens), // vDesc da nota já inclui o desconto dos itens
                 command.ValorFreteTerceiro, transportadora.Data?.Id, command.VencimentoFreteTerceiro,
                 dados.InformacoesComplementares,
-                dados.Itens.Select(i => new CriarCompraItemCommand(skus[i.NumeroItem].Sku, i.Quantidade, i.ValorUnitario, i.ValorDesconto, i.CodigoProduto)).ToList(),
+                dados.Itens.Select(i => new CriarCompraItemCommand(skus[i.NumeroItem].Sku, i.Quantidade, i.ValorUnitario, i.ValorDesconto, i.CodigoProduto, i.ValorProdutos)).ToList(),
                 command.CondicaoPagamentoId, parcelas.ToList());
 
             var compra = await _comprasService.GravarCompra(compraCommand);

@@ -7,7 +7,9 @@ public record CriarCompraItemCommand(
     decimal Quantidade,
     decimal ValorUnitario,
     decimal ValorDesconto,
-    string? CodigoProdutoFornecedor
+    string? CodigoProdutoFornecedor,
+    // vProd do XML: quando informado, é o valor bruto do item (qtd x unit pode ter mais casas que o documento).
+    decimal? ValorBruto = null
 );
 
 public record CriarCompraCommand(

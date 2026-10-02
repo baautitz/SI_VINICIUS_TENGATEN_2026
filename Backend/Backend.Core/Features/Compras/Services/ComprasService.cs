@@ -130,7 +130,7 @@ public sealed class ComprasService : BaseService
             var sku = await _skusRepository.ObterSkuPorSku(i.Sku);
             if (sku is null)
                 return Resultado<Compra>.Falha(new ResultadoErro("SKU_INEXISTENTE", $"O SKU '{i.Sku}' não existe.", "Itens"));
-            itens.Add(new CompraItens(i.Quantidade, i.ValorUnitario, i.ValorDesconto, sku, i.CodigoProdutoFornecedor));
+            itens.Add(new CompraItens(i.Quantidade, i.ValorUnitario, i.ValorDesconto, sku, i.CodigoProdutoFornecedor, i.ValorBruto));
         }
 
         var compra = new Compra(command.DataCompra, emitente, fornecedor, itens,

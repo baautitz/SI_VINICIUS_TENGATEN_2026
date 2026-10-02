@@ -21,7 +21,7 @@ public class CompraItens
 
     protected CompraItens() { Sku = null!; }
 
-    public CompraItens(decimal quantidade, decimal valorUnitario, decimal valorDesconto, Skus sku, string? codigoProdutoFornecedor = null)
+    public CompraItens(decimal quantidade, decimal valorUnitario, decimal valorDesconto, Skus sku, string? codigoProdutoFornecedor = null, decimal? valorBruto = null)
     {
         if (quantidade <= 0)
             throw new DomainException("Quantidade deve ser maior que zero.");
@@ -35,7 +35,7 @@ public class CompraItens
         ValorDesconto = valorDesconto;
         Sku = sku ?? throw new DomainException("SKU é obrigatório.");
         CodigoProdutoFornecedor = string.IsNullOrWhiteSpace(codigoProdutoFornecedor) ? null : codigoProdutoFornecedor.Trim();
-        ValorTotal = quantidade * valorUnitario - valorDesconto;
+        ValorTotal = Math.Round((valorBruto ?? quantidade * valorUnitario) - valorDesconto, 2, MidpointRounding.AwayFromZero);
 
         if (ValorTotal < 0)
             throw new DomainException("Valor total do item não pode ser negativo.");
