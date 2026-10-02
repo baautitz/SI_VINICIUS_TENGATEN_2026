@@ -7,6 +7,10 @@ export const vendasApi = {
     http.get<PaginatedResult<Venda>>(
       `/api/vendas?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`
     ),
+  listByCliente: (clienteId: number, page = 1, pageSize = 20) =>
+    http.get<PaginatedResult<Venda>>(
+      `/api/vendas?clienteId=${clienteId}&page=${page}&pageSize=${pageSize}`
+    ),
   getById: (id: number) => http.get<Venda>(`/api/vendas/${id}`),
   create: (data: VendaFormValues) =>
     http.post<Resultado<Venda>>("/api/vendas", data),

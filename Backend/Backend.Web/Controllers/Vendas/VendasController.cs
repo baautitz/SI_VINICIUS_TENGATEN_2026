@@ -22,8 +22,8 @@ public class VendasController : ControllerBase
     }
 
     [HttpGet]
-    public Task<ResultadoPaginado<Venda>> GetVendas([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-        => _vendasService.PesquisarVendas(search ?? string.Empty, page, pageSize);
+    public Task<ResultadoPaginado<Venda>> GetVendas([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] int? clienteId = null)
+        => _vendasService.PesquisarVendas(search ?? string.Empty, page, pageSize, clienteId);
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<Venda>> GetVenda(int id)

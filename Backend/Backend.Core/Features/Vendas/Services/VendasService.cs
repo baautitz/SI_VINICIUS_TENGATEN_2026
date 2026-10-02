@@ -68,18 +68,18 @@ public sealed class VendasService : BaseService
         _unitOfWork = unitOfWork;
     }
 
-    public Task<ResultadoPaginado<Venda>> ObterVendas(int pagina = 1, int tamanhoDaPagina = 20)
-        => _vendasRepository.ObterVendas(pagina, tamanhoDaPagina);
+    public Task<ResultadoPaginado<Venda>> ObterVendas(int pagina = 1, int tamanhoDaPagina = 20, int? clienteId = null)
+        => _vendasRepository.ObterVendas(pagina, tamanhoDaPagina, clienteId);
 
     public Task<Venda?> ObterVendaPorId(int id)
         => _vendasRepository.ObterVendaPorId(id);
 
-    public Task<ResultadoPaginado<Venda>> PesquisarVendas(string termo, int pagina = 1, int tamanhoDaPagina = 20)
+    public Task<ResultadoPaginado<Venda>> PesquisarVendas(string termo, int pagina = 1, int tamanhoDaPagina = 20, int? clienteId = null)
     {
         if (string.IsNullOrWhiteSpace(termo))
-            return _vendasRepository.ObterVendas(pagina, tamanhoDaPagina);
+            return _vendasRepository.ObterVendas(pagina, tamanhoDaPagina, clienteId);
 
-        return _vendasRepository.PesquisarVendas(termo, pagina, tamanhoDaPagina);
+        return _vendasRepository.PesquisarVendas(termo, pagina, tamanhoDaPagina, clienteId);
     }
 
     public async Task<Resultado<Venda>> CriarVenda(CriarVendaCommand command)

@@ -17,11 +17,11 @@ public class VendasRepository : IVendasRepository
         _session = session;
     }
 
-    public async Task<ResultadoPaginado<Venda>> ObterVendas(int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<Venda>> ObterVendas(int pagina = 1, int tamanhoDaPagina = 20, int? clienteId = null)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
-        const string countSql = "SELECT COUNT(*) FROM vendas;";
+        const string countSql = "SELECT COUNT(*) FROM vendas v WHERE (@ClienteId::int IS NULL OR v.cliente_id = @ClienteId::int);";
 
         const string querySql = @"
             SELECT v.id AS Id, v.data_venda, v.valor_total, v.observacao,
@@ -31,11 +31,12 @@ public class VendasRepository : IVendasRepository
             FROM vendas v
             JOIN emitentes e ON e.id = v.emitente_id
             JOIN clientes c ON c.id = v.cliente_id
+            WHERE (@ClienteId::int IS NULL OR v.cliente_id = @ClienteId::int)
             ORDER BY v.data_venda DESC, v.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(
-            countSql, transaction: _session.Transaction);
+            countSql, new { ClienteId = clienteId }, transaction: _session.Transaction);
 
         var vendas = (await _session.Connection.QueryAsync<Venda, Emitentes, Clientes, Venda>(
             querySql,
@@ -46,7 +47,7 @@ public class VendasRepository : IVendasRepository
                 venda.DefinirItens(new List<VendaItens>());
                 return venda;
             },
-            new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
+            new { ClienteId = clienteId, TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
             splitOn: "Id,Id")).ToList();
 
@@ -237,7 +238,7 @@ public class VendasRepository : IVendasRepository
         return linhasAfetadas > 0;
     }
 
-    public async Task<ResultadoPaginado<Venda>> PesquisarVendas(string termo, int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<Venda>> PesquisarVendas(string termo, int pagina = 1, int tamanhoDaPagina = 20, int? clienteId = null)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
@@ -245,7 +246,8 @@ public class VendasRepository : IVendasRepository
             SELECT COUNT(*) FROM vendas v
             JOIN clientes c ON c.id = v.cliente_id
             JOIN emitentes e ON e.id = v.emitente_id
-            WHERE c.nome_razaosocial ILIKE @Termo OR v.observacao ILIKE @Termo OR e.nome_razaosocial ILIKE @Termo;";
+            WHERE (c.nome_razaosocial ILIKE @Termo OR v.observacao ILIKE @Termo OR e.nome_razaosocial ILIKE @Termo)
+              AND (@ClienteId::int IS NULL OR v.cliente_id = @ClienteId::int);";
 
         const string querySql = @"
             SELECT v.id AS Id, v.data_venda, v.valor_total, v.observacao,
@@ -255,12 +257,13 @@ public class VendasRepository : IVendasRepository
             FROM vendas v
             JOIN emitentes e ON e.id = v.emitente_id
             JOIN clientes c ON c.id = v.cliente_id
-            WHERE c.nome_razaosocial ILIKE @Termo OR v.observacao ILIKE @Termo OR e.nome_razaosocial ILIKE @Termo
+            WHERE (c.nome_razaosocial ILIKE @Termo OR v.observacao ILIKE @Termo OR e.nome_razaosocial ILIKE @Termo)
+              AND (@ClienteId::int IS NULL OR v.cliente_id = @ClienteId::int)
             ORDER BY v.data_venda DESC, v.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(
-            countSql, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
+            countSql, new { Termo = $"%{termo}%", ClienteId = clienteId }, transaction: _session.Transaction);
 
         var vendas = (await _session.Connection.QueryAsync<Venda, Emitentes, Clientes, Venda>(
             querySql,
@@ -271,7 +274,7 @@ public class VendasRepository : IVendasRepository
                 venda.DefinirItens(new List<VendaItens>());
                 return venda;
             },
-            new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
+            new { Termo = $"%{termo}%", ClienteId = clienteId, TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
             splitOn: "Id,Id")).ToList();
 
