@@ -18,6 +18,4 @@ export const vendasApi = {
     http.get<Devolucao[]>(`/api/vendas/${vendaId}/devolucoes`),
   createDevolucao: (vendaId: number, data: CriarDevolucaoValues) =>
     http.post<Resultado<Devolucao>>(`/api/vendas/${vendaId}/devolucoes`, data),
-  cancel: (id: number, motivo: string) =>
-    http.post<Resultado<void>>(`/api/vendas/${id}/cancelar`, { motivo }),
 };

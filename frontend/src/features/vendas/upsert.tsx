@@ -43,7 +43,7 @@ import {
   type VendaItem,
   type VendaFormValues,
 } from "./types";
-import { Trash2, Boxes, Receipt, FileText, Ban, Undo2 } from "lucide-react";
+import { Trash2, Boxes, Receipt, FileText, Undo2 } from "lucide-react";
 import { DevolucoesHistoricoWindow, type DevolucoesHistoricoWindowProps } from "./devolucao";
 import { estoqueApi } from "@/api/estoque";
 import { ContasReceberUpsertForm } from "@/features/financeiro/contas-receber/upsert";
@@ -530,14 +530,6 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
       size: "large",
     });
   const openObservacao = () => openTexto("Observação da Venda", editingItem!.observacao ?? "");
-  const openCancelamento = () => {
-    const d = new Date(editingItem!.dataCancelamento!);
-    return openTexto(
-      `Venda Cancelada em ${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR")}`,
-      editingItem!.motivoCancelamento ?? "",
-    );
-  };
-
   const openDevolucoes = () =>
     ui.windows.open<void, DevolucoesHistoricoWindowProps>({
       component: DevolucoesHistoricoWindow,
@@ -565,16 +557,6 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
       run: (event: KeyboardEvent) => {
         event.preventDefault();
         void openObservacao();
-      },
-    },
-    {
-      id: "vendas.view-cancelamento",
-      hotkey: "Alt+C" as const,
-      label: "Visualizar cancelamento",
-      enabled: readOnly && !!editingItem?.dataCancelamento,
-      run: (event: KeyboardEvent) => {
-        event.preventDefault();
-        void openCancelamento();
       },
     },
     {
@@ -843,11 +825,6 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
             <Button type="button" variant="outline" onClick={openObservacao}>
               <FileText /> Observação <Kbd>Alt+O</Kbd>
             </Button>
-            {editingItem.dataCancelamento && (
-              <Button type="button" variant="destructive" onClick={openCancelamento}>
-                <Ban /> Cancelamento <Kbd>Alt+C</Kbd>
-              </Button>
-            )}
           </div>
         )}
         <Button

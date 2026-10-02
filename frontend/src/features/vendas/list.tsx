@@ -2,20 +2,19 @@
 
 import * as React from "react";
 import { FeatureHeader } from "@/ui/composites";
-import { ShoppingBag, Eye, Trash2, Undo2 } from "lucide-react";
+import { ShoppingBag, Eye, Undo2 } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/ui/primitives";
 import { DataTable } from "@/ui/composites";
 import { FeatureLayout } from "@/ui/composites";
 import { Badge } from "@/ui/primitives";
-import { cn, fireAndForget } from "@/lib/utils";
+import { fireAndForget } from "@/lib/utils";
 import type { Venda } from "./types";
 import type { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 import { formatToLocal } from "@/utils/date-utils";
 
 interface VendasListProps extends FeatureListProps<Venda> {
   onView: (item: Venda) => void;
-  onReturn: (item: Venda) => void;
 }
 
 export function VendasList({
@@ -29,7 +28,6 @@ export function VendasList({
   onAdd,
   onDelete,
   onView,
-  onReturn,
   onPageChange,
 }: VendasListProps) {
   const columns: ColumnDef<Venda>[] = [
@@ -75,10 +73,7 @@ export function VendasList({
       cell: ({ row }) => {
         const total = Number(row.getValue("valorTotal"));
         return (
-          <div className={cn(
-            "text-right font-semibold text-emerald-600 dark:text-emerald-400",
-            row.original.dataCancelamento && "line-through text-muted-foreground/60 dark:text-muted-foreground/50"
-          )}>
+          <div className={"text-right font-semibold text-emerald-600 dark:text-emerald-400"}>
             {new Intl.NumberFormat("pt-BR", {
               style: "currency",
               currency: "BRL",
@@ -88,20 +83,17 @@ export function VendasList({
       },
     },
     {
-      accessorKey: "dataCancelamento",
+      accessorKey: "statusDevolucao",
       header: "Status",
       size: 100,
       cell: ({ row }) => {
-        const isCanceled = !!row.original.dataCancelamento;
         return (
-          <Badge variant={isCanceled ? "destructive" : "outline"}>
-            {isCanceled
-              ? "Cancelada"
-              : row.original.statusDevolucao === "TOTAL"
-                ? "Devolvida"
-                : row.original.statusDevolucao === "PARCIAL"
-                  ? "Devolvida parcialmente"
-                  : "Confirmada"}
+          <Badge variant="outline">
+            {row.original.statusDevolucao === "TOTAL"
+              ? "Devolvida"
+              : row.original.statusDevolucao === "PARCIAL"
+                ? "Devolvida parcialmente"
+                : "Confirmada"}
           </Badge>
         );
       },
@@ -111,7 +103,6 @@ export function VendasList({
       header: () => <div className="px-4 text-right">Ações</div>,
       cell: ({ row }) => {
         const item = row.original;
-        const isCanceled = !!item.dataCancelamento;
         return (
           <div className="flex justify-end gap-2 px-4">
             <Button
@@ -122,24 +113,14 @@ export function VendasList({
             >
               <Eye className="h-4 w-4" />
             </Button>
-            {!isCanceled && item.statusDevolucao !== "TOTAL" && (
+            {item.statusDevolucao !== "TOTAL" && (
               <Button
                 size="icon-sm"
                 variant="outline"
-                title="Devolver Itens"
-                onClick={() => fireAndForget(() => onReturn(item))}
-              >
-                <Undo2 className="h-4 w-4" />
-              </Button>
-            )}
-            {!isCanceled && (
-              <Button
-                size="icon-sm"
-                variant="destructive"
-                title="Cancelar Venda"
+                title="Devolver Itens (Del)"
                 onClick={() => fireAndForget(() => onDelete(item))}
               >
-                <Trash2 className="h-4 w-4" />
+                <Undo2 className="h-4 w-4" />
               </Button>
             )}
           </div>

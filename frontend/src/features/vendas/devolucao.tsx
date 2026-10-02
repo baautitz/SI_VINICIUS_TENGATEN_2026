@@ -33,11 +33,35 @@ const brl = (v: number) =>
 const valorLiquidoUnitario = (item: Venda["itens"][number]) =>
   Number(item.valorTotal) / Number(item.quantidade);
 
-export interface DevolucaoWindowProps {
-  venda: Venda;
+export type TipoDevolucao = "total" | "parcial";
+
+export function DevolucaoTipoWindow() {
+  const activeWindow = useWindow<TipoDevolucao>();
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-sm">Escolha o tipo de devolução.</p>
+      <WindowActions>
+        <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>
+          Cancelar <Kbd>Esc</Kbd>
+        </Button>
+        <Button type="button" variant="outline" onClick={() => activeWindow.resolve("parcial")}>
+          Devolução parcial
+        </Button>
+        <Button type="button" autoFocus onClick={() => activeWindow.resolve("total")}>
+          Devolução total
+        </Button>
+      </WindowActions>
+    </div>
+  );
 }
 
-export function DevolucaoWindow({ venda }: DevolucaoWindowProps) {
+export interface DevolucaoWindowProps {
+  venda: Venda;
+  /** Total: quantidades já preenchidas com o saldo devolvível; parcial: zeradas. */
+  total?: boolean;
+}
+
+export function DevolucaoWindow({ venda, total: devolucaoTotal }: DevolucaoWindowProps) {
   const activeWindow = useWindow<CriarDevolucaoValues>();
   const { data: full, isLoading } = useQuery({
     queryKey: ["vendas", "detail", venda.id],
@@ -59,24 +83,29 @@ export function DevolucaoWindow({ venda }: DevolucaoWindowProps) {
   );
 
   const itens = React.useMemo(() => full?.itens ?? [], [full]);
+  const qtdDe = React.useCallback(
+    (i: Venda["itens"][number]) =>
+      quantidades[i.id] ?? (devolucaoTotal ? Number(i.saldoDevolvivel ?? i.quantidade) : 0),
+    [quantidades, devolucaoTotal],
+  );
   const total = itens.reduce(
-    (sum, i) => sum + (quantidades[i.id] ?? 0) * valorLiquidoUnitario(i),
+    (sum, i) => sum + qtdDe(i) * valorLiquidoUnitario(i),
     0,
   );
 
   const confirm = React.useCallback(() => {
     const motivo = (motivoRef.current?.value ?? "").trim();
     const selecionados = itens
-      .filter((i) => (quantidades[i.id] ?? 0) > 0)
-      .map((i) => ({ vendaItemId: i.id, quantidade: quantidades[i.id] }));
+      .filter((i) => qtdDe(i) > 0)
+      .map((i) => ({ vendaItemId: i.id, quantidade: qtdDe(i) }));
 
     if (selecionados.length === 0) return setError("Informe a quantidade de ao menos um item.");
-    if (itens.some((i) => (quantidades[i.id] ?? 0) > Number(i.saldoDevolvivel ?? i.quantidade)))
+    if (itens.some((i) => qtdDe(i) > Number(i.saldoDevolvivel ?? i.quantidade)))
       return setError("Há quantidade acima do saldo devolvível.");
     if (motivo.length < 5) return setError("O motivo deve ter pelo menos 5 caracteres.");
 
     activeWindow.resolve({ motivo, itens: selecionados });
-  }, [activeWindow, itens, quantidades]);
+  }, [activeWindow, itens, qtdDe]);
 
   useWindowCommands(
     React.useMemo(
@@ -124,7 +153,7 @@ export function DevolucaoWindow({ venda }: DevolucaoWindowProps) {
           {itens.map((item) => {
             const saldo = Number(item.saldoDevolvivel ?? item.quantidade);
             const decimais = !!item.sku.produto?.unidadeMedida?.permiteDecimais;
-            const qtd = quantidades[item.id] ?? 0;
+            const qtd = qtdDe(item);
             return (
               <TableRow key={item.id}>
                 <TableCell>{getFullSkuName(item.sku) || item.sku.sku}</TableCell>

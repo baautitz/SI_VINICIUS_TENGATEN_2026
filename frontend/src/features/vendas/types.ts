@@ -25,8 +25,6 @@ export interface Venda {
   dataVenda: string;
   valorTotal: number;
   observacao?: string | null;
-  dataCancelamento?: string | null;
-  motivoCancelamento?: string | null;
   emitente: Emitente;
   cliente: Cliente;
   vencimentos?: string;
