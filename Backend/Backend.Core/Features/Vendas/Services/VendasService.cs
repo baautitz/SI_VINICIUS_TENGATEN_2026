@@ -15,6 +15,7 @@ using Backend.Core.Features.Estoque.Entities.Enums;
 using Backend.Core.Features.Financeiro.Repositories;
 using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Financeiro.Entities.Enums;
+using Backend.Core.Features.Relacionados;
 using Backend.Core.Features.Vendas.Repositories;
 using Backend.Core.Features.Vendas.Entities;
 using Backend.Core.Features.Vendas.Commands;
@@ -31,6 +32,7 @@ public sealed class VendasService : BaseService
     private readonly ICondicoesPagamentosRepository _condicoesRepository;
     private readonly IMovimentacoesEstoquesRepository _movimentacoesRepository;
     private readonly IContasReceberRepository _contasRepository;
+    private readonly IRelacionadosRepository _relacionadosRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public VendasService(
@@ -41,6 +43,7 @@ public sealed class VendasService : BaseService
         ICondicoesPagamentosRepository condicoesRepository,
         IMovimentacoesEstoquesRepository movimentacoesRepository,
         IContasReceberRepository contasRepository,
+        IRelacionadosRepository relacionadosRepository,
         IUnitOfWork unitOfWork)
     {
         _vendasRepository = vendasRepository;
@@ -50,6 +53,7 @@ public sealed class VendasService : BaseService
         _condicoesRepository = condicoesRepository;
         _movimentacoesRepository = movimentacoesRepository;
         _contasRepository = contasRepository;
+        _relacionadosRepository = relacionadosRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -201,6 +205,22 @@ public sealed class VendasService : BaseService
     private static bool TemRecebimentoManual(ContasReceberParcelas p, CondicoesPagamentos? condicao)
         => p.ValorRecebido > 0 && !(EhAVista(condicao) && p.Status == StatusTituloFinanceiro.PAGO);
 
+    private async Task<MovimentacoesEstoques?> ObterMovimentacaoConfirmada(int vendaId)
+    {
+        foreach (var r in await _relacionadosRepository.MovimentacoesPorVenda(vendaId))
+        {
+            var mov = await _movimentacoesRepository.ObterMovimentacaoPorId(r.Id);
+            if (mov?.Status == StatusMovimentacaoEstoque.CONFIRMADA) return mov;
+        }
+        return null;
+    }
+
+    private async Task<ContasReceber?> ObterContaDaVenda(int vendaId)
+    {
+        var contas = await _relacionadosRepository.ContasReceberPorVenda(vendaId);
+        return contas.Count == 0 ? null : await _contasRepository.ObterContaReceberPorId(contas[0].Id);
+    }
+
     public async Task<bool> DeletarVenda(int id)
     {
         var venda = await _vendasRepository.ObterVendaPorId(id);
@@ -212,8 +232,7 @@ public sealed class VendasService : BaseService
             _unitOfWork.BeginTransaction();
 
             // Reverse Stock Movements related to this Venda
-            var movimentacoes = await _movimentacoesRepository.ObterMovimentacoes(1, 100);
-            var movVenda = movimentacoes.Itens.FirstOrDefault(m => m.VendaId == id && m.Status == StatusMovimentacaoEstoque.CONFIRMADA);
+            var movVenda = await ObterMovimentacaoConfirmada(id);
             if (movVenda != null)
             {
                 foreach (var item in movVenda.MovimentacoesEstoquesItens)
@@ -231,8 +250,7 @@ public sealed class VendasService : BaseService
             }
 
             // Cancel Accounts Receivable related to this Venda
-            var contas = await _contasRepository.ObterContasReceber(1, 100);
-            var contaVenda = contas.Itens.FirstOrDefault(c => c.VendaId == id);
+            var contaVenda = await ObterContaDaVenda(id);
             if (contaVenda != null)
             {
                 // Check if any installments were already paid
@@ -267,8 +285,7 @@ public sealed class VendasService : BaseService
             _unitOfWork.BeginTransaction();
 
             // Reverse Stock Movements related to this Venda
-            var movimentacoes = await _movimentacoesRepository.ObterMovimentacoes(1, 100);
-            var movVenda = movimentacoes.Itens.FirstOrDefault(m => m.VendaId == id && m.Status == StatusMovimentacaoEstoque.CONFIRMADA);
+            var movVenda = await ObterMovimentacaoConfirmada(id);
             if (movVenda != null)
             {
                 foreach (var item in movVenda.MovimentacoesEstoquesItens)
@@ -286,8 +303,7 @@ public sealed class VendasService : BaseService
             }
 
             // Cancel Accounts Receivable related to this Venda
-            var contas = await _contasRepository.ObterContasReceber(1, 100);
-            var contaVenda = contas.Itens.FirstOrDefault(c => c.VendaId == id);
+            var contaVenda = await ObterContaDaVenda(id);
             if (contaVenda != null)
             {
                 // Check if any installments were already paid
