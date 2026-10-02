@@ -57,11 +57,13 @@ export function getActionsColumn<T>({
               size="icon-sm"
               variant="outline"
               onClick={() => fireAndForget(() => onEdit(item))}
+              aria-label="Editar"
             >
               <Pencil className="size-4" />
             </Button>
           )}
-          {onView && (
+          {/* Editar ou visualizar, nunca os dois: a edição já abre o registro. */}
+          {onView && !onEdit && (
             <Button
               size="icon-sm"
               variant="outline"
