@@ -118,6 +118,7 @@ export interface PreviaNfe {
   };
   fornecedorId?: number | null;
   transportadoraId?: number | null;
+  condicaoPagamentoId?: number | null;
   itens: Array<{
     numeroItem: number;
     status: "VINCULADO" | "SUGERIDO" | "PENDENTE";

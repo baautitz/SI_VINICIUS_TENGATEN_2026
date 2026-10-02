@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Plus, RefreshCw, Trash2, TriangleAlert } from "lucide-react";
 import { WindowActions } from "@/imperative-ui";
 import { comprasApi } from "@/api/compras";
+import { condicoesApi } from "@/api/financeiro";
 import { SkuInput } from "@/components/entity-inputs/sku-input";
 import { EmitenteInput } from "@/components/entity-inputs/emitente-input";
 import { FornecedorInput } from "@/components/entity-inputs/fornecedor-input";
@@ -238,6 +239,40 @@ function CompraForm({
   const [condicao, setCondicao] = React.useState<CondicaoPagamento | null>(
     null,
   );
+  // Condição vinda do fornecedor: as parcelas são geradas ao entrar na etapa de custos (valores já fechados).
+  const [gerarParcelasDaCondicao, setGerarParcelasDaCondicao] =
+    React.useState(false);
+  const aplicarCondicaoDoFornecedor = React.useCallback(
+    async (id: number | null | undefined) => {
+      if (!id) return;
+      try {
+        const c = await condicoesApi.getById(id);
+        if (!c.ativo) return;
+        setCondicao(c);
+        setGerarParcelasDaCondicao(true);
+      } catch {
+        // sem condição padrão: o usuário escolhe na etapa de custos
+      }
+    },
+    [],
+  );
+  // XML com parcelas (cobr/dup) tem prioridade sobre a condição do fornecedor.
+  React.useEffect(() => {
+    const id = previa?.condicaoPagamentoId;
+    if (!id || !dados || dados.parcelas.length > 0) return;
+    let ativo = true;
+    condicoesApi
+      .getById(id)
+      .then((c) => {
+        if (!ativo || !c.ativo) return;
+        setCondicao(c);
+        setGerarParcelasDaCondicao(true);
+      })
+      .catch(() => {});
+    return () => {
+      ativo = false;
+    };
+  }, [dados, previa]);
   const [parcelas, setParcelas] = React.useState<ParcelaCompra[]>(() =>
     dados
       ? dados.parcelas.map((p, i) => ({
@@ -482,7 +517,13 @@ function CompraForm({
         document
           .querySelector<HTMLInputElement>("[data-sem-sku] input")
           ?.focus();
-    } else setEtapa(etapa + 1);
+    } else {
+      if (etapa === 2 && gerarParcelasDaCondicao) {
+        setParcelas(gerarParcelas(valorNota, dataCompra, condicao));
+        setGerarParcelasDaCondicao(false);
+      }
+      setEtapa(etapa + 1);
+    }
   };
 
   useWindowCommands([
@@ -652,7 +693,10 @@ function CompraForm({
                 <FornecedorInput
                   name="compra-fornecedor"
                   initialItem={fornecedor}
-                  onSelectItem={setFornecedor}
+                  onSelectItem={(f) => {
+                    setFornecedor(f);
+                    void aplicarCondicaoDoFornecedor(f?.condicaoPagamento?.id);
+                  }}
                   onSelectId={() => {}}
                   disabled={readOnly}
                 />
