@@ -51,19 +51,20 @@ public sealed class BalancosService : BaseService
         if (command.UsuarioId.HasValue && usuario == null)
             return Resultado<Balancos>.Falha(new ResultadoErro("USUARIO_INEXISTENTE", "O usuário informado não existe.", "UsuarioId"));
 
-        var skus = command.Skus?.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim().ToUpperInvariant()).Distinct().ToList();
-        foreach (var codigo in skus ?? new List<string>())
-        {
-            if (await _skusRepository.ObterSkuPorSku(codigo) == null)
-                return Resultado<Balancos>.Falha(new ResultadoErro("SKU_INEXISTENTE", $"O SKU '{codigo}' não existe.", "Skus"));
-        }
+        var (itens, erro) = await MontarItens(command.Itens);
+        if (erro != null)
+            return Resultado<Balancos>.Falha(erro);
+
+        var balanco = new Balancos(command.Observacao, usuario);
+        foreach (var item in itens!)
+            balanco.AdicionarItem(item);
 
         return await ExecuteResultAsync(async () =>
         {
             try
             {
                 _unitOfWork.BeginTransaction();
-                var criado = await _balancosRepository.CriarBalanco(new Balancos(command.Observacao, usuario), skus);
+                var criado = await _balancosRepository.CriarBalanco(balanco);
                 _unitOfWork.Commit();
                 return Resultado<Balancos>.Sucesso(criado);
             }
@@ -75,25 +76,66 @@ public sealed class BalancosService : BaseService
         });
     }
 
-    public async Task<Resultado<Balancos>> InformarContagem(int id, InformarContagemCommand command)
+    public async Task<Resultado<Balancos>> AtualizarBalanco(int id, AtualizarBalancoCommand command)
     {
+        if (command.Observacao?.Length > 500)
+            return Resultado<Balancos>.Falha(new ResultadoErro("OBSERVACAO_EXCEDE_LIMITE", "Observação deve ter no máximo 500 caracteres.", "Observacao"));
+
         var balanco = await _balancosRepository.ObterBalancoPorId(id);
         if (balanco == null)
             return Resultado<Balancos>.Falha(new ResultadoErro("BALANCO_INEXISTENTE", "Balanço não encontrado."));
 
         balanco.ExigirAberto();
 
-        foreach (var linha in command.Itens)
-        {
-            var item = balanco.Itens.FirstOrDefault(i => string.Equals(i.Sku, linha.Sku, StringComparison.OrdinalIgnoreCase));
-            if (item == null)
-                return Resultado<Balancos>.Falha(new ResultadoErro("ITEM_INEXISTENTE", $"O SKU '{linha.Sku}' não faz parte deste balanço.", "Itens"));
+        var (itens, erro) = await MontarItens(command.Itens);
+        if (erro != null)
+            return Resultado<Balancos>.Falha(erro);
 
-            item.InformarContagem(linha.QuantidadeContada);
+        balanco.Atualizar(command.Observacao, itens!);
+
+        return await ExecuteResultAsync(async () =>
+        {
+            try
+            {
+                _unitOfWork.BeginTransaction();
+                await _balancosRepository.AtualizarBalanco(balanco);
+                _unitOfWork.Commit();
+                return Resultado<Balancos>.Sucesso((await _balancosRepository.ObterBalancoPorId(id))!);
+            }
+            catch
+            {
+                _unitOfWork.Rollback();
+                throw;
+            }
+        });
+    }
+
+    // Itens escolhidos pelo usuário: o saldo do sistema é o vigente no momento do lançamento.
+    private async Task<(List<BalancosItens>? Itens, ResultadoErro? Erro)> MontarItens(List<ContagemItemCommand>? comandos)
+    {
+        if (comandos == null || comandos.Count == 0)
+            return (null, new ResultadoErro("ITENS_OBRIGATORIOS", "O balanço deve conter pelo menos um item.", "Itens"));
+
+        var itens = new List<BalancosItens>();
+        for (var i = 0; i < comandos.Count; i++)
+        {
+            var linha = comandos[i];
+            var codigo = linha.Sku?.Trim().ToUpperInvariant() ?? string.Empty;
+
+            if (linha.QuantidadeContada < 0)
+                return (null, new ResultadoErro("QUANTIDADE_INVALIDA", "Quantidade contada não pode ser negativa.", $"itens.{i}.quantidadeContada"));
+
+            if (itens.Any(x => x.Sku == codigo))
+                return (null, new ResultadoErro("SKU_DUPLICADO", $"O SKU '{codigo}' foi informado mais de uma vez.", $"itens.{i}.sku"));
+
+            var sku = await _skusRepository.ObterSkuPorSku(codigo);
+            if (sku == null)
+                return (null, new ResultadoErro("SKU_INEXISTENTE", $"O SKU '{codigo}' não existe.", $"itens.{i}.sku"));
+
+            itens.Add(new BalancosItens(0, sku.Sku, sku.NomeExibicao, sku.Produto!.UnidadeMedida.Sigla, sku.Estoque, linha.QuantidadeContada));
         }
 
-        await _balancosRepository.AtualizarBalanco(balanco);
-        return Resultado<Balancos>.Sucesso(balanco);
+        return (itens, null);
     }
 
     // Fecha o balanço: cada diferença vira uma movimentação (ENTRADA para sobra, SAIDA para falta) com origem BALANCO.
@@ -147,14 +189,36 @@ public sealed class BalancosService : BaseService
         });
     }
 
-    public async Task<Resultado<Balancos>> Cancelar(int id)
+    // Aberto: só descarta. Fechado: estorna as movimentações geradas (exige motivo) e cancela.
+    public async Task<Resultado<Balancos>> Cancelar(int id, CancelarBalancoCommand? command)
     {
         var balanco = await _balancosRepository.ObterBalancoPorId(id);
         if (balanco == null)
             return Resultado<Balancos>.Falha(new ResultadoErro("BALANCO_INEXISTENTE", "Balanço não encontrado."));
 
-        balanco.Cancelar();
-        await _balancosRepository.AtualizarBalanco(balanco);
-        return Resultado<Balancos>.Sucesso(balanco);
+        var fechado = balanco.Status == StatusBalanco.FECHADO;
+        var motivo = command?.Motivo?.Trim();
+        if (fechado && (string.IsNullOrEmpty(motivo) || motivo.Length < 5 || motivo.Length > 500))
+            return Resultado<Balancos>.Falha(new ResultadoErro("MOTIVO_INVALIDO", "Motivo do cancelamento deve ter entre 5 e 500 caracteres.", "motivo"));
+
+        return await ExecuteResultAsync(async () =>
+        {
+            try
+            {
+                _unitOfWork.BeginTransaction();
+                if (fechado)
+                    await _movimentacoesService.EstornarPorOrigem(OrigemMovimentacaoEstoque.BALANCO, id, motivo!);
+
+                balanco.Cancelar();
+                await _balancosRepository.AtualizarBalanco(balanco);
+                _unitOfWork.Commit();
+                return Resultado<Balancos>.Sucesso(balanco);
+            }
+            catch
+            {
+                _unitOfWork.Rollback();
+                throw;
+            }
+        });
     }
 }

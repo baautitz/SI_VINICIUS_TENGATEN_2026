@@ -2,9 +2,11 @@ using System.Collections.Generic;
 
 namespace Backend.Core.Features.Estoque.Commands;
 
-// Skus vazio/nulo = todos os SKUs ativos.
-public record CriarBalancoCommand(int? UsuarioId, string? Observacao, List<string>? Skus);
+public record ContagemItemCommand(string Sku, decimal QuantidadeContada);
 
-public record ContagemItemCommand(string Sku, decimal? QuantidadeContada);
+public record CriarBalancoCommand(int? UsuarioId, string? Observacao, List<ContagemItemCommand> Itens);
 
-public record InformarContagemCommand(List<ContagemItemCommand> Itens);
+public record AtualizarBalancoCommand(string? Observacao, List<ContagemItemCommand> Itens);
+
+// Motivo obrigatório (mínimo 5 caracteres) só ao cancelar um balanço já fechado.
+public record CancelarBalancoCommand(string? Motivo);

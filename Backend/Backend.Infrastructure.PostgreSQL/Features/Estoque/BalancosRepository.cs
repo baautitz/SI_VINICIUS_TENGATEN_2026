@@ -44,8 +44,7 @@ public class BalancosRepository : IBalancosRepository
         return (await Montar(rows)).FirstOrDefault();
     }
 
-    // skus nulo/vazio = todos os SKUs ativos; a quantidade do sistema é o saldo no momento da abertura.
-    public async Task<Balancos> CriarBalanco(Balancos balanco, IEnumerable<string>? skus)
+    public async Task<Balancos> CriarBalanco(Balancos balanco)
     {
         try
         {
@@ -55,14 +54,7 @@ public class BalancosRepository : IBalancosRepository
                 new { balanco.DataAbertura, Status = balanco.Status.ToString(), UsuarioId = balanco.Usuario?.Id, balanco.Observacao },
                 transaction: _session.Transaction);
 
-            var lista = skus?.ToArray() ?? Array.Empty<string>();
-            await _session.Connection.ExecuteAsync(
-                @"INSERT INTO balancos_itens (balanco_id, sku, quantidade_sistema)
-                  SELECT @Id, s.sku, s.estoque FROM skus s
-                  WHERE (@TemLista AND s.sku = ANY(@Skus)) OR (NOT @TemLista AND s.ativo);",
-                new { Id = id, TemLista = lista.Length > 0, Skus = lista },
-                transaction: _session.Transaction);
-
+            await InserirItens(id, balanco.Itens);
             return (await ObterBalancoPorId(id))!;
         }
         catch (PostgresException ex)
@@ -76,20 +68,26 @@ public class BalancosRepository : IBalancosRepository
         try
         {
             await _session.Connection.ExecuteAsync(
-                "UPDATE balancos SET status = @Status::status_balanco_enum, data_fechamento = @DataFechamento WHERE id = @Id;",
-                new { balanco.Id, Status = balanco.Status.ToString(), balanco.DataFechamento },
+                "UPDATE balancos SET status = @Status::status_balanco_enum, data_fechamento = @DataFechamento, observacao = @Observacao WHERE id = @Id;",
+                new { balanco.Id, Status = balanco.Status.ToString(), balanco.DataFechamento, balanco.Observacao },
                 transaction: _session.Transaction);
 
             await _session.Connection.ExecuteAsync(
-                "UPDATE balancos_itens SET quantidade_sistema = @QuantidadeSistema, quantidade_contada = @QuantidadeContada WHERE id = @Id;",
-                balanco.Itens.Select(i => new { i.Id, i.QuantidadeSistema, i.QuantidadeContada }),
-                transaction: _session.Transaction);
+                "DELETE FROM balancos_itens WHERE balanco_id = @Id;", new { balanco.Id }, transaction: _session.Transaction);
+            await InserirItens(balanco.Id, balanco.Itens);
         }
         catch (PostgresException ex)
         {
             throw DbExceptionTranslator.Translate(ex);
         }
     }
+
+    private Task InserirItens(int balancoId, IEnumerable<BalancosItens> itens)
+        => _session.Connection.ExecuteAsync(
+            @"INSERT INTO balancos_itens (balanco_id, sku, quantidade_sistema, quantidade_contada)
+              VALUES (@BalancoId, @Sku, @QuantidadeSistema, @QuantidadeContada);",
+            itens.Select(i => new { BalancoId = balancoId, i.Sku, i.QuantidadeSistema, i.QuantidadeContada }),
+            transaction: _session.Transaction);
 
     private async Task<List<Balancos>> Montar(List<BalancoDbRow> rows)
     {

@@ -38,6 +38,15 @@ public class Balancos
 
     public void AdicionarItem(BalancosItens item) => _itens.Add(item);
 
+    // Enquanto aberto, o balanço pode ter observação e itens redefinidos.
+    public void Atualizar(string? observacao, IEnumerable<BalancosItens> itens)
+    {
+        ExigirAberto();
+        Observacao = TextNormalization.NormalizeOrNull(observacao);
+        _itens.Clear();
+        _itens.AddRange(itens);
+    }
+
     public void Fechar()
     {
         ExigirAberto();
@@ -48,9 +57,12 @@ public class Balancos
         DataFechamento = DateTime.UtcNow;
     }
 
+    // Aberto: descarta. Fechado: o chamador deve estornar antes as movimentações geradas.
     public void Cancelar()
     {
-        ExigirAberto();
+        if (Status == StatusBalanco.CANCELADO)
+            throw new DomainException("Balanço já está cancelado.");
+
         Status = StatusBalanco.CANCELADO;
         DataFechamento = DateTime.UtcNow;
     }

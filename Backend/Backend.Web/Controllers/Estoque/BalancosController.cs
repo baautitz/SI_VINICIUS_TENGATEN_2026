@@ -37,17 +37,17 @@ public class BalancosController : ControllerBase
         return result.Success ? CreatedAtAction(nameof(GetBalanco), new { id = result.Data!.Id }, result) : BadRequest(result);
     }
 
-    [HttpPut("{id:int}/contagem")]
-    public async Task<ActionResult<Resultado<Balancos>>> InformarContagem(int id, [FromBody] InformarContagemCommand command)
-        => Responder(await _balancosService.InformarContagem(id, command));
+    [HttpPut("{id:int}")]
+    public async Task<ActionResult<Resultado<Balancos>>> UpdateBalanco(int id, [FromBody] AtualizarBalancoCommand command)
+        => Responder(await _balancosService.AtualizarBalanco(id, command));
 
     [HttpPost("{id:int}/fechar")]
     public async Task<ActionResult<Resultado<Balancos>>> Fechar(int id)
         => Responder(await _balancosService.Fechar(id));
 
     [HttpPost("{id:int}/cancelar")]
-    public async Task<ActionResult<Resultado<Balancos>>> Cancelar(int id)
-        => Responder(await _balancosService.Cancelar(id));
+    public async Task<ActionResult<Resultado<Balancos>>> Cancelar(int id, [FromBody] CancelarBalancoCommand? command)
+        => Responder(await _balancosService.Cancelar(id, command));
 
     private ActionResult<Resultado<Balancos>> Responder(Resultado<Balancos> result)
     {
