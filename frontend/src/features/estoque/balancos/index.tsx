@@ -12,6 +12,7 @@ import { DataTable, FeatureHeader, FeatureLayout } from "@/ui/composites";
 import { formatToLocal } from "@/utils/date-utils";
 import { fireAndForget } from "@/lib/utils";
 import { Balanco, statusBalancoLabels } from "./types";
+import { EstornoWindow, type EstornoWindowProps } from "@/features/estoque/movimentacoes";
 import { BalancoWindow, type BalancoWindowProps } from "./window";
 
 export function BalancosFeature() {
@@ -37,50 +38,47 @@ export function BalancosFeature() {
       ),
     );
 
-  const abrir = async (item: Balanco) => {
-    const result = await ui.windows.open<true, BalancoWindowProps>({
+  const abrir = async (item: Balanco | null) => {
+    const result = await ui.windows.open<"saved" | "closed", BalancoWindowProps>({
       component: BalancoWindow,
-      props: { balancoId: item.id },
-      title: `Balanço #${item.id}`,
+      props: { balancoId: item?.id ?? null },
+      title: item ? `Balanço #${item.id}` : "Novo Balanço de Estoque",
       size: "full",
     });
+    if (result.status !== "confirmed") return;
     await invalidate();
-    if (result.status === "confirmed")
-      ui.feedback.notify({ type: "success", title: "Balanço fechado e ajustes lançados." });
-  };
-
-  // Abre o balanço com todos os SKUs ativos (saldo do sistema congelado na abertura).
-  // ponytail: sem escolha de SKUs na tela; a API já aceita "skus" para contagem parcial.
-  const novo = async () => {
-    const ok = await ui.windows.confirm({
-      title: "Novo balanço",
-      description: "Abrir um balanço com todos os SKUs ativos? Você informará a contagem física na próxima tela.",
-      confirmLabel: "Abrir balanço",
+    ui.feedback.notify({
+      type: "success",
+      title: result.value === "closed" ? "Balanço fechado e ajustes lançados." : "Balanço salvo como rascunho.",
     });
-    if (!ok) return;
-    try {
-      const res = await balancosApi.create({});
-      if (res.success === false || !res.data) {
-        ui.feedback.notifyError(res, { fallbackTitle: "Não foi possível abrir o balanço." });
-        return;
-      }
-      await invalidate();
-      await abrir(res.data);
-    } catch (error) {
-      ui.feedback.notifyError(error, { fallbackTitle: "Não foi possível abrir o balanço." });
-    }
   };
 
+  // Aberto: só descarta. Fechado: estorna as movimentações geradas, então pede o motivo.
   const cancelar = async (item: Balanco) => {
-    const ok = await ui.windows.confirm({
-      title: "Cancelar balanço",
-      description: `Cancelar o balanço #${item.id}? Nenhum ajuste será lançado.`,
-      confirmLabel: "Cancelar balanço",
-      confirmVariant: "destructive",
-    });
-    if (!ok) return;
+    let motivo: string | undefined;
+    if (item.status === "FECHADO") {
+      const result = await ui.windows.open<string, EstornoWindowProps>({
+        component: EstornoWindow,
+        props: {
+          pergunta: `Deseja realmente cancelar o balanço #${item.id}?`,
+          aviso: "As movimentações de ajuste geradas pelo balanço serão estornadas.",
+        },
+        title: "Cancelar Balanço",
+        size: "small",
+      });
+      if (result.status !== "confirmed") return;
+      motivo = result.value;
+    } else {
+      const ok = await ui.windows.confirm({
+        title: "Cancelar balanço",
+        description: `Cancelar o balanço #${item.id}? Nenhum ajuste será lançado.`,
+        confirmLabel: "Cancelar balanço",
+        confirmVariant: "destructive",
+      });
+      if (!ok) return;
+    }
     try {
-      const res = await balancosApi.cancelar(item.id);
+      const res = await balancosApi.cancelar(item.id, motivo);
       if (res.success === false) {
         ui.feedback.notifyError(res, { fallbackTitle: "Não foi possível cancelar o balanço." });
         return;
@@ -129,7 +127,7 @@ export function BalancosFeature() {
           <Button size="icon-sm" variant="outline" title={row.original.status === "ABERTO" ? "Contar" : "Visualizar"} onClick={() => fireAndForget(() => abrir(row.original))}>
             <Eye className="h-4 w-4" />
           </Button>
-          {row.original.status === "ABERTO" && (
+          {row.original.status !== "CANCELADO" && (
             <Button size="icon-sm" variant="outline" className="text-red-600" title="Cancelar balanço" onClick={() => fireAndForget(() => cancelar(row.original))}>
               <Ban className="h-4 w-4" />
             </Button>
@@ -142,7 +140,7 @@ export function BalancosFeature() {
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
       <FeatureLayout>
-        <FeatureHeader title="Balanços de Estoque" icon={<ListChecks />} onAdd={novo} addButtonLabel="Novo Balanço" />
+        <FeatureHeader title="Balanços de Estoque" icon={<ListChecks />} onAdd={() => abrir(null)} addButtonLabel="Novo Balanço" />
         <DataTable
           columns={columns}
           data={data?.itens ?? []}
@@ -157,7 +155,7 @@ export function BalancosFeature() {
           getRowId={(row) => row.id.toString()}
           onEditRow={abrir}
           onDeleteRow={(item) => {
-            if (item.status === "ABERTO") fireAndForget(() => cancelar(item));
+            if (item.status !== "CANCELADO") fireAndForget(() => cancelar(item));
           }}
         />
       </FeatureLayout>
