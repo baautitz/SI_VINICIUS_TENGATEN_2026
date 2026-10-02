@@ -1,5 +1,7 @@
 "use client";
 import React from "react";
+import { useUi } from "@/ui/imperative";
+import { ClientesUpsert } from "@/features/parceiros/clientes/upsert";
 import { EntityInput } from "@/ui/composites";
 import { ClientesFeature } from "@/features/parceiros/clientes";
 import { Cliente } from "@/features/parceiros/clientes/types";
@@ -25,6 +27,7 @@ export function ClienteInput({
   onSelectItem,
   disabled = false,
 }: ClienteInputProps) {
+  const ui = useUi();
   return (
     <EntityInput<Cliente, Cliente>
       name={name}
@@ -39,6 +42,14 @@ export function ClienteInput({
       getSearchTerm={(item) => item.nomeRazaoSocial}
       getId={(item) => item.id}
       disabled={disabled}
+      onView={(item) =>
+        ui.windows.open({
+          component: ClientesUpsert,
+          props: { editingItem: item, readOnly: true },
+          title: "Visualizar Cliente",
+          size: "full",
+        })
+      }
       fetchById={async (id) => {
         try {
           return await clientesApi.getById(id as number);

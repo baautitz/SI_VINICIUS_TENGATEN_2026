@@ -1,5 +1,7 @@
 "use client"
 import React from "react"
+import { useUi } from "@/ui/imperative";
+import { CidadesUpsert } from "@/features/localizacao/cidades/upsert";
 import { EntityInput } from "@/ui/composites"
 import {
   CidadesFeature,
@@ -26,6 +28,7 @@ export function CidadeInput({
   onSelectId,
   onSelectItem,
 }: CidadeInputProps) {
+  const ui = useUi()
   return (
     <EntityInput<Cidade, Cidade>
       name={name}
@@ -35,6 +38,8 @@ export function CidadeInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
+      onView={(item) =>
+        ui.windows.open({ component: CidadesUpsert, props: { editingItem: item, readOnly: true }, title: "Visualizar Cidade", size: "full" })}
       modalTitle="Selecionar Cidade"
       getDisplayLabel={(item) => item?.cidade ?? ""}
       getSearchTerm={(item) => item.cidade}

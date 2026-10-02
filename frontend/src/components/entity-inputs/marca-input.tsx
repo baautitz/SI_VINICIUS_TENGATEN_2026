@@ -1,5 +1,7 @@
 "use client"
 import React from "react"
+import { useUi } from "@/ui/imperative";
+import { MarcasUpsert } from "@/features/catalogo/marcas/upsert";
 import { EntityInput } from "@/ui/composites"
 import { MarcasFeature, Marca } from "@/features/catalogo/marcas"
 import { marcasApi } from "@/api/catalogo"
@@ -23,6 +25,7 @@ export function MarcaInput({
   onSelectId,
   onSelectItem,
 }: MarcaInputProps) {
+  const ui = useUi()
   return (
     <EntityInput<Marca, Marca>
       name={name}
@@ -32,6 +35,8 @@ export function MarcaInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
+      onView={(item) =>
+        ui.windows.open({ component: MarcasUpsert, props: { editingItem: item, readOnly: true }, title: "Visualizar Marca", size: "full" })}
       modalTitle="Selecionar Marca"
       getDisplayLabel={(item) => item?.marca ?? ""}
       getSearchTerm={(item) => item.marca}

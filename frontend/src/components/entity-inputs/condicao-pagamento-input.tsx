@@ -1,5 +1,7 @@
 "use client";
 import React from "react";
+import { useUi } from "@/ui/imperative";
+import { CondicoesUpsert } from "@/features/financeiro/condicoes/upsert";
 import { EntityInput } from "@/ui/composites";
 import { CondicoesFeature } from "@/features/financeiro/condicoes";
 import { CondicaoPagamento } from "@/features/financeiro/condicoes/types";
@@ -24,6 +26,7 @@ export function CondicaoPagamentoInput({
   onSelectItem,
   disabled = false,
 }: CondicaoPagamentoInputProps) {
+  const ui = useUi();
   return (
     <EntityInput<CondicaoPagamento, CondicaoPagamento>
       name={name}
@@ -48,6 +51,14 @@ export function CondicaoPagamentoInput({
       getSearchTerm={(item) => item.descricao}
       getId={(item) => item.id}
       disabled={disabled}
+      onView={(item) =>
+        ui.windows.open({
+          component: CondicoesUpsert,
+          props: { editingItem: item, readOnly: true },
+          title: "Visualizar Condição de Pagamento",
+          size: "full",
+        })
+      }
       fetchById={async (id) => {
         try {
           return await condicoesApi.getById(id as number);

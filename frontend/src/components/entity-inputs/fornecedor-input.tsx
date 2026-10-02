@@ -1,5 +1,7 @@
 "use client";
 import React from "react";
+import { useUi } from "@/ui/imperative";
+import { FornecedoresUpsert } from "@/features/parceiros/fornecedores/upsert";
 import { EntityInput } from "@/ui/composites";
 import { FornecedoresFeature } from "@/features/parceiros/fornecedores";
 import { Fornecedor } from "@/features/parceiros/fornecedores/types";
@@ -24,6 +26,7 @@ export function FornecedorInput({
   onSelectItem,
   disabled = false,
 }: FornecedorInputProps) {
+  const ui = useUi()
   return (
     <EntityInput<Fornecedor, Fornecedor>
       name={name}
@@ -32,6 +35,8 @@ export function FornecedorInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
+      onView={(item) =>
+        ui.windows.open({ component: FornecedoresUpsert, props: { editingItem: item, readOnly: true }, title: "Visualizar Fornecedor", size: "full" })}
       modalTitle="Selecionar Fornecedor"
       getDisplayLabel={(item) => item?.nomeRazaosocial ?? ""}
       getSearchTerm={(item) => item.nomeRazaosocial}

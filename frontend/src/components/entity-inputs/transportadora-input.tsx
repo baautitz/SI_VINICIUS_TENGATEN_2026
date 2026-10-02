@@ -1,5 +1,7 @@
 "use client";
 import React from "react";
+import { useUi } from "@/ui/imperative";
+import { TransportadorasUpsert } from "@/features/parceiros/transportadoras/upsert";
 import { EntityInput } from "@/ui/composites";
 import { TransportadorasFeature, Transportadora } from "@/features/parceiros/transportadoras";
 import { transportadorasApi } from "@/api/parceiros";
@@ -21,6 +23,7 @@ export function TransportadoraInput({
   initialItem,
   onSelectId,
 }: TransportadoraInputProps) {
+  const ui = useUi()
   return (
     <EntityInput<Transportadora, Transportadora>
       name={name}
@@ -29,6 +32,8 @@ export function TransportadoraInput({
       disabled={disabled}
       initialItem={initialItem}
       onSelectId={onSelectId}
+      onView={(item) =>
+        ui.windows.open({ component: TransportadorasUpsert, props: { editingItem: item, readOnly: true }, title: "Visualizar Transportadora", size: "full" })}
       modalTitle="Selecionar Transportadora"
       getDisplayLabel={(item) => item.nomeRazaosocial}
       getSearchTerm={(item) => item.nomeRazaosocial}

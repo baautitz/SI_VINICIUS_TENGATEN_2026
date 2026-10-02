@@ -1,5 +1,7 @@
 "use client"
 import React from "react"
+import { useUi } from "@/ui/imperative";
+import { EstadosUpsert } from "@/features/localizacao/estados/upsert";
 import { EntityInput } from "@/ui/composites"
 import {
   EstadosFeature,
@@ -26,6 +28,7 @@ export function EstadoInput({
   onSelectId,
   onSelectItem,
 }: EstadoInputProps) {
+  const ui = useUi()
   return (
     <EntityInput<Estado, Estado>
       name={name}
@@ -35,6 +38,8 @@ export function EstadoInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
+      onView={(item) =>
+        ui.windows.open({ component: EstadosUpsert, props: { editingItem: item, readOnly: true }, title: "Visualizar Estado", size: "full" })}
       modalTitle="Selecionar Estado"
       getDisplayLabel={(item) => item?.estado ?? ""}
       getSearchTerm={(item) => item.estado}

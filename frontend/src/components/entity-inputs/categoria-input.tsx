@@ -1,5 +1,7 @@
 "use client"
 import React from "react"
+import { useUi } from "@/ui/imperative";
+import { CategoriasUpsert } from "@/features/catalogo/categorias/upsert";
 import { EntityInput } from "@/ui/composites"
 import { CategoriasFeature, Categoria } from "@/features/catalogo/categorias"
 import { categoriasApi } from "@/api/catalogo"
@@ -23,6 +25,7 @@ export function CategoriaInput({
   onSelectId,
   onSelectItem,
 }: CategoriaInputProps) {
+  const ui = useUi()
   return (
     <EntityInput<Categoria, Categoria>
       name={name}
@@ -32,6 +35,8 @@ export function CategoriaInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
+      onView={(item) =>
+        ui.windows.open({ component: CategoriasUpsert, props: { editingItem: item, readOnly: true }, title: "Visualizar Categoria", size: "full" })}
       modalTitle="Selecionar Categoria"
       getDisplayLabel={(item) => item?.categoria ?? ""}
       getSearchTerm={(item) => item.categoria}

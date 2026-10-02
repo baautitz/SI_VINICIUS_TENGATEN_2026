@@ -1,5 +1,7 @@
 "use client"
 import React from "react"
+import { useUi } from "@/ui/imperative";
+import { AtributosUpsert } from "@/features/catalogo/atributos/upsert";
 import { EntityInput } from "@/ui/composites"
 import { AtributosFeature, SkuAtributoChave } from "@/features/catalogo/atributos"
 import { atributosApi } from "@/api/catalogo"
@@ -23,6 +25,7 @@ export function AtributoChaveInput({
   onSelectId,
   onSelectItem,
 }: AtributoChaveInputProps) {
+  const ui = useUi()
   return (
     <EntityInput<SkuAtributoChave, SkuAtributoChave>
       name={name}
@@ -32,6 +35,8 @@ export function AtributoChaveInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
+      onView={(item) =>
+        ui.windows.open({ component: AtributosUpsert, props: { editingItem: item, readOnly: true }, title: "Visualizar Atributo", size: "full" })}
       modalTitle="Selecionar Atributo"
       getDisplayLabel={(item) => item?.chave ?? ""}
       getSearchTerm={(item) => item.chave}

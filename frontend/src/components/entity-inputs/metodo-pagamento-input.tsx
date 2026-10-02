@@ -1,5 +1,7 @@
 "use client";
 
+import { useUi } from "@/ui/imperative";
+import { MetodosUpsert } from "@/features/financeiro/metodos/upsert";
 import { EntityInput } from "@/ui/composites";
 import { MetodosFeature } from "@/features/financeiro/metodos";
 import { metodosApi } from "@/api/financeiro";
@@ -24,6 +26,7 @@ export function MetodoPagamentoInput({
   onSelectItem,
   disabled,
 }: MetodoPagamentoInputProps) {
+  const ui = useUi()
   return (
     <EntityInput<MetodoPagamento, MetodoPagamento, string>
       name={name}
@@ -33,6 +36,8 @@ export function MetodoPagamentoInput({
       onSelectId={onSelectCodigo}
       onSelectItem={onSelectItem}
       disabled={disabled}
+      onView={(item) =>
+        ui.windows.open({ component: MetodosUpsert, props: { editingItem: item, readOnly: true }, title: "Visualizar Método de Pagamento", size: "full" })}
       modalTitle="Selecionar Método de Pagamento"
       getDisplayLabel={(item) =>
         item ? `${item.codigo} - ${item.descricao}` : ""

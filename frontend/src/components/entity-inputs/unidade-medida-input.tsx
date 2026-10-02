@@ -1,5 +1,7 @@
 "use client"
 import React from "react"
+import { useUi } from "@/ui/imperative";
+import { UnidadesMedidaUpsert } from "@/features/catalogo/unidades-medida/upsert";
 import { EntityInput } from "@/ui/composites"
 import { UnidadesMedidaFeature, UnidadeMedida } from "@/features/catalogo/unidades-medida"
 import { unidadesMedidaApi } from "@/api/catalogo"
@@ -23,6 +25,7 @@ export function UnidadeMedidaInput({
   onSelectId,
   onSelectItem,
 }: UnidadeMedidaInputProps) {
+  const ui = useUi()
   return (
     <EntityInput<UnidadeMedida, UnidadeMedida>
       name={name}
@@ -32,6 +35,8 @@ export function UnidadeMedidaInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
+      onView={(item) =>
+        ui.windows.open({ component: UnidadesMedidaUpsert, props: { editingItem: item, readOnly: true }, title: "Visualizar Unidade de Medida", size: "full" })}
       modalTitle="Selecionar Unidade de Medida"
       getDisplayLabel={(item) => item?.descricao ?? ""}
       getSearchTerm={(item) => item.descricao}

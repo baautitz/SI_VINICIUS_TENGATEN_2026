@@ -17,6 +17,8 @@ interface EntityInputProps<T, TResumo = T, TId extends string | number = number>
 
   onSelectId: (id: TId | null) => void;
   onSelectItem?: (item: T | null) => void;
+  /** Com o campo desabilitado, mantém-no focável e abre a visualização com Enter ou clique. */
+  onView?: (item: T) => unknown;
 
   fetchById: (id: TId) => Promise<T | null>;
   fetchList: (term: string) => Promise<{ itens?: TResumo[] } | null>;
@@ -67,6 +69,7 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
   disabled = false,
   onSelectId,
   onSelectItem,
+  onView,
   fetchById,
   fetchList,
   getDisplayLabel,
@@ -107,6 +110,20 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
     return selectedItem && visibleText === selectedLabel
       ? getSearchTerm(selectedItem)
       : visibleText;
+  };
+
+  const viewable = disabled && !!onView && !!selectedItem;
+
+  const openView = async () => {
+    if (!viewable) return;
+    try {
+      const full = await fetchById(getId(selectedItem!));
+      if (full) await onView!(full);
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: `Não foi possível abrir ${modalTitle.toLowerCase()}.`,
+      });
+    }
   };
 
   const openSelection = async () => {
@@ -239,9 +256,16 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
             id={name}
             placeholder={placeholder}
             value={searchText}
-            disabled={disabled}
+            disabled={disabled && !viewable}
+            readOnly={viewable}
+            onClick={() => void openView()}
             onChange={(e) => setSearchText(e.target.value)}
             onKeyDown={(e) => {
+              if (viewable && e.key === "Enter") {
+                e.preventDefault();
+                void openView();
+                return;
+              }
               if (disabled) return;
               if (e.key === "Enter" && !e.altKey) {
                 e.preventDefault();

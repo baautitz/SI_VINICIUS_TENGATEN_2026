@@ -1,5 +1,7 @@
 "use client"
 import React from "react"
+import { useUi } from "@/ui/imperative";
+import { BairrosUpsert } from "@/features/localizacao/bairros/upsert";
 import { EntityInput } from "@/ui/composites"
 import {
   BairrosFeature,
@@ -26,6 +28,7 @@ export function BairroInput({
   onSelectId,
   onSelectItem,
 }: BairroInputProps) {
+  const ui = useUi()
   return (
     <EntityInput<Bairro, Bairro>
       name={name}
@@ -35,6 +38,8 @@ export function BairroInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
+      onView={(item) =>
+        ui.windows.open({ component: BairrosUpsert, props: { editingItem: item, readOnly: true }, title: "Visualizar Bairro", size: "full" })}
       modalTitle="Selecionar Bairro"
       getDisplayLabel={(item) => item?.bairro ?? ""}
       getSearchTerm={(item) => item.bairro}

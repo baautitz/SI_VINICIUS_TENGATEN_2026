@@ -1,5 +1,7 @@
 "use client"
 import React from "react"
+import { useUi } from "@/ui/imperative";
+import { PaisesUpsert } from "@/features/localizacao/paises/upsert";
 import { EntityInput } from "@/ui/composites"
 import { PaisesFeature, Pais, formatPaisLabel } from "@/features/localizacao/paises"
 import { paisesApi } from "@/api/localizacao"
@@ -23,6 +25,7 @@ export function PaisInput({
   onSelectId,
   onSelectItem,
 }: PaisInputProps) {
+  const ui = useUi()
   return (
     <EntityInput<Pais, Pais>
       name={name}
@@ -32,6 +35,8 @@ export function PaisInput({
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
+      onView={(item) =>
+        ui.windows.open({ component: PaisesUpsert, props: { editingItem: item, readOnly: true }, title: "Visualizar País", size: "full" })}
       modalTitle="Selecionar País"
       getDisplayLabel={formatPaisLabel}
       getSearchTerm={(item) => item.pais}

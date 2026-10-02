@@ -1,5 +1,7 @@
 "use client";
 import React from "react";
+import { useUi } from "@/ui/imperative";
+import { EmitentesUpsert } from "@/features/parceiros/emitentes/upsert";
 import { EntityInput } from "@/ui/composites";
 import { EmitentesFeature } from "@/features/parceiros/emitentes";
 import { Emitente } from "@/features/parceiros/emitentes/types";
@@ -24,6 +26,7 @@ export function EmitenteInput({
   onSelectItem,
   disabled = false,
 }: EmitenteInputProps) {
+  const ui = useUi();
   return (
     <EntityInput<Emitente, Emitente>
       name={name}
@@ -37,6 +40,14 @@ export function EmitenteInput({
       getSearchTerm={(item) => item.nomeRazaoSocial}
       getId={(item) => item.id}
       disabled={disabled}
+      onView={(item) =>
+        ui.windows.open({
+          component: EmitentesUpsert,
+          props: { editingItem: item, readOnly: true },
+          title: "Visualizar Emitente",
+          size: "full",
+        })
+      }
       fetchById={async (id) => {
         try {
           return await emitentesApi.getById(id as number);
