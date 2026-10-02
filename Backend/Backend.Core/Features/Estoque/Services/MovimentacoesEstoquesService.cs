@@ -246,6 +246,12 @@ public sealed class MovimentacoesEstoquesService : BaseService
         if (existente.Status != StatusMovimentacaoEstoque.CONFIRMADA)
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_STATUS_INVALIDO", $"Apenas movimentações confirmadas podem ser canceladas. Status atual: {existente.Status}"));
 
+        if (existente.VendaId.HasValue)
+            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_VENDA", "Esta movimentação foi gerada por uma venda. Cancele a venda para estornar a movimentação de estoque."));
+
+        if (existente.NfeId.HasValue)
+            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_NFE", "Esta movimentação foi gerada por uma nota fiscal. Cancele a nota fiscal para estornar a movimentação de estoque."));
+
         if (existente.TipoMovimentacao == TipoMovimentacaoEstoque.ENTRADA)
         {
             var itensLista = existente.MovimentacoesEstoquesItens.ToList();
