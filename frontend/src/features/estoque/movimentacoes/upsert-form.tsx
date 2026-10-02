@@ -1,4 +1,9 @@
 "use client";
+import { VendasUpsertForm } from "@/features/vendas/upsert";
+import { vendasApi } from "@/api/vendas";
+import { useRelated } from "@/hooks/use-related";
+import { RelatedActions } from "@/components/related-actions";
+import { ShoppingCart } from "lucide-react";
 
 import { Kbd, KbdGroup } from "@/ui/primitives";
 import { WindowActions } from "@/imperative-ui";
@@ -23,6 +28,7 @@ import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import { useQueryClient } from "@tanstack/react-query";
 import { estoqueApi } from "@/api/estoque";
 import type { Resultado } from "@/api/types";
+import { SkuViewLink } from "@/components/sku-view-link";
 import { SkuInput } from "@/components/entity-inputs/sku-input";
 import { Sku, getFullSkuName } from "@/features/catalogo/skus/types";
 import { Trash2 } from "lucide-react";
@@ -400,9 +406,11 @@ export function MovimentacoesUpsertForm({
     title = `Visualizar Movimentação #${editingItem.id} [${statusLabels[editingItem.status]}]`;
   }
 
+  const related = useRelated();
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
+        {readOnly && editingItem && !!editingItem.vendaId && <RelatedActions actions={[{ id: "mov.venda", hotkey: "Alt+V", label: "Venda", icon: <ShoppingCart className="size-4" />, run: () => related.openView(() => vendasApi.getById(editingItem.vendaId!), VendasUpsertForm, "Detalhes da Venda") }]} />}
         <Button type="button" variant="outline" onClick={handleCancel}>
           <span className="flex items-center gap-2">
             {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
@@ -488,7 +496,7 @@ export function MovimentacoesUpsertForm({
                     </form.Field>
                   </div>
 
-                  {tipoMovimentacao === "VENDA" && (
+                  {tipoMovimentacao === "VENDA" && !isEditMode && !readOnly && (
                     <div className="flex w-48 flex-col gap-2">
                       <form.Field name="vendaId">
                         {(field) => {
@@ -512,23 +520,6 @@ export function MovimentacoesUpsertForm({
                     </div>
                   )}
 
-                  {isEditMode && (
-                    <div className="flex w-48 flex-col gap-2">
-                      <form.Field name="nfeId">
-                        {(field) => (
-                          <FormFieldUI
-                            field={field}
-                            label="ID da NF-e"
-                            inputSize="full"
-                            type="number"
-                            decimals={0}
-                            disabled
-                            getFieldError={getFieldError}
-                          />
-                        )}
-                      </form.Field>
-                    </div>
-                  )}
                 </>
               )}
             </form.Subscribe>
@@ -668,7 +659,7 @@ export function MovimentacoesUpsertForm({
                               >
                                 <TableCell className="px-4 py-2.5 align-middle">
                                   <span className="text-foreground/90 font-mono text-sm font-bold">
-                                    {item.sku}
+                                    <SkuViewLink sku={item.sku} enabled={readOnly} />
                                   </span>
                                   {skuErr && (
                                     <p className="mt-0.5 text-xs text-red-500">

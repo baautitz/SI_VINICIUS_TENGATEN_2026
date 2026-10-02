@@ -93,6 +93,22 @@ export function MovimentacoesList({
       },
     },
     {
+      id: "venda",
+      header: "Venda",
+      accessorFn: (row) => row.vendaId,
+      cell: ({ getValue }) => (
+        <span className="text-muted-foreground">{getValue() ? `#${getValue()}` : "-"}</span>
+      ),
+    },
+    {
+      id: "nfe",
+      header: "NF-e",
+      accessorFn: (row) => row.nfeId,
+      cell: ({ getValue }) => (
+        <span className="text-muted-foreground">{getValue() ? `#${getValue()}` : "-"}</span>
+      ),
+    },
+    {
       accessorKey: "observacao",
       header: "Observação",
       cell: ({ row }) => (
