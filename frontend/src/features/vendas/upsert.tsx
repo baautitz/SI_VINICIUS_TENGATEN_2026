@@ -1,5 +1,6 @@
 "use client";
 
+import type React from "react";
 import { useState, useRef, useMemo, useCallback } from "react";
 import { WindowActions } from "@/imperative-ui";
 import { useForm, useStore } from "@tanstack/react-form";
@@ -25,6 +26,7 @@ import {
 import { ClienteInput } from "@/components/entity-inputs/cliente-input";
 import { EmitenteInput } from "@/components/entity-inputs/emitente-input";
 import { CondicaoPagamentoInput } from "@/components/entity-inputs/condicao-pagamento-input";
+import { SkuViewLink } from "@/components/sku-view-link";
 import { SkuInput } from "@/components/entity-inputs/sku-input";
 import {
   useUpsertMutation,
@@ -41,7 +43,13 @@ import {
   type VendaItem,
   type VendaFormValues,
 } from "./types";
-import { Trash2 } from "lucide-react";
+import { Trash2, Boxes, Receipt } from "lucide-react";
+import { estoqueApi } from "@/api/estoque";
+import { ContasReceberUpsertForm } from "@/features/financeiro/contas-receber/upsert";
+import { relacionadosApi } from "@/api/relacionados";
+import { useRelated } from "@/hooks/use-related";
+import { contasReceberApi } from "@/api/financeiro";
+import { MovimentacoesUpsert } from "@/features/estoque/movimentacoes/upsert";
 import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
 import { Spinner } from "@/ui/primitives";
 import { navigationCell } from "@/ui/keyboard-navigation";
@@ -273,6 +281,8 @@ function formatCurrency(value: number) {
 function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
   const activeWindow = useWindow<true>();
   const ui = useUi();
+
+  const { openView, openList } = useRelated();
   const {
     mutation,
     getFieldError: originalGetFieldError,
@@ -493,7 +503,45 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     }
   };
 
+  const openMovimentacao = () =>
+    openList(
+      () => relacionadosApi.movimentacoesPorVenda(editingItem!.id),
+      estoqueApi.getById,
+      MovimentacoesUpsert,
+      "Visualizar Movimentação de Estoque",
+      "Venda sem movimentação de estoque.",
+    );
+
+  const openContasReceber = () =>
+    openList(
+      () => relacionadosApi.contasReceberPorVenda(editingItem!.id),
+      contasReceberApi.getById,
+      ContasReceberUpsertForm,
+      "Detalhes da Conta a Receber",
+      "Venda sem contas a receber.",
+    );
+
   const commands = [
+    {
+      id: "vendas.view-contas-receber",
+      hotkey: "Alt+R" as const,
+      label: "Visualizar contas a receber",
+      enabled: readOnly && !!editingItem,
+      run: (event: KeyboardEvent) => {
+        event.preventDefault();
+        void openContasReceber();
+      },
+    },
+    {
+      id: "vendas.view-movimentacao",
+      hotkey: "Alt+M" as const,
+      label: "Visualizar movimentação de estoque",
+      enabled: readOnly && !!editingItem,
+      run: (event: KeyboardEvent) => {
+        event.preventDefault();
+        void openMovimentacao();
+      },
+    },
     {
       id: "vendas.focus-sku",
       hotkey: "Alt+K" as const,
@@ -722,6 +770,20 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
       <WindowActions>
+        {readOnly && editingItem && (
+          <div className="mr-auto flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={openMovimentacao}
+            >
+              <Boxes /> Movimentação de Estoque <Kbd>Alt+M</Kbd>
+            </Button>
+            <Button type="button" variant="outline" onClick={openContasReceber}>
+              <Receipt /> Contas a Receber <Kbd>Alt+R</Kbd>
+            </Button>
+          </div>
+        )}
         <Button
           type="button"
           variant="outline"
@@ -895,7 +957,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                         itens.map((item, index) => (
                           <TableRow key={item.sku} className="hover:/30">
                             <TableCell className="px-4 py-1 font-mono text-xs font-medium">
-                              {item.sku}
+                              <SkuViewLink sku={item.sku} enabled={readOnly} />
                             </TableCell>
                             <TableCell className="px-4 py-1 text-xs font-medium">
                               {item.produtoNome}
