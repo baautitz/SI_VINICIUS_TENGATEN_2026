@@ -204,6 +204,15 @@ function CompraForm({
     return [];
   });
 
+  // Mesma regra do backend ao importar: o vDesc da nota já inclui o desconto dos itens, e a diferença
+  // até o vNF (IPI, ST etc.) entra como despesa (ou desconto).
+  const diferencaXml = dados
+    ? dados.totais.nota -
+      (dados.itens.reduce((s, i) => s + Number(i.valorProdutos) - Number(i.valorDesconto), 0) +
+        dados.totais.frete + dados.totais.seguro + dados.totais.outras)
+    : 0;
+  const descontoItensXml = dados?.itens.reduce((s, i) => s + Number(i.valorDesconto), 0) ?? 0;
+
   const [frete, setFrete] = React.useState(
     compra?.valorFrete ?? dados?.totais.frete ?? 0,
   );
@@ -211,10 +220,11 @@ function CompraForm({
     compra?.valorSeguro ?? dados?.totais.seguro ?? 0,
   );
   const [outras, setOutras] = React.useState(
-    compra?.valorOutrasDespesas ?? dados?.totais.outras ?? 0,
+    compra?.valorOutrasDespesas ?? (dados ? round2(dados.totais.outras + Math.max(diferencaXml, 0)) : 0),
   );
   const [desconto, setDesconto] = React.useState(
-    compra?.valorDesconto ?? dados?.totais.desconto ?? 0,
+    compra?.valorDesconto ??
+      (dados ? round2(Math.max(0, dados.totais.desconto - descontoItensXml) + Math.max(-diferencaXml, 0)) : 0),
   );
   const [freteTerceiro, setFreteTerceiro] = React.useState(
     compra?.valorFreteTerceiro ?? 0,
