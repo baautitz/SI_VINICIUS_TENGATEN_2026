@@ -107,9 +107,11 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
     // arrive in the same event turn as the final input change, before the
     // controlled state commit is observable by this callback.
     const visibleText = inputRef.current?.value ?? searchText;
-    return selectedItem && visibleText === selectedLabel
-      ? getSearchTerm(selectedItem)
-      : visibleText;
+    return (
+      selectedItem && visibleText === selectedLabel
+        ? getSearchTerm(selectedItem)
+        : visibleText
+    ) ?? "";
   };
 
   const viewable = disabled && !!onView && !!selectedItem;

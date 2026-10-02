@@ -19,7 +19,7 @@ export function useFeatureList<T>({
   initialSearchTerm = "",
   recipes: suppliedRecipes,
 }: UseFeatureListOptions<T> = {}) {
-  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm ?? "");
   const deferredSearch = React.useDeferredValue(searchTerm);
   const [page, setPage] = useState(1);
 
