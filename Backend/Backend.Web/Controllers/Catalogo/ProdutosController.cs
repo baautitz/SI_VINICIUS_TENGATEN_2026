@@ -29,9 +29,10 @@ public class ProdutosController : ControllerBase
 
     [HttpGet]
     [ProducesResponseType(typeof(ResultadoPaginado<Produtos>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetProdutos([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<IActionResult> GetProdutos([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20,
+        [FromQuery] int? categoriaId = null, [FromQuery] int? marcaId = null, [FromQuery] int? unidadeMedidaId = null)
     {
-        var result = await _produtosService.ObterProdutos(search, page, pageSize);
+        var result = await _produtosService.ObterProdutos(search, page, pageSize, categoriaId, marcaId, unidadeMedidaId);
         return new JsonResult(result, _jsonOptions);
     }
 

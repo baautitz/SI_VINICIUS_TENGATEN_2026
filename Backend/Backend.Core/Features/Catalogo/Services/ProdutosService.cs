@@ -38,13 +38,13 @@ public sealed class ProdutosService : BaseService
         _unitOfWork = unitOfWork;
     }
 
-    public Task<ResultadoPaginado<Produtos>> ObterProdutos(string? search, int pagina = 1, int tamanhoPagina = 20)
+    public Task<ResultadoPaginado<Produtos>> ObterProdutos(string? search, int pagina = 1, int tamanhoPagina = 20, int? categoriaId = null, int? marcaId = null, int? unidadeMedidaId = null)
     {
         if (string.IsNullOrWhiteSpace(search))
         {
-            return _produtosRepository.ObterProdutos(pagina, tamanhoPagina);
+            return _produtosRepository.ObterProdutos(pagina, tamanhoPagina, categoriaId, marcaId, unidadeMedidaId);
         }
-        return _produtosRepository.PesquisarProdutos(search, pagina, tamanhoPagina);
+        return _produtosRepository.PesquisarProdutos(search, pagina, tamanhoPagina, categoriaId, marcaId, unidadeMedidaId);
     }
 
     public Task<Produtos?> ObterProdutoPorId(int id)

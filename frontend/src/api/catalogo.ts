@@ -73,6 +73,17 @@ export const produtosApi = {
     http.get<PaginatedResult<Produto>>(
       `/api/catalogo/produtos?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`,
     ),
+  listByFiltro: (
+    filtro: { categoriaId?: number; marcaId?: number; unidadeMedidaId?: number },
+    page = 1,
+    pageSize = 20,
+  ) => {
+    const qs = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+    if (filtro.categoriaId != null) qs.set("categoriaId", String(filtro.categoriaId));
+    if (filtro.marcaId != null) qs.set("marcaId", String(filtro.marcaId));
+    if (filtro.unidadeMedidaId != null) qs.set("unidadeMedidaId", String(filtro.unidadeMedidaId));
+    return http.get<PaginatedResult<Produto>>(`/api/catalogo/produtos?${qs}`);
+  },
   getById: (id: number) => http.get<Produto>(`/api/catalogo/produtos/${id}`),
   create: (data: ProdutoFormValues) =>
     http.post<Resultado<Produto>>("/api/catalogo/produtos", data),

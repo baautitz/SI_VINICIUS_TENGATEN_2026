@@ -17,11 +17,11 @@ public class ProdutosRepository : IProdutosRepository
         _session = session;
     }
 
-    public async Task<ResultadoPaginado<Produtos>> ObterProdutos(int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<Produtos>> ObterProdutos(int pagina = 1, int tamanhoDaPagina = 20, int? categoriaId = null, int? marcaId = null, int? unidadeMedidaId = null)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
-        const string countSql = "SELECT COUNT(*) FROM produtos;";
+        const string countSql = "SELECT COUNT(*) FROM produtos WHERE TRUE AND (@CategoriaId::int IS NULL OR categoria_id = @CategoriaId) AND (@MarcaId::int IS NULL OR marca_id = @MarcaId) AND (@UnidadeMedidaId::int IS NULL OR unidade_medida_id = @UnidadeMedidaId);";
 
         const string querySql = @"
             SELECT p.id AS Id, p.produto AS Produto, p.descricao AS Descricao, p.ativo AS Ativo,
@@ -32,15 +32,16 @@ public class ProdutosRepository : IProdutosRepository
             JOIN categorias c ON c.id = p.categoria_id
             JOIN marcas m ON m.id = p.marca_id
             JOIN unidades_medida u ON u.id = p.unidade_medida_id
+            WHERE TRUE AND (@CategoriaId::int IS NULL OR p.categoria_id = @CategoriaId) AND (@MarcaId::int IS NULL OR p.marca_id = @MarcaId) AND (@UnidadeMedidaId::int IS NULL OR p.unidade_medida_id = @UnidadeMedidaId)
             ORDER BY p.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(
-            countSql, transaction: _session.Transaction);
+            countSql, new { CategoriaId = categoriaId, MarcaId = marcaId, UnidadeMedidaId = unidadeMedidaId }, transaction: _session.Transaction);
 
         var produtosDbRow = (await _session.Connection.QueryAsync<ProdutoDbRow>(
             querySql,
-            new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
+            new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset, CategoriaId = categoriaId, MarcaId = marcaId, UnidadeMedidaId = unidadeMedidaId },
             transaction: _session.Transaction)).ToList();
 
         var produtos = produtosDbRow.Select(p => BuildProdutoFromDbRow(p)).ToList();
@@ -258,14 +259,14 @@ public class ProdutosRepository : IProdutosRepository
         }
     }
 
-    public async Task<ResultadoPaginado<Produtos>> PesquisarProdutos(string termo, int pagina = 1, int tamanhoDaPagina = 20)
+    public async Task<ResultadoPaginado<Produtos>> PesquisarProdutos(string termo, int pagina = 1, int tamanhoDaPagina = 20, int? categoriaId = null, int? marcaId = null, int? unidadeMedidaId = null)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
         const string countSql = @"
             SELECT COUNT(*)
             FROM produtos
-            WHERE produto ILIKE @Termo OR descricao ILIKE @Termo;";
+            WHERE (produto ILIKE @Termo OR descricao ILIKE @Termo) AND (@CategoriaId::int IS NULL OR categoria_id = @CategoriaId) AND (@MarcaId::int IS NULL OR marca_id = @MarcaId) AND (@UnidadeMedidaId::int IS NULL OR unidade_medida_id = @UnidadeMedidaId);";
 
         const string querySql = @"
             SELECT p.id AS Id, p.produto AS Produto, p.descricao AS Descricao, p.ativo AS Ativo,
@@ -276,16 +277,16 @@ public class ProdutosRepository : IProdutosRepository
             JOIN categorias c ON c.id = p.categoria_id
             JOIN marcas m ON m.id = p.marca_id
             JOIN unidades_medida u ON u.id = p.unidade_medida_id
-            WHERE p.produto ILIKE @Termo OR p.descricao ILIKE @Termo
+            WHERE (p.produto ILIKE @Termo OR p.descricao ILIKE @Termo) AND (@CategoriaId::int IS NULL OR p.categoria_id = @CategoriaId) AND (@MarcaId::int IS NULL OR p.marca_id = @MarcaId) AND (@UnidadeMedidaId::int IS NULL OR p.unidade_medida_id = @UnidadeMedidaId)
             ORDER BY p.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(
-            countSql, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
+            countSql, new { Termo = $"%{termo}%", CategoriaId = categoriaId, MarcaId = marcaId, UnidadeMedidaId = unidadeMedidaId }, transaction: _session.Transaction);
 
         var produtosDbRow = (await _session.Connection.QueryAsync<ProdutoDbRow>(
             querySql,
-            new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
+            new { Termo = $"%{termo}%", CategoriaId = categoriaId, MarcaId = marcaId, UnidadeMedidaId = unidadeMedidaId, TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction)).ToList();
 
         var produtos = produtosDbRow.Select(p => BuildProdutoFromDbRow(p)).ToList();
