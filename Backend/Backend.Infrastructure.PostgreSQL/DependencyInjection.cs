@@ -98,6 +98,7 @@ public static class DependencyInjection
 
         services.AddScoped<IComprasRepository, ComprasRepository>();
         services.AddScoped<ComprasService>();
+        services.AddScoped<Backend.Core.Features.NFe.Services.NfesImportacaoService>();
 
         services.AddScoped<ITransportadorasRepository, TransportadorasRepository>();
         services.AddScoped<TransportadorasService>();
