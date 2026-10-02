@@ -44,6 +44,7 @@ export function MovimentacoesFeature() {
       component: MovimentacoesUpsert,
       props: { editingItem: null },
       title: "Nova Movimentação de Estoque",
+      size: "full",
     });
     if (result.status === "confirmed") {
       await invalidate();
@@ -57,6 +58,7 @@ export function MovimentacoesFeature() {
       component: MovimentacoesUpsert,
       props: { editingItem: item },
       title: `Editar Movimentação #${item.id}`,
+      size: "full",
     });
     if (result.status === "confirmed") {
       await invalidate();
@@ -69,6 +71,7 @@ export function MovimentacoesFeature() {
       component: MovimentacoesUpsert,
       props: { editingItem: item, readOnly: true },
       title: `Visualizar Movimentação #${item.id}`,
+      size: "full",
     });
   };
 
