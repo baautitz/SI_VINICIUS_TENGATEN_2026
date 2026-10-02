@@ -45,6 +45,8 @@ public class Nfes
     // Só preenchido na criação; as consultas não carregam a coluna (use ObterXmlDocumento).
     [System.Text.Json.Serialization.JsonIgnore]
     public string? XmlDocumento { get; private set; }
+    public string? JustificativaCancelamento { get; private set; }
+    public DateTime? DataCancelamento { get; private set; }
     public NfesTransportes? NfesTransportes { get; private set; }
     public NfesInformacoesAdicionais? NfesInformacoesAdicionais { get; private set; }
 
@@ -205,6 +207,37 @@ public class Nfes
         return nfe;
     }
 
+    // Saída: RASCUNHO com chave -> EMITIDA, guardando o XML gerado na emissão.
+    public void Emitir(string xmlDocumento)
+    {
+        if (TipoOperacao != TipoOperacao.SAIDA || StatusNfe != StatusNfe.RASCUNHO)
+            throw new DomainException("Somente NF-e de saída em rascunho pode ser emitida.");
+        if (ChaveAcesso is not { Length: 44 })
+            throw new DomainException("Chave de acesso deve ter 44 dígitos.");
+        if (string.IsNullOrWhiteSpace(xmlDocumento))
+            throw new DomainException("XML da NF-e é obrigatório.");
+
+        XmlDocumento = xmlDocumento;
+        StatusNfe = StatusNfe.EMITIDA;
+    }
+
+    // Cancelamento fiscal: não desfaz a venda, o estoque nem o financeiro.
+    public void Cancelar(string justificativa, DateTime? quando = null)
+    {
+        if (TipoOperacao != TipoOperacao.SAIDA)
+            throw new DomainException("NF-e de entrada não pode ser cancelada.");
+        if (StatusNfe != StatusNfe.EMITIDA)
+            throw new DomainException("Somente NF-e emitida pode ser cancelada.");
+
+        justificativa = TextNormalization.Normalize(justificativa);
+        if (justificativa.Length < 15 || justificativa.Length > 255)
+            throw new DomainException("A justificativa do cancelamento deve ter entre 15 e 255 caracteres.");
+
+        JustificativaCancelamento = justificativa;
+        DataCancelamento = quando ?? DateTime.UtcNow;
+        StatusNfe = StatusNfe.CANCELADA;
+    }
+
     public void AtualizarStatus(StatusNfe status)
     {
         if (StatusNfe == StatusNfe.CANCELADA)
@@ -264,9 +297,9 @@ public class Nfes
         if (itens == null)
             throw new DomainException("Itens da nota fiscal são obrigatórios.");
 
+        // Hidratação: os totais persistidos prevalecem (recalcular aqui zera o desconto antes de os itens chegarem).
         _itens.Clear();
         _itens.AddRange(itens);
-        AtualizarTotais();
     }
 
     public void DefinirPagamentos(IEnumerable<NfesPagamentos> pagamentos)
@@ -276,7 +309,6 @@ public class Nfes
 
         _pagamentos.Clear();
         _pagamentos.AddRange(pagamentos);
-        ValidarPagamentos();
     }
     private void AtualizarTotais()
     {

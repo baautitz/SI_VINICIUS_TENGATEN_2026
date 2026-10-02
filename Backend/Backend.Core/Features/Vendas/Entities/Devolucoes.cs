@@ -13,6 +13,8 @@ public class Devolucao
     public DateTime DataDevolucao { get; private set; }
     public string Motivo { get; private set; } = null!;
     public decimal ValorTotal { get; private set; }
+    // Aviso na resposta da criação: NF-e de saída ainda ativa da venda (não persistido).
+    public Backend.Core.Features.NFe.DTOs.NfeAtiva? NfeAtiva { get; set; }
     public IReadOnlyCollection<DevolucaoItens> Itens => _itens.AsReadOnly();
 
     protected Devolucao() { }

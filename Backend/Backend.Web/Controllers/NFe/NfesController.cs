@@ -13,9 +13,12 @@ public class NfesController : ControllerBase
 {
     private readonly NfesImportacaoService _importacaoService;
 
-    public NfesController(NfesImportacaoService importacaoService)
+    private readonly NfesSaidaService _saidaService;
+
+    public NfesController(NfesImportacaoService importacaoService, NfesSaidaService saidaService)
     {
         _importacaoService = importacaoService;
+        _saidaService = saidaService;
     }
 
     [HttpGet("api/nfes/{id:int}")]
@@ -54,7 +57,25 @@ public class NfesController : ControllerBase
         return CreatedAtAction(nameof(GetNfe), new { id = result.Data!.NfeId }, result);
     }
 
+    [HttpPost("api/vendas/{vendaId:int}/nfe")]
+    [ProducesResponseType(typeof(Resultado<Nfes>), StatusCodes.Status201Created)]
+    public async Task<ActionResult<Resultado<Nfes>>> EmitirDeVenda(int vendaId)
+    {
+        var result = await _saidaService.EmitirDeVenda(vendaId);
+        if (!result.Success)
+            return Falha(result.Errors!, result);
+
+        return CreatedAtAction(nameof(GetNfe), new { id = result.Data!.Id }, result);
+    }
+
+    [HttpPost("api/nfes/{id:int}/cancelar")]
+    public async Task<ActionResult<Resultado<Nfes>>> Cancelar(int id, [FromBody] CancelarNfeCommand command)
+    {
+        var result = await _saidaService.Cancelar(id, command);
+        return result.Success ? Ok(result) : Falha(result.Errors!, result);
+    }
+
     // Chave já importada = 409; demais falhas = 400.
     private ActionResult Falha<T>(IReadOnlyCollection<ResultadoErro> erros, Resultado<T> result)
-        => erros.Any(e => e.Code == NfesImportacaoService.ChaveJaImportada) ? Conflict(result) : BadRequest(result);
+        => erros.Any(e => e.Code == NfesImportacaoService.ChaveJaImportada) || NfesSaidaService.EhConflito(erros) ? Conflict(result) : BadRequest(result);
 }

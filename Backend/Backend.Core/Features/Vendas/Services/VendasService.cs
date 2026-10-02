@@ -18,6 +18,7 @@ using Backend.Core.Features.Financeiro.DTOs;
 using Backend.Core.Features.Financeiro.Repositories;
 using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Financeiro.Entities.Enums;
+using Backend.Core.Features.NFe.Repositories;
 using Backend.Core.Features.Vendas.Repositories;
 using Backend.Core.Features.Vendas.Entities;
 using Backend.Core.Features.Vendas.Commands;
@@ -37,6 +38,7 @@ public sealed class VendasService : BaseService
     private readonly IContasPagarRepository _contasPagarRepository;
     private readonly IDevolucoesRepository _devolucoesRepository;
     private readonly IMovimentacoesEstoquesRepository _movimentacoesRepository;
+    private readonly INfesRepository _nfesRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public VendasService(
@@ -50,6 +52,7 @@ public sealed class VendasService : BaseService
         IContasPagarRepository contasPagarRepository,
         IDevolucoesRepository devolucoesRepository,
         IMovimentacoesEstoquesRepository movimentacoesRepository,
+        INfesRepository nfesRepository,
         IUnitOfWork unitOfWork)
     {
         _vendasRepository = vendasRepository;
@@ -62,6 +65,7 @@ public sealed class VendasService : BaseService
         _contasPagarRepository = contasPagarRepository;
         _devolucoesRepository = devolucoesRepository;
         _movimentacoesRepository = movimentacoesRepository;
+        _nfesRepository = nfesRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -194,7 +198,7 @@ public sealed class VendasService : BaseService
 
     private static bool EhAVista(CondicoesPagamentos? condicao) => condicao?.EntradaMinimaPercentual >= 100;
 
-    private async Task<ContasReceber?> ObterContaDaVenda(int vendaId)
+    public async Task<ContasReceber?> ObterContaDaVenda(int vendaId)
     {
         var contas = await _contasRepository.PesquisarContasReceber("", 1, 1, new FiltroContasReceber(OrigemTipo: OrigemTituloFinanceiro.VENDA, OrigemId: vendaId));
         var primeira = contas.Itens.FirstOrDefault();
@@ -268,6 +272,8 @@ public sealed class VendasService : BaseService
                 }
 
                 _unitOfWork.Commit();
+                // Só avisa: o cancelamento da NF-e é decisão fiscal separada.
+                criada.NfeAtiva = await _nfesRepository.ObterNfeEmitidaDaVenda(vendaId);
                 return Resultado<Devolucao>.Sucesso(criada);
             }
             catch (Exception)

@@ -327,7 +327,7 @@ public class NfesRepository : INfesRepository
             UPDATE nfes
             SET chave_acesso = @ChaveAcesso, numero = @Numero, serie = @Serie,
                 data_emissao = @DataEmissao, data_saida = @DataSaida,
-                tipo_operacao = @TipoOperacao, status_nfe = @StatusNfe,
+                tipo_operacao = @TipoOperacao::tipo_operacao_enum, status_nfe = @StatusNfe::status_nfe_enum,
                 valor_produtos = @ValorProdutos, valor_desconto = @ValorDesconto,
                 valor_frete = @ValorFrete, valor_seguro = @ValorSeguro,
                 valor_outras_despesas = @ValorOutrasDespesas, valor_total = @ValorTotal,
@@ -343,8 +343,8 @@ public class NfesRepository : INfesRepository
                 nfe.Serie,
                 nfe.DataEmissao,
                 nfe.DataSaida,
-                nfe.TipoOperacao,
-                nfe.StatusNfe,
+                TipoOperacao = nfe.TipoOperacao.ToString(),
+                StatusNfe = nfe.StatusNfe.ToString(),
                 nfe.ValorProdutos,
                 nfe.ValorDesconto,
                 nfe.ValorFrete,
@@ -464,6 +464,26 @@ public class NfesRepository : INfesRepository
             transaction: _session.Transaction);
     }
 
+    public Task<NfeAtiva?> ObterNfeEmitidaDaVenda(int vendaId)
+        => _session.Connection.QuerySingleOrDefaultAsync<NfeAtiva?>(
+            "SELECT id AS NfeId, chave_acesso AS ChaveAcesso FROM nfes WHERE venda_id = @VendaId AND status_nfe = 'EMITIDA';",
+            new { VendaId = vendaId }, transaction: _session.Transaction);
+
+    public async Task<int> ProximoNumeroSaida(int emitenteId, short serie)
+    {
+        await _session.Connection.ExecuteAsync(
+            "SELECT pg_advisory_xact_lock(@EmitenteId, @Serie);",
+            new { EmitenteId = emitenteId, Serie = (int)serie }, transaction: _session.Transaction);
+        return await _session.Connection.ExecuteScalarAsync<int>(
+            "SELECT COALESCE(MAX(numero), 0) + 1 FROM nfes WHERE emitente_id = @EmitenteId AND serie = @Serie AND tipo_operacao = 'SAIDA';",
+            new { EmitenteId = emitenteId, Serie = (int)serie }, transaction: _session.Transaction);
+    }
+
+    public Task CancelarNfe(Nfes nfe)
+        => _session.Connection.ExecuteAsync(
+            "UPDATE nfes SET status_nfe = 'CANCELADA', justificativa_cancelamento = @JustificativaCancelamento, data_cancelamento = @DataCancelamento WHERE id = @Id;",
+            new { nfe.Id, nfe.JustificativaCancelamento, nfe.DataCancelamento }, transaction: _session.Transaction);
+
     public Task<string?> ObterXmlDocumento(int id)
         => _session.Connection.ExecuteScalarAsync<string?>(
             "SELECT xml_documento FROM nfes WHERE id = @Id;", new { Id = id }, transaction: _session.Transaction);
@@ -493,13 +513,13 @@ public class NfesRepository : INfesRepository
     {
         const string sql = @"
             INSERT INTO nfes_pagamentos (indicador_pagamento, valor_pagamento, metodo_pagamento_codigo, nfe_id)
-            VALUES (@IndicadorPagamento, @ValorPagamento, @MetodoPagamentoCodigo, @NfeId);";
+            VALUES (@IndicadorPagamento::indicador_pagamento_enum, @ValorPagamento, @MetodoPagamentoCodigo, @NfeId);";
 
         await _session.Connection.ExecuteAsync(
             sql,
             pagamentos.Select(p => new
             {
-                p.IndicadorPagamento,
+                IndicadorPagamento = p.IndicadorPagamento.ToString(),
                 p.ValorPagamento,
                 MetodoPagamentoCodigo = p.MetodosPagamento.Codigo,
                 NfeId = nfeId
