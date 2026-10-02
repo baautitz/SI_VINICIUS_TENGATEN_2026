@@ -1,3 +1,4 @@
+using Backend.Core.Features.Estoque.Entities.Enums;
 using Backend.Core.Common.Results;
 using Backend.Core.Features.Estoque.Commands;
 using Backend.Core.Features.Estoque.Entities;
@@ -21,8 +22,16 @@ public class MovimentacoesEstoquesController : ControllerBase
     }
 
     [HttpGet]
-    public Task<ResultadoPaginado<MovimentacoesEstoques>> GetMovimentacoes([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-        => _movimentacoesService.ObterMovimentacoes(search, page, pageSize);
+    public async Task<ActionResult<ResultadoPaginado<MovimentacoesEstoques>>> GetMovimentacoes([FromQuery] string? search, [FromQuery] OrigemMovimentacaoEstoque? origemTipo, [FromQuery] int? origemId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        if (origemTipo is null && origemId is null)
+            return await _movimentacoesService.ObterMovimentacoes(search, page, pageSize);
+
+        if (origemTipo is null || origemId is null)
+            return BadRequest("Informe origemTipo e origemId.");
+
+        return await _movimentacoesService.ObterMovimentacoesPorOrigem(origemTipo.Value, origemId.Value);
+    }
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<MovimentacoesEstoques>> GetMovimentacao(int id)

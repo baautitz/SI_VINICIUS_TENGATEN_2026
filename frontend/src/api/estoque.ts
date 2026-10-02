@@ -8,6 +8,10 @@ export const estoqueApi = {
     http.get<PaginatedResult<MovimentacaoEstoque>>(
       `/api/estoque/movimentacoes?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`
     ),
+  listByOrigem: (origemTipo: string, origemId: number) =>
+    http.get<PaginatedResult<MovimentacaoEstoque>>(
+      `/api/estoque/movimentacoes?origemTipo=${origemTipo}&origemId=${origemId}`
+    ),
   getById: (id: number) => http.get<MovimentacaoEstoque>(`/api/estoque/movimentacoes/${id}`),
   create: (data: MovimentacaoEstoqueFormValues) => http.post<Resultado<MovimentacaoEstoque>>("/api/estoque/movimentacoes", data),
   estornar: (id: number, motivo: string) => http.post<Resultado<MovimentacaoEstoque>>(`/api/estoque/movimentacoes/${id}/estornar`, { motivo }),

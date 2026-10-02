@@ -42,6 +42,12 @@ public sealed class MovimentacoesEstoquesService : BaseService
             ? _movimentacoesRepository.ObterMovimentacoes(pagina, tamanhoPagina)
             : _movimentacoesRepository.PesquisarMovimentacoes(search, pagina, tamanhoPagina);
 
+    public async Task<ResultadoPaginado<MovimentacoesEstoques>> ObterMovimentacoesPorOrigem(OrigemMovimentacaoEstoque origemTipo, int origemId)
+    {
+        var lista = await _movimentacoesRepository.ObterMovimentacoesPorOrigem(origemTipo, origemId);
+        return new ResultadoPaginado<MovimentacoesEstoques>(lista, lista.Count, 1, Math.Max(lista.Count, 1));
+    }
+
     public Task<MovimentacoesEstoques?> ObterMovimentacaoPorId(int id)
         => _movimentacoesRepository.ObterMovimentacaoPorId(id);
 
