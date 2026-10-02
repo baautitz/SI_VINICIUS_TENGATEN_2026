@@ -18,11 +18,24 @@ CREATE TABLE IF NOT EXISTS fornecedores (
   ativo BOOLEAN NOT NULL DEFAULT TRUE,
   criado_em TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   observacao TEXT,
+  condicao_pagamento_id INTEGER,
   CONSTRAINT fornecedores_bairro_fk FOREIGN KEY (bairro_id) REFERENCES bairros (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT fornecedores_nacionalidade_fk FOREIGN KEY (nacionalidade_id) REFERENCES paises (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT fornecedores_condicao_pagamento_fk FOREIGN KEY (condicao_pagamento_id) REFERENCES condicoes_pagamentos (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT fornecedores_nome_not_empty CHECK (LENGTH(TRIM(nome_razaosocial)) > 0),
   CONSTRAINT fornecedores_cpf_cnpj_not_empty CHECK (LENGTH(TRIM(cpf_cnpj)) > 0),
   CONSTRAINT fornecedores_cpf_cnpj_unique UNIQUE (cpf_cnpj),
   CONSTRAINT fornecedores_sexo_ck
     CHECK (sexo IS NULL OR (tipo_pessoa = 'FISICA' AND sexo IN ('M', 'F', 'O')))
 );
+
+-- Migração de bancos já existentes: o CREATE acima não altera a tabela antiga.
+ALTER TABLE fornecedores ADD COLUMN IF NOT EXISTS atualizado_em TIMESTAMP WITH TIME ZONE;
+ALTER TABLE fornecedores ADD COLUMN IF NOT EXISTS condicao_pagamento_id INTEGER;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fornecedores_condicao_pagamento_fk') THEN
+    ALTER TABLE fornecedores ADD CONSTRAINT fornecedores_condicao_pagamento_fk
+      FOREIGN KEY (condicao_pagamento_id) REFERENCES condicoes_pagamentos (id) ON DELETE NO ACTION ON UPDATE NO ACTION;
+  END IF;
+END $$;

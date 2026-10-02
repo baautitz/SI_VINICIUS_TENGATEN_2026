@@ -21,7 +21,6 @@ SET search_path TO projeto_sistemas, public;
 \ir parceiros/schema/clientes.sql
 \ir parceiros/schema/emitentes.sql
 
-\ir parceiros/schema/fornecedores.sql
 \ir parceiros/schema/transportadoras.sql
 \ir parceiros/schema/veiculos.sql
 
@@ -36,6 +35,9 @@ SET search_path TO projeto_sistemas, public;
 \ir financeiro/schema/metodos_pagamento.sql
 \ir financeiro/schema/condicoes_pagamentos.sql
 \ir financeiro/schema/condicoes_pagamentos_parcelas.sql
+
+-- fornecedores referencia condicoes_pagamentos (condição padrão).
+\ir parceiros/schema/fornecedores.sql
 
 \ir vendas/schema/vendas.sql
 \ir vendas/schema/vendas_itens.sql
