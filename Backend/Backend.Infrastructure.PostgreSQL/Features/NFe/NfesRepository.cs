@@ -40,7 +40,7 @@ public class NfesRepository : INfesRepository
                    c.id AS ClienteId, c.nome_razaosocial, c.cpf_cnpj, c.ativo
             FROM nfes n
             JOIN emitentes e ON e.id = n.emitente_id
-            JOIN clientes c ON c.id = n.cliente_id
+            LEFT JOIN clientes c ON c.id = n.cliente_id
             ORDER BY n.data_emissao DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
@@ -52,7 +52,7 @@ public class NfesRepository : INfesRepository
             (nfe, emitente, cliente) =>
             {
                 nfe.AtualizarEmitente(emitente);
-                nfe.AtualizarCliente(cliente);
+                if (cliente is not null) nfe.AtualizarCliente(cliente);
                 nfe.DefinirItens(new List<NfesItens>());
                 nfe.DefinirPagamentos(new List<NfesPagamentos>());
                 return nfe;
@@ -141,7 +141,7 @@ public class NfesRepository : INfesRepository
                     c.observacao
             FROM nfes n
             JOIN emitentes e ON e.id = n.emitente_id
-            JOIN clientes c ON c.id = n.cliente_id
+            LEFT JOIN clientes c ON c.id = n.cliente_id
             WHERE n.id = @Id;";
 
         const string itensSql = @"
@@ -172,7 +172,7 @@ public class NfesRepository : INfesRepository
             (n, emitente, cliente) =>
             {
                 n.AtualizarEmitente(emitente);
-                n.AtualizarCliente(cliente);
+                if (cliente is not null) n.AtualizarCliente(cliente);
                 n.DefinirItens(new List<NfesItens>());
                 n.DefinirPagamentos(new List<NfesPagamentos>());
                 return n;
@@ -279,7 +279,7 @@ public class NfesRepository : INfesRepository
                 nfe.ValorOutrasDespesas,
                 nfe.ValorTotal,
                 EmitenteId = nfe.Emitente.Id,
-                ClienteId = nfe.Cliente.Id
+                ClienteId = nfe.Cliente?.Id
             },
             transaction: _session.Transaction);
 
@@ -325,7 +325,7 @@ public class NfesRepository : INfesRepository
                 nfe.ValorOutrasDespesas,
                 nfe.ValorTotal,
                 EmitenteId = nfe.Emitente.Id,
-                ClienteId = nfe.Cliente.Id
+                ClienteId = nfe.Cliente?.Id
             },
             transaction: _session.Transaction);
 
