@@ -512,21 +512,23 @@ export function MovimentacoesUpsertForm({
                     </div>
                   )}
 
-                  <div className="flex w-48 flex-col gap-2">
-                    <form.Field name="nfeId">
-                      {(field) => (
-                        <FormFieldUI
-                          field={field}
-                          label="ID da NF-e"
-                          inputSize="full"
-                          type="number"
-                          decimals={0}
-                          disabled={readOnly}
-                          getFieldError={getFieldError}
-                        />
-                      )}
-                    </form.Field>
-                  </div>
+                  {isEditMode && (
+                    <div className="flex w-48 flex-col gap-2">
+                      <form.Field name="nfeId">
+                        {(field) => (
+                          <FormFieldUI
+                            field={field}
+                            label="ID da NF-e"
+                            inputSize="full"
+                            type="number"
+                            decimals={0}
+                            disabled
+                            getFieldError={getFieldError}
+                          />
+                        )}
+                      </form.Field>
+                    </div>
+                  )}
                 </>
               )}
             </form.Subscribe>
