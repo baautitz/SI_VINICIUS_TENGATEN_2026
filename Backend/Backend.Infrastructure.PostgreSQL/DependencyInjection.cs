@@ -12,6 +12,9 @@ using Backend.Core.Features.Localizacao.Services;
 using Backend.Core.Features.Catalogo.Services;
 using Backend.Core.Features.Estoque.Services;
 using Backend.Core.Features.NFe.Repositories;
+using Backend.Core.Features.Compras.Repositories;
+using Backend.Core.Features.Compras.Services;
+using Backend.Infrastructure.PostgreSQL.Features.Compras;
 using Backend.Core.Features.Vendas.Repositories;
 using Backend.Core.Features.Vendas.Services;
 using Backend.Infrastructure.PostgreSQL.Common;
@@ -92,6 +95,9 @@ public static class DependencyInjection
         services.AddScoped<IVendasRepository, VendasRepository>();
         services.AddScoped<IDevolucoesRepository, DevolucoesRepository>();
         services.AddScoped<VendasService>();
+
+        services.AddScoped<IComprasRepository, ComprasRepository>();
+        services.AddScoped<ComprasService>();
 
         services.AddScoped<ITransportadorasRepository, TransportadorasRepository>();
         services.AddScoped<TransportadorasService>();
