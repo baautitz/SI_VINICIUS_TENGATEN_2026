@@ -1,4 +1,9 @@
 "use client";
+import { VendasUpsertForm } from "@/features/vendas/upsert";
+import { vendasApi } from "@/api/vendas";
+import { useRelated } from "@/hooks/use-related";
+import { RelatedActions } from "@/components/related-actions";
+import { ShoppingCart } from "lucide-react";
 
 import React, { useState, useCallback } from "react";
 import { WindowActions } from "@/imperative-ui";
@@ -108,9 +113,11 @@ export function ContasReceberUpsertForm({
     onSuccessCallback: () => activeWindow.resolve(true),
   });
 
+  const related = useRelated();
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
+        {readOnly && editingItem && !!editingItem.vendaId && <RelatedActions actions={[{ id: "cr.venda", hotkey: "Alt+V", label: "Venda", icon: <ShoppingCart className="size-4" />, run: () => related.openView(() => vendasApi.getById(editingItem.vendaId!), VendasUpsertForm, "Detalhes da Venda") }]} />}
         <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>
           {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
         </Button>
@@ -549,26 +556,6 @@ function ContasReceberFormBody({
                 );
               }}
             </form.Field>
-
-            <form.Field name="nfeId">
-              {(field) => (
-                <div className="flex flex-col gap-2">
-                  <FieldLabel htmlFor={field.name}>ID Nota Fiscal</FieldLabel>
-                  <NumberInput
-                    id={field.name}
-                    name={field.name}
-                    onBlur={field.handleBlur}
-                    inputSize="full"
-                    value={field.state.value ?? 0}
-                    decimals={0}
-                    inputMode="numeric"
-                    onNumberChange={(num) => field.handleChange(num || null)}
-                    disabled={readOnly}
-                    className="text-right"
-                  />
-                </div>
-              )}
-            </form.Field>
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -592,26 +579,6 @@ function ContasReceberFormBody({
                       }
                     }}
                     disabled={readOnly || temParcelaPagaOuParcial}
-                  />
-                </div>
-              )}
-            </form.Field>
-
-            <form.Field name="vendaId">
-              {(field) => (
-                <div className="flex flex-col gap-2">
-                  <FieldLabel htmlFor={field.name}>ID Venda Relacionada</FieldLabel>
-                  <NumberInput
-                    id={field.name}
-                    name={field.name}
-                    onBlur={field.handleBlur}
-                    inputSize="full"
-                    value={field.state.value ?? 0}
-                    decimals={0}
-                    inputMode="numeric"
-                    onNumberChange={(num) => field.handleChange(num || null)}
-                    disabled={readOnly || !!editingItem?.vendaId}
-                    className="text-right"
                   />
                 </div>
               )}

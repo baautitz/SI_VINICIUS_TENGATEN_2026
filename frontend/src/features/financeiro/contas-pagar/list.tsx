@@ -63,6 +63,14 @@ export function ContasPagarList({
       },
     },
     {
+      id: "nfe",
+      header: "NF-e",
+      accessorFn: (row) => row.nfeId,
+      cell: ({ getValue }) => (
+        <span className="text-muted-foreground">{getValue() ? `#${getValue()}` : "-"}</span>
+      ),
+    },
+    {
       accessorKey: "dataEmissao",
       header: "Emissão",
       cell: ({ row }) => {

@@ -64,6 +64,22 @@ export function ContasReceberList({
       },
     },
     {
+      id: "venda",
+      header: "Venda",
+      accessorFn: (row) => row.vendaId,
+      cell: ({ getValue }) => (
+        <span className="text-muted-foreground">{getValue() ? `#${getValue()}` : "-"}</span>
+      ),
+    },
+    {
+      id: "nfe",
+      header: "NF-e",
+      accessorFn: (row) => row.nfeId,
+      cell: ({ getValue }) => (
+        <span className="text-muted-foreground">{getValue() ? `#${getValue()}` : "-"}</span>
+      ),
+    },
+    {
       accessorKey: "dataEmissao",
       header: "Emissão",
       cell: ({ row }) => {
