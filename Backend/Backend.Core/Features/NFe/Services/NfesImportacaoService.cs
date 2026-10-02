@@ -167,15 +167,13 @@ public sealed class NfesImportacaoService : BaseService
             if (!transportadora.Success) { _unitOfWork.Rollback(); return Resultado<ImportarNfeResultado>.Falha(transportadora.Errors!); }
 
             var t = dados.Totais;
-            var descontoItens = dados.Itens.Sum(i => i.ValorDesconto);
             // IPI, ST, II, FCP ST, ICMS desonerado etc. não são lidos: a diferença até o vNF entra como despesa (ou desconto),
-            // integra o custo e fecha as parcelas com o vNF. Créditos recuperáveis ficam fora do escopo.
-            var diferenca = t.Nota - (dados.Itens.Sum(i => i.ValorProdutos - i.ValorDesconto) + t.Frete + t.Seguro + t.Outras);
+            // integra o custo e fecha as parcelas com o vNF (compras.valor_nota = nfes.valor_total). Créditos recuperáveis ficam fora do escopo.
+            var (outrasCompra, descontoCompra) = AjustarTotais(t, dados.Itens);
             var compraCommand = new CriarCompraCommand(
                 // Dia da emissão preservado (meio-dia UTC não muda de dia em nenhum fuso do Brasil).
                 DateTime.SpecifyKind(dados.DataEmissaoLocal.Date.AddHours(12), DateTimeKind.Utc), command.EmitenteId, fornecedor.Id,
-                t.Frete, t.Seguro, t.Outras + Math.Max(diferenca, 0m),
-                Math.Max(0m, t.Desconto - descontoItens) + Math.Max(-diferenca, 0m), // vDesc da nota já inclui o desconto dos itens
+                t.Frete, t.Seguro, outrasCompra, descontoCompra,
                 command.ValorFreteTerceiro, transportadora.Data?.Id, command.VencimentoFreteTerceiro,
                 dados.InformacoesComplementares,
                 dados.Itens.Select(i => new CriarCompraItemCommand(skus[i.NumeroItem].Sku, i.Quantidade, i.ValorUnitario, i.ValorDesconto, i.CodigoProduto, i.ValorProdutos)).ToList(),
@@ -285,4 +283,14 @@ public sealed class NfesImportacaoService : BaseService
     }
 
     private static string? Cortar(string? v, int max) => TextNormalization.Truncate(v?.Trim(), max);
+
+    // Despesa/desconto gerais da compra para fechar com o vNF. O vDesc da nota já inclui o dos itens, então só o
+    // excedente é desconto geral; a diferença não lida (IPI/ST etc.) é calculada já descontando o vDesc total.
+    public static (decimal Outras, decimal Desconto) AjustarTotais(NfeXmlTotais t, IReadOnlyCollection<NfeXmlItem> itens)
+    {
+        var descontoItens = itens.Sum(i => i.ValorDesconto);
+        var descontoTotal = Math.Max(t.Desconto, descontoItens);
+        var diferenca = t.Nota - (itens.Sum(i => i.ValorProdutos) - descontoTotal + t.Frete + t.Seguro + t.Outras);
+        return (t.Outras + Math.Max(diferenca, 0m), descontoTotal - descontoItens + Math.Max(-diferenca, 0m));
+    }
 }
