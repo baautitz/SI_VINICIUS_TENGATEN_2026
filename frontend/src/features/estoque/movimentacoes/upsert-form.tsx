@@ -2,8 +2,9 @@
 import { VendasUpsertForm } from "@/features/vendas/upsert";
 import { vendasApi } from "@/api/vendas";
 import { useRelated } from "@/hooks/use-related";
-import { RelatedActions } from "@/components/related-actions";
-import { ShoppingCart } from "lucide-react";
+import { RelatedActions, type RelatedAction } from "@/components/related-actions";
+import { ClipboardList, ListChecks, ShoppingCart } from "lucide-react";
+import { BalancoWindow, type BalancoWindowProps } from "@/features/estoque/balancos/window";
 
 import { Kbd, KbdGroup } from "@/ui/primitives";
 import { WindowActions } from "@/imperative-ui";
@@ -352,10 +353,21 @@ export function MovimentacoesUpsertForm({
     : "Lançamento Manual de Estoque";
 
   const related = useRelated();
+  // Atalhos para o documento de origem da movimentação (só em visualização).
+  const origemId = editingItem?.origemId;
+  const origemActions: RelatedAction[] = !origemId
+    ? []
+    : editingItem.origemTipo === "VENDA"
+      ? [{ id: "mov.venda", hotkey: "Alt+V", label: "Venda", icon: <ShoppingCart className="size-4" />, run: () => related.openView(() => vendasApi.getById(origemId), VendasUpsertForm, "Detalhes da Venda") }]
+      : editingItem.origemTipo === "BALANCO"
+        ? [{ id: "mov.balanco", hotkey: "Alt+B", label: "Balanço", icon: <ListChecks className="size-4" />, run: () => ui.windows.open<"saved" | "closed", BalancoWindowProps>({ component: BalancoWindow, props: { balancoId: origemId }, title: `Balanço #${origemId}`, size: "full" }) }]
+        : editingItem.origemTipo === "ESTORNO"
+          ? [{ id: "mov.original", hotkey: "Alt+M", label: "Movimentação original", icon: <ClipboardList className="size-4" />, run: () => related.openView(() => estoqueApi.getById(origemId), MovimentacoesUpsertForm, "Visualizar Movimentação") }]
+          : [];
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        {readOnly && editingItem?.origemTipo === "VENDA" && !!editingItem.origemId && <RelatedActions actions={[{ id: "mov.venda", hotkey: "Alt+V", label: "Venda", icon: <ShoppingCart className="size-4" />, run: () => related.openView(() => vendasApi.getById(editingItem.origemId!), VendasUpsertForm, "Detalhes da Venda") }]} />}
+        {readOnly && <RelatedActions actions={origemActions} />}
         <Button type="button" variant="outline" onClick={handleCancel}>
           <span className="flex items-center gap-2">
             {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>

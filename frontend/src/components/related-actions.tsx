@@ -6,7 +6,7 @@ import { useWindowCommands } from "@/ui/imperative";
 
 export interface RelatedAction {
   id: string;
-  hotkey: "Alt+V" | "Alt+R" | "Alt+T" | "Alt+L";
+  hotkey: "Alt+V" | "Alt+R" | "Alt+T" | "Alt+L" | "Alt+B" | "Alt+M";
   label: string;
   icon: React.ReactNode;
   run: () => unknown;
