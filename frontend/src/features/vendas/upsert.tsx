@@ -47,8 +47,7 @@ import { Trash2, Boxes, Receipt, FileText, Ban, Undo2 } from "lucide-react";
 import { DevolucoesHistoricoWindow, type DevolucoesHistoricoWindowProps } from "./devolucao";
 import { estoqueApi } from "@/api/estoque";
 import { ContasReceberUpsertForm } from "@/features/financeiro/contas-receber/upsert";
-import { relacionadosApi } from "@/api/relacionados";
-import { useRelated } from "@/hooks/use-related";
+import { useRelated, mapItens } from "@/hooks/use-related";
 import { contasReceberApi } from "@/api/financeiro";
 import { MovimentacoesUpsert } from "@/features/estoque/movimentacoes/upsert";
 import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
@@ -506,7 +505,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
 
   const openMovimentacao = () =>
     openList(
-      () => relacionadosApi.movimentacoesPorVenda(editingItem!.id),
+      () => estoqueApi.listByOrigem("VENDA", editingItem!.id).then(mapItens((x) => ({ id: x.id, descricao: `Movimentação #${x.id}`, detalhe: x.tipoMovimentacao }))),
       estoqueApi.getById,
       MovimentacoesUpsert,
       "Visualizar Movimentação de Estoque",
@@ -515,7 +514,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
 
   const openContasReceber = () =>
     openList(
-      () => relacionadosApi.contasReceberPorVenda(editingItem!.id),
+      () => contasReceberApi.listByOrigem("VENDA", editingItem!.id).then(mapItens((x) => ({ id: x.id, descricao: x.descricao, detalhe: x.status }))),
       contasReceberApi.getById,
       ContasReceberUpsertForm,
       "Detalhes da Conta a Receber",

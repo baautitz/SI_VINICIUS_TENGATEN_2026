@@ -14,10 +14,10 @@ using Backend.Core.Features.Estoque.Entities;
 using Backend.Core.Features.Estoque.Entities.Enums;
 using Backend.Core.Features.Estoque.Repositories;
 using Backend.Core.Features.Parceiros.Entities;
+using Backend.Core.Features.Financeiro.DTOs;
 using Backend.Core.Features.Financeiro.Repositories;
 using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Financeiro.Entities.Enums;
-using Backend.Core.Features.Relacionados;
 using Backend.Core.Features.Vendas.Repositories;
 using Backend.Core.Features.Vendas.Entities;
 using Backend.Core.Features.Vendas.Commands;
@@ -37,7 +37,6 @@ public sealed class VendasService : BaseService
     private readonly IContasPagarRepository _contasPagarRepository;
     private readonly IDevolucoesRepository _devolucoesRepository;
     private readonly IMovimentacoesEstoquesRepository _movimentacoesRepository;
-    private readonly IRelacionadosRepository _relacionadosRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public VendasService(
@@ -51,7 +50,6 @@ public sealed class VendasService : BaseService
         IContasPagarRepository contasPagarRepository,
         IDevolucoesRepository devolucoesRepository,
         IMovimentacoesEstoquesRepository movimentacoesRepository,
-        IRelacionadosRepository relacionadosRepository,
         IUnitOfWork unitOfWork)
     {
         _vendasRepository = vendasRepository;
@@ -64,7 +62,6 @@ public sealed class VendasService : BaseService
         _contasPagarRepository = contasPagarRepository;
         _devolucoesRepository = devolucoesRepository;
         _movimentacoesRepository = movimentacoesRepository;
-        _relacionadosRepository = relacionadosRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -199,8 +196,9 @@ public sealed class VendasService : BaseService
 
     private async Task<ContasReceber?> ObterContaDaVenda(int vendaId)
     {
-        var contas = await _relacionadosRepository.ContasReceberPorVenda(vendaId);
-        return contas.Count == 0 ? null : await _contasRepository.ObterContaReceberPorId(contas[0].Id);
+        var contas = await _contasRepository.PesquisarContasReceber("", 1, 1, new FiltroContasReceber(OrigemTipo: OrigemTituloFinanceiro.VENDA, OrigemId: vendaId));
+        var primeira = contas.Itens.FirstOrDefault();
+        return primeira is null ? null : await _contasRepository.ObterContaReceberPorId(primeira.Id);
     }
 
     public async Task<bool> DeletarVenda(int id)

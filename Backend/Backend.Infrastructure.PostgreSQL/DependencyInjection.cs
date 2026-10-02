@@ -76,7 +76,6 @@ public static class DependencyInjection
 
         services.AddScoped<IContasPagarRepository, ContasPagarRepository>();
         services.AddScoped<IContasReceberRepository, ContasReceberRepository>();
-        services.AddScoped<Backend.Core.Features.Relacionados.IRelacionadosRepository, Backend.Infrastructure.PostgreSQL.Features.Relacionados.RelacionadosRepository>();
         services.AddScoped<ContasPagarService>();
         services.AddScoped<ContasReceberService>();
 

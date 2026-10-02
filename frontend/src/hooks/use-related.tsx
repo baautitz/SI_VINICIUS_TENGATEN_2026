@@ -2,7 +2,19 @@
 
 import React from "react";
 import { useUi, useWindow } from "@/ui/imperative";
-import type { RelacionadoItem } from "@/api/relacionados";
+import type { PaginatedResult } from "@/api/types";
+
+export interface RelacionadoItem {
+  id: number;
+  descricao: string;
+  detalhe?: string | null;
+}
+
+/** Converte uma página de um módulo em itens de escolha para openList. */
+export const mapItens =
+  <T,>(fn: (x: T) => RelacionadoItem) =>
+  (r: PaginatedResult<T>) =>
+    r.itens.map(fn);
 
 function RelacionadosWindow({ itens }: { itens: RelacionadoItem[] }) {
   const win = useWindow<number>();

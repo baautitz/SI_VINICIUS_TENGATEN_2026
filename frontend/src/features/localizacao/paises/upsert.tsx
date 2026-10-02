@@ -1,8 +1,7 @@
 "use client";
 import { EstadosUpsert } from "@/features/localizacao/estados/upsert";
 import { estadosApi } from "@/api/localizacao";
-import { relacionadosApi } from "@/api/relacionados";
-import { useRelated } from "@/hooks/use-related";
+import { useRelated, mapItens } from "@/hooks/use-related";
 import { RelatedActions } from "@/components/related-actions";
 import { MapPin } from "lucide-react";
 
@@ -112,7 +111,7 @@ function PaisesUpsertForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        {readOnly && editingItem && <RelatedActions actions={[{ id: "pais.estados", hotkey: "Alt+L", label: "Estados", icon: <MapPin className="size-4" />, run: () => related.openList(() => relacionadosApi.localizacaoFilhos("pais", editingItem.id), estadosApi.getById, EstadosUpsert, "Estados", "Nenhum estado neste país.", false) }]} />}
+        {readOnly && editingItem && <RelatedActions actions={[{ id: "pais.estados", hotkey: "Alt+L", label: "Estados", icon: <MapPin className="size-4" />, run: () => related.openList(() => estadosApi.listByPais(editingItem.id).then(mapItens((x) => ({ id: x.id, descricao: x.estado, detalhe: x.uf }))), estadosApi.getById, EstadosUpsert, "Estados", "Nenhum estado neste país.", false) }]} />}
         <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>
           {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
         </Button>

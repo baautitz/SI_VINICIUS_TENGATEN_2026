@@ -1,8 +1,7 @@
 "use client";
 import { ProdutosUpsert } from "@/features/catalogo/produtos/upsert";
 import { produtosApi } from "@/api/catalogo";
-import { relacionadosApi } from "@/api/relacionados";
-import { useRelated } from "@/hooks/use-related";
+import { useRelated, mapItens } from "@/hooks/use-related";
 import { RelatedActions } from "@/components/related-actions";
 import { Package } from "lucide-react";
 
@@ -124,7 +123,7 @@ function UnidadesMedidaUpsertForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        {readOnly && editingItem && <RelatedActions actions={[{ id: "unidade.produtos", hotkey: "Alt+R", label: "Produtos", icon: <Package className="size-4" />, run: () => related.openList(() => relacionadosApi.produtosPor("unidadeMedidaId", editingItem.id), produtosApi.getById, ProdutosUpsert, "Produtos (unidade)", "Nenhum produto nesta unidade.", false) }]} />}
+        {readOnly && editingItem && <RelatedActions actions={[{ id: "unidade.produtos", hotkey: "Alt+R", label: "Produtos", icon: <Package className="size-4" />, run: () => related.openList(() => produtosApi.listByFiltro({ unidadeMedidaId: editingItem.id }).then(mapItens((x) => ({ id: x.id, descricao: x.produto }))), produtosApi.getById, ProdutosUpsert, "Produtos (unidade)", "Nenhum produto nesta unidade.", false) }]} />}
         <Button
           type="button"
           variant="outline"

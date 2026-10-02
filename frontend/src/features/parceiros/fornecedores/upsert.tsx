@@ -1,8 +1,7 @@
 "use client";
 import { ContasPagarUpsertForm } from "@/features/financeiro/contas-pagar/upsert";
 import { contasPagarApi } from "@/api/financeiro";
-import { relacionadosApi } from "@/api/relacionados";
-import { useRelated } from "@/hooks/use-related";
+import { useRelated, mapItens } from "@/hooks/use-related";
 import { RelatedActions } from "@/components/related-actions";
 import { Receipt } from "lucide-react";
 
@@ -159,7 +158,7 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false }: FornecedoresU
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        {readOnly && editingItem && <RelatedActions actions={[{ id: "fornecedor.titulos", hotkey: "Alt+T", label: "Títulos", icon: <Receipt className="size-4" />, run: () => related.openList(() => relacionadosApi.contasPagarPorFornecedor(editingItem.id), contasPagarApi.getById, ContasPagarUpsertForm, "Títulos a pagar", "Nenhum título deste fornecedor.", false) }]} />}
+        {readOnly && editingItem && <RelatedActions actions={[{ id: "fornecedor.titulos", hotkey: "Alt+T", label: "Títulos", icon: <Receipt className="size-4" />, run: () => related.openList(() => contasPagarApi.listByFornecedor(editingItem.id).then(mapItens((x) => ({ id: x.id, descricao: x.descricao, detalhe: x.status }))), contasPagarApi.getById, ContasPagarUpsertForm, "Títulos a pagar", "Nenhum título deste fornecedor.", false) }]} />}
         <Button type="button" variant="outline" onClick={cancelForm}>
           {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
         </Button>
