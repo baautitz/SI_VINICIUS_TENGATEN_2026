@@ -114,11 +114,7 @@ public static class NfeXmlParser
         if (chave.Length != 44 || !chave.All(char.IsAsciiDigit))
             throw new DomainException("Chave de acesso inválida: deve ter 44 dígitos.");
 
-        var soma = 0;
-        for (int i = 42, peso = 2; i >= 0; i--, peso = peso == 9 ? 2 : peso + 1)
-            soma += (chave[i] - '0') * peso;
-        var resto = soma % 11;
-        var dv = resto < 2 ? 0 : 11 - resto;
+        var dv = NfeChaveAcesso.CalcularDv(chave[..43]);
         if (dv != chave[43] - '0')
             throw new DomainException("Chave de acesso inválida: dígito verificador não confere.");
     }
