@@ -17,6 +17,7 @@ public record CriarFornecedorCommand(
     string? Observacao,
     bool Ativo,
     string? Sexo = null,
-    DateTime? DataNascimento = null
+    DateTime? DataNascimento = null,
+    int? CondicaoPagamentoId = null
 );
 

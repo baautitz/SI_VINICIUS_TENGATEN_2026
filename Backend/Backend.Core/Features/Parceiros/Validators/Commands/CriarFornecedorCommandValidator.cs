@@ -22,6 +22,10 @@ public class CriarFornecedorCommandValidator : AbstractValidator<CriarFornecedor
         RuleFor(x => x.NacionalidadeId)
             .GreaterThan(0).WithMessage("Nacionalidade é obrigatória.");
 
+        RuleFor(x => x.CondicaoPagamentoId)
+            .GreaterThan(0).When(x => x.CondicaoPagamentoId.HasValue)
+            .WithMessage("Condição de pagamento inválida.");
+
         RuleFor(x => x.Sexo)
             .Must(s => string.IsNullOrEmpty(s) || s == "M" || s == "F" || s == "O")
             .WithMessage("Sexo inválido. Escolha entre M, F ou O.");

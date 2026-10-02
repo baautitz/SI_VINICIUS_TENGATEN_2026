@@ -1,5 +1,6 @@
 using System.Linq;
 using Backend.Core.Common.Results;
+using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Localizacao.Entities;
 using Backend.Core.Features.Parceiros.Entities;
 using Backend.Core.Features.Parceiros.Repositories;
@@ -30,32 +31,34 @@ public class FornecedoresRepository : IFornecedoresRepository
                    ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
                    e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
                    pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.codigo_iso_pais, pe.ddi, pe.codigo_iso_moeda, pe.simbolo_moeda,
-                   p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
+                   p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda,
+                   cp.id AS CondicaoId, cp.id AS Id, cp.descricao, cp.ativo
             FROM fornecedores f
             INNER JOIN paises p ON p.id = f.nacionalidade_id
             LEFT JOIN bairros b ON b.id = f.bairro_id
             LEFT JOIN cidades ci ON ci.id = b.cidade_id
             LEFT JOIN estados e ON e.id = ci.estado_id
             LEFT JOIN paises pe ON pe.id = e.pais_id
+            LEFT JOIN condicoes_pagamentos cp ON cp.id = f.condicao_pagamento_id
             ORDER BY f.criado_em DESC, f.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
 
-        var itens = await _session.Connection.QueryAsync<Fornecedores, Bairros, Cidades, Estados, Paises, Paises, Fornecedores>(
+        var itens = await _session.Connection.QueryAsync<Fornecedores, Bairros, Cidades, Estados, Paises, Paises, CondicoesPagamentos, Fornecedores>(
             sqlData,
-            (fornecedor, bairro, city, state, countryState, country) =>
+            (fornecedor, bairro, city, state, countryState, country, condicao) =>
             {
                 if (countryState is not null && state is not null) state.AtualizarResultado(state.Estado, state.Uf, countryState);
                 if (state is not null && city is not null) city.AtualizarResultado(city.Cidade, city.Ddd, state);
                 if (city is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, city);
 
-                fornecedor.Atualizar(fornecedor.TipoPessoa, fornecedor.NomeRazaosocial, fornecedor.CpfCnpj, country!, fornecedor.RgIe, fornecedor.ApelidoNomefantasia, fornecedor.Logradouro, fornecedor.Numero, bairro, fornecedor.Telefone, fornecedor.Email, fornecedor.Observacao, fornecedor.Sexo, fornecedor.DataNascimento);
+                fornecedor.Atualizar(fornecedor.TipoPessoa, fornecedor.NomeRazaosocial, fornecedor.CpfCnpj, country!, fornecedor.RgIe, fornecedor.ApelidoNomefantasia, fornecedor.Logradouro, fornecedor.Numero, bairro, fornecedor.Telefone, fornecedor.Email, fornecedor.Observacao, fornecedor.Sexo, fornecedor.DataNascimento, condicao);
                 return fornecedor;
             },
             new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "BairroId,CidadeId,EstadoId,PaisEstadoId,PaisId"
+            splitOn: "BairroId,CidadeId,EstadoId,PaisEstadoId,PaisId,CondicaoId"
         );
 
         return new ResultadoPaginado<Fornecedores>(itens.ToList(), total, pagina, tamanhoDaPagina);
@@ -71,30 +74,32 @@ public class FornecedoresRepository : IFornecedoresRepository
                    ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
                    e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
                    pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.codigo_iso_pais, pe.ddi, pe.codigo_iso_moeda, pe.simbolo_moeda,
-                   p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
+                   p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda,
+                   cp.id AS CondicaoId, cp.id AS Id, cp.descricao, cp.ativo
             FROM fornecedores f
             INNER JOIN paises p ON p.id = f.nacionalidade_id
             LEFT JOIN bairros b ON b.id = f.bairro_id
             LEFT JOIN cidades ci ON ci.id = b.cidade_id
             LEFT JOIN estados e ON e.id = ci.estado_id
             LEFT JOIN paises pe ON pe.id = e.pais_id
+            LEFT JOIN condicoes_pagamentos cp ON cp.id = f.condicao_pagamento_id
             WHERE f.id = @Id;";
 
-        var result = await _session.Connection.QueryAsync<Fornecedores, Bairros, Cidades, Estados, Paises, Paises, Fornecedores>(
+        var result = await _session.Connection.QueryAsync<Fornecedores, Bairros, Cidades, Estados, Paises, Paises, CondicoesPagamentos, Fornecedores>(
             sql,
-            (fornecedor, bairro, city, state, countryState, country) =>
+            (fornecedor, bairro, city, state, countryState, country, condicao) =>
             {
                 if (countryState is not null && state is not null) state.AtualizarResultado(state.Estado, state.Uf, countryState);
                 if (state is not null && city is not null) city.AtualizarResultado(city.Cidade, city.Ddd, state);
                 if (city is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, city);
 
-                fornecedor.Atualizar(fornecedor.TipoPessoa, fornecedor.NomeRazaosocial, fornecedor.CpfCnpj, country!, fornecedor.RgIe, fornecedor.ApelidoNomefantasia, fornecedor.Logradouro, fornecedor.Numero, bairro, fornecedor.Telefone, fornecedor.Email, fornecedor.Observacao, fornecedor.Sexo, fornecedor.DataNascimento);
+                fornecedor.Atualizar(fornecedor.TipoPessoa, fornecedor.NomeRazaosocial, fornecedor.CpfCnpj, country!, fornecedor.RgIe, fornecedor.ApelidoNomefantasia, fornecedor.Logradouro, fornecedor.Numero, bairro, fornecedor.Telefone, fornecedor.Email, fornecedor.Observacao, fornecedor.Sexo, fornecedor.DataNascimento, condicao);
 
                 return fornecedor;
             },
             new { Id = id },
             transaction: _session.Transaction,
-            splitOn: "BairroId,CidadeId,EstadoId,PaisEstadoId,PaisId"
+            splitOn: "BairroId,CidadeId,EstadoId,PaisEstadoId,PaisId,CondicaoId"
         );
 
         return result.SingleOrDefault();
@@ -105,10 +110,10 @@ public class FornecedoresRepository : IFornecedoresRepository
         const string sql = @"
             INSERT INTO fornecedores (tipo_pessoa, nome_razaosocial, cpf_cnpj, rg_ie, apelido_nomefantasia,
                                       logradouro, numero, sexo, data_nascimento, bairro_id, nacionalidade_id, telefone, email,
-                                      ativo, criado_em, observacao)
+                                      ativo, criado_em, observacao, condicao_pagamento_id)
             VALUES (@TipoPessoa::tipo_pessoa, @NomeRazaosocial, @CpfCnpj, @RgIe, @ApelidoNomefantasia,
                     @Logradouro, @Numero, @Sexo, @DataNascimento, @BairroId, @NacionalidadeId, @Telefone, @Email,
-                    @Ativo, @CriadoEm, @Observacao)
+                    @Ativo, @CriadoEm, @Observacao, @CondicaoPagamentoId)
             RETURNING id;";
 
         var idGerado = await _session.Connection.ExecuteScalarAsync<int>(
@@ -130,7 +135,8 @@ public class FornecedoresRepository : IFornecedoresRepository
                 fornecedor.Email,
                 fornecedor.Ativo,
                 CriadoEm = DateTime.UtcNow,
-                fornecedor.Observacao
+                fornecedor.Observacao,
+                CondicaoPagamentoId = fornecedor.CondicaoPagamento?.Id
             },
             transaction: _session.Transaction
         );
@@ -148,7 +154,7 @@ public class FornecedoresRepository : IFornecedoresRepository
                 rg_ie = @RgIe, apelido_nomefantasia = @ApelidoNomefantasia,
                 logradouro = @Logradouro, numero = @Numero, sexo = @Sexo, data_nascimento = @DataNascimento, bairro_id = @BairroId, nacionalidade_id = @NacionalidadeId,
                 telefone = @Telefone, email = @Email, ativo = @Ativo,
-                atualizado_em = @AtualizadoEm, observacao = @Observacao
+                atualizado_em = @AtualizadoEm, observacao = @Observacao, condicao_pagamento_id = @CondicaoPagamentoId
             WHERE id = @Id;";
 
         await _session.Connection.ExecuteAsync(
@@ -171,7 +177,8 @@ public class FornecedoresRepository : IFornecedoresRepository
                 fornecedor.Email,
                 fornecedor.Ativo,
                 AtualizadoEm = DateTime.UtcNow,
-                fornecedor.Observacao
+                fornecedor.Observacao,
+                CondicaoPagamentoId = fornecedor.CondicaoPagamento?.Id
             },
             transaction: _session.Transaction
         );
@@ -211,13 +218,15 @@ public class FornecedoresRepository : IFornecedoresRepository
                    ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd,
                    e.id AS EstadoId, e.id AS Id, e.estado, e.uf,
                    pe.id AS PaisEstadoId, pe.id AS Id, pe.pais, pe.codigo_iso_pais, pe.ddi, pe.codigo_iso_moeda, pe.simbolo_moeda,
-                   p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
+                   p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda,
+                   cp.id AS CondicaoId, cp.id AS Id, cp.descricao, cp.ativo
             FROM fornecedores f
             INNER JOIN paises p ON p.id = f.nacionalidade_id
             LEFT JOIN bairros b ON b.id = f.bairro_id
             LEFT JOIN cidades ci ON ci.id = b.cidade_id
             LEFT JOIN estados e ON e.id = ci.estado_id
             LEFT JOIN paises pe ON pe.id = e.pais_id
+            LEFT JOIN condicoes_pagamentos cp ON cp.id = f.condicao_pagamento_id
             WHERE f.nome_razaosocial ILIKE @Termo OR f.cpf_cnpj ILIKE @Termo
                OR f.apelido_nomefantasia ILIKE @Termo OR f.email ILIKE @Termo
             ORDER BY f.criado_em DESC, f.id DESC
@@ -225,20 +234,20 @@ public class FornecedoresRepository : IFornecedoresRepository
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
 
-        var itens = await _session.Connection.QueryAsync<Fornecedores, Bairros, Cidades, Estados, Paises, Paises, Fornecedores>(
+        var itens = await _session.Connection.QueryAsync<Fornecedores, Bairros, Cidades, Estados, Paises, Paises, CondicoesPagamentos, Fornecedores>(
             sqlData,
-            (fornecedor, bairro, city, state, countryState, country) =>
+            (fornecedor, bairro, city, state, countryState, country, condicao) =>
             {
                 if (countryState is not null && state is not null) state.AtualizarResultado(state.Estado, state.Uf, countryState);
                 if (state is not null && city is not null) city.AtualizarResultado(city.Cidade, city.Ddd, state);
                 if (city is not null && bairro is not null) bairro.AtualizarResultado(bairro.Bairro, city);
 
-                fornecedor.Atualizar(fornecedor.TipoPessoa, fornecedor.NomeRazaosocial, fornecedor.CpfCnpj, country!, fornecedor.RgIe, fornecedor.ApelidoNomefantasia, fornecedor.Logradouro, fornecedor.Numero, bairro, fornecedor.Telefone, fornecedor.Email, fornecedor.Observacao, fornecedor.Sexo, fornecedor.DataNascimento);
+                fornecedor.Atualizar(fornecedor.TipoPessoa, fornecedor.NomeRazaosocial, fornecedor.CpfCnpj, country!, fornecedor.RgIe, fornecedor.ApelidoNomefantasia, fornecedor.Logradouro, fornecedor.Numero, bairro, fornecedor.Telefone, fornecedor.Email, fornecedor.Observacao, fornecedor.Sexo, fornecedor.DataNascimento, condicao);
                 return fornecedor;
             },
             new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction,
-            splitOn: "BairroId,CidadeId,EstadoId,PaisEstadoId,PaisId"
+            splitOn: "BairroId,CidadeId,EstadoId,PaisEstadoId,PaisId,CondicaoId"
         );
 
         return new ResultadoPaginado<Fornecedores>(itens.ToList(), total, pagina, tamanhoDaPagina);

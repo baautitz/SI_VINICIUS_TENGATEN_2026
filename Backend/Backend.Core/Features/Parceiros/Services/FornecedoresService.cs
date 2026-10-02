@@ -7,6 +7,8 @@ using Backend.Core.Common.Extensions;
 using Backend.Core.Common;
 using Backend.Core.Features.Parceiros.Enums;
 using Backend.Core.Common.ValueObjects;
+using Backend.Core.Features.Financeiro.Entities;
+using Backend.Core.Features.Financeiro.Repositories;
 using Backend.Core.Features.Localizacao.Repositories;
 using FluentValidation;
 
@@ -17,9 +19,11 @@ public sealed class FornecedoresService : BaseService
     private readonly IFornecedoresRepository _fornecedoresRepository;
     private readonly IBairrosRepository _bairrosRepository;
     private readonly IPaisesRepository _paisesRepository;
+    private readonly ICondicoesPagamentosRepository _condicoesRepository;
 
-    public FornecedoresService(IFornecedoresRepository fornecedoresRepository, IBairrosRepository bairrosRepository, IPaisesRepository paisesRepository)
+    public FornecedoresService(IFornecedoresRepository fornecedoresRepository, IBairrosRepository bairrosRepository, IPaisesRepository paisesRepository, ICondicoesPagamentosRepository condicoesRepository)
     {
+        _condicoesRepository = condicoesRepository;
         _fornecedoresRepository = fornecedoresRepository;
         _bairrosRepository = bairrosRepository;
         _paisesRepository = paisesRepository;
@@ -49,6 +53,16 @@ public sealed class FornecedoresService : BaseService
                 return Resultado<Fornecedores>.Falha(new ResultadoErro("BAIRRO_NAO_ENCONTRADO", "O bairro informado não foi encontrado.", "BairroId"));
         }
 
+        CondicoesPagamentos? condicao = null;
+        if (command.CondicaoPagamentoId.HasValue)
+        {
+            condicao = await _condicoesRepository.ObterCondicaoPagamentoPorId(command.CondicaoPagamentoId.Value);
+            if (condicao is null)
+                return Resultado<Fornecedores>.Falha(new ResultadoErro("CONDICAO_PAGAMENTO_INEXISTENTE", "A condição de pagamento informada não existe.", "CondicaoPagamentoId"));
+            if (!condicao.Ativo)
+                return Resultado<Fornecedores>.Falha(new ResultadoErro("CONDICAO_PAGAMENTO_INATIVA", "A condição de pagamento informada está inativa.", "CondicaoPagamentoId"));
+        }
+
         var documentoLimpo = new DocumentoGenerico(command.CpfCnpj).Valor;
 
         if (await _fornecedoresRepository.ExisteFornecedorCpfCnpj(documentoLimpo, command.NacionalidadeId))
@@ -73,7 +87,8 @@ public sealed class FornecedoresService : BaseService
                 command.Email,
                 command.Observacao,
                 command.Sexo,
-                command.DataNascimento
+                command.DataNascimento,
+                condicao
             );
 
             if (command.Ativo) fornecedor.Ativar();
@@ -106,6 +121,16 @@ public sealed class FornecedoresService : BaseService
                 return Resultado<Fornecedores>.Falha(new ResultadoErro("BAIRRO_NAO_ENCONTRADO", "O bairro informado não foi encontrado.", "BairroId"));
         }
 
+        CondicoesPagamentos? condicao = null;
+        if (command.CondicaoPagamentoId.HasValue)
+        {
+            condicao = await _condicoesRepository.ObterCondicaoPagamentoPorId(command.CondicaoPagamentoId.Value);
+            if (condicao is null)
+                return Resultado<Fornecedores>.Falha(new ResultadoErro("CONDICAO_PAGAMENTO_INEXISTENTE", "A condição de pagamento informada não existe.", "CondicaoPagamentoId"));
+            if (!condicao.Ativo)
+                return Resultado<Fornecedores>.Falha(new ResultadoErro("CONDICAO_PAGAMENTO_INATIVA", "A condição de pagamento informada está inativa.", "CondicaoPagamentoId"));
+        }
+
         var documentoLimpo = new DocumentoGenerico(command.CpfCnpj).Valor;
 
         if (await _fornecedoresRepository.ExisteFornecedorCpfCnpj(documentoLimpo, command.NacionalidadeId, id))
@@ -130,7 +155,8 @@ public sealed class FornecedoresService : BaseService
                 command.Email,
                 command.Observacao,
                 command.Sexo,
-                command.DataNascimento
+                command.DataNascimento,
+                condicao
             );
 
             if (command.Ativo) existente.Ativar();

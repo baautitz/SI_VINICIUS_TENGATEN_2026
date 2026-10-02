@@ -104,7 +104,8 @@ public sealed class NfesImportacaoService : BaseService
             itens.Add(new PreviaNfeItem(i.NumeroItem, sugestao is null ? "PENDENTE" : "SUGERIDO", null, sugestao));
         }
 
-        return Resultado<PreviaNfeDto>.Sucesso(new PreviaNfeDto(dados, fornecedor?.Id, transportadora?.Id, itens, avisos));
+        return Resultado<PreviaNfeDto>.Sucesso(new PreviaNfeDto(dados, fornecedor?.Id, transportadora?.Id, itens, avisos,
+            fornecedor?.CondicaoPagamento is { Ativo: true } cond ? cond.Id : null));
     }
 
     public async Task<Resultado<ImportarNfeResultado>> Importar(ImportarNfeCommand command)

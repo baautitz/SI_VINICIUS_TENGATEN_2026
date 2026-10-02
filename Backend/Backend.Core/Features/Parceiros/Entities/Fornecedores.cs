@@ -2,6 +2,7 @@ using Backend.Core.Features.Parceiros.Enums;
 using Backend.Core.Common.Exceptions;
 using Backend.Core.Common.Helpers;
 using Backend.Core.Common.ValueObjects;
+using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Localizacao.Entities;
 
 namespace Backend.Core.Features.Parceiros.Entities;
@@ -25,6 +26,7 @@ public class Fornecedores
     public string? Sexo { get; private set; }
     public DateTime? DataNascimento { get; private set; }
     public string? Observacao { get; private set; }
+    public CondicoesPagamentos? CondicaoPagamento { get; private set; }
 
 
     protected Fornecedores()
@@ -48,7 +50,8 @@ public class Fornecedores
         string? email = null,
         string? observacao = null,
         string? sexo = null,
-        DateTime? dataNascimento = null)
+        DateTime? dataNascimento = null,
+        CondicoesPagamentos? condicaoPagamento = null)
     {
         nomeRazaosocial = TextNormalization.Normalize(nomeRazaosocial);
 
@@ -83,17 +86,18 @@ public class Fornecedores
         CriadoEm = DateTime.UtcNow;
         Sexo = tipoPessoa == TipoPessoa.FISICA ? TextNormalization.NormalizeOrNull(sexo)?.ToUpper() : null;
         DataNascimento = dataNascimento;
+        CondicaoPagamento = condicaoPagamento;
     }
 
-    public Fornecedores(int id, TipoPessoa tipoPessoa, string nomeRazaosocial, Documento cpfCnpj, Paises nacionalidade, Documento? rgIe = null, string? apelidoNomefantasia = null, string? logradouro = null, string? numero = null, Bairros? bairro = null, string? telefone = null, string? email = null, string? observacao = null, bool ativo = true, DateTime? criadoEm = null, string? sexo = null, DateTime? dataNascimento = null)
-        : this(tipoPessoa, nomeRazaosocial, cpfCnpj, nacionalidade, rgIe, apelidoNomefantasia, logradouro, numero, bairro, telefone, email, observacao, sexo, dataNascimento)
+    public Fornecedores(int id, TipoPessoa tipoPessoa, string nomeRazaosocial, Documento cpfCnpj, Paises nacionalidade, Documento? rgIe = null, string? apelidoNomefantasia = null, string? logradouro = null, string? numero = null, Bairros? bairro = null, string? telefone = null, string? email = null, string? observacao = null, bool ativo = true, DateTime? criadoEm = null, string? sexo = null, DateTime? dataNascimento = null, CondicoesPagamentos? condicaoPagamento = null)
+        : this(tipoPessoa, nomeRazaosocial, cpfCnpj, nacionalidade, rgIe, apelidoNomefantasia, logradouro, numero, bairro, telefone, email, observacao, sexo, dataNascimento, condicaoPagamento)
     {
         Id = id;
         Ativo = ativo;
         CriadoEm = criadoEm ?? DateTime.UtcNow;
     }
 
-    public void Atualizar(TipoPessoa tipoPessoa, string nomeRazaosocial, Documento cpfCnpj, Paises nacionalidade, Documento? rgIe = null, string? apelidoNomefantasia = null, string? logradouro = null, string? numero = null, Bairros? bairro = null, string? telefone = null, string? email = null, string? observacao = null, string? sexo = null, DateTime? dataNascimento = null)
+    public void Atualizar(TipoPessoa tipoPessoa, string nomeRazaosocial, Documento cpfCnpj, Paises nacionalidade, Documento? rgIe = null, string? apelidoNomefantasia = null, string? logradouro = null, string? numero = null, Bairros? bairro = null, string? telefone = null, string? email = null, string? observacao = null, string? sexo = null, DateTime? dataNascimento = null, CondicoesPagamentos? condicaoPagamento = null)
     {
         nomeRazaosocial = TextNormalization.Normalize(nomeRazaosocial);
 
@@ -126,6 +130,7 @@ public class Fornecedores
         Observacao = TextNormalization.NormalizeOrNull(observacao);
         Sexo = tipoPessoa == TipoPessoa.FISICA ? TextNormalization.NormalizeOrNull(sexo)?.ToUpper() : null;
         DataNascimento = dataNascimento;
+        CondicaoPagamento = condicaoPagamento;
     }
 
     public void Ativar() => Ativo = true;

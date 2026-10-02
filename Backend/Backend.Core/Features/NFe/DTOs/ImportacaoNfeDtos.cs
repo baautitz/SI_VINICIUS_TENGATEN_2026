@@ -8,6 +8,7 @@ public record PreviaNfeDto(
     int? FornecedorId,
     int? TransportadoraId,
     IReadOnlyList<PreviaNfeItem> Itens,
-    IReadOnlyList<string> Avisos);
+    IReadOnlyList<string> Avisos,
+    int? CondicaoPagamentoId = null);
 
 public record ImportarNfeResultado(int CompraId, int NfeId, string ChaveAcesso);
