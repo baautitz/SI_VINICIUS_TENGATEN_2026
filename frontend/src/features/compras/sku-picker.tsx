@@ -110,6 +110,7 @@ export function SkuPicker({
         tabIndex={-1}
         disabled={disabled}
         title="Selecionar SKU"
+        aria-label="Selecionar SKU"
         className="absolute top-0.5 right-0.5 size-6"
         onClick={() => void abrir("")}
       >

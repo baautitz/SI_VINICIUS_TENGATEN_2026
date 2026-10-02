@@ -395,13 +395,18 @@ function CompraForm({
       return;
     }
     if (parcelasDivergem) {
-      const ok = await ui.windows.confirm({
-        title: "Parcelas divergem do valor da nota",
-        description: `A soma das parcelas (${moeda(somaParcelas)}) é diferente do valor da nota (${moeda(valorNota)}). Deseja confirmar assim mesmo?`,
-        confirmLabel: "Confirmar assim mesmo",
+      ui.feedback.notify({
+        type: "error",
+        title: `Parcelas somam ${moeda(somaParcelas)} e a nota vale ${moeda(valorNota)}. Ajuste as parcelas.`,
       });
-      if (!ok) return;
+      return;
     }
+    const ok = await ui.windows.confirm({
+      title: modoXml ? "Confirmar importação?" : "Fechar compra?",
+      description: `Total ${moeda(valorNota)} em ${parcelas.length} parcela(s). Esta ação grava a entrada e movimenta o estoque.`,
+      confirmLabel: modoXml ? "Confirmar importação" : "Fechar compra",
+    });
+    if (!ok) return;
     const parcelasPayload = parcelas.map((p) => ({
       ...p,
       dataVencimento: iso(p.dataVencimento),
@@ -464,13 +469,20 @@ function CompraForm({
       if (pendentes > 0)
         return `Há ${pendentes} item(ns) sem SKU. Escolha o SKU de cada item.`;
     }
+    if (etapa === 3 && parcelasDivergem)
+      return `Parcelas somam ${moeda(somaParcelas)} e a nota vale ${moeda(valorNota)} (diferença ${moeda(round2(valorNota - somaParcelas))}).`;
     return null;
   };
   const avancar = () => {
     if (etapa === 3) return void confirmar();
     const b = bloqueioEtapa();
-    if (b) ui.feedback.notify({ type: "error", title: b });
-    else setEtapa(etapa + 1);
+    if (b) {
+      ui.feedback.notify({ type: "error", title: b });
+      if (etapa === 2 && pendentes > 0)
+        document
+          .querySelector<HTMLInputElement>("[data-sem-sku] input")
+          ?.focus();
+    } else setEtapa(etapa + 1);
   };
 
   useWindowCommands([
@@ -485,28 +497,8 @@ function CompraForm({
       },
     },
     {
-      id: "compras.next-arrow",
-      hotkey: "Alt+ArrowRight" as const,
-      label: "Avançar etapa",
-      enabled: etapa < 3,
-      run: (e: KeyboardEvent) => {
-        e.preventDefault();
-        avancar();
-      },
-    },
-    {
-      id: "compras.prev-arrow",
-      hotkey: "Alt+ArrowLeft" as const,
-      label: "Voltar etapa",
-      enabled: etapa > 0,
-      run: (e: KeyboardEvent) => {
-        e.preventDefault();
-        setEtapa((x) => Math.max(0, x - 1));
-      },
-    },
-    {
       id: "compras.add-parcela",
-      hotkey: "Alt+P" as const,
+      hotkey: "Alt+A" as const,
       label: "Adicionar parcela",
       enabled: !readOnly && etapa === 3,
       run: (e: KeyboardEvent) => {
@@ -516,8 +508,8 @@ function CompraForm({
     },
     {
       id: "compras.recalcular-parcelas",
-      hotkey: "Alt+R" as const,
-      label: "Recalcular parcelas",
+      hotkey: "Alt+G" as const,
+      label: "Gerar parcelas",
       enabled: !readOnly && etapa === 3,
       run: (e: KeyboardEvent) => {
         e.preventDefault();
@@ -540,8 +532,9 @@ function CompraForm({
     desabilitado = false,
   ) => (
     <Field>
-      <FieldLabel>{label}</FieldLabel>
+      <FieldLabel htmlFor={`despesa-${label}`}>{label}</FieldLabel>
       <NumberInput
+        id={`despesa-${label}`}
         value={valor}
         decimals={2}
         inputSize="full"
@@ -569,19 +562,20 @@ function CompraForm({
             variant="outline"
             onClick={() => setEtapa(etapa - 1)}
           >
-            Voltar{" "}
-            <KbdGroup>
-              <Kbd>Alt</Kbd>
-              <Kbd>←</Kbd>
-            </KbdGroup>
+            Voltar
           </Button>
+        )}
+        {!readOnly && bloqueioEtapa() && (
+          <span role="status" className="text-destructive self-center text-xs">
+            {bloqueioEtapa()}
+          </span>
         )}
         {etapa < 3 ? (
           <Button type="button" onClick={avancar}>
             Avançar{" "}
             <KbdGroup>
               <Kbd>Alt</Kbd>
-              <Kbd>→</Kbd>
+              <Kbd>Enter</Kbd>
             </KbdGroup>
           </Button>
         ) : (
@@ -589,7 +583,7 @@ function CompraForm({
             <Button
               type="button"
               onClick={() => void confirmar()}
-              disabled={mutation.isPending}
+              disabled={mutation.isPending || parcelasDivergem}
             >
               {mutation.isPending
                 ? "Gravando..."
@@ -611,6 +605,7 @@ function CompraForm({
             <button
               type="button"
               disabled={i > etapa}
+              aria-current={i === etapa ? "step" : undefined}
               onClick={() => setEtapa(i)}
               className={cn(
                 "w-full rounded-md border px-3 py-1.5 text-left font-medium",
@@ -618,7 +613,7 @@ function CompraForm({
                   ? "border-primary bg-primary/10 text-primary"
                   : i < etapa
                     ? "hover:bg-muted"
-                    : "text-muted-foreground opacity-60",
+                    : "text-muted-foreground",
               )}
             >
               {i + 1}. {nome}
@@ -747,7 +742,7 @@ function CompraForm({
               )}
 
               <div className="rounded-lg border">
-                <Table className="min-w-250">
+                <Table className="min-w-250" aria-label="Itens da compra">
                   <TableHeader className="bg-muted">
                     <TableRow className="hover:bg-transparent">
                       <TableHead className="w-10 px-2">#</TableHead>
@@ -827,7 +822,11 @@ function CompraForm({
                         />
                       );
                       return (
-                        <TableRow key={item.key}>
+                        <TableRow
+                          key={item.key}
+                          data-sem-sku={!item.sku && !readOnly ? "" : undefined}
+                          className={!item.sku && !readOnly ? "bg-destructive/10" : undefined}
+                        >
                           <TableCell className="px-2 text-xs">
                             {item.numeroItem ?? idx + 1}
                           </TableCell>
@@ -1025,7 +1024,7 @@ function CompraForm({
                       size="sm"
                       onClick={recalcularParcelas}
                     >
-                      <RefreshCw /> Recalcular parcelas <Kbd>Alt+R</Kbd>
+                      <RefreshCw /> Recalcular parcelas <Kbd>Alt+G</Kbd>
                     </Button>
                     <Button
                       type="button"
@@ -1033,7 +1032,7 @@ function CompraForm({
                       size="sm"
                       onClick={adicionarParcela}
                     >
-                      <Plus /> Parcela <Kbd>Alt+P</Kbd>
+                      <Plus /> Parcela <Kbd>Alt+A</Kbd>
                     </Button>
                   </div>
                   {parcelas.length === 0 && (
@@ -1104,8 +1103,10 @@ function CompraForm({
                     <Alert variant="destructive">
                       <TriangleAlert />
                       <AlertDescription>
-                        A soma das parcelas ({moeda(somaParcelas)}) difere do
-                        valor da nota ({moeda(valorNota)}).
+                        Soma das parcelas {moeda(somaParcelas)} x valor da nota{" "}
+                        {moeda(valorNota)}: diferença de{" "}
+                        {moeda(round2(valorNota - somaParcelas))}. Ajuste para
+                        fechar a compra.
                       </AlertDescription>
                     </Alert>
                   )}
