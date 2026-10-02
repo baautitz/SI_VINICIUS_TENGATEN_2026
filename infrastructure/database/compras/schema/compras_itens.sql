@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS compras_itens (
   valor_desconto NUMERIC(14, 4) NOT NULL DEFAULT 0,
   valor_total NUMERIC(14, 4) NOT NULL,
   valor_rateio NUMERIC(14, 4) NOT NULL DEFAULT 0,
-  custo_unitario NUMERIC(14, 4) NOT NULL,
+  custo_unitario NUMERIC(18, 10) NOT NULL,
   CONSTRAINT compras_itens_compra_fk FOREIGN KEY (compra_id) REFERENCES compras (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT compras_itens_sku_fk FOREIGN KEY (sku) REFERENCES skus (sku) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT compras_itens_quantidade_ck CHECK (quantidade > 0),
@@ -18,3 +18,6 @@ CREATE TABLE IF NOT EXISTS compras_itens (
   CONSTRAINT compras_itens_valor_total_ck CHECK (valor_total >= 0),
   CONSTRAINT compras_itens_custo_unitario_ck CHECK (custo_unitario >= 0)
 );
+
+-- Migração: custo com 10 casas (C1).
+ALTER TABLE compras_itens ALTER COLUMN custo_unitario TYPE NUMERIC(18, 10);

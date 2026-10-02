@@ -27,6 +27,9 @@ public static class RateioCompra
         return rateios;
     }
 
+    // 10 casas: com 4, 7000 un por 100,00 valorizava o estoque em 100,10. Erro residual < 0,005 até ~10 milhões de unidades.
+    public const int CasasCusto = 10;
+
     public static decimal CustoUnitario(decimal quantidade, decimal valorLiquido, decimal rateio)
-        => Math.Round((valorLiquido + rateio) / quantidade, 4, MidpointRounding.AwayFromZero);
+        => Math.Round((valorLiquido + rateio) / quantidade, CasasCusto, MidpointRounding.AwayFromZero);
 }

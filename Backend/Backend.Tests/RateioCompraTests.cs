@@ -1,4 +1,5 @@
 using Backend.Core.Common.Exceptions;
+using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Compras.Services;
 
 namespace Backend.Tests;
@@ -45,4 +46,19 @@ public class RateioCompraTests
     [Fact]
     public void Rejeita_desconto_que_deixa_custo_negativo()
         => Assert.Throws<DomainException>(() => RateioCompra.Ratear(new[] { 10m, 10m }, -30m));
+
+    // C1: estoque valorizado (estoque x custo médio) bate com o valor pago, mesmo em quantidades grandes.
+    [Theory]
+    [InlineData(7000, 100.00)]
+    [InlineData(30000, 1.00)]
+    [InlineData(1234567, 9999.99)]
+    public void Entrada_valoriza_o_estoque_exatamente_pelo_valor_pago(double qtd, double pago)
+    {
+        var sku = new Skus("SKU-1", 10m);
+        var custo = RateioCompra.CustoUnitario((decimal)qtd, (decimal)pago, 0m);
+
+        sku.RegistrarEntradaDeEstoque((decimal)qtd, custo);
+
+        Assert.Equal((decimal)pago, Math.Round(sku.Estoque * sku.CustoMedio, 2, MidpointRounding.AwayFromZero));
+    }
 }

@@ -6,8 +6,8 @@ CREATE TABLE IF NOT EXISTS skus (
   gtin_ean VARCHAR(14),
   preco NUMERIC(14, 4) NOT NULL,
   estoque NUMERIC(14, 4) NOT NULL DEFAULT 0,
-  custo_medio NUMERIC(14, 4) NOT NULL DEFAULT 0,
-  custo_ultima_compra NUMERIC(14, 4) NOT NULL DEFAULT 0,
+  custo_medio NUMERIC(18, 10) NOT NULL DEFAULT 0,
+  custo_ultima_compra NUMERIC(18, 10) NOT NULL DEFAULT 0,
   ativo BOOLEAN NOT NULL DEFAULT TRUE,
   CONSTRAINT skus_produto_fk
     FOREIGN KEY (produto_id)
@@ -21,3 +21,7 @@ CREATE TABLE IF NOT EXISTS skus (
   CONSTRAINT skus_custo_ultima_compra_ck
     CHECK (custo_ultima_compra >= 0)
 );
+
+-- Migração: custo com 10 casas (C1).
+ALTER TABLE skus ALTER COLUMN custo_medio TYPE NUMERIC(18, 10);
+ALTER TABLE skus ALTER COLUMN custo_ultima_compra TYPE NUMERIC(18, 10);

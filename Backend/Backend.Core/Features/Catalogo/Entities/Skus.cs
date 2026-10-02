@@ -87,7 +87,7 @@ public class Skus
         decimal valorEntrada = quantidadeEntrada * custoUnitarioPago;
         decimal novoEstoqueTotal = Estoque + quantidadeEntrada;
 
-        CustoMedio = novoEstoqueTotal == 0 ? 0 : Math.Round((valorEstoqueAtual + valorEntrada) / novoEstoqueTotal, 4);
+        CustoMedio = novoEstoqueTotal == 0 ? 0 : Math.Round((valorEstoqueAtual + valorEntrada) / novoEstoqueTotal, 10);
         CustoUltimaCompra = custoUnitarioPago;
         Estoque = novoEstoqueTotal;
     }

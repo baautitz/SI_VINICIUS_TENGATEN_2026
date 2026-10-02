@@ -147,7 +147,7 @@ public sealed class ComprasService : BaseService
         foreach (var g in criada.Itens.GroupBy(i => i.Sku.Sku))
         {
             var quantidade = g.Sum(i => i.Quantidade);
-            var custo = Math.Round(g.Sum(i => i.ValorTotal + i.ValorRateio) / quantidade, 4, MidpointRounding.AwayFromZero);
+            var custo = Math.Round(g.Sum(i => i.ValorTotal + i.ValorRateio) / quantidade, RateioCompra.CasasCusto, MidpointRounding.AwayFromZero);
             entrada.AdicionarItem(g.First().Sku, quantidade, custo);
         }
 

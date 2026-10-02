@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS devolucoes_itens (
   sku VARCHAR(50) NOT NULL,
   quantidade NUMERIC(14, 4) NOT NULL,
   valor_unitario NUMERIC(14, 4) NOT NULL,
-  custo_unitario NUMERIC(14, 4) NOT NULL DEFAULT 0,
+  custo_unitario NUMERIC(18, 10) NOT NULL DEFAULT 0,
   CONSTRAINT devolucoes_itens_devolucao_fk
     FOREIGN KEY (devolucao_id)
     REFERENCES devolucoes (id)
@@ -34,3 +34,6 @@ CREATE TABLE IF NOT EXISTS devolucoes_itens (
 );
 
 CREATE INDEX IF NOT EXISTS devolucoes_itens_venda_item_idx ON devolucoes_itens (venda_item_id);
+
+-- Migração: custo com 10 casas (C1).
+ALTER TABLE devolucoes_itens ALTER COLUMN custo_unitario TYPE NUMERIC(18, 10);
