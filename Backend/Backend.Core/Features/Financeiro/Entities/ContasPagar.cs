@@ -29,13 +29,14 @@ public class ContasPagar
     public Fornecedores? Fornecedor { get; private set; }
     public int? ClienteId { get; private set; }
     public string? ClienteNome { get; private set; }
+    public int? TransportadoraId { get; private set; }
     public OrigemTituloFinanceiro OrigemTipo { get; private set; }
     public int? OrigemId { get; private set; }
     public CondicoesPagamentos? CondicaoPagamento { get; private set; }
 
     public IReadOnlyCollection<ContasPagarParcelas> ContasPagarParcelas => _parcelas.AsReadOnly();
 
-    public ContasPagar(string descricao, decimal valorOriginal, Fornecedores? fornecedor, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, OrigemTituloFinanceiro origemTipo = OrigemTituloFinanceiro.MANUAL, int? origemId = null, string? observacao = null, int? clienteId = null, string? clienteNome = null)
+    public ContasPagar(string descricao, decimal valorOriginal, Fornecedores? fornecedor, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, OrigemTituloFinanceiro origemTipo = OrigemTituloFinanceiro.MANUAL, int? origemId = null, string? observacao = null, int? clienteId = null, string? clienteNome = null, int? transportadoraId = null)
     {
         descricao = TextNormalization.Normalize(descricao);
         observacao = TextNormalization.NormalizeOrNull(observacao);
@@ -52,14 +53,15 @@ public class ContasPagar
         if (origemTipo != OrigemTituloFinanceiro.MANUAL && origemId is null)
             throw new DomainException("O documento de origem é obrigatório.");
 
-        if ((fornecedor is null) == (clienteId is null))
-            throw new DomainException("A conta a pagar deve ter exatamente um fornecedor ou um cliente.");
+        if ((fornecedor is null ? 0 : 1) + (clienteId is null ? 0 : 1) + (transportadoraId is null ? 0 : 1) != 1)
+            throw new DomainException("A conta a pagar deve ter exatamente um fornecedor, cliente ou transportadora.");
 
-        if (origemTipo == OrigemTituloFinanceiro.DEVOLUCAO_VENDA ? clienteId is null : fornecedor is null)
+        if (origemTipo == OrigemTituloFinanceiro.DEVOLUCAO_VENDA ? clienteId is null : (fornecedor is null && (origemTipo != OrigemTituloFinanceiro.COMPRA || transportadoraId is null)))
             throw new DomainException(origemTipo == OrigemTituloFinanceiro.DEVOLUCAO_VENDA ? "Reembolso de devolução exige cliente." : "Fornecedor é obrigatório para contas a pagar.");
 
         Fornecedor = fornecedor;
         ClienteId = clienteId;
+        TransportadoraId = transportadoraId;
         ClienteNome = clienteNome;
         Descricao = descricao;
         ValorOriginal = valorOriginal;
@@ -74,8 +76,8 @@ public class ContasPagar
         Status = StatusTituloFinanceiro.ABERTO;
     }
 
-    public ContasPagar(int id, string descricao, decimal valorOriginal, Fornecedores? fornecedor, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, OrigemTituloFinanceiro origemTipo = OrigemTituloFinanceiro.MANUAL, int? origemId = null, string? observacao = null, DateTime? criadoEm = null, StatusTituloFinanceiro status = StatusTituloFinanceiro.ABERTO, int? clienteId = null, string? clienteNome = null)
-        : this(descricao, valorOriginal, fornecedor, dataEmissao, dataVencimento, condicaoPagamento, origemTipo, origemId, observacao, clienteId, clienteNome)
+    public ContasPagar(int id, string descricao, decimal valorOriginal, Fornecedores? fornecedor, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, OrigemTituloFinanceiro origemTipo = OrigemTituloFinanceiro.MANUAL, int? origemId = null, string? observacao = null, DateTime? criadoEm = null, StatusTituloFinanceiro status = StatusTituloFinanceiro.ABERTO, int? clienteId = null, string? clienteNome = null, int? transportadoraId = null)
+        : this(descricao, valorOriginal, fornecedor, dataEmissao, dataVencimento, condicaoPagamento, origemTipo, origemId, observacao, clienteId, clienteNome, transportadoraId)
     {
         Id = id;
         CriadoEm = criadoEm ?? DateTime.UtcNow;
