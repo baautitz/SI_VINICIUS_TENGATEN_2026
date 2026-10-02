@@ -12,6 +12,13 @@ interface NumberInputProps extends Omit<InputProps, "value" | "onChange"> {
   allowNegative?: boolean;
 }
 
+// Máscara de milhares: o estado guarda "1234,50"; a tela mostra "1.234,50".
+const withThousands = (v: string) => {
+  const [int, frac] = v.split(",");
+  const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return frac === undefined ? grouped : grouped + "," + frac;
+};
+
 const NumberInput = ({
   className,
   decimals = 2,
@@ -77,7 +84,14 @@ const NumberInput = ({
     const selectionStart = input.selectionStart;
 
     let val = originalValue;
-    val = val.replace(/\./g, ",");
+    // "." digitado vira vírgula; os pontos já presentes são da máscara.
+    if (
+      (e.nativeEvent as InputEvent).data === "." &&
+      selectionStart !== null
+    ) {
+      val =
+        val.slice(0, selectionStart - 1) + "," + val.slice(selectionStart);
+    }
     const negative = allowNegative && val.trimStart().startsWith("-");
     val = val.replace(/[^0-9,]/g, "");
     if (negative) val = "-" + val;
@@ -103,8 +117,14 @@ const NumberInput = ({
     onNumberChange?.(isNaN(numericValue) ? 0 : numericValue);
 
     if (selectionStart !== null) {
-      const diff = val.length - originalValue.length;
-      const newPosition = Math.max(0, selectionStart + diff);
+      // Posiciona o cursor após o mesmo número de caracteres significativos.
+      let keep = originalValue.slice(0, selectionStart).replace(/[^0-9,-]/g, "").length;
+      const shown = withThousands(val);
+      let newPosition = 0;
+      while (newPosition < shown.length && keep > 0) {
+        if (shown[newPosition] !== ".") keep--;
+        newPosition++;
+      }
       requestAnimationFrame(() => {
         input.setSelectionRange(newPosition, newPosition);
       });
@@ -143,7 +163,7 @@ const NumberInput = ({
       {...props}
       ref={ref}
       type="text"
-      value={internalValue}
+      value={withThousands(internalValue)}
       onChange={handleChange}
       onBlur={handleBlur}
       onFocus={handleFocus}
