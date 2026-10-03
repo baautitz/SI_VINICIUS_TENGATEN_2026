@@ -1385,8 +1385,8 @@ function CompraForm({
                 </div>
               )}
 
-              <div className="rounded-lg border text-xs">
-                <div className="bg-muted grid grid-cols-4 px-3 py-1 font-semibold">
+              <div className="rounded-lg border text-sm">
+                <div className="bg-muted grid grid-cols-4 px-3 py-2 font-semibold">
                   <span className="col-span-2">Item</span>
                   <span className="text-right">Rateio</span>
                   <span className="text-right">Custo unit. final</span>
@@ -1394,7 +1394,7 @@ function CompraForm({
                 {itens.map((it, i) => (
                   <div
                     key={it.key}
-                    className="grid grid-cols-4 border-t px-3 py-1"
+                    className="grid grid-cols-4 border-t px-3 py-2"
                   >
                     <span className="col-span-2 truncate">
                       {it.sku} - {it.produtoNome}
