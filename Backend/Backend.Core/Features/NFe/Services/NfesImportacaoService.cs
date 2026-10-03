@@ -189,7 +189,7 @@ public sealed class NfesImportacaoService : BaseService
                 dados.Itens.Select(i => new CriarCompraItemCommand(skus[i.NumeroItem].Sku, i.Quantidade, i.ValorUnitario, i.ValorDesconto, i.CodigoProduto, i.ValorProdutos)).ToList(),
                 command.CondicaoPagamentoId, parcelas.ToList());
 
-            var compra = await _comprasService.GravarCompra(compraCommand);
+            var compra = await _comprasService.GravarCompra(compraCommand, dados.DataEmissaoLocal.Date);
             if (!compra.Success) { _unitOfWork.Rollback(); return Resultado<ImportarNfeResultado>.Falha(compra.Errors!); }
 
             var nfe = MontarNfe(command.Xml, dados, emitente, fornecedor, compra.Data!.Id, skus, transportadora.Data);

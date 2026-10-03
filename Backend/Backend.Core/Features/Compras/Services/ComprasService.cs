@@ -20,6 +20,11 @@ using Backend.Core.Features.Parceiros.Repositories;
 
 namespace Backend.Core.Features.Compras.Services;
 
+// Limitações conhecidas (fora de escopo): estornar compra já paga exige estornar o pagamento antes e não gera crédito
+// com o fornecedor; parcelas canceladas no estorno não têm histórico próprio (só o status CANCELADO); não emite NF-e de
+// devolução (a NF-e de entrada é apenas marcada como cancelada); créditos de impostos (ICMS/IPI etc.) não são tratados.
+// Contas a pagar: parcela de XML (cobr/dup) nunca nasce paga; só compra manual à vista paga a conta do fornecedor;
+// o frete de terceiro nunca é baixado automaticamente.
 public sealed class ComprasService : BaseService
 {
     private readonly IComprasRepository _comprasRepository;
@@ -141,13 +146,23 @@ public sealed class ComprasService : BaseService
         });
     }
 
+    private static string Truncar(string v, int max) => v.Length <= max ? v : v[..max];
+
     private async Task<Resultado<Compra>> EstornarNaTransacao(Compra compra, string motivo, int? usuarioId)
     {
         // Primeiro o UPDATE guardado: trava a linha, então um estorno concorrente espera e cai em JA_ESTORNADA.
         var quando = DateTime.UtcNow;
-        compra.Estornar(motivo, usuarioId, quando);
+        // NF-e de entrada que existe mas não está EMITIDA (ex.: já cancelada) não é alterada; fica registrada no motivo (limite de 255).
+        var nfe = await _nfesRepository.ObterNfeDaCompra(compra.Id);
+        var motivoGravado = nfe is not null && nfe.StatusNfe != NFe.Entities.Enums.StatusNfe.EMITIDA
+            ? Truncar($"{motivo} [NF-e {nfe.Numero} estava {nfe.StatusNfe}, não alterada]", 255)
+            : motivo;
+        compra.Estornar(motivoGravado, usuarioId, quando);
         if (!await _comprasRepository.MarcarEstornada(compra))
             return Resultado<Compra>.Falha(new ResultadoErro(CompraJaEstornada, "Esta compra já foi estornada."));
+
+        // Trava os SKUs antes de checar bloqueios: venda/movimentação concorrente espera o estorno terminar.
+        await _skusRepository.TravarSkus(compra.Itens.Select(i => i.Sku.Sku));
 
         var contas = (await _contasPagarRepository.PesquisarContasPagar("", 1, 100,
             new Financeiro.DTOs.FiltroContasPagar(OrigemTipo: OrigemTituloFinanceiro.COMPRA, OrigemId: compra.Id))).Itens
@@ -170,7 +185,6 @@ public sealed class ComprasService : BaseService
             await _contasPagarRepository.AtualizarContaPagar(conta.Id, conta);
         }
 
-        var nfe = await _nfesRepository.ObterNfeDaCompra(compra.Id);
         if (nfe is not null && nfe.StatusNfe == NFe.Entities.Enums.StatusNfe.EMITIDA)
         {
             nfe.CancelarPorEstorno(motivo, quando);
@@ -182,7 +196,8 @@ public sealed class ComprasService : BaseService
     }
 
     // Grava na transação já aberta pelo chamador (ex.: importação de NF-e, que grava a NFe junto).
-    public async Task<Resultado<Compra>> GravarCompra(CriarCompraCommand command)
+    // emissaoNfe != null = compra vinda de XML: título nasce com a emissão da NF-e e as parcelas (cobr/dup) nunca nascem pagas.
+    public async Task<Resultado<Compra>> GravarCompra(CriarCompraCommand command, DateTime? emissaoNfe = null)
     {
         var validation = await new CriarCompraCommandValidator().ValidateAsync(command);
         if (!validation.IsValid)
@@ -249,10 +264,11 @@ public sealed class ComprasService : BaseService
         foreach (var item in criada.Itens.Where(i => i.CodigoProdutoFornecedor != null))
             await _comprasRepository.VincularSku(fornecedor.Id, item.CodigoProdutoFornecedor!, item.Sku.Sku);
 
-        var aVista = condicao?.EntradaMinimaPercentual >= 100;
+        // Só a compra manual à vista (entrada mínima 100%) baixa a conta do fornecedor; o frete de terceiro nunca é baixado sozinho.
+        var aVista = emissaoNfe is null && condicao?.EntradaMinimaPercentual >= 100;
         var conta = new ContasPagar(
             descricao: $"Compra nº {criada.Id}", valorOriginal: criada.ValorNota, fornecedor: fornecedor,
-            dataEmissao: criada.DataCompra, condicaoPagamento: condicao,
+            dataEmissao: emissaoNfe ?? criada.DataCompra, condicaoPagamento: condicao,
             origemTipo: OrigemTituloFinanceiro.COMPRA, origemId: criada.Id, observacao: criada.Observacao);
 
         foreach (var p in command.Parcelas!)
@@ -271,8 +287,6 @@ public sealed class ComprasService : BaseService
                 dataEmissao: criada.DataCompra, origemTipo: OrigemTituloFinanceiro.COMPRA, origemId: criada.Id,
                 transportadoraId: transportadora!.Id);
             frete.AdicionarParcela(1, command.VencimentoFreteTerceiro!.Value, criada.ValorFreteTerceiro);
-            if (aVista)
-                frete.RegistrarPagamento(1, criada.ValorFreteTerceiro);
             await _contasPagarRepository.CriarContaPagar(frete);
         }
 

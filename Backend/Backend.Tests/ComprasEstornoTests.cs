@@ -59,7 +59,7 @@ public class ComprasEstornoTests
             typeof(Nfes).GetProperty(nameof(Nfes.StatusNfe))!.SetValue(Nfe, nfeEmitida ? StatusNfe.EMITIDA : StatusNfe.CANCELADA);
 
             var entrada = new MovimentacoesEstoques(3, DateTime.UtcNow, TipoMovimentacaoEstoque.ENTRADA, OrigemMovimentacaoEstoque.COMPRA, 7, null, null, null, false);
-            entrada.AdicionarItemExistente(new MovimentacoesEstoquesItens(1, 3, Sku, 2, 5m, 0, 0, "p", "UN"));
+            entrada.AdicionarItemExistente(new MovimentacoesEstoquesItens(1, 3, Sku, 2, 5m, 0, 0, "p", "UN", 1.5m));
 
             var movs = Criar<IMovimentacoesEstoquesRepository>(h =>
             {
@@ -106,6 +106,7 @@ public class ComprasEstornoTests
         Assert.Equal(0, c.Uow.Rollbacks);
         Assert.Equal(0, c.Sku.Estoque);
         Assert.Equal(0m, c.Sku.CustoMedio); // custo médio de antes da entrada
+        Assert.Equal(1.5m, c.Sku.CustoUltimaCompra); // custo da última compra de antes da entrada
         var estorno = Assert.Single(c.MovimentacoesCriadas);
         Assert.Equal(OrigemMovimentacaoEstoque.ESTORNO, estorno.OrigemTipo);
         Assert.Equal(3, estorno.OrigemId);
@@ -114,6 +115,17 @@ public class ComprasEstornoTests
         Assert.Equal(StatusNfe.CANCELADA, c.Nfe.StatusNfe);
         Assert.Equal("Compra lançada errada", c.Nfe.JustificativaCancelamento);
         Assert.True(c.Compra.Estornada);
+    }
+
+    [Fact]
+    public async Task Nfe_nao_emitida_nao_e_alterada_e_fica_no_motivo()
+    {
+        var c = new Cenario(nfeEmitida: false);
+        var r = await c.Service.Estornar(7, new EstornarCompraCommand("Compra lançada errada"));
+
+        Assert.True(r.Success);
+        Assert.Equal(0, c.NfesCanceladas);
+        Assert.Contains("CANCELADA", c.Compra.MotivoEstorno);
     }
 
     [Theory]
