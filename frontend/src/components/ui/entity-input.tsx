@@ -90,8 +90,11 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
 
   const getLabel = (item: T | TResumo | null) => {
     if (!item) return "";
-    return getDisplayLabel(item);
+    return `${getId(item)} - ${getDisplayLabel(item)}`;
   };
+
+  // "12 - Nome" (rótulo exibido) pesquisa por "Nome"; o código sozinho vira busca por id.
+  const stripId = (text: string) => text.replace(/^\s*\d+\s+-\s+/, "");
 
   const initialLabel = getLabel(initialItem);
   const [searchText, setSearchText] = useState(initialLabel ?? "");
@@ -114,7 +117,7 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
     return (
       selectedItem && visibleText === selectedLabel
         ? getSearchTerm(selectedItem)
-        : visibleText
+        : stripId(visibleText)
     ) ?? "";
   };
 
@@ -206,8 +209,10 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
 
       try {
         const textTrimmed = text.trim();
-        const numericId = parseInt(textTrimmed, 10);
-        if (!isNaN(numericId) && /^\d+$/.test(textTrimmed)) {
+        const idPrefix = /^(\d+)\s+-\s+/.exec(textTrimmed);
+        const numericId = idPrefix ? parseInt(idPrefix[1], 10) : parseInt(textTrimmed, 10);
+        const isIdText = !!idPrefix || /^\d+$/.test(textTrimmed);
+        if (isIdText) {
           try {
             const matched = await fetchById(numericId as TId);
             if (matched) {
@@ -217,7 +222,7 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
           } catch {}
         }
 
-        const listRes = await fetchList(text);
+        const listRes = await fetchList(stripId(text));
         if (listRes?.itens && listRes.itens.length === 1) {
           const matched = await fetchById(getId(listRes.itens[0]));
           if (matched) {
@@ -247,7 +252,7 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
     const itemId = getId(item);
     const fullItem = await fetchById(itemId);
     if (fullItem) {
-      const newLabel = getDisplayLabel(fullItem);
+      const newLabel = getLabel(fullItem);
       onSelectId(itemId);
       onSelectItem?.(fullItem);
       setSelectedItem(item as TResumo);
