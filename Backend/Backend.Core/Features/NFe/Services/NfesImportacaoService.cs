@@ -15,7 +15,9 @@ using Backend.Core.Features.NFe.DTOs;
 using Backend.Core.Features.NFe.Entities;
 using Backend.Core.Features.NFe.Entities.Enums;
 using Backend.Core.Features.NFe.Repositories;
+using Backend.Core.Features.Parceiros.Commands;
 using Backend.Core.Features.Parceiros.Entities;
+using Backend.Core.Features.Parceiros.Services;
 using Backend.Core.Features.Parceiros.Enums;
 using Backend.Core.Features.Parceiros.Repositories;
 using Backend.Core.Common.ValueObjects;
@@ -35,14 +37,18 @@ public sealed class NfesImportacaoService : BaseService
     private readonly IEmitentesRepository _emitentesRepository;
     private readonly ISkusRepository _skusRepository;
     private readonly IPaisesRepository _paisesRepository;
+    private readonly FornecedoresService _fornecedoresService;
+    private readonly TransportadorasService _transportadorasService;
     private readonly IUnitOfWork _unitOfWork;
 
     public NfesImportacaoService(
         INfesRepository nfesRepository, IComprasRepository comprasRepository, ComprasService comprasService,
         IFornecedoresRepository fornecedoresRepository, ITransportadorasRepository transportadorasRepository,
         IEmitentesRepository emitentesRepository, ISkusRepository skusRepository, IPaisesRepository paisesRepository,
-        IUnitOfWork unitOfWork)
+        FornecedoresService fornecedoresService, TransportadorasService transportadorasService, IUnitOfWork unitOfWork)
     {
+        _fornecedoresService = fornecedoresService;
+        _transportadorasService = transportadorasService;
         _nfesRepository = nfesRepository;
         _comprasRepository = comprasRepository;
         _comprasService = comprasService;
@@ -146,9 +152,14 @@ public sealed class NfesImportacaoService : BaseService
             _unitOfWork.BeginTransaction();
 
             var fornecedor = await ObterFornecedor(dados.Emitente);
+            if (fornecedor is not null && command.FornecedorDados is not null)
+            {
+                _unitOfWork.Rollback();
+                return Falha("FORNECEDOR_JA_CADASTRADO", "O fornecedor já está cadastrado: edite-o pelo cadastro, não envie fornecedorDados.", "FornecedorDados");
+            }
             if (fornecedor is null)
             {
-                var criado = await CriarFornecedor(dados.Emitente);
+                var criado = command.FornecedorDados is { } fd ? await _fornecedoresService.CriarFornecedor(fd) : await CriarFornecedor(dados.Emitente);
                 if (!criado.Success) { _unitOfWork.Rollback(); return Resultado<ImportarNfeResultado>.Falha(criado.Errors!); }
                 fornecedor = criado.Data!;
             }
@@ -269,6 +280,8 @@ public sealed class NfesImportacaoService : BaseService
     private async Task<Resultado<Transportadoras?>> ResolverTransportadora(ImportarNfeCommand command, NfeXmlDados dados)
     {
         Transportadoras? t = null;
+        if (command.TransportadoraDados is not null && (command.TransportadoraId.HasValue || !command.CadastrarTransportadora))
+            return Resultado<Transportadoras?>.Falha(new ResultadoErro("TRANSPORTADORA_DADOS_INVALIDOS", "transportadoraDados só vale ao cadastrar nova transportadora (cadastrarTransportadora=true, sem transportadoraId).", "TransportadoraDados"));
         if (command.TransportadoraId is { } id)
         {
             t = await _transportadorasRepository.ObterTransportadoraPorId(id);
@@ -277,7 +290,13 @@ public sealed class NfesImportacaoService : BaseService
         else if (Digitos(dados.Transportadora?.Documento) is { Length: > 0 } doc)
         {
             t = await _transportadorasRepository.ObterTransportadoraPorCpfCnpj(doc);
-            if (t is null && command.CadastrarTransportadora)
+            if (t is null && command.CadastrarTransportadora && command.TransportadoraDados is { } td)
+            {
+                var criada = await _transportadorasService.CriarTransportadora(td);
+                if (!criada.Success) return Resultado<Transportadoras?>.Falha(criada.Errors!);
+                t = criada.Data;
+            }
+            else if (t is null && command.CadastrarTransportadora)
             {
                 var p = dados.Transportadora!;
                 var (tipo, documento, erro) = ValidarDocumento(p);
