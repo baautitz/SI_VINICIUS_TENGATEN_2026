@@ -38,7 +38,7 @@ public class ComprasEstornoTests
         public UowFake Uow = new();
         public ComprasService Service;
 
-        public Cenario(bool paga = false, bool nfeEmitida = true)
+        public Cenario(bool paga = false, bool nfeEmitida = true, bool semUltimaCompra = false)
         {
             var produto = Instancia<Produtos>();
             typeof(Produtos).GetProperty(nameof(Produtos.Produto))!.SetValue(produto, "Produto teste");
@@ -59,7 +59,7 @@ public class ComprasEstornoTests
             typeof(Nfes).GetProperty(nameof(Nfes.StatusNfe))!.SetValue(Nfe, nfeEmitida ? StatusNfe.EMITIDA : StatusNfe.CANCELADA);
 
             var entrada = new MovimentacoesEstoques(3, DateTime.UtcNow, TipoMovimentacaoEstoque.ENTRADA, OrigemMovimentacaoEstoque.COMPRA, 7, null, null, null, false);
-            entrada.AdicionarItemExistente(new MovimentacoesEstoquesItens(1, 3, Sku, 2, 5m, 0, 0, "p", "UN", 1.5m));
+            entrada.AdicionarItemExistente(new MovimentacoesEstoquesItens(1, 3, Sku, 2, 5m, 0, 0, "p", "UN", semUltimaCompra ? null : 1.5m));
 
             var movs = Criar<IMovimentacoesEstoquesRepository>(h =>
             {
@@ -115,6 +115,20 @@ public class ComprasEstornoTests
         Assert.Equal(StatusNfe.CANCELADA, c.Nfe.StatusNfe);
         Assert.Equal("Compra lançada errada", c.Nfe.JustificativaCancelamento);
         Assert.True(c.Compra.Estornada);
+    }
+
+    [Fact]
+    public async Task Estorno_de_movimentacao_antiga_mantem_custo_da_ultima_compra()
+    {
+        var c = new Cenario(semUltimaCompra: true);
+        var antes = c.Sku.CustoUltimaCompra;
+        var r = await c.Service.Estornar(7, new EstornarCompraCommand("Compra lançada errada"));
+
+        Assert.True(r.Success);
+        Assert.Equal(0, c.Sku.Estoque);
+        Assert.Equal(0m, c.Sku.CustoMedio);
+        Assert.Equal(antes, c.Sku.CustoUltimaCompra); // inalterado
+        Assert.Contains("MANTIDO INALTERADO", Assert.Single(c.MovimentacoesCriadas).Observacao);
     }
 
     [Fact]

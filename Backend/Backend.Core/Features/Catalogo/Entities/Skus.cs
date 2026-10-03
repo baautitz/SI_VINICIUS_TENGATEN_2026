@@ -92,14 +92,14 @@ public class Skus
         Estoque = novoEstoqueTotal;
     }
 
-    public void ReverterEntradaDeEstoque(decimal quantidadeCancelada, decimal custoMedioAnterior, decimal custoUltimaCompraAnterior)
+    public void ReverterEntradaDeEstoque(decimal quantidadeCancelada, decimal custoMedioAnterior, decimal? custoUltimaCompraAnterior)
     {
         if (Estoque - quantidadeCancelada < 0)
             throw new DomainException("Estoque não pode ficar negativo ao reverter a entrada.");
 
         Estoque -= quantidadeCancelada;
         CustoMedio = custoMedioAnterior;
-        CustoUltimaCompra = custoUltimaCompraAnterior;
+        CustoUltimaCompra = custoUltimaCompraAnterior ?? CustoUltimaCompra;
     }
 
     public void AjustarEstoque(decimal quantidade)

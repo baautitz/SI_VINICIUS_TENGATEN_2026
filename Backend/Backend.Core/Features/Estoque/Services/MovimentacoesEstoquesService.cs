@@ -153,7 +153,7 @@ public sealed class MovimentacoesEstoquesService : BaseService
     }
 
     // Aplica a movimentação ao saldo dos SKUs e grava no razão. O chamador controla a transação.
-    public async Task<Resultado<MovimentacoesEstoques>> Registrar(MovimentacoesEstoques movimentacao, IReadOnlyDictionary<string, (decimal CustoMedio, decimal CustoUltimaCompra)>? custosARestaurar = null)
+    public async Task<Resultado<MovimentacoesEstoques>> Registrar(MovimentacoesEstoques movimentacao, IReadOnlyDictionary<string, (decimal CustoMedio, decimal? CustoUltimaCompra)>? custosARestaurar = null)
     {
         var skus = new Dictionary<string, Skus>();
         foreach (var item in movimentacao.MovimentacoesEstoquesItens)
@@ -194,10 +194,13 @@ public sealed class MovimentacoesEstoquesService : BaseService
     }
 
     // Estorno = movimentação inversa apontando para a original.
-    private static (MovimentacoesEstoques Estorno, Dictionary<string, (decimal CustoMedio, decimal CustoUltimaCompra)>? CustosARestaurar) MontarEstorno(MovimentacoesEstoques original, string motivo)
+    private static (MovimentacoesEstoques Estorno, Dictionary<string, (decimal CustoMedio, decimal? CustoUltimaCompra)>? CustosARestaurar) MontarEstorno(MovimentacoesEstoques original, string motivo)
     {
         var inverso = original.TipoMovimentacao == TipoMovimentacaoEstoque.ENTRADA ? TipoMovimentacaoEstoque.SAIDA : TipoMovimentacaoEstoque.ENTRADA;
-        var estorno = new MovimentacoesEstoques(inverso, OrigemMovimentacaoEstoque.ESTORNO, original.Id, motivo, $"Estorno da movimentação #{original.Id}");
+        // Movimentações anteriores à migração não têm custo_ultima_compra_anterior: o custo da última compra fica inalterado e isso é registrado na observação.
+        var semUltimaCompra = original.TipoMovimentacao == TipoMovimentacaoEstoque.ENTRADA && original.MovimentacoesEstoquesItens.Any(i => i.CustoUltimaCompraAnterior is null);
+        var estorno = new MovimentacoesEstoques(inverso, OrigemMovimentacaoEstoque.ESTORNO, original.Id, motivo,
+            $"Estorno da movimentação #{original.Id}" + (semUltimaCompra ? " (custo da última compra anterior não registrado: mantido inalterado)" : ""));
 
         foreach (var item in original.MovimentacoesEstoquesItens)
             estorno.AdicionarItem(item.Sku, item.Quantidade, item.CustoUnitario);
@@ -206,13 +209,13 @@ public sealed class MovimentacoesEstoquesService : BaseService
         var custos = original.TipoMovimentacao == TipoMovimentacaoEstoque.ENTRADA
             ? original.MovimentacoesEstoquesItens.ToDictionary(i => i.Sku.Sku, i => (
                 i.CustoMedioAnterior ?? throw new DomainException($"Movimentação #{original.Id}: custo médio anterior do SKU '{i.Sku.Sku}' não foi registrado; não é possível reverter o custo."),
-                i.CustoUltimaCompraAnterior ?? throw new DomainException($"Movimentação #{original.Id}: custo da última compra anterior do SKU '{i.Sku.Sku}' não foi registrado; não é possível reverter o custo.")))
+                i.CustoUltimaCompraAnterior))
             : null;
 
         return (estorno, custos);
     }
 
-    private async Task<Resultado<MovimentacoesEstoques>> ExecutarEmTransacao(MovimentacoesEstoques movimentacao, IReadOnlyDictionary<string, (decimal CustoMedio, decimal CustoUltimaCompra)>? custosARestaurar)
+    private async Task<Resultado<MovimentacoesEstoques>> ExecutarEmTransacao(MovimentacoesEstoques movimentacao, IReadOnlyDictionary<string, (decimal CustoMedio, decimal? CustoUltimaCompra)>? custosARestaurar)
     {
         return await ExecuteResultAsync(async () =>
         {
