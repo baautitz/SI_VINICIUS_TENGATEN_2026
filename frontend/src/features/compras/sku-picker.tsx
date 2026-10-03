@@ -96,7 +96,7 @@ export function SkuPicker({
         placeholder="SKU (Enter busca)"
         className="h-7 pr-8 font-mono text-xs"
         onKeyDown={(e) => {
-          if (e.key !== "Enter" || e.altKey) return;
+          if (e.key !== "Enter" || e.altKey || e.repeat) return;
           e.preventDefault();
           const termo = e.currentTarget.value.trim();
           if (termo && termo === value) return;

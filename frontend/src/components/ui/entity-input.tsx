@@ -284,6 +284,8 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
               }
               if (disabled) return;
               if (e.key === "Enter" && !e.altKey) {
+                // Enter repetido (tecla segurada após Alt+Enter avançar de etapa) não abre a listagem.
+                if (e.repeat) return e.preventDefault();
                 e.preventDefault();
                 // Enter is the keyboard command for opening the entity
                 // browser. Do not block the dialog on the optional inline
