@@ -188,6 +188,9 @@ public sealed class ComprasService : BaseService
         if (!validation.IsValid)
             return Resultado<Compra>.Falha(validation.ToResultadoErros());
 
+        if (DatasCompra.Validar(command.DataCompra, null) is { } erroData)
+            return Resultado<Compra>.Falha(erroData);
+
         var fornecedor = await _fornecedoresRepository.ObterFornecedorPorId(command.FornecedorId);
         if (fornecedor is null)
             return Resultado<Compra>.Falha(new ResultadoErro("FORNECEDOR_INEXISTENTE", "O fornecedor informado não existe.", "FornecedorId"));

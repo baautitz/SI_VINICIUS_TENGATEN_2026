@@ -66,6 +66,9 @@ public sealed class NfesImportacaoService : BaseService
         try { dados = NfeXmlParser.Parse(command.Xml); }
         catch (DomainException ex) { return Resultado<PreviaNfeDto>.Falha(new ResultadoErro("XML_INVALIDO", ex.Message, "Xml")); }
 
+        if (DatasCompra.Validar(DatasCompra.Hoje(), dados.DataEmissaoLocal) is { Code: DatasCompra.EmissaoFutura } emissaoFutura)
+            return Resultado<PreviaNfeDto>.Falha(emissaoFutura);
+
         if (await _nfesRepository.ExisteChaveAcesso(dados.ChaveAcesso))
             return Resultado<PreviaNfeDto>.Falha(new ResultadoErro(ChaveJaImportada, "Esta NF-e já foi importada.", "Xml"));
 
@@ -117,6 +120,10 @@ public sealed class NfesImportacaoService : BaseService
 
         if (await _nfesRepository.ExisteChaveAcesso(dados.ChaveAcesso))
             return Falha(ChaveJaImportada, "Esta NF-e já foi importada.", "Xml");
+
+        var chegada = command.DataChegada ?? DatasCompra.Hoje();
+        if (DatasCompra.Validar(chegada, dados.DataEmissaoLocal) is { } erroData)
+            return Resultado<ImportarNfeResultado>.Falha(erroData);
 
         var emitente = await _emitentesRepository.ObterEmitentePorId(command.EmitenteId);
         if (emitente is null)
@@ -172,8 +179,8 @@ public sealed class NfesImportacaoService : BaseService
             // integra o custo e fecha as parcelas com o vNF (compras.valor_nota = nfes.valor_total). Créditos recuperáveis ficam fora do escopo.
             var (outrasCompra, descontoCompra) = AjustarTotais(t, dados.Itens);
             var compraCommand = new CriarCompraCommand(
-                // Dia da emissão preservado (meio-dia UTC não muda de dia em nenhum fuso do Brasil).
-                DateTime.SpecifyKind(dados.DataEmissaoLocal.Date.AddHours(12), DateTimeKind.Utc), command.EmitenteId, fornecedor.Id,
+                // Dia de chegada preservado (meio-dia UTC não muda de dia em nenhum fuso do Brasil).
+                DateTime.SpecifyKind(DatasCompra.DiaLocal(chegada).AddHours(12), DateTimeKind.Utc), command.EmitenteId, fornecedor.Id,
                 t.Frete, t.Seguro, outrasCompra, descontoCompra,
                 command.ValorFreteTerceiro, transportadora.Data?.Id, command.VencimentoFreteTerceiro,
                 dados.InformacoesComplementares,

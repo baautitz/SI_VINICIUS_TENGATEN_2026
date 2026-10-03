@@ -16,5 +16,7 @@ public record ImportarNfeCommand(
     decimal ValorFreteTerceiro,
     DateTime? VencimentoFreteTerceiro,
     int? TransportadoraId,
-    bool CadastrarTransportadora
+    bool CadastrarTransportadora,
+    // Dia de chegada da mercadoria; omitida = hoje (Brasília).
+    DateTime? DataChegada = null
 );
