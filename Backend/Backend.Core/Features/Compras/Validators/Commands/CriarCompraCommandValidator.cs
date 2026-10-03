@@ -36,7 +36,7 @@ public class CriarCompraCommandValidator : AbstractValidator<CriarCompraCommand>
         {
             p.RuleFor(x => x.NumeroParcela).GreaterThan(0).WithMessage("Número da parcela deve ser maior que zero.");
             p.RuleFor(x => x.DataVencimento).NotEmpty().WithMessage("Data de vencimento da parcela é obrigatória.");
-            p.RuleFor(x => x.ValorParcela).GreaterThan(0).WithMessage("Valor da parcela deve ser maior que zero.");
+            p.RuleFor(x => x.ValorParcela).GreaterThan(0).WithMessage("Valor da parcela deve ser maior que zero.").WithErrorCode("PARCELA_VALOR_INVALIDO");
         }).When(x => x.Parcelas != null);
 
         // valor_nota = produtos + frete + seguro + outras - desconto (sem frete de terceiro).

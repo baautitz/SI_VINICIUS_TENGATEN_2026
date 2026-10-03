@@ -82,4 +82,35 @@ public class ComprasServiceTests
         Assert.Equal(1, uow.Rollbacks);
         Assert.Equal(0, uow.Commits);
     }
+
+    private static ComprasService ServicoSemRepos() => new(
+        Criar<IComprasRepository>(), Criar<IFornecedoresRepository>(), Criar<IEmitentesRepository>(), Criar<ITransportadorasRepository>(),
+        Criar<ISkusRepository>(), Criar<ICondicoesPagamentosRepository>(),
+        new MovimentacoesEstoquesService(Criar<IMovimentacoesEstoquesRepository>(), Criar<ISkusRepository>(), Criar<IUsuariosRepository>(), new UowFake()),
+        Criar<IContasPagarRepository>(), Criar<Backend.Core.Features.NFe.Repositories.INfesRepository>(), Criar<IUsuariosRepository>(), new UowFake());
+
+    private static CriarCompraCommand CompraComParcela(DateTime venc, decimal valor)
+        => new(DateTime.UtcNow, 1, 1, 0, 0, 0, 0, 0, null, null, null,
+            new[] { new CriarCompraItemCommand("SKU-1", 2, 5m, 0, null) }, null,
+            new[] { new CriarParcelaPagarCommand(1, venc, valor) });
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-10)]
+    public async Task ParcelaComValorZeroOuNegativoEhRejeitada(int valor)
+    {
+        var r = await ServicoSemRepos().GravarCompra(CompraComParcela(DateTime.UtcNow.AddDays(5), valor));
+        Assert.Contains(r.Errors!, e => e.Code == "PARCELA_VALOR_INVALIDO");
+    }
+
+    [Fact]
+    public async Task VencimentoAnteriorAChegadaEhRejeitadoNaCompraManualMasNaoNoXml()
+    {
+        var cmd = CompraComParcela(DateTime.UtcNow.AddDays(-5), 10m);
+        var manual = await ServicoSemRepos().GravarCompra(cmd);
+        Assert.Contains(manual.Errors!, e => e.Code == "PARCELA_VENCIMENTO_ANTERIOR_CHEGADA");
+
+        var xml = await ServicoSemRepos().GravarCompra(cmd, DateTime.UtcNow.AddDays(-10));
+        Assert.DoesNotContain(xml.Errors ?? Enumerable.Empty<Backend.Core.Common.Results.ResultadoErro>(), e => e.Code == "PARCELA_VENCIMENTO_ANTERIOR_CHEGADA");
+    }
 }

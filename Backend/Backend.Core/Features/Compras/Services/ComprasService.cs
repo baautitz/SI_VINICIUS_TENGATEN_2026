@@ -206,6 +206,10 @@ public sealed class ComprasService : BaseService
         if (DatasCompra.Validar(command.DataCompra, null) is { } erroData)
             return Resultado<Compra>.Falha(erroData);
 
+        // Compra manual: vencimento não pode anteceder a chegada; parcelas de XML (cobr/dup) seguem o que a NF-e traz.
+        if (emissaoNfe is null && command.Parcelas!.FirstOrDefault(p => DatasCompra.DiaLocal(p.DataVencimento) < DatasCompra.DiaLocal(command.DataCompra)) is { } antes)
+            return Resultado<Compra>.Falha(new ResultadoErro("PARCELA_VENCIMENTO_ANTERIOR_CHEGADA", $"O vencimento da parcela {antes.NumeroParcela} é anterior à data de chegada da compra.", "Parcelas"));
+
         var fornecedor = await _fornecedoresRepository.ObterFornecedorPorId(command.FornecedorId);
         if (fornecedor is null)
             return Resultado<Compra>.Falha(new ResultadoErro("FORNECEDOR_INEXISTENTE", "O fornecedor informado não existe.", "FornecedorId"));
