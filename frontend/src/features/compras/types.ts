@@ -74,6 +74,8 @@ export interface ImportarNfePayload {
   vencimentoFreteTerceiro: string | null;
   transportadoraId: number | null;
   cadastrarTransportadora: boolean;
+  /** Dia de chegada (YYYY-MM-DD); omitida = hoje. */
+  dataChegada?: string;
 }
 
 export interface ImportarNfeResultado {
@@ -94,6 +96,8 @@ export interface PreviaNfe {
     numero: number;
     serie: number;
     dataEmissao: string;
+    /** Dia de emissão no fuso do próprio XML (sem Z). */
+    dataEmissaoLocal?: string;
     emitente: NfeXmlParte;
     destinatario?: NfeXmlParte | null;
     itens: Array<{

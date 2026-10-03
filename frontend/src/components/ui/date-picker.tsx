@@ -27,6 +27,10 @@ interface DatePickerProps {
   disabled?: boolean;
   className?: string;
   inputSize?: "sm" | "default" | "lg" | "full";
+  /** Limites do calendário (YYYY-MM-DD); a digitação continua livre, valide no formulário. */
+  min?: string | null;
+  max?: string | null;
+  invalid?: boolean;
 }
 
 const parseStringDate = (
@@ -101,6 +105,9 @@ export function DatePicker({
   disabled = false,
   className,
   inputSize = "full",
+  min,
+  max,
+  invalid,
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [prevValue, setPrevValue] = React.useState(value);
@@ -173,7 +180,7 @@ export function DatePicker({
 
   const isSmall = className?.includes("h-8") || className?.includes("text-xs");
   const isLarge = className?.includes("h-10");
-  const hasError = className?.includes("border-destructive");
+  const hasError = invalid || className?.includes("border-destructive");
   const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     onKeyDown?.(event);
     if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) {
@@ -208,6 +215,7 @@ export function DatePicker({
         onChange={handleInputChange}
         placeholder={placeholder}
         disabled={disabled}
+        aria-invalid={hasError || undefined}
         maxLength={10}
         inputMode="numeric"
         className={cn(
@@ -234,6 +242,10 @@ export function DatePicker({
             mode="single"
             selected={selectedDate}
             onSelect={handleSelect}
+            disabled={[
+              ...(parseStringDate(min) ? [{ before: parseStringDate(min)! }] : []),
+              ...(parseStringDate(max) ? [{ after: parseStringDate(max)! }] : []),
+            ]}
             locale={ptBR}
           />
         </PopoverContent>

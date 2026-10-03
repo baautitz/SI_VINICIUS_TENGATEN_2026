@@ -29,6 +29,7 @@ import {
   Button,
   Checkbox,
   Field,
+  FieldError,
   FieldLabel,
   Kbd,
   KbdGroup,
@@ -159,12 +160,43 @@ function CompraForm({
   const modoXml = !!importacao;
 
   const [dataCompra, setDataCompra] = React.useState(() =>
-    compra
-      ? compra.dataCompra.split("T")[0]
-      : dados
-        ? dados.dataEmissao.split("T")[0]
-        : todayLocalISODate(),
+    compra ? compra.dataCompra.split("T")[0] : todayLocalISODate(),
   );
+  // Emissão do XML (somente leitura): limita a chegada por baixo; hoje (local) limita por cima.
+  const hoje = todayLocalISODate();
+  const emissaoXml = dados
+    ? (dados.dataEmissaoLocal ?? dados.dataEmissao).split("T")[0]
+    : null;
+  const dataBr = (d: string) => d.split("-").reverse().join("/");
+  const erroEmissao =
+    emissaoXml && emissaoXml > hoje
+      ? `A emissão do XML (${dataBr(emissaoXml)}) é posterior a hoje: o XML está incorreto.`
+      : null;
+  const erroChegada = readOnly
+    ? null
+    : !/^\d{4}-\d{2}-\d{2}$/.test(dataCompra)
+      ? "Informe uma data de chegada válida."
+      : dataCompra > hoje
+        ? "A chegada não pode ser posterior a hoje."
+        : emissaoXml && dataCompra < emissaoXml
+          ? `A chegada não pode ser anterior à emissão da NF-e (${dataBr(emissaoXml)}).`
+          : null;
+  const erroData = erroEmissao ?? erroChegada;
+  // Troca a chegada: parcelas ainda geradas a partir da data antiga acompanham a nova; as editadas são mantidas com aviso.
+  const mudarChegada = (v: string | null) => {
+    const nova = v ?? "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(nova) && parcelas.length > 0 && valorNota > 0) {
+      const padrao = JSON.stringify(gerarParcelas(valorNota, dataCompra, condicao));
+      if (JSON.stringify(parcelas) === padrao)
+        setParcelas(gerarParcelas(valorNota, nova, condicao));
+      else
+        ui.feedback.notify({
+          type: "warning",
+          title: "Parcelas mantidas: revise os vencimentos para a nova data de chegada.",
+        });
+    }
+    setDataCompra(nova);
+  };
   const [emitente, setEmitente] = React.useState<Emitente | null>(
     compra?.emitente ?? importacao?.emitente ?? null,
   );
@@ -409,6 +441,7 @@ function CompraForm({
 
   const validar = (): string | null => {
     if (!emitente) return "Emitente é obrigatório.";
+    if (erroData) return erroData;
     if (!modoXml && !fornecedor) return "Fornecedor é obrigatório.";
     if (itens.length === 0) return "A entrada deve conter ao menos um item.";
     if (pendentes > 0)
@@ -467,6 +500,7 @@ function CompraForm({
               vencimentoFreteTerceiro: venc,
               transportadoraId,
               cadastrarTransportadora,
+              dataChegada: dataCompra,
             })
           : comprasApi.create({
               dataCompra: new Date(
@@ -503,6 +537,7 @@ function CompraForm({
     if (etapa === 0 && !modoXml && !fornecedor)
       return "Selecione o fornecedor.";
     if (etapa === 1 && !emitente) return "Emitente é obrigatório.";
+    if (etapa === 1 && erroData) return erroData;
     if (etapa === 2) {
       if (itens.length === 0) return "Adicione ao menos um item.";
       if (pendentes > 0)
@@ -792,9 +827,13 @@ function CompraForm({
                     <FieldLabel>Data da Compra</FieldLabel>
                     <DatePicker
                       value={dataCompra}
-                      onChange={(v) => setDataCompra(v || todayLocalISODate())}
-                      disabled={readOnly || modoXml}
+                      onChange={mudarChegada}
+                      disabled={readOnly}
+                      max={hoje}
+                      min={emissaoXml}
+                      invalid={!!erroChegada}
                     />
+                    {erroChegada && <FieldError>{erroChegada}</FieldError>}
                   </Field>
                 </div>
                 <div className="w-[80%]">
@@ -808,6 +847,19 @@ function CompraForm({
                 </div>
               </div>
 
+              {emissaoXml && (
+                <div className="flex flex-col gap-1 text-sm">
+                  <span>
+                    <b>Emissão da NF-e:</b> {dataBr(emissaoXml)}
+                  </span>
+                  {erroEmissao && (
+                    <Alert variant="destructive">
+                      <TriangleAlert />
+                      <AlertDescription>{erroEmissao}</AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              )}
               {dados?.destinatario && (
                 <p className="text-muted-foreground text-xs">
                   Destinatário no XML: {dados.destinatario.nome} (
