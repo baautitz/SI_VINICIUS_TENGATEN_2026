@@ -9,7 +9,9 @@ import { FornecedoresUpsert } from "@/features/parceiros/fornecedores/upsert";
 import { TransportadorasUpsert } from "@/features/parceiros/transportadoras/upsert";
 import type { FornecedorFormValues } from "@/features/parceiros/fornecedores/types";
 import type { TransportadoraFormValues } from "@/features/parceiros/transportadoras/types";
-import { ParteXmlCard, valoresDaParteXml } from "./parte-xml";
+import { ParteXmlCard, valoresDaParteXml, erroDoCadastro } from "./parte-xml";
+import { fornecedorSchema } from "@/features/parceiros/fornecedores/types";
+import { transportadoraSchema } from "@/features/parceiros/transportadoras/types";
 import { comprasApi } from "@/api/compras";
 import { condicoesApi } from "@/api/financeiro";
 import { SkuInput } from "@/components/entity-inputs/sku-input";
@@ -471,7 +473,18 @@ function CompraForm({
 
   const iso = (d: string) => new Date(d + "T12:00:00").toISOString();
 
+  const erroFornecedorNovo =
+    modoXml && dados && !previa?.fornecedorId
+      ? erroDoCadastro(fornecedorSchema, dados.emitente, fornecedorDados)
+      : null;
+  const erroTransportadoraNova =
+    modoXml && dados?.transportadora && !previa?.transportadoraId && cadastrarTransportadora
+      ? erroDoCadastro(transportadoraSchema, dados.transportadora, transportadoraDados)
+      : null;
+
   const validar = (): string | null => {
+    if (erroFornecedorNovo) return `Fornecedor: ${erroFornecedorNovo}`;
+    if (erroTransportadoraNova) return `Transportadora: ${erroTransportadoraNova}`;
     if (!emitente) return "Emitente é obrigatório.";
     if (erroData) return erroData;
     if (!modoXml && !fornecedor) return "Fornecedor é obrigatório.";
@@ -574,6 +587,7 @@ function CompraForm({
     if (readOnly) return null;
     if (etapa === 0 && !modoXml && !fornecedor)
       return "Selecione o fornecedor.";
+    if (etapa === 0 && erroFornecedorNovo) return `Fornecedor: ${erroFornecedorNovo}`;
     if (etapa === 1 && !emitente) return "Emitente é obrigatório.";
     if (etapa === 1 && erroData) return erroData;
     if (etapa === 2) {
@@ -804,6 +818,7 @@ function CompraForm({
                   documento={fornecedorXml?.cpfCnpj ?? fornecedorDados?.cpfCnpj ?? dados!.emitente.documento}
                   existente={!!previa?.fornecedorId}
                   editado={!!fornecedorDados}
+                  erro={erroFornecedorNovo}
                   onEditar={async () => {
                     if (previa?.fornecedorId) {
                       // Existente: salva direto na API; a query do cadastro é invalidada pelo upsert.
@@ -1185,6 +1200,7 @@ function CompraForm({
                             documento={transportadoraXml?.cpfCnpj ?? transportadoraDados?.cpfCnpj ?? dados.transportadora.documento}
                             existente={!!previa?.transportadoraId}
                             editado={!!transportadoraDados}
+                            erro={erroTransportadoraNova}
                             onEditar={async () => {
                               if (previa?.transportadoraId) {
                                 if (transportadoraXml)
