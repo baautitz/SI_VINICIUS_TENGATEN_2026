@@ -27,3 +27,6 @@ CREATE TABLE IF NOT EXISTS movimentacoes_estoque_itens (
 -- Migração: custo com 10 casas para a entrada ser valorizada exatamente (C1).
 ALTER TABLE movimentacoes_estoque_itens ALTER COLUMN custo_unitario TYPE NUMERIC(18, 10);
 ALTER TABLE movimentacoes_estoque_itens ALTER COLUMN custo_medio_anterior TYPE NUMERIC(18, 10);
+
+-- Custo da última compra do SKU antes da entrada, para o estorno restaurá-lo.
+ALTER TABLE movimentacoes_estoque_itens ADD COLUMN IF NOT EXISTS custo_ultima_compra_anterior NUMERIC(18, 10);

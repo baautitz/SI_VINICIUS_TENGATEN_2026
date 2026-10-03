@@ -153,7 +153,7 @@ public sealed class MovimentacoesEstoquesService : BaseService
     }
 
     // Aplica a movimentação ao saldo dos SKUs e grava no razão. O chamador controla a transação.
-    public async Task<Resultado<MovimentacoesEstoques>> Registrar(MovimentacoesEstoques movimentacao, IReadOnlyDictionary<string, decimal>? custoMedioARestaurar = null)
+    public async Task<Resultado<MovimentacoesEstoques>> Registrar(MovimentacoesEstoques movimentacao, IReadOnlyDictionary<string, (decimal CustoMedio, decimal CustoUltimaCompra)>? custosARestaurar = null)
     {
         var skus = new Dictionary<string, Skus>();
         foreach (var item in movimentacao.MovimentacoesEstoquesItens)
@@ -171,7 +171,7 @@ public sealed class MovimentacoesEstoquesService : BaseService
         foreach (var item in movimentacao.MovimentacoesEstoquesItens)
         {
             var sku = skus[item.Sku.Sku];
-            item.DefinirQuantidadesECustosAnteriores(sku.Estoque, sku.CustoMedio);
+            item.DefinirQuantidadesECustosAnteriores(sku.Estoque, sku.CustoMedio, sku.CustoUltimaCompra);
 
             if (movimentacao.TipoMovimentacao == TipoMovimentacaoEstoque.ENTRADA)
             {
@@ -181,8 +181,8 @@ public sealed class MovimentacoesEstoquesService : BaseService
             {
                 // Saída é valorizada ao custo médio vigente.
                 item.AtualizarCustoUnitario(sku.CustoMedio);
-                if (custoMedioARestaurar != null && custoMedioARestaurar.TryGetValue(sku.Sku, out var custoMedio))
-                    sku.ReverterEntradaDeEstoque(item.Quantidade, custoMedio);
+                if (custosARestaurar != null && custosARestaurar.TryGetValue(sku.Sku, out var custos))
+                    sku.ReverterEntradaDeEstoque(item.Quantidade, custos.CustoMedio, custos.CustoUltimaCompra);
                 else
                     sku.AjustarEstoque(-item.Quantidade);
             }
@@ -194,7 +194,7 @@ public sealed class MovimentacoesEstoquesService : BaseService
     }
 
     // Estorno = movimentação inversa apontando para a original.
-    private static (MovimentacoesEstoques Estorno, Dictionary<string, decimal>? CustosARestaurar) MontarEstorno(MovimentacoesEstoques original, string motivo)
+    private static (MovimentacoesEstoques Estorno, Dictionary<string, (decimal CustoMedio, decimal CustoUltimaCompra)>? CustosARestaurar) MontarEstorno(MovimentacoesEstoques original, string motivo)
     {
         var inverso = original.TipoMovimentacao == TipoMovimentacaoEstoque.ENTRADA ? TipoMovimentacaoEstoque.SAIDA : TipoMovimentacaoEstoque.ENTRADA;
         var estorno = new MovimentacoesEstoques(inverso, OrigemMovimentacaoEstoque.ESTORNO, original.Id, motivo, $"Estorno da movimentação #{original.Id}");
@@ -204,13 +204,15 @@ public sealed class MovimentacoesEstoquesService : BaseService
 
         // Reverter uma entrada devolve também o custo médio de antes dela.
         var custos = original.TipoMovimentacao == TipoMovimentacaoEstoque.ENTRADA
-            ? original.MovimentacoesEstoquesItens.ToDictionary(i => i.Sku.Sku, i => i.CustoMedioAnterior ?? 0)
+            ? original.MovimentacoesEstoquesItens.ToDictionary(i => i.Sku.Sku, i => (
+                i.CustoMedioAnterior ?? throw new DomainException($"Movimentação #{original.Id}: custo médio anterior do SKU '{i.Sku.Sku}' não foi registrado; não é possível reverter o custo."),
+                i.CustoUltimaCompraAnterior ?? throw new DomainException($"Movimentação #{original.Id}: custo da última compra anterior do SKU '{i.Sku.Sku}' não foi registrado; não é possível reverter o custo.")))
             : null;
 
         return (estorno, custos);
     }
 
-    private async Task<Resultado<MovimentacoesEstoques>> ExecutarEmTransacao(MovimentacoesEstoques movimentacao, IReadOnlyDictionary<string, decimal>? custosARestaurar)
+    private async Task<Resultado<MovimentacoesEstoques>> ExecutarEmTransacao(MovimentacoesEstoques movimentacao, IReadOnlyDictionary<string, (decimal CustoMedio, decimal CustoUltimaCompra)>? custosARestaurar)
     {
         return await ExecuteResultAsync(async () =>
         {

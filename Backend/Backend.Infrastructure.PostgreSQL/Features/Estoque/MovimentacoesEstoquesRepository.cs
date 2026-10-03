@@ -86,7 +86,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
             var persistida = new MovimentacoesEstoques(idGerado, movimentacao.DataMovimentacao, movimentacao.TipoMovimentacao, movimentacao.OrigemTipo, movimentacao.OrigemId, movimentacao.Motivo, movimentacao.Observacao, movimentacao.Usuario, false);
             foreach (var item in movimentacao.MovimentacoesEstoquesItens)
             {
-                persistida.AdicionarItemExistente(new MovimentacoesEstoquesItens(item.Id, idGerado, item.Sku, item.Quantidade, item.CustoUnitario, item.QuantidadeAnterior, item.CustoMedioAnterior, item.ProdutoNome, item.UnidadeMedidaSigla));
+                persistida.AdicionarItemExistente(new MovimentacoesEstoquesItens(item.Id, idGerado, item.Sku, item.Quantidade, item.CustoUnitario, item.QuantidadeAnterior, item.CustoMedioAnterior, item.ProdutoNome, item.UnidadeMedidaSigla, item.CustoUltimaCompraAnterior));
             }
 
             return persistida;
@@ -130,7 +130,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
             SELECT mei.id, mei.quantidade, mei.custo_unitario, mei.movimentacao_estoque_id AS MovimentacaoId,
                    s.sku AS SkuCodigo, s.gtin_ean AS SkuGtinEan, s.preco AS SkuPreco, s.estoque AS SkuEstoque, s.ativo AS SkuAtivo,
                    s.custo_medio AS SkuCustoMedio, s.custo_ultima_compra AS SkuCustoUltimaCompra,
-                   mei.quantidade_anterior AS QuantidadeAnterior, mei.custo_medio_anterior AS CustoMedioAnterior,
+                   mei.quantidade_anterior AS QuantidadeAnterior, mei.custo_medio_anterior AS CustoMedioAnterior, mei.custo_ultima_compra_anterior AS CustoUltimaCompraAnterior,
                    p.id, p.produto, p.descricao, p.ativo,
                    c.id, c.categoria, c.descricao, c.ativo,
                    m.id, m.marca, m.descricao, m.ativo,
@@ -189,8 +189,8 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
     private async Task InserirItens(int movimentacaoId, IEnumerable<MovimentacoesEstoquesItens> itens)
     {
         const string sql = @"
-            INSERT INTO movimentacoes_estoque_itens (quantidade, custo_unitario, sku, movimentacao_estoque_id, quantidade_anterior, custo_medio_anterior)
-            VALUES (@Quantidade, @CustoUnitario, @SkuCodigo, @MovimentacaoId, @QuantidadeAnterior, @CustoMedioAnterior);";
+            INSERT INTO movimentacoes_estoque_itens (quantidade, custo_unitario, sku, movimentacao_estoque_id, quantidade_anterior, custo_medio_anterior, custo_ultima_compra_anterior)
+            VALUES (@Quantidade, @CustoUnitario, @SkuCodigo, @MovimentacaoId, @QuantidadeAnterior, @CustoMedioAnterior, @CustoUltimaCompraAnterior);";
 
         await _session.Connection.ExecuteAsync(
             sql,
@@ -201,7 +201,8 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
                 SkuCodigo = i.Sku.Sku,
                 MovimentacaoId = movimentacaoId,
                 i.QuantidadeAnterior,
-                i.CustoMedioAnterior
+                i.CustoMedioAnterior,
+                i.CustoUltimaCompraAnterior
             }),
             transaction: _session.Transaction);
     }
@@ -218,7 +219,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
         if (!row.SkuAtivo)
             sku.Desativar();
 
-        return new MovimentacoesEstoquesItens(row.Id, movimentacaoId, sku, row.Quantidade, row.CustoUnitario, row.QuantidadeAnterior, row.CustoMedioAnterior, sku.NomeExibicao, sku.Produto!.UnidadeMedida.Sigla);
+        return new MovimentacoesEstoquesItens(row.Id, movimentacaoId, sku, row.Quantidade, row.CustoUnitario, row.QuantidadeAnterior, row.CustoMedioAnterior, sku.NomeExibicao, sku.Produto!.UnidadeMedida.Sigla, row.CustoUltimaCompraAnterior);
     }
 
     private sealed record MovimentacaoDbRow(int Id, DateTime DataMovimentacao, TipoMovimentacaoEstoque TipoMovimentacao, OrigemMovimentacaoEstoque OrigemTipo, int? OrigemId, string? Motivo, string? Observacao, bool Estornada,
@@ -240,6 +241,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
         public decimal SkuCustoUltimaCompra { get; set; }
         public decimal? QuantidadeAnterior { get; set; }
         public decimal? CustoMedioAnterior { get; set; }
+        public decimal? CustoUltimaCompraAnterior { get; set; }
         public string ProdutoNome { get; set; } = null!;
         public string UnidadeMedidaSigla { get; set; } = null!;
         public Produtos? Produto { get; set; }

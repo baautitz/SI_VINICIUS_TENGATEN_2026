@@ -151,6 +151,10 @@ public class SkusRepository : ISkusRepository
         return new ResultadoPaginado<Skus>(skus, total, 1, total > 0 ? total : 1);
     }
 
+    public Task TravarSkus(IEnumerable<string> skus)
+        => _session.Connection.ExecuteAsync("SELECT sku FROM skus WHERE sku = ANY(@Skus) ORDER BY sku FOR UPDATE;",
+            new { Skus = skus.Distinct().ToArray() }, transaction: _session.Transaction);
+
     public async Task<Skus?> ObterSkuPorSku(string sku)
     {
         const string skuSql = @"

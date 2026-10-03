@@ -8,6 +8,8 @@ public interface ISkusRepository
     public Task<ResultadoPaginado<Skus>> ObterSkus(int pagina = 1, int tamanhoDaPagina = 20);
     public Task<ResultadoPaginado<Skus>> ObterSkusPorProduto(int produtoId);
     public Task<Skus?> ObterSkuPorSku(string sku);
+    // SELECT ... FOR UPDATE (ordenado, sem deadlock entre estornos): só faz sentido dentro de transação.
+    public Task TravarSkus(IEnumerable<string> skus);
     public Task<Skus> CriarSku(int produtoId, Skus skuData);
     public Task<Skus> AtualizarSku(string sku, Skus skuData);
     public Task<bool> DeletarSku(string sku);

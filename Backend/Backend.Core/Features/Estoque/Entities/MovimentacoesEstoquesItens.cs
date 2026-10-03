@@ -13,6 +13,7 @@ public class MovimentacoesEstoquesItens
 
     public decimal? QuantidadeAnterior { get; private set; }
     public decimal? CustoMedioAnterior { get; private set; }
+    public decimal? CustoUltimaCompraAnterior { get; private set; }
 
     public Skus Sku { get; private set; }
     public string ProdutoNome { get; private set; }
@@ -39,17 +40,19 @@ public class MovimentacoesEstoquesItens
         CustoUnitario = custoUnitario;
     }
 
-    public MovimentacoesEstoquesItens(int id, int movimentacaoId, Skus sku, decimal quantidade, decimal custoUnitario, decimal? quantidadeAnterior = null, decimal? custoMedioAnterior = null, string produtoNome = "", string unidadeMedidaSigla = "")
+    public MovimentacoesEstoquesItens(int id, int movimentacaoId, Skus sku, decimal quantidade, decimal custoUnitario, decimal? quantidadeAnterior = null, decimal? custoMedioAnterior = null, string produtoNome = "", string unidadeMedidaSigla = "", decimal? custoUltimaCompraAnterior = null)
         : this(sku, quantidade, custoUnitario, produtoNome, unidadeMedidaSigla)
     {
         Id = id;
         MovimentacaoId = movimentacaoId;
         QuantidadeAnterior = quantidadeAnterior;
         CustoMedioAnterior = custoMedioAnterior;
+        CustoUltimaCompraAnterior = custoUltimaCompraAnterior;
     }
 
-    public void DefinirQuantidadesECustosAnteriores(decimal quantidade, decimal custoMedio)
+    public void DefinirQuantidadesECustosAnteriores(decimal quantidade, decimal custoMedio, decimal custoUltimaCompra)
     {
+        CustoUltimaCompraAnterior = custoUltimaCompra;
         QuantidadeAnterior = quantidade;
         CustoMedioAnterior = custoMedio;
     }
