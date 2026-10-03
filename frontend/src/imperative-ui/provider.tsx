@@ -56,7 +56,7 @@ interface WindowRuntimeValue {
 const WindowManagerContext = createContext<WindowManager | null>(null)
 const WindowRuntimeContext = createContext<WindowRuntimeValue | null>(null)
 
-function restoreFocusTarget(target: FocusTarget | null): void {
+function restoreFocusTarget(target: FocusTarget | null, windowChanged: () => boolean = () => false): void {
   if (!target || !target.isConnected) return
   const isBlocked = () =>
     typeof HTMLElement !== "undefined" &&
@@ -69,7 +69,8 @@ function restoreFocusTarget(target: FocusTarget | null): void {
     return
   }
   window.requestAnimationFrame(() => {
-    if (target.isConnected && !isBlocked()) {
+    // Janela aberta em cadeia após o fechamento: não roubar o foco dela (Radix a fecharia por foco externo).
+    if (target.isConnected && !isBlocked() && !windowChanged()) {
       try { target.focus() } catch { /* opener pode ter sido desabilitado */ }
     }
   })
@@ -103,7 +104,10 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
     // A porta de confirmação é chamada somente após a instância estar criada.
     // eslint-disable-next-line prefer-const
     controller = new WindowController({
-      restoreFocus: restoreFocusTarget,
+      restoreFocus: (target) => {
+        const activeId = controller.snapshot().activeId
+        restoreFocusTarget(target, () => controller.snapshot().activeId !== activeId)
+      },
       confirmDiscard: async () => {
         const focusTarget =
           typeof document !== "undefined" && document.activeElement instanceof HTMLElement
