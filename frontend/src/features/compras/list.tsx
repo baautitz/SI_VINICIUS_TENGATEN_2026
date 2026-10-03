@@ -8,7 +8,7 @@ import { DataTable, FeatureLayout } from "@/ui/composites";
 import { FeatureHeader } from "@/ui/composites";
 import { useWindowCommands } from "@/ui/imperative";
 import { fireAndForget } from "@/lib/utils";
-import { formatToLocal } from "@/utils/date-utils";
+import { formatDateToLocal } from "@/utils/date-utils";
 import type { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 import { moeda, type Compra } from "./types";
 
@@ -63,7 +63,7 @@ export function ComprasList({
     {
       accessorKey: "dataCompra",
       header: "Data",
-      cell: ({ row }) => formatToLocal(row.original.dataCompra),
+      cell: ({ row }) => formatDateToLocal(row.original.dataCompra),
     },
     {
       id: "fornecedor",

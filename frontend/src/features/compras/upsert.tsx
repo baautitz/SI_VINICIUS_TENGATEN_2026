@@ -318,6 +318,11 @@ function CompraForm({
         }))
       : [],
   );
+  const [duplicatasXml] = React.useState(parcelas);
+  const divergeDoXml =
+    !!dados &&
+    dados.parcelas.length > 0 &&
+    JSON.stringify(parcelas) !== JSON.stringify(duplicatasXml);
   const [etapa, setEtapa] = React.useState(0);
   // Foco no primeiro campo da etapa: a identidade do callback só muda com a etapa.
   const focoEtapa = React.useCallback(
@@ -503,9 +508,8 @@ function CompraForm({
               dataChegada: dataCompra,
             })
           : comprasApi.create({
-              dataCompra: new Date(
-                `${dataCompra}T${new Date().toTimeString().slice(0, 8)}`,
-              ).toISOString(),
+              // Meio-dia UTC (como a importação): o dia não desloca em nenhum fuso do Brasil.
+              dataCompra: `${dataCompra}T12:00:00.000Z`,
               emitenteId: emitente!.id,
               fornecedorId: fornecedor!.id,
               valorFrete: frete,
@@ -1248,6 +1252,15 @@ function CompraForm({
                       </Button>
                     </div>
                   ))}
+                  {divergeDoXml && (
+                    <Alert>
+                      <TriangleAlert />
+                      <AlertDescription>
+                        As parcelas foram alteradas e divergem das duplicatas
+                        (cobr/dup) do XML da NF-e.
+                      </AlertDescription>
+                    </Alert>
+                  )}
                   {parcelasDivergem && (
                     <Alert variant="destructive">
                       <TriangleAlert />
