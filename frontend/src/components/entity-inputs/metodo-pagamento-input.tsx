@@ -39,9 +39,7 @@ export function MetodoPagamentoInput({
       onView={(item, readOnly) =>
         ui.windows.open({ component: MetodosUpsert, props: { editingItem: item, readOnly }, title: readOnly ? "Visualizar Método de Pagamento" : "Editar Método de Pagamento", size: "full" })}
       modalTitle="Selecionar Método de Pagamento"
-      getDisplayLabel={(item) =>
-        item ? `${item.codigo} - ${item.descricao}` : ""
-      }
+      getDisplayLabel={(item) => item?.descricao ?? ""}
       getSearchTerm={(item) => item.descricao}
       getId={(item) => item.codigo}
       fetchById={async (codigo) => {
