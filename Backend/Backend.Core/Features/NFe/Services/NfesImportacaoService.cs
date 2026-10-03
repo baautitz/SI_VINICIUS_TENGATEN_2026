@@ -88,6 +88,8 @@ public sealed class NfesImportacaoService : BaseService
         var fornecedor = await ObterFornecedor(dados.Emitente);
         var vinculos = fornecedor is null ? new Dictionary<string, string>() : await _comprasRepository.ObterVinculosDoFornecedor(fornecedor.Id);
         var transportadora = dados.Transportadora?.Documento is { } doc ? await _transportadorasRepository.ObterTransportadoraPorCpfCnpj(doc) : null;
+        if (dados.Transportadora is { } tp && transportadora is null && ValidarDocumento(tp).Erro is not null)
+            avisos.Add($"CNPJ da transportadora inválido ('{tp.Documento}'): não será possível cadastrá-la; o documento é gravado como veio no XML.");
 
         var itens = new List<PreviaNfeItem>();
         foreach (var i in dados.Itens)
@@ -227,7 +229,17 @@ public sealed class NfesImportacaoService : BaseService
                 3 => ModalidadeFrete.REMETENTE_PROPRIO, 4 => ModalidadeFrete.DESTINATARIO_PROPRIO, 9 => ModalidadeFrete.SEM_TRANSPORTE,
                 _ => throw new DomainException($"modFrete inválido: {mod}.")
             };
-            transportes = new NfesTransportes(modalidade, transportadora?.NomeRazaosocial, transportadora?.CpfCnpj, exigirTransportadora: false);
+            // Snapshot do XML mesmo sem transportadora cadastrada (documento como veio, mesmo inválido).
+            var x = d.Transportadora;
+            var v = d.Transporte;
+            var uf = Cortar(v?.Uf, 2)?.ToUpperInvariant() is { Length: 2 } u ? u : null;
+            transportes = new NfesTransportes(modalidade,
+                Cortar(x?.Nome, 150) ?? transportadora?.NomeRazaosocial,
+                Documento.CriarGenerico(Cortar(Digitos(x?.Documento), 14)) ?? transportadora?.CpfCnpj,
+                Documento.CriarGenerico(Cortar(x?.Ie, 15)),
+                uf is null ? null : Cortar(v?.Placa, 10), uf, Documento.CriarGenerico(Cortar(v?.Rntc, 20)),
+                v?.QuantidadeVolumes, Cortar(v?.Especie, 50), Cortar(v?.Marca, 50), Cortar(v?.Numeracao, 50),
+                v?.PesoBruto, v?.PesoLiquido, exigirTransportadora: false);
         }
 
         var t = d.Totais;

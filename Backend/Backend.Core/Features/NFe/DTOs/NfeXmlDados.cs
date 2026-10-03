@@ -10,6 +10,11 @@ public record NfeXmlItem(
 
 public record NfeXmlTotais(decimal Produtos, decimal Desconto, decimal Frete, decimal Seguro, decimal Outras, decimal Nota);
 
+// Volumes (vol, somados) e veículo (veicTransp) do bloco transp.
+public record NfeXmlTransporte(
+    int? QuantidadeVolumes, string? Especie, string? Marca, string? Numeracao, decimal? PesoLiquido, decimal? PesoBruto,
+    string? Placa, string? Uf, string? Rntc);
+
 public record NfeXmlParcela(int Numero, DateTime Vencimento, decimal Valor);
 
 // Dados lidos do XML da NF-e (4.0). ModalidadeFrete = modFrete (0, 1, 2, 3, 4, 9) quando presente.
@@ -20,4 +25,4 @@ public record NfeXmlDados(
     int? ModalidadeFrete, NfeXmlParte? Transportadora,
     IReadOnlyList<NfeXmlParcela> Parcelas, string? InformacoesComplementares,
     // Data de emissão no fuso do próprio XML (sem converter para UTC), para não deslocar o dia.
-    DateTime DataEmissaoLocal = default);
+    DateTime DataEmissaoLocal = default, NfeXmlTransporte? Transporte = null);

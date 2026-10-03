@@ -106,7 +106,25 @@ public static class NfeXmlParser
             transp is null || Filho(transp, "transporta") is not { } t ? null : Parte(t, null),
             parcelas,
             Texto(Filho(inf, "infAdic"), "infCpl"),
-            DateTimeOffset.Parse(emissao, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal).DateTime);
+            DateTimeOffset.Parse(emissao, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal).DateTime,
+            Transporte(transp));
+    }
+
+    private static NfeXmlTransporte? Transporte(XElement? transp)
+    {
+        if (transp is null) return null;
+        var vols = transp.Elements().Where(e => e.Name.LocalName == "vol").ToList();
+        var veic = Filho(transp, "veicTransp");
+        if (vols.Count == 0 && veic is null) return null;
+        decimal? Soma(string campo) => vols.Select(v => Texto(v, campo)).Where(x => x is not null).ToList() is { Count: > 0 } l
+            ? l.Sum(x => Decimal(x, campo)) : null;
+        return new NfeXmlTransporte(
+            Soma("qVol") is { } q ? (int)q : null,
+            vols.Select(v => Texto(v, "esp")).FirstOrDefault(x => x is not null),
+            vols.Select(v => Texto(v, "marca")).FirstOrDefault(x => x is not null),
+            vols.Select(v => Texto(v, "nVol")).FirstOrDefault(x => x is not null),
+            Soma("pesoL"), Soma("pesoB"),
+            Texto(veic, "placa"), Texto(veic, "UF"), Texto(veic, "RNTC"));
     }
 
     // 44 dígitos; DV = módulo 11 (pesos 2..9 da direita para a esquerda).

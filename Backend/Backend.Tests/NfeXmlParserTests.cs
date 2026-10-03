@@ -66,6 +66,22 @@ public class NfeXmlParserTests
     }
 
     [Fact]
+    public void Le_volumes_e_veiculo_do_transp()
+    {
+        var xml = Nfe(Chave(), "").Replace("</transporta></transp>",
+            "</transporta><veicTransp><placa>ABC1D23</placa><UF>SP</UF><RNTC>123</RNTC></veicTransp><vol><qVol>1</qVol><esp>CAIXA</esp><pesoL>1.200</pesoL><pesoB>1.500</pesoB></vol><vol><qVol>2</qVol><pesoL>0.800</pesoL></vol></transp>");
+        var t = NfeXmlParser.Parse(xml).Transporte!;
+
+        Assert.Equal(3, t.QuantidadeVolumes);
+        Assert.Equal("CAIXA", t.Especie);
+        Assert.Equal(2.0m, t.PesoLiquido);
+        Assert.Equal(1.5m, t.PesoBruto);
+        Assert.Equal("ABC1D23", t.Placa);
+        Assert.Equal("SP", t.Uf);
+        Assert.Equal("123", t.Rntc);
+    }
+
+    [Fact]
     public void Le_nfe_sem_nfeProc_e_sem_namespace()
     {
         var d = NfeXmlParser.Parse(Nfe(Chave(), ""));
