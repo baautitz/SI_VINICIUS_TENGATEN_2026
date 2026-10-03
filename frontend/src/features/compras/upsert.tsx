@@ -322,8 +322,10 @@ function CompraForm({
     },
     [],
   );
-  // XML com parcelas (cobr/dup) tem prioridade sobre a condição do fornecedor; sem elas, a condição do XML é derivada da query.
-  const condicaoXmlId = dados && dados.parcelas.length === 0 ? previa?.condicaoPagamentoId : null;
+  // XML com parcelas (cobr/dup) tem prioridade sobre a condição do fornecedor; sem elas, vale a do XML, a do cadastro novo editado ou a do fornecedor existente.
+  const condicaoXmlId = dados && dados.parcelas.length === 0
+      ? (previa?.condicaoPagamentoId ?? fornecedorDados?.condicaoPagamentoId ?? fornecedorXml?.condicaoPagamento?.id)
+      : null;
   const { data: condicaoXmlQuery } = useQuery({
     queryKey: ["condicoes-pagamentos", condicaoXmlId],
     queryFn: () => condicoesApi.getById(condicaoXmlId!),
