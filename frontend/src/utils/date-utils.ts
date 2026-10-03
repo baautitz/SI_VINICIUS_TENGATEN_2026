@@ -60,3 +60,13 @@ export function toLocalISODate(date: Date): string {
 export function todayLocalISODate(): string {
   return toLocalISODate(new Date());
 }
+
+/** Data de hoje em Brasília (o backend valida datas de compra nesse fuso) como "YYYY-MM-DD", independente do fuso do navegador. */
+export function todayBrasiliaISODate(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}

@@ -46,7 +46,7 @@ import {
 } from "@/ui/primitives";
 import { DatePicker, NumberInput } from "@/ui/composites";
 import { navigationCell } from "@/ui/keyboard-navigation";
-import { todayLocalISODate, toLocalISODate } from "@/utils/date-utils";
+import { todayLocalISODate, todayBrasiliaISODate, toLocalISODate } from "@/utils/date-utils";
 import { cn } from "@/lib/utils";
 import { SkuPicker } from "./sku-picker";
 import {
@@ -160,10 +160,10 @@ function CompraForm({
   const modoXml = !!importacao;
 
   const [dataCompra, setDataCompra] = React.useState(() =>
-    compra ? compra.dataCompra.split("T")[0] : todayLocalISODate(),
+    compra ? compra.dataCompra.split("T")[0] : todayBrasiliaISODate(),
   );
-  // Emissão do XML (somente leitura): limita a chegada por baixo; hoje (local) limita por cima.
-  const hoje = todayLocalISODate();
+  // Emissão do XML (somente leitura): limita a chegada por baixo; hoje (Brasília, como o backend) limita por cima.
+  const hoje = todayBrasiliaISODate();
   const emissaoXml = dados
     ? (dados.dataEmissaoLocal ?? dados.dataEmissao).split("T")[0]
     : null;
@@ -183,17 +183,23 @@ function CompraForm({
           : null;
   const erroData = erroEmissao ?? erroChegada;
   // Troca a chegada: parcelas ainda geradas a partir da data antiga acompanham a nova; as editadas são mantidas com aviso.
+  // Última chegada válida: valores parciais/vazios da digitação são ignorados na comparação com o padrão gerado.
+  const chegadaValida = React.useRef(dataCompra);
   const mudarChegada = (v: string | null) => {
     const nova = v ?? "";
-    if (/^\d{4}-\d{2}-\d{2}$/.test(nova) && parcelas.length > 0 && valorNota > 0) {
-      const padrao = JSON.stringify(gerarParcelas(valorNota, dataCompra, condicao));
-      if (JSON.stringify(parcelas) === padrao)
-        setParcelas(gerarParcelas(valorNota, nova, condicao));
-      else
-        ui.feedback.notify({
-          type: "warning",
-          title: "Parcelas mantidas: revise os vencimentos para a nova data de chegada.",
-        });
+    if (/^\d{4}-\d{2}-\d{2}$/.test(nova)) {
+      const anterior = chegadaValida.current;
+      chegadaValida.current = nova;
+      if (nova !== anterior && parcelas.length > 0 && valorNota > 0) {
+        const padrao = JSON.stringify(gerarParcelas(valorNota, anterior, condicao));
+        if (JSON.stringify(parcelas) === padrao)
+          setParcelas(gerarParcelas(valorNota, nova, condicao));
+        else if (!(dados && dados.parcelas.length > 0 && !divergeDoXml))
+          ui.feedback.notify({
+            type: "warning",
+            title: "Parcelas mantidas: revise os vencimentos para a nova data de chegada.",
+          });
+      }
     }
     setDataCompra(nova);
   };
@@ -272,11 +278,11 @@ function CompraForm({
   const [cadastrarTransportadora, setCadastrarTransportadora] =
     React.useState(false);
   const [vencFrete, setVencFrete] = React.useState(todayLocalISODate());
-  const [condicao, setCondicao] = React.useState<CondicaoPagamento | null>(
-    null,
+  const [condicaoEscolhida, setCondicao] = React.useState<CondicaoPagamento | null | undefined>(
+    undefined,
   );
   // Condição vinda do fornecedor: as parcelas são geradas ao entrar na etapa de custos (valores já fechados).
-  const [gerarParcelasDaCondicao, setGerarParcelasDaCondicao] =
+  const [gerarDoFornecedor, setGerarParcelasDaCondicao] =
     React.useState(false);
   const aplicarCondicaoDoFornecedor = React.useCallback(
     async (id: number | null | undefined) => {
@@ -292,23 +298,16 @@ function CompraForm({
     },
     [],
   );
-  // XML com parcelas (cobr/dup) tem prioridade sobre a condição do fornecedor.
-  React.useEffect(() => {
-    const id = previa?.condicaoPagamentoId;
-    if (!id || !dados || dados.parcelas.length > 0) return;
-    let ativo = true;
-    condicoesApi
-      .getById(id)
-      .then((c) => {
-        if (!ativo || !c.ativo) return;
-        setCondicao(c);
-        setGerarParcelasDaCondicao(true);
-      })
-      .catch(() => {});
-    return () => {
-      ativo = false;
-    };
-  }, [dados, previa]);
+  // XML com parcelas (cobr/dup) tem prioridade sobre a condição do fornecedor; sem elas, a condição do XML é derivada da query.
+  const condicaoXmlId = dados && dados.parcelas.length === 0 ? previa?.condicaoPagamentoId : null;
+  const { data: condicaoXmlQuery } = useQuery({
+    queryKey: ["condicoes-pagamentos", condicaoXmlId],
+    queryFn: () => condicoesApi.getById(condicaoXmlId!),
+    enabled: !!condicaoXmlId,
+  });
+  const condicaoXml = condicaoXmlQuery?.ativo ? condicaoXmlQuery : null;
+  const condicao = condicaoEscolhida !== undefined ? condicaoEscolhida : condicaoXml;
+  const gerarParcelasDaCondicao = gerarDoFornecedor || (!!condicaoXml && condicaoEscolhida === undefined);
   const [parcelas, setParcelas] = React.useState<ParcelaCompra[]>(() =>
     dados
       ? dados.parcelas.map((p, i) => ({
@@ -432,15 +431,23 @@ function CompraForm({
     setParcelas(gerarParcelas(valorNota, dataCompra, condicao));
   };
 
-  const adicionarParcela = () =>
+  const adicionarParcela = () => {
+    if (round2(valorNota - somaParcelas) <= 0) {
+      ui.feedback.notify({
+        type: "error",
+        title: "Não há saldo para uma nova parcela: ajuste as parcelas existentes.",
+      });
+      return;
+    }
     setParcelas((p) => [
       ...p,
       {
         numeroParcela: p.length + 1,
         dataVencimento: dataCompra,
-        valorParcela: round2(Math.max(0, valorNota - somaParcelas)),
+        valorParcela: round2(valorNota - somaParcelas),
       },
     ]);
+  };
 
   const iso = (d: string) => new Date(d + "T12:00:00").toISOString();
 
@@ -461,6 +468,8 @@ function CompraForm({
       return "Frete de terceiro exige a transportadora.";
     if (parcelas.length === 0)
       return "Informe ao menos uma parcela (use Recalcular parcelas).";
+    if (parcelas.some((p) => !(p.valorParcela > 0)))
+      return "O valor de cada parcela deve ser maior que zero.";
     return null;
   };
 
@@ -1233,6 +1242,9 @@ function CompraForm({
                             )
                           }
                         />
+                        {!(p.valorParcela > 0) && (
+                          <FieldError>Informe um valor maior que zero.</FieldError>
+                        )}
                       </div>
                       <Button
                         type="button"
