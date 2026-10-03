@@ -21,7 +21,7 @@ import { PaisInput } from "@/components/entity-inputs/pais-input";
 import { TipoPessoaSelect } from "@/components/tipo-pessoa-select";
 import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
-import { fornecedorSchema, Fornecedor, FornecedorFormValues } from "./types";
+import { fornecedorSchema, Fornecedor, FornecedorFormValues, ItensSelecionados } from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { fornecedoresApi } from "@/api/parceiros";
 import { TipoPessoa } from "@/api/types";
@@ -36,6 +36,10 @@ export interface FornecedoresUpsertProps {
   controlado?: boolean;
   /** Valores iniciais de um cadastro ainda não gravado (ex.: dados do XML). */
   valoresIniciais?: Partial<FornecedorFormValues>;
+  /** Itens já escolhidos nos campos de entidade do cadastro novo (reabertura). */
+  itensIniciais?: ItensSelecionados;
+  /** Recebe os itens escolhidos ao confirmar no modo controlado. */
+  onItens?: (itens: ItensSelecionados) => void;
 }
 
 export function FornecedoresUpsert(props: FornecedoresUpsertProps) {
@@ -65,7 +69,8 @@ export function FornecedoresUpsert(props: FornecedoresUpsertProps) {
   );
 }
 
-function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, valoresIniciais }: FornecedoresUpsertProps) {
+function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, valoresIniciais, itensIniciais, onItens }: FornecedoresUpsertProps) {
+  const itens = React.useRef<ItensSelecionados>(itensIniciais ?? {});
   const activeWindow = useWindow<true | FornecedorFormValues>();
   const [selectedPais, setSelectedPais] = useState<Pais | null>(
     editingItem?.nacionalidade ?? null,
@@ -118,7 +123,10 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
         sexo: value.tipoPessoa === TipoPessoa.FISICA ? value.sexo : "",
         dataNascimento: value.dataNascimento || null,
       };
-      if (controlado) return activeWindow.resolve(payload as FornecedorFormValues);
+      if (controlado) {
+        onItens?.(itens.current);
+        return activeWindow.resolve(payload as FornecedorFormValues);
+      }
       try {
         await mutation.mutateAsync(payload as FornecedorFormValues);
       } catch {
@@ -261,13 +269,16 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
                     name={field.name}
                     label="Nacionalidade"
                     error={getFieldError(field.name, field.state.meta.errors)}
-                    initialItem={editingItem?.nacionalidade}
+                    initialItem={editingItem?.nacionalidade ?? itensIniciais?.nacionalidade}
                     disabled={readOnly}
                     onSelectId={(id) => {
                       field.handleChange(id ?? 0);
                       setNacionalidadeId(id ?? 0);
                     }}
-                    onSelectItem={(item) => setSelectedPais(item)}
+                    onSelectItem={(item) => {
+                      setSelectedPais(item);
+                      itens.current.nacionalidade = item;
+                    }}
                   />
                 )}
               </form.Field>
@@ -495,7 +506,8 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
                     <BairroInput
                       name={field.name}
                       error={error}
-                      initialItem={editingItem?.bairro}
+                      initialItem={editingItem?.bairro ?? itensIniciais?.bairro}
+                      onSelectItem={(item) => { itens.current.bairro = item; }}
                       onSelectId={(id) => field.handleChange(id)}
                       disabled={readOnly}
                     />
@@ -512,7 +524,8 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
               name={field.name}
               label="Condição de pagamento padrão"
               error={getFieldError(field.name, field.state.meta.errors)}
-              initialItem={editingItem?.condicaoPagamento}
+              initialItem={editingItem?.condicaoPagamento ?? itensIniciais?.condicaoPagamento}
+              onSelectItem={(item) => { itens.current.condicaoPagamento = item; }}
               onSelectId={(id) => field.handleChange(id)}
               disabled={readOnly}
             />

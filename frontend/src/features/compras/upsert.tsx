@@ -10,7 +10,7 @@ import { TransportadorasUpsert } from "@/features/parceiros/transportadoras/upse
 import type { FornecedorFormValues } from "@/features/parceiros/fornecedores/types";
 import type { TransportadoraFormValues } from "@/features/parceiros/transportadoras/types";
 import { ParteXmlCard, valoresDaParteXml, erroDoCadastro } from "./parte-xml";
-import { fornecedorSchema } from "@/features/parceiros/fornecedores/types";
+import { fornecedorSchema, type ItensSelecionados } from "@/features/parceiros/fornecedores/types";
 import { transportadoraSchema } from "@/features/parceiros/transportadoras/types";
 import { comprasApi } from "@/api/compras";
 import { condicoesApi } from "@/api/financeiro";
@@ -219,6 +219,8 @@ function CompraForm({
   );
   const [fornecedorDados, setFornecedorDados] =
     React.useState<FornecedorFormValues>();
+  const [fornecedorItens, setFornecedorItens] = React.useState<ItensSelecionados>();
+  const [transportadoraItens, setTransportadoraItens] = React.useState<ItensSelecionados>();
   const [transportadoraDados, setTransportadoraDados] =
     React.useState<TransportadoraFormValues>();
   const { data: fornecedorXml } = useQuery({
@@ -837,6 +839,8 @@ function CompraForm({
                         editingItem: null,
                         controlado: true,
                         valoresIniciais: fornecedorDados ?? valoresDaParteXml(dados!.emitente),
+                        itensIniciais: fornecedorItens,
+                        onItens: setFornecedorItens,
                       },
                       title: "Editar Fornecedor",
                       size: "full",
@@ -1218,6 +1222,8 @@ function CompraForm({
                                   editingItem: null,
                                   controlado: true,
                                   valoresIniciais: transportadoraDados ?? valoresDaParteXml(dados.transportadora!),
+                                  itensIniciais: transportadoraItens,
+                                  onItens: setTransportadoraItens,
                                 },
                                 title: "Editar Transportadora",
                                 size: "full",

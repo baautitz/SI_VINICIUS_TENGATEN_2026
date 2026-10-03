@@ -22,6 +22,7 @@ import {
 } from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { transportadorasApi } from "@/api/parceiros";
+import type { ItensSelecionados } from "../fornecedores/types";
 import { TipoPessoa } from "@/api/types";
 import { Pais } from "@/features/localizacao/paises";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
@@ -34,6 +35,10 @@ export interface TransportadorasUpsertProps {
   controlado?: boolean;
   /** Valores iniciais de um cadastro ainda não gravado (ex.: dados do XML). */
   valoresIniciais?: Partial<TransportadoraFormValues>;
+  /** Itens já escolhidos nos campos de entidade do cadastro novo (reabertura). */
+  itensIniciais?: ItensSelecionados;
+  /** Recebe os itens escolhidos ao confirmar no modo controlado. */
+  onItens?: (itens: ItensSelecionados) => void;
 }
 
 interface TransportadorasUpsertFormProps {
@@ -43,6 +48,10 @@ interface TransportadorasUpsertFormProps {
   controlado?: boolean;
   /** Valores iniciais de um cadastro ainda não gravado (ex.: dados do XML). */
   valoresIniciais?: Partial<TransportadoraFormValues>;
+  /** Itens já escolhidos nos campos de entidade do cadastro novo (reabertura). */
+  itensIniciais?: ItensSelecionados;
+  /** Recebe os itens escolhidos ao confirmar no modo controlado. */
+  onItens?: (itens: ItensSelecionados) => void;
 }
 
 export function TransportadorasUpsert(props: TransportadorasUpsertProps) {
@@ -77,7 +86,10 @@ function TransportadorasUpsertForm({
   readOnly = false,
   controlado,
   valoresIniciais,
+  itensIniciais,
+  onItens,
 }: TransportadorasUpsertFormProps) {
+  const itens = React.useRef<ItensSelecionados>(itensIniciais ?? {});
   const activeWindow = useWindow<true | TransportadoraFormValues>();
   const [selectedPais, setSelectedPais] = useState<Pais | null>(
     editingItem?.nacionalidade ?? null,
@@ -130,7 +142,10 @@ function TransportadorasUpsertForm({
         sexo: value.tipoPessoa === TipoPessoa.FISICA ? value.sexo : "",
         dataNascimento: value.dataNascimento || null,
       };
-      if (controlado) return activeWindow.resolve(payload as TransportadoraFormValues);
+      if (controlado) {
+        onItens?.(itens.current);
+        return activeWindow.resolve(payload as TransportadoraFormValues);
+      }
       try {
         await mutation.mutateAsync(payload as TransportadoraFormValues);
       } catch {
@@ -266,12 +281,15 @@ function TransportadorasUpsertForm({
                     name={field.name}
                     label="Nacionalidade"
                     error={getFieldError(field.name, field.state.meta.errors)}
-                    initialItem={editingItem?.nacionalidade}
+                    initialItem={editingItem?.nacionalidade ?? itensIniciais?.nacionalidade}
                     onSelectId={(id) => {
                       field.handleChange(id ?? 0);
                       setNacionalidadeId(id ?? 0);
                     }}
-                    onSelectItem={(item) => setSelectedPais(item)}
+                    onSelectItem={(item) => {
+                      setSelectedPais(item);
+                      itens.current.nacionalidade = item;
+                    }}
                     disabled={readOnly}
                   />
                 )}
@@ -516,7 +534,8 @@ function TransportadorasUpsertForm({
                     <BairroInput
                       name={field.name}
                       error={error}
-                      initialItem={editingItem?.bairro}
+                      initialItem={editingItem?.bairro ?? itensIniciais?.bairro}
+                      onSelectItem={(item) => { itens.current.bairro = item; }}
                       onSelectId={(id) => field.handleChange(id)}
                       disabled={readOnly}
                     />

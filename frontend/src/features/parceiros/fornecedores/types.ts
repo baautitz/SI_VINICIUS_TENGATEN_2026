@@ -44,3 +44,10 @@ export const fornecedorSchema = z.object({
 })
 
 export type FornecedorFormValues = z.infer<typeof fornecedorSchema>
+
+/** Itens exibidos nos campos de entidade de um cadastro novo, guardados em memória até gravar. */
+export interface ItensSelecionados {
+  nacionalidade?: Pais | null
+  bairro?: Bairro | null
+  condicaoPagamento?: CondicaoPagamento | null
+}
