@@ -296,7 +296,7 @@ public class SkusRepository : ISkusRepository
             SELECT COUNT(*)
             FROM skus s
             JOIN produtos p ON p.id = s.produto_id
-            WHERE unaccent(s.id::text) ILIKE unaccent(@Termo::text) OR unaccent(s.sku::text) ILIKE unaccent(@Termo::text) OR unaccent(s.gtin_ean::text) ILIKE unaccent(@Termo::text) OR unaccent(p.produto::text) ILIKE unaccent(@Termo::text);";
+            WHERE unaccent(s.sku::text) ILIKE unaccent(@Termo::text) OR unaccent(s.gtin_ean::text) ILIKE unaccent(@Termo::text) OR unaccent(p.produto::text) ILIKE unaccent(@Termo::text);";
 
         const string sqlData = @"
             SELECT 
@@ -310,7 +310,7 @@ public class SkusRepository : ISkusRepository
             JOIN categorias c ON c.id = p.categoria_id
             JOIN marcas m ON m.id = p.marca_id
             JOIN unidades_medida u ON u.id = p.unidade_medida_id
-            WHERE unaccent(s.id::text) ILIKE unaccent(@Termo::text) OR unaccent(s.sku::text) ILIKE unaccent(@Termo::text) OR unaccent(s.gtin_ean::text) ILIKE unaccent(@Termo::text) OR unaccent(p.produto::text) ILIKE unaccent(@Termo::text)
+            WHERE unaccent(s.sku::text) ILIKE unaccent(@Termo::text) OR unaccent(s.gtin_ean::text) ILIKE unaccent(@Termo::text) OR unaccent(p.produto::text) ILIKE unaccent(@Termo::text)
             ORDER BY s.sku DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
