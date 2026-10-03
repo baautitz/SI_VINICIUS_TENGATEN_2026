@@ -9,6 +9,7 @@ COPY ["backend.slnx", "."]
 COPY ["Backend.Core/Backend.Core.csproj", "Backend.Core/"]
 COPY ["Backend.Infrastructure.PostgreSQL/Backend.Infrastructure.PostgreSQL.csproj", "Backend.Infrastructure.PostgreSQL/"]
 COPY ["Backend.Web/Backend.Web.csproj", "Backend.Web/"]
+COPY ["Backend.Tests/Backend.Tests.csproj", "Backend.Tests/"]
 RUN dotnet restore "backend.slnx"
 COPY . .
 WORKDIR "/src/Backend.Web"
