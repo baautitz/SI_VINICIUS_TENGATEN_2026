@@ -4,6 +4,12 @@ import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, RefreshCw, Trash2, TriangleAlert, Undo2 } from "lucide-react";
 import { WindowActions } from "@/imperative-ui";
+import { fornecedoresApi, transportadorasApi } from "@/api/parceiros";
+import { FornecedoresUpsert } from "@/features/parceiros/fornecedores/upsert";
+import { TransportadorasUpsert } from "@/features/parceiros/transportadoras/upsert";
+import type { FornecedorFormValues } from "@/features/parceiros/fornecedores/types";
+import type { TransportadoraFormValues } from "@/features/parceiros/transportadoras/types";
+import { ParteXmlCard, valoresDaParteXml } from "./parte-xml";
 import { comprasApi } from "@/api/compras";
 import { condicoesApi } from "@/api/financeiro";
 import { SkuInput } from "@/components/entity-inputs/sku-input";
@@ -209,6 +215,20 @@ function CompraForm({
   const [fornecedor, setFornecedor] = React.useState<Fornecedor | null>(
     compra?.fornecedor ?? null,
   );
+  const [fornecedorDados, setFornecedorDados] =
+    React.useState<FornecedorFormValues>();
+  const [transportadoraDados, setTransportadoraDados] =
+    React.useState<TransportadoraFormValues>();
+  const { data: fornecedorXml } = useQuery({
+    queryKey: ["fornecedores", "detail", previa?.fornecedorId],
+    queryFn: () => fornecedoresApi.getById(previa!.fornecedorId!),
+    enabled: !!previa?.fornecedorId,
+  });
+  const { data: transportadoraXml } = useQuery({
+    queryKey: ["transportadoras", "detail", previa?.transportadoraId],
+    queryFn: () => transportadorasApi.getById(previa!.transportadoraId!),
+    enabled: !!previa?.transportadoraId,
+  });
   const [observacao, setObservacao] = React.useState(
     compra?.observacao ?? dados?.informacoesComplementares ?? "",
   );
@@ -514,6 +534,11 @@ function CompraForm({
               vencimentoFreteTerceiro: venc,
               transportadoraId,
               cadastrarTransportadora,
+              fornecedorDados: previa?.fornecedorId ? undefined : fornecedorDados,
+              transportadoraDados:
+                !previa?.transportadoraId && cadastrarTransportadora
+                  ? transportadoraDados
+                  : undefined,
               dataChegada: dataCompra,
             })
           : comprasApi.create({
@@ -773,23 +798,37 @@ function CompraForm({
           {etapa === 0 && (
             <>
               {modoXml ? (
-                <div className="flex flex-col gap-1 rounded-lg border p-4 text-sm">
-                  <span className="text-muted-foreground text-xs font-semibold uppercase">
-                    Fornecedor do XML
-                  </span>
-                  <span className="text-base font-semibold">
-                    {dados?.emitente.nome}
-                  </span>
-                  <span>CNPJ: {dados?.emitente.documento}</span>
-                  <Badge
-                    variant={previa?.fornecedorId ? "outline" : "secondary"}
-                    className="w-fit"
-                  >
-                    {previa?.fornecedorId
-                      ? "Fornecedor já cadastrado"
-                      : "Será cadastrado ao confirmar"}
-                  </Badge>
-                </div>
+                <ParteXmlCard
+                  titulo="Fornecedor do XML"
+                  nome={fornecedorXml?.nomeRazaosocial ?? fornecedorDados?.nomeRazaosocial ?? dados!.emitente.nome}
+                  documento={fornecedorXml?.cpfCnpj ?? fornecedorDados?.cpfCnpj ?? dados!.emitente.documento}
+                  existente={!!previa?.fornecedorId}
+                  editado={!!fornecedorDados}
+                  onEditar={async () => {
+                    if (previa?.fornecedorId) {
+                      // Existente: salva direto na API; a query do cadastro é invalidada pelo upsert.
+                      if (fornecedorXml)
+                        await ui.windows.open({
+                          component: FornecedoresUpsert,
+                          props: { editingItem: fornecedorXml },
+                          title: "Editar Fornecedor",
+                          size: "full",
+                        });
+                      return;
+                    }
+                    const r = await ui.windows.open<true | FornecedorFormValues, React.ComponentProps<typeof FornecedoresUpsert>>({
+                      component: FornecedoresUpsert,
+                      props: {
+                        editingItem: null,
+                        controlado: true,
+                        valoresIniciais: fornecedorDados ?? valoresDaParteXml(dados!.emitente),
+                      },
+                      title: "Editar Fornecedor",
+                      size: "full",
+                    });
+                    if (r.status === "confirmed" && r.value !== true) setFornecedorDados(r.value);
+                  }}
+                />
               ) : (
                 <FornecedorInput
                   name="compra-fornecedor"
@@ -1138,6 +1177,43 @@ function CompraForm({
                         onSelectId={setTransportadoraId}
                         label="Transportadora do frete"
                       />
+                      {modoXml && dados?.transportadora && (
+                        <div className="mt-2">
+                          <ParteXmlCard
+                            titulo="Transportadora do XML"
+                            nome={transportadoraXml?.nomeRazaosocial ?? transportadoraDados?.nomeRazaosocial ?? dados.transportadora.nome}
+                            documento={transportadoraXml?.cpfCnpj ?? transportadoraDados?.cpfCnpj ?? dados.transportadora.documento}
+                            existente={!!previa?.transportadoraId}
+                            editado={!!transportadoraDados}
+                            onEditar={async () => {
+                              if (previa?.transportadoraId) {
+                                if (transportadoraXml)
+                                  await ui.windows.open({
+                                    component: TransportadorasUpsert,
+                                    props: { editingItem: transportadoraXml },
+                                    title: "Editar Transportadora",
+                                    size: "full",
+                                  });
+                                return;
+                              }
+                              const r = await ui.windows.open<true | TransportadoraFormValues, React.ComponentProps<typeof TransportadorasUpsert>>({
+                                component: TransportadorasUpsert,
+                                props: {
+                                  editingItem: null,
+                                  controlado: true,
+                                  valoresIniciais: transportadoraDados ?? valoresDaParteXml(dados.transportadora!),
+                                },
+                                title: "Editar Transportadora",
+                                size: "full",
+                              });
+                              if (r.status === "confirmed" && r.value !== true) {
+                                setTransportadoraDados(r.value);
+                                setCadastrarTransportadora(true);
+                              }
+                            }}
+                          />
+                        </div>
+                      )}
                       {modoXml &&
                         dados?.transportadora &&
                         !previa?.transportadoraId && (

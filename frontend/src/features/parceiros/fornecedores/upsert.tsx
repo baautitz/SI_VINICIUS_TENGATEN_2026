@@ -32,6 +32,10 @@ import { Spinner } from "@/ui/primitives";
 export interface FornecedoresUpsertProps {
   editingItem: Fornecedor | null;
   readOnly?: boolean;
+  /** Modo controlado: devolve os valores (sem chamar a API) a quem abriu. */
+  controlado?: boolean;
+  /** Valores iniciais de um cadastro ainda não gravado (ex.: dados do XML). */
+  valoresIniciais?: Partial<FornecedorFormValues>;
 }
 
 export function FornecedoresUpsert(props: FornecedoresUpsertProps) {
@@ -61,8 +65,8 @@ export function FornecedoresUpsert(props: FornecedoresUpsertProps) {
   );
 }
 
-function FornecedoresUpsertForm({ editingItem, readOnly = false }: FornecedoresUpsertProps) {
-  const activeWindow = useWindow<true>();
+function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, valoresIniciais }: FornecedoresUpsertProps) {
+  const activeWindow = useWindow<true | FornecedorFormValues>();
   const [selectedPais, setSelectedPais] = useState<Pais | null>(
     editingItem?.nacionalidade ?? null,
   );
@@ -102,6 +106,7 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false }: FornecedoresU
       observacao: editingItem?.observacao ?? "",
       condicaoPagamentoId: editingItem?.condicaoPagamento?.id ?? null,
       ativo: editingItem?.ativo ?? true,
+      ...valoresIniciais,
     } as FornecedorFormValues,
     onSubmit: async ({ value }) => {
       resetErrors();
@@ -113,6 +118,7 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false }: FornecedoresU
         sexo: value.tipoPessoa === TipoPessoa.FISICA ? value.sexo : "",
         dataNascimento: value.dataNascimento || null,
       };
+      if (controlado) return activeWindow.resolve(payload as FornecedorFormValues);
       try {
         await mutation.mutateAsync(payload as FornecedorFormValues);
       } catch {

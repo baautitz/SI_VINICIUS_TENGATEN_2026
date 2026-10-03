@@ -1,5 +1,7 @@
 import type { Emitente } from "@/features/parceiros/emitentes/types";
 import type { Fornecedor } from "@/features/parceiros/fornecedores/types";
+import type { FornecedorFormValues } from "@/features/parceiros/fornecedores/types";
+import type { TransportadoraFormValues } from "@/features/parceiros/transportadoras/types";
 import type { Sku } from "@/features/catalogo/skus/types";
 
 export interface Compra {
@@ -74,6 +76,9 @@ export interface ImportarNfePayload {
   vencimentoFreteTerceiro: string | null;
   transportadoraId: number | null;
   cadastrarTransportadora: boolean;
+  /** Só para cadastros novos (inexistentes); gravados ao confirmar a compra. */
+  fornecedorDados?: FornecedorFormValues;
+  transportadoraDados?: TransportadoraFormValues;
   /** Dia de chegada (YYYY-MM-DD); omitida = hoje. */
   dataChegada?: string;
 }

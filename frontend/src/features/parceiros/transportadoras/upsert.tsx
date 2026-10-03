@@ -30,11 +30,19 @@ import { Spinner } from "@/ui/primitives";
 export interface TransportadorasUpsertProps {
   editingItem: Transportadora | null;
   readOnly?: boolean;
+  /** Modo controlado: devolve os valores (sem chamar a API) a quem abriu. */
+  controlado?: boolean;
+  /** Valores iniciais de um cadastro ainda não gravado (ex.: dados do XML). */
+  valoresIniciais?: Partial<TransportadoraFormValues>;
 }
 
 interface TransportadorasUpsertFormProps {
   editingItem: Transportadora | null;
   readOnly?: boolean;
+  /** Modo controlado: devolve os valores (sem chamar a API) a quem abriu. */
+  controlado?: boolean;
+  /** Valores iniciais de um cadastro ainda não gravado (ex.: dados do XML). */
+  valoresIniciais?: Partial<TransportadoraFormValues>;
 }
 
 export function TransportadorasUpsert(props: TransportadorasUpsertProps) {
@@ -67,8 +75,10 @@ export function TransportadorasUpsert(props: TransportadorasUpsertProps) {
 function TransportadorasUpsertForm({
   editingItem,
   readOnly = false,
+  controlado,
+  valoresIniciais,
 }: TransportadorasUpsertFormProps) {
-  const activeWindow = useWindow<true>();
+  const activeWindow = useWindow<true | TransportadoraFormValues>();
   const [selectedPais, setSelectedPais] = useState<Pais | null>(
     editingItem?.nacionalidade ?? null,
   );
@@ -108,6 +118,7 @@ function TransportadorasUpsertForm({
       dataNascimento: editingItem?.dataNascimento ? editingItem.dataNascimento.split("T")[0] : "",
       observacao: editingItem?.observacao ?? "",
       ativo: editingItem?.ativo ?? true,
+      ...valoresIniciais,
     } as TransportadoraFormValues,
     onSubmit: async ({ value }) => {
       if (readOnly) return;
@@ -119,6 +130,7 @@ function TransportadorasUpsertForm({
         sexo: value.tipoPessoa === TipoPessoa.FISICA ? value.sexo : "",
         dataNascimento: value.dataNascimento || null,
       };
+      if (controlado) return activeWindow.resolve(payload as TransportadoraFormValues);
       try {
         await mutation.mutateAsync(payload as TransportadoraFormValues);
       } catch {
