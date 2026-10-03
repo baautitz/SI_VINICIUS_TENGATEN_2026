@@ -228,6 +228,8 @@ public sealed class ComprasService : BaseService
             condicao = await _condicoesRepository.ObterCondicaoPagamentoPorId(command.CondicaoPagamentoId.Value);
             if (condicao is null)
                 return Resultado<Compra>.Falha(new ResultadoErro("CONDICAO_PAGAMENTO_INEXISTENTE", "A condição de pagamento informada não existe.", "CondicaoPagamentoId"));
+            if (!condicao.Ativo)
+                return Resultado<Compra>.Falha(new ResultadoErro("CONDICAO_PAGAMENTO_INATIVA", "A condição de pagamento informada está inativa.", "CondicaoPagamentoId"));
         }
 
         var itens = new List<CompraItens>();

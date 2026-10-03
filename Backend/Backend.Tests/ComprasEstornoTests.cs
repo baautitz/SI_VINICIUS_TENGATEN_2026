@@ -132,6 +132,23 @@ public class ComprasEstornoTests
     }
 
     [Fact]
+    public async Task Condicao_inativa_na_compra_falha()
+    {
+        var service = new ComprasService(
+            Criar<IComprasRepository>(),
+            Criar<IFornecedoresRepository>(h => h["ObterFornecedorPorId"] = _ => Instancia<Fornecedores>()),
+            Criar<IEmitentesRepository>(h => h["ObterEmitentePorId"] = _ => Instancia<Emitentes>()),
+            Criar<ITransportadorasRepository>(), Criar<ISkusRepository>(),
+            Criar<ICondicoesPagamentosRepository>(h => h["ObterCondicaoPagamentoPorId"] = _ => Instancia<CondicoesPagamentos>()),
+            new MovimentacoesEstoquesService(Criar<IMovimentacoesEstoquesRepository>(), Criar<ISkusRepository>(), Criar<IUsuariosRepository>(), new UowFake()),
+            Criar<IContasPagarRepository>(), Criar<INfesRepository>(), Criar<IUsuariosRepository>(), new UowFake());
+        var r = await service.GravarCompra(new CriarCompraCommand(
+            DateTime.UtcNow, 1, 1, 0, 0, 0, 0, 0, null, null, null,
+            new[] { new CriarCompraItemCommand("SKU-1", 2, 5m, 0, null) }, 5, new[] { new Backend.Core.Features.Financeiro.Commands.CriarParcelaPagarCommand(1, DateTime.UtcNow.AddDays(30), 10m) }));
+        Assert.Equal("CONDICAO_PAGAMENTO_INATIVA", r.Errors!.First().Code);
+    }
+
+    [Fact]
     public async Task Nfe_nao_emitida_nao_e_alterada_e_fica_no_motivo()
     {
         var c = new Cenario(nfeEmitida: false);
