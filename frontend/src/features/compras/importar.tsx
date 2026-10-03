@@ -10,6 +10,7 @@ import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
 import {
   Button,
   Field,
+  FieldDescription,
   FieldLabel,
   Input,
   Kbd,
@@ -101,7 +102,7 @@ export function ImportarXmlWindow() {
             setXml(await f.text());
           }}
         />
-        {arquivo && <span className="text-muted-foreground text-xs">Arquivo: {arquivo}</span>}
+        <FieldDescription>{arquivo ? `Arquivo: ${arquivo}` : "Escolha o XML da NF-e (até 2 MB)."}</FieldDescription>
       </Field>
       <Field>
         <FieldLabel htmlFor="xml-texto">ou cole o conteúdo</FieldLabel>
