@@ -11,6 +11,7 @@ import {
   Button,
   Field,
   FieldLabel,
+  Input,
   Kbd,
   KbdGroup,
   Textarea,
@@ -84,11 +85,10 @@ export function ImportarXmlWindow() {
       </div>
       <Field>
         <FieldLabel htmlFor="xml-arquivo">Arquivo XML</FieldLabel>
-        <input
+        <Input
           id="xml-arquivo"
           type="file"
           accept=".xml,text/xml,application/xml"
-          className="text-sm"
           onChange={async (e) => {
             const f = e.target.files?.[0];
             if (!f) return;
