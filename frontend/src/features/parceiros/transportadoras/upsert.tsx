@@ -139,6 +139,11 @@ function TransportadorasUpsertForm({
     },
   });
 
+  // Cadastro novo vindo do XML: mostra de cara os obrigatórios que faltam.
+  React.useEffect(() => {
+    if (valoresIniciais) void form.validateAllFields("change");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const registerDirty = React.useCallback(() => {
     activeWindow.setDirtyCheck(() => form.state.isDirty);
