@@ -200,8 +200,8 @@ public class EmitentesRepository : IEmitentesRepository
 
         const string sqlCount = @"
             SELECT COUNT(*) FROM emitentes
-            WHERE nome_razaosocial ILIKE @Termo OR cpf_cnpj ILIKE @Termo
-               OR apelido_nomefantasia ILIKE @Termo OR email ILIKE @Termo;";
+            WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(cpf_cnpj::text) ILIKE unaccent(@Termo::text)
+               OR unaccent(apelido_nomefantasia::text) ILIKE unaccent(@Termo::text) OR unaccent(email::text) ILIKE unaccent(@Termo::text);";
 
         const string sqlData = @"
             SELECT e.id AS Id, e.tipo_pessoa AS TipoPessoa, e.nome_razaosocial AS NomeRazaoSocial, e.cpf_cnpj AS CpfCnpj, e.apelido_nomefantasia AS ApelidoNomeFantasia, e.logradouro AS Logradouro, e.numero AS Numero, e.sexo AS Sexo, e.data_nascimento AS DataNascimento,
@@ -218,8 +218,8 @@ public class EmitentesRepository : IEmitentesRepository
             LEFT JOIN cidades c ON c.id = b.cidade_id
             LEFT JOIN estados st ON st.id = c.estado_id
             LEFT JOIN paises pe ON pe.id = st.pais_id
-            WHERE e.nome_razaosocial ILIKE @Termo OR e.cpf_cnpj ILIKE @Termo
-               OR e.apelido_nomefantasia ILIKE @Termo OR e.email ILIKE @Termo
+            WHERE unaccent(e.id::text) ILIKE unaccent(@Termo::text) OR unaccent(e.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(e.cpf_cnpj::text) ILIKE unaccent(@Termo::text)
+               OR unaccent(e.apelido_nomefantasia::text) ILIKE unaccent(@Termo::text) OR unaccent(e.email::text) ILIKE unaccent(@Termo::text)
             ORDER BY e.criado_em DESC, e.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 

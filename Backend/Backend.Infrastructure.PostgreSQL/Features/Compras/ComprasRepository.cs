@@ -34,7 +34,7 @@ public class ComprasRepository : IComprasRepository
     {
         var p = new { Termo = string.IsNullOrWhiteSpace(termo) ? null : $"%{termo}%", FornecedorId = fornecedorId, TamanhoDaPagina = tamanhoDaPagina, Offset = (pagina - 1) * tamanhoDaPagina };
         const string where = @"
-            WHERE (@Termo::text IS NULL OR f.nome_razaosocial ILIKE @Termo OR e.nome_razaosocial ILIKE @Termo OR c.observacao ILIKE @Termo)
+            WHERE (@Termo::text IS NULL OR unaccent(c.id::text) ILIKE unaccent(@Termo::text) OR unaccent(f.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(e.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(c.observacao::text) ILIKE unaccent(@Termo::text))
               AND (@FornecedorId::int IS NULL OR c.fornecedor_id = @FornecedorId::int)";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(

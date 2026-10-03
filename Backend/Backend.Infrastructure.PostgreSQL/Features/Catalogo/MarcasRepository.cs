@@ -127,12 +127,12 @@ public class MarcasRepository : IMarcasRepository
         const string sql = @"
             SELECT COUNT(*)
             FROM marcas
-            WHERE unaccent(marca::text) ILIKE unaccent(@Termo::text) 
+            WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(marca::text) ILIKE unaccent(@Termo::text) 
                OR unaccent(descricao::text) ILIKE unaccent(@Termo::text);
 
             SELECT id, marca, descricao, ativo
             FROM marcas
-            WHERE unaccent(marca::text) ILIKE unaccent(@Termo::text) 
+            WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(marca::text) ILIKE unaccent(@Termo::text) 
                OR unaccent(descricao::text) ILIKE unaccent(@Termo::text)
             ORDER BY id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";

@@ -79,13 +79,13 @@ public class CidadesRepository : ICidadesRepository
     public async Task<ResultadoPaginado<Cidades>> PesquisarCidades(string termo, int pagina = 1, int tamanhoDaPagina = 20, int? estadoId = null)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
-        const string sqlCount = "SELECT COUNT(*) FROM cidades WHERE (cidade ILIKE @Termo OR ddd ILIKE @Termo) AND (@EstadoId::int IS NULL OR estado_id = @EstadoId);";
+        const string sqlCount = "SELECT COUNT(*) FROM cidades WHERE (unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(cidade::text) ILIKE unaccent(@Termo::text) OR unaccent(ddd::text) ILIKE unaccent(@Termo::text)) AND (@EstadoId::int IS NULL OR estado_id = @EstadoId);";
         const string sqlData = @"
             SELECT ci.id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM cidades ci
             INNER JOIN estados st ON st.id = ci.estado_id
             INNER JOIN paises p ON p.id = st.pais_id
-            WHERE (ci.cidade ILIKE @Termo OR ci.ddd ILIKE @Termo) AND (@EstadoId::int IS NULL OR ci.estado_id = @EstadoId)
+            WHERE (unaccent(ci.id::text) ILIKE unaccent(@Termo::text) OR unaccent(ci.cidade::text) ILIKE unaccent(@Termo::text) OR unaccent(ci.ddd::text) ILIKE unaccent(@Termo::text)) AND (@EstadoId::int IS NULL OR ci.estado_id = @EstadoId)
             ORDER BY ci.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 

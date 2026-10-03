@@ -229,8 +229,8 @@ public class TransportadorasRepository : ITransportadorasRepository
 
         const string sqlCount = @"
             SELECT COUNT(*) FROM transportadoras
-            WHERE nome_razaosocial ILIKE @Termo OR cpf_cnpj ILIKE @Termo
-               OR apelido_nomefantasia ILIKE @Termo OR email ILIKE @Termo;";
+            WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(cpf_cnpj::text) ILIKE unaccent(@Termo::text)
+               OR unaccent(apelido_nomefantasia::text) ILIKE unaccent(@Termo::text) OR unaccent(email::text) ILIKE unaccent(@Termo::text);";
 
         const string sqlData = @"
             SELECT t.id AS Id, t.tipo_pessoa AS TipoPessoa, t.nome_razaosocial AS NomeRazaoSocial, t.cpf_cnpj AS CpfCnpj, t.rg_ie AS RgIe, t.apelido_nomefantasia AS ApelidoNomefantasia,
@@ -247,8 +247,8 @@ public class TransportadorasRepository : ITransportadorasRepository
             LEFT JOIN cidades ci ON ci.id = b.cidade_id
             LEFT JOIN estados e ON e.id = ci.estado_id
             LEFT JOIN paises pe ON pe.id = e.pais_id
-            WHERE t.nome_razaosocial ILIKE @Termo OR t.cpf_cnpj ILIKE @Termo
-               OR t.apelido_nomefantasia ILIKE @Termo OR t.email ILIKE @Termo
+            WHERE unaccent(t.id::text) ILIKE unaccent(@Termo::text) OR unaccent(t.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(t.cpf_cnpj::text) ILIKE unaccent(@Termo::text)
+               OR unaccent(t.apelido_nomefantasia::text) ILIKE unaccent(@Termo::text) OR unaccent(t.email::text) ILIKE unaccent(@Termo::text)
             ORDER BY t.criado_em DESC, t.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 

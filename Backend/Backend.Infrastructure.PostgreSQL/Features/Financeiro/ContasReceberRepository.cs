@@ -350,7 +350,7 @@ public class ContasReceberRepository : IContasReceberRepository
             SELECT COUNT(*)
             FROM contas_receber cr
             JOIN clientes c ON c.id = cr.cliente_id
-            WHERE (cr.descricao ILIKE @Termo OR c.nome_razaosocial ILIKE @Termo)
+            WHERE (unaccent(cr.id::text) ILIKE unaccent(@Termo::text) OR unaccent(cr.descricao::text) ILIKE unaccent(@Termo::text) OR unaccent(c.nome_razaosocial::text) ILIKE unaccent(@Termo::text))
               AND (@ClienteId::int IS NULL OR cr.cliente_id = @ClienteId)
               AND (@OrigemTipo::text IS NULL OR cr.origem_tipo::text = @OrigemTipo)
               AND (@OrigemId::int IS NULL OR cr.origem_id = @OrigemId);";
@@ -373,7 +373,7 @@ public class ContasReceberRepository : IContasReceberRepository
             JOIN paises p ON p.id = c.nacionalidade_id
             LEFT JOIN condicoes_pagamentos con ON con.id = cr.condicao_pagamento_id
             LEFT JOIN metodos_pagamento mp ON mp.codigo = con.metodo_pagamento_codigo
-            WHERE (cr.descricao ILIKE @Termo OR c.nome_razaosocial ILIKE @Termo)
+            WHERE (unaccent(cr.id::text) ILIKE unaccent(@Termo::text) OR unaccent(cr.descricao::text) ILIKE unaccent(@Termo::text) OR unaccent(c.nome_razaosocial::text) ILIKE unaccent(@Termo::text))
               AND (@ClienteId::int IS NULL OR cr.cliente_id = @ClienteId)
               AND (@OrigemTipo::text IS NULL OR cr.origem_tipo::text = @OrigemTipo)
               AND (@OrigemId::int IS NULL OR cr.origem_id = @OrigemId)

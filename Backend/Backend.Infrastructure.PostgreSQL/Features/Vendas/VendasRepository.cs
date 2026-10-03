@@ -220,7 +220,7 @@ public class VendasRepository : IVendasRepository
             SELECT COUNT(*) FROM vendas v
             JOIN clientes c ON c.id = v.cliente_id
             JOIN emitentes e ON e.id = v.emitente_id
-            WHERE (c.nome_razaosocial ILIKE @Termo OR v.observacao ILIKE @Termo OR e.nome_razaosocial ILIKE @Termo)
+            WHERE (unaccent(v.id::text) ILIKE unaccent(@Termo::text) OR unaccent(c.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(v.observacao::text) ILIKE unaccent(@Termo::text) OR unaccent(e.nome_razaosocial::text) ILIKE unaccent(@Termo::text))
               AND (@ClienteId::int IS NULL OR v.cliente_id = @ClienteId::int);";
 
         const string querySql = @"
@@ -230,7 +230,7 @@ public class VendasRepository : IVendasRepository
             FROM vendas v
             JOIN emitentes e ON e.id = v.emitente_id
             JOIN clientes c ON c.id = v.cliente_id
-            WHERE (c.nome_razaosocial ILIKE @Termo OR v.observacao ILIKE @Termo OR e.nome_razaosocial ILIKE @Termo)
+            WHERE (unaccent(v.id::text) ILIKE unaccent(@Termo::text) OR unaccent(c.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(v.observacao::text) ILIKE unaccent(@Termo::text) OR unaccent(e.nome_razaosocial::text) ILIKE unaccent(@Termo::text))
               AND (@ClienteId::int IS NULL OR v.cliente_id = @ClienteId::int)
             ORDER BY v.data_venda DESC, v.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";

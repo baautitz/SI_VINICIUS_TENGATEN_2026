@@ -162,11 +162,11 @@ public class UsuariosRepository : IUsuariosRepository
         const string sql = @"
             SELECT COUNT(*)
             FROM usuarios
-            WHERE nome ILIKE @Termo OR email ILIKE @Termo OR usuario ILIKE @Termo;
+            WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(nome::text) ILIKE unaccent(@Termo::text) OR unaccent(email::text) ILIKE unaccent(@Termo::text) OR unaccent(usuario::text) ILIKE unaccent(@Termo::text);
 
             SELECT id, nome, cpf_cnpj, email, usuario
             FROM usuarios
-            WHERE nome ILIKE @Termo OR email ILIKE @Termo OR usuario ILIKE @Termo
+            WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(nome::text) ILIKE unaccent(@Termo::text) OR unaccent(email::text) ILIKE unaccent(@Termo::text) OR unaccent(usuario::text) ILIKE unaccent(@Termo::text)
             ORDER BY id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 

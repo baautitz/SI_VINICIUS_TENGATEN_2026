@@ -247,7 +247,7 @@ public class CondicoesPagamentosRepository : ICondicoesPagamentosRepository
         const string sqlCount = @"
             SELECT COUNT(*) FROM condicoes_pagamentos cp
             INNER JOIN metodos_pagamento mp ON mp.codigo = cp.metodo_pagamento_codigo
-            WHERE cp.descricao ILIKE @Termo OR mp.descricao ILIKE @Termo;";
+            WHERE unaccent(cp.id::text) ILIKE unaccent(@Termo::text) OR unaccent(cp.descricao::text) ILIKE unaccent(@Termo::text) OR unaccent(mp.descricao::text) ILIKE unaccent(@Termo::text);";
 
         const string sqlData = @"
             SELECT cp.id AS Id, cp.descricao AS Descricao, cp.entrada_minima_percentual AS EntradaMinimaPercentual,
@@ -256,7 +256,7 @@ public class CondicoesPagamentosRepository : ICondicoesPagamentosRepository
                    mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo, mp.permite_troco AS PermiteTroco
             FROM condicoes_pagamentos cp
             INNER JOIN metodos_pagamento mp ON mp.codigo = cp.metodo_pagamento_codigo
-            WHERE cp.descricao ILIKE @Termo OR mp.descricao ILIKE @Termo
+            WHERE unaccent(cp.id::text) ILIKE unaccent(@Termo::text) OR unaccent(cp.descricao::text) ILIKE unaccent(@Termo::text) OR unaccent(mp.descricao::text) ILIKE unaccent(@Termo::text)
             ORDER BY cp.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 

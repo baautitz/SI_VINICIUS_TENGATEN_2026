@@ -77,12 +77,12 @@ public class EstadosRepository : IEstadosRepository
     public async Task<ResultadoPaginado<Estados>> PesquisarEstados(string termo, int pagina = 1, int tamanhoDaPagina = 20, int? paisId = null)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
-        const string sqlCount = "SELECT COUNT(*) FROM estados WHERE (estado ILIKE @Termo OR uf ILIKE @Termo) AND (@PaisId::int IS NULL OR pais_id = @PaisId);";
+        const string sqlCount = "SELECT COUNT(*) FROM estados WHERE (unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(estado::text) ILIKE unaccent(@Termo::text) OR unaccent(uf::text) ILIKE unaccent(@Termo::text)) AND (@PaisId::int IS NULL OR pais_id = @PaisId);";
         const string sqlData = @"
             SELECT e.id, e.estado, e.uf, p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM estados e
             INNER JOIN paises p ON p.id = e.pais_id
-            WHERE (e.estado ILIKE @Termo OR e.uf ILIKE @Termo) AND (@PaisId::int IS NULL OR e.pais_id = @PaisId)
+            WHERE (unaccent(e.id::text) ILIKE unaccent(@Termo::text) OR unaccent(e.estado::text) ILIKE unaccent(@Termo::text) OR unaccent(e.uf::text) ILIKE unaccent(@Termo::text)) AND (@PaisId::int IS NULL OR e.pais_id = @PaisId)
             ORDER BY e.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 

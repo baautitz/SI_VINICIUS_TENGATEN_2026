@@ -32,10 +32,10 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
         => Listar("TRUE", new { }, pagina, tamanhoDaPagina);
 
     public Task<ResultadoPaginado<MovimentacoesEstoques>> PesquisarMovimentacoes(string termo, int pagina = 1, int tamanhoDaPagina = 20)
-        => Listar(@"(me.observacao ILIKE @Termo OR me.motivo ILIKE @Termo
-                     OR me.tipo_movimentacao::text ILIKE @Termo OR me.origem_tipo::text ILIKE @Termo
+        => Listar(@"(unaccent(me.id::text) ILIKE unaccent(@Termo::text) OR unaccent(me.observacao::text) ILIKE unaccent(@Termo::text) OR unaccent(me.motivo::text) ILIKE unaccent(@Termo::text)
+                     OR unaccent(me.tipo_movimentacao::text) ILIKE unaccent(@Termo::text) OR unaccent(me.origem_tipo::text) ILIKE unaccent(@Termo::text)
                      OR me.id::text = @Exato
-                     OR EXISTS (SELECT 1 FROM movimentacoes_estoque_itens i WHERE i.movimentacao_estoque_id = me.id AND i.sku ILIKE @Termo))",
+                     OR EXISTS (SELECT 1 FROM movimentacoes_estoque_itens i WHERE i.movimentacao_estoque_id = me.id AND unaccent(i.sku::text) ILIKE unaccent(@Termo::text)))",
             new { Termo = $"%{termo}%", Exato = termo.Trim() }, pagina, tamanhoDaPagina);
 
     public async Task<MovimentacoesEstoques?> ObterMovimentacaoPorId(int id)

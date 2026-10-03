@@ -64,11 +64,11 @@ public class PaisesRepository : IPaisesRepository
     public async Task<ResultadoPaginado<Paises>> PesquisarPaises(string termo, int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
-        const string sqlCount = "SELECT COUNT(*) FROM paises WHERE pais ILIKE @Termo OR codigo_iso_pais ILIKE @Termo;";
+        const string sqlCount = "SELECT COUNT(*) FROM paises WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(pais::text) ILIKE unaccent(@Termo::text) OR unaccent(codigo_iso_pais::text) ILIKE unaccent(@Termo::text);";
         const string sqlData = @"
             SELECT id, pais, codigo_iso_pais AS CodigoIsoPais, ddi, codigo_iso_moeda AS CodigoIsoMoeda, simbolo_moeda AS SimboloMoeda
             FROM paises
-            WHERE pais ILIKE @Termo OR codigo_iso_pais ILIKE @Termo
+            WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(pais::text) ILIKE unaccent(@Termo::text) OR unaccent(codigo_iso_pais::text) ILIKE unaccent(@Termo::text)
             ORDER BY id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 

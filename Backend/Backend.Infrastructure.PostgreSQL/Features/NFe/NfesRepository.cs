@@ -397,8 +397,8 @@ public class NfesRepository : INfesRepository
     private async Task<ResultadoPaginado<NfesResumo>> ListarResumo(string? termo, int pagina, int tamanhoDaPagina, string? tipoOperacao, string? statusNfe)
     {
         const string where = @"
-            WHERE (@Termo IS NULL OR chave_acesso ILIKE @Termo OR cliente_nome_razaosocial ILIKE @Termo
-                   OR emitente_nome_razaosocial ILIKE @Termo OR numero::text ILIKE @Termo)
+            WHERE (@Termo IS NULL OR unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(chave_acesso::text) ILIKE unaccent(@Termo::text) OR unaccent(cliente_nome_razaosocial::text) ILIKE unaccent(@Termo::text)
+                   OR unaccent(emitente_nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(numero::text) ILIKE unaccent(@Termo::text))
               AND (@TipoOperacao IS NULL OR tipo_operacao::text = @TipoOperacao)
               AND (@StatusNfe IS NULL OR status_nfe::text = @StatusNfe)";
 

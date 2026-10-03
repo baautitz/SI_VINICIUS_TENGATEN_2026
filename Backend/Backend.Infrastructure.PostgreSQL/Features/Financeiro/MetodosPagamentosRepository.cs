@@ -110,11 +110,11 @@ public class MetodosPagamentosRepository : IMetodosPagamentosRepository
         var offset = (pagina - 1) * tamanhoDaPagina;
         var queryTermo = $"%{termo}%";
 
-        const string sqlCount = "SELECT COUNT(*) FROM metodos_pagamento WHERE codigo ILIKE @Termo OR descricao ILIKE @Termo;";
+        const string sqlCount = "SELECT COUNT(*) FROM metodos_pagamento WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(codigo::text) ILIKE unaccent(@Termo::text) OR unaccent(descricao::text) ILIKE unaccent(@Termo::text);";
         const string sqlData = @"
             SELECT codigo, descricao, ativo, permite_troco AS PermiteTroco
             FROM metodos_pagamento
-            WHERE codigo ILIKE @Termo OR descricao ILIKE @Termo
+            WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(codigo::text) ILIKE unaccent(@Termo::text) OR unaccent(descricao::text) ILIKE unaccent(@Termo::text)
             ORDER BY codigo DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 

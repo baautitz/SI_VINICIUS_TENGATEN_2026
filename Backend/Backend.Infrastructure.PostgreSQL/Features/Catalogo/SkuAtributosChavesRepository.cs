@@ -185,10 +185,10 @@ public class SkuAtributosChavesRepository : ISkuAtributosChavesRepository
         const string sql = @"
             SELECT COUNT(*)
             FROM sku_atributos_chaves
-            WHERE unaccent(chave::text) ILIKE unaccent(@Termo::text);
+            WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(chave::text) ILIKE unaccent(@Termo::text);
 
             SELECT id, chave FROM sku_atributos_chaves
-            WHERE unaccent(chave::text) ILIKE unaccent(@Termo::text)
+            WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(chave::text) ILIKE unaccent(@Termo::text)
             ORDER BY id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 

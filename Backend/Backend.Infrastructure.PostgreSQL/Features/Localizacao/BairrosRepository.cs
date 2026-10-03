@@ -81,14 +81,14 @@ public class BairrosRepository : IBairrosRepository
     public async Task<ResultadoPaginado<Bairros>> PesquisarBairros(string termo, int pagina = 1, int tamanhoDaPagina = 20, int? cidadeId = null)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
-        const string sqlCount = "SELECT COUNT(*) FROM bairros WHERE (bairro ILIKE @Termo) AND (@CidadeId::int IS NULL OR cidade_id = @CidadeId);";
+        const string sqlCount = "SELECT COUNT(*) FROM bairros WHERE (unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(bairro::text) ILIKE unaccent(@Termo::text)) AND (@CidadeId::int IS NULL OR cidade_id = @CidadeId);";
         const string sqlData = @"
             SELECT b.id, b.bairro, ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM bairros b
             INNER JOIN cidades ci ON ci.id = b.cidade_id
             INNER JOIN estados st ON st.id = ci.estado_id
             INNER JOIN paises p ON p.id = st.pais_id
-            WHERE (b.bairro ILIKE @Termo) AND (@CidadeId::int IS NULL OR b.cidade_id = @CidadeId)
+            WHERE (unaccent(b.id::text) ILIKE unaccent(@Termo::text) OR unaccent(b.bairro::text) ILIKE unaccent(@Termo::text)) AND (@CidadeId::int IS NULL OR b.cidade_id = @CidadeId)
             ORDER BY b.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 

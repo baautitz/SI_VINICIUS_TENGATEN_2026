@@ -333,7 +333,7 @@ public class ContasPagarRepository : IContasPagarRepository
             FROM contas_pagar cp
             LEFT JOIN fornecedores f ON f.id = cp.fornecedor_id
             LEFT JOIN clientes cli ON cli.id = cp.cliente_id
-            WHERE (cp.descricao ILIKE @Termo OR f.nome_razaosocial ILIKE @Termo OR cli.nome_razaosocial ILIKE @Termo)
+            WHERE (unaccent(cp.id::text) ILIKE unaccent(@Termo::text) OR unaccent(cp.descricao::text) ILIKE unaccent(@Termo::text) OR unaccent(f.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(cli.nome_razaosocial::text) ILIKE unaccent(@Termo::text))
               AND (@FornecedorId::int IS NULL OR cp.fornecedor_id = @FornecedorId)
               AND (@ClienteId::int IS NULL OR cp.cliente_id = @ClienteId)
               AND (@OrigemTipo::text IS NULL OR cp.origem_tipo::text = @OrigemTipo)
@@ -357,7 +357,7 @@ public class ContasPagarRepository : IContasPagarRepository
             LEFT JOIN clientes cli ON cli.id = cp.cliente_id
             LEFT JOIN condicoes_pagamentos con ON con.id = cp.condicao_pagamento_id
             LEFT JOIN metodos_pagamento mp ON mp.codigo = con.metodo_pagamento_codigo
-            WHERE (cp.descricao ILIKE @Termo OR f.nome_razaosocial ILIKE @Termo OR cli.nome_razaosocial ILIKE @Termo)
+            WHERE (unaccent(cp.id::text) ILIKE unaccent(@Termo::text) OR unaccent(cp.descricao::text) ILIKE unaccent(@Termo::text) OR unaccent(f.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(cli.nome_razaosocial::text) ILIKE unaccent(@Termo::text))
               AND (@FornecedorId::int IS NULL OR cp.fornecedor_id = @FornecedorId)
               AND (@ClienteId::int IS NULL OR cp.cliente_id = @ClienteId)
               AND (@OrigemTipo::text IS NULL OR cp.origem_tipo::text = @OrigemTipo)

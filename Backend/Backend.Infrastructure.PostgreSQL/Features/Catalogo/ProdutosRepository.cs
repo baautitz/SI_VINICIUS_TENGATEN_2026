@@ -266,7 +266,7 @@ public class ProdutosRepository : IProdutosRepository
         const string countSql = @"
             SELECT COUNT(*)
             FROM produtos
-            WHERE (produto ILIKE @Termo OR descricao ILIKE @Termo) AND (@CategoriaId::int IS NULL OR categoria_id = @CategoriaId) AND (@MarcaId::int IS NULL OR marca_id = @MarcaId) AND (@UnidadeMedidaId::int IS NULL OR unidade_medida_id = @UnidadeMedidaId);";
+            WHERE (unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(produto::text) ILIKE unaccent(@Termo::text) OR unaccent(descricao::text) ILIKE unaccent(@Termo::text)) AND (@CategoriaId::int IS NULL OR categoria_id = @CategoriaId) AND (@MarcaId::int IS NULL OR marca_id = @MarcaId) AND (@UnidadeMedidaId::int IS NULL OR unidade_medida_id = @UnidadeMedidaId);";
 
         const string querySql = @"
             SELECT p.id AS Id, p.produto AS Produto, p.descricao AS Descricao, p.ativo AS Ativo,
@@ -277,7 +277,7 @@ public class ProdutosRepository : IProdutosRepository
             JOIN categorias c ON c.id = p.categoria_id
             JOIN marcas m ON m.id = p.marca_id
             JOIN unidades_medida u ON u.id = p.unidade_medida_id
-            WHERE (p.produto ILIKE @Termo OR p.descricao ILIKE @Termo) AND (@CategoriaId::int IS NULL OR p.categoria_id = @CategoriaId) AND (@MarcaId::int IS NULL OR p.marca_id = @MarcaId) AND (@UnidadeMedidaId::int IS NULL OR p.unidade_medida_id = @UnidadeMedidaId)
+            WHERE (unaccent(p.id::text) ILIKE unaccent(@Termo::text) OR unaccent(p.produto::text) ILIKE unaccent(@Termo::text) OR unaccent(p.descricao::text) ILIKE unaccent(@Termo::text)) AND (@CategoriaId::int IS NULL OR p.categoria_id = @CategoriaId) AND (@MarcaId::int IS NULL OR p.marca_id = @MarcaId) AND (@UnidadeMedidaId::int IS NULL OR p.unidade_medida_id = @UnidadeMedidaId)
             ORDER BY p.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 

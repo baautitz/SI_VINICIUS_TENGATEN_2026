@@ -186,7 +186,7 @@ public class VeiculosRepository : IVeiculosRepository
             SELECT COUNT(*) FROM veiculos v
             LEFT JOIN transportadoras t ON t.id = v.transportadora_id
             LEFT JOIN estados e ON e.id = v.estado_id
-            WHERE v.placa ILIKE @Termo OR v.marca_modelo ILIKE @Termo OR t.nome_razaosocial ILIKE @Termo OR e.uf ILIKE @Termo;";
+            WHERE unaccent(v.id::text) ILIKE unaccent(@Termo::text) OR unaccent(v.placa::text) ILIKE unaccent(@Termo::text) OR unaccent(v.marca_modelo::text) ILIKE unaccent(@Termo::text) OR unaccent(t.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(e.uf::text) ILIKE unaccent(@Termo::text);";
 
         const string sqlData = @"
             SELECT v.id AS Id, v.placa AS Placa, v.rntrc AS Rntrc, v.renavam AS Renavam,
@@ -199,7 +199,7 @@ public class VeiculosRepository : IVeiculosRepository
             LEFT JOIN transportadoras t ON t.id = v.transportadora_id
             LEFT JOIN estados e ON e.id = v.estado_id
             LEFT JOIN paises p ON p.id = e.pais_id
-            WHERE v.placa ILIKE @Termo OR v.marca_modelo ILIKE @Termo OR t.nome_razaosocial ILIKE @Termo OR e.uf ILIKE @Termo
+            WHERE unaccent(v.id::text) ILIKE unaccent(@Termo::text) OR unaccent(v.placa::text) ILIKE unaccent(@Termo::text) OR unaccent(v.marca_modelo::text) ILIKE unaccent(@Termo::text) OR unaccent(t.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(e.uf::text) ILIKE unaccent(@Termo::text)
             ORDER BY v.criado_em DESC, v.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 

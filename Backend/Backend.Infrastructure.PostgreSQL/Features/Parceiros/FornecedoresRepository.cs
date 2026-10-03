@@ -207,8 +207,8 @@ public class FornecedoresRepository : IFornecedoresRepository
 
         const string sqlCount = @"
             SELECT COUNT(*) FROM fornecedores
-            WHERE nome_razaosocial ILIKE @Termo OR cpf_cnpj ILIKE @Termo
-               OR apelido_nomefantasia ILIKE @Termo OR email ILIKE @Termo;";
+            WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(cpf_cnpj::text) ILIKE unaccent(@Termo::text)
+               OR unaccent(apelido_nomefantasia::text) ILIKE unaccent(@Termo::text) OR unaccent(email::text) ILIKE unaccent(@Termo::text);";
 
         const string sqlData = @"
             SELECT f.id AS Id, f.tipo_pessoa AS TipoPessoa, f.nome_razaosocial AS NomeRazaosocial, f.cpf_cnpj AS CpfCnpj, f.rg_ie AS RgIe, f.apelido_nomefantasia AS ApelidoNomefantasia,
@@ -227,8 +227,8 @@ public class FornecedoresRepository : IFornecedoresRepository
             LEFT JOIN estados e ON e.id = ci.estado_id
             LEFT JOIN paises pe ON pe.id = e.pais_id
             LEFT JOIN condicoes_pagamentos cp ON cp.id = f.condicao_pagamento_id
-            WHERE f.nome_razaosocial ILIKE @Termo OR f.cpf_cnpj ILIKE @Termo
-               OR f.apelido_nomefantasia ILIKE @Termo OR f.email ILIKE @Termo
+            WHERE unaccent(f.id::text) ILIKE unaccent(@Termo::text) OR unaccent(f.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(f.cpf_cnpj::text) ILIKE unaccent(@Termo::text)
+               OR unaccent(f.apelido_nomefantasia::text) ILIKE unaccent(@Termo::text) OR unaccent(f.email::text) ILIKE unaccent(@Termo::text)
             ORDER BY f.criado_em DESC, f.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 

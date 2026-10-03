@@ -109,13 +109,13 @@ public class UnidadesMedidaRepository : IUnidadesMedidaRepository
 
         const string sql = @"
             SELECT COUNT(*) FROM unidades_medida
-            WHERE unaccent(sigla::text) ILIKE unaccent(@Termo::text)
+            WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(sigla::text) ILIKE unaccent(@Termo::text)
                OR unaccent(descricao::text) ILIKE unaccent(@Termo::text)
                OR unaccent(categoria::text) ILIKE unaccent(@Termo::text);
 
             SELECT id, sigla, descricao, categoria, permite_decimais AS PermiteDecimais, ativo
             FROM unidades_medida
-            WHERE unaccent(sigla::text) ILIKE unaccent(@Termo::text)
+            WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(sigla::text) ILIKE unaccent(@Termo::text)
                OR unaccent(descricao::text) ILIKE unaccent(@Termo::text)
                OR unaccent(categoria::text) ILIKE unaccent(@Termo::text)
             ORDER BY id DESC
