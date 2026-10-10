@@ -139,20 +139,17 @@
     @apply font-sans;
     }
 }
-/* DANFE: ao imprimir, só o documento aparece (esconde sidebar, janelas e toasts). */
+/* DANFE: a impressão usa uma cópia do documento (#danfe-print, criada em nfes/danfe.tsx) fora de qualquer
+   janela; durante a impressão só ela aparece. */
+#danfe-print {
+  display: none;
+}
 @media print {
-  body * {
-    visibility: hidden;
+  body.imprimindo-danfe > *:not(#danfe-print) {
+    display: none !important;
   }
-  #danfe,
-  #danfe * {
-    visibility: visible;
-  }
-  #danfe {
-    position: absolute;
-    left: 0;
-    top: 0;
+  body.imprimindo-danfe #danfe-print {
+    display: block;
     width: 100%;
-    max-width: none;
   }
 }

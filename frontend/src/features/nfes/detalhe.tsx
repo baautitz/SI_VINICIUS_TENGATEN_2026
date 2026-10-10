@@ -2,26 +2,24 @@
 
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ban, Copy, Download, FileCode, Printer } from "lucide-react";
+import { Ban, Copy, Download, ExternalLink, FileCode, Printer } from "lucide-react";
 import { WindowActions } from "@/imperative-ui";
 import { nfesApi } from "@/api/nfes";
+import { contasPagarApi } from "@/api/financeiro";
+import { comprasApi } from "@/api/compras";
+import { CompraInput } from "@/components/entity-inputs/compra-input";
 import { TextoWindow, type TextoWindowProps } from "@/components/texto-window";
 import {
-  Button, Kbd, Spinner, Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Button, Field, FieldLabel, Input, Kbd, Spinner, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Textarea,
 } from "@/ui/primitives";
+import { navigationCell } from "@/ui/keyboard-navigation";
 import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
-import { formatToLocal } from "@/utils/date-utils";
+import { formatDateToLocal, formatToLocal } from "@/utils/date-utils";
 import { CompraWindow, type CompraWindowProps } from "@/features/compras/upsert";
+import { ContasPagarUpsertForm, type ContasPagarUpsertProps } from "@/features/financeiro/contas-pagar/upsert";
 import { CancelarNfeWindow } from "./cancelar";
-import { NfeStatusBadge } from "./status-badge";
-import { brl, chaveFormatada, modalidadeFreteLabels, tipoLabels, type Nfe } from "./types";
-
-export const abrirDanfe = (id: number) => {
-  // Sem a feature "noopener" (retornaria sempre null) para poder detectar bloqueio de popup; o opener é zerado em seguida.
-  const w = window.open(`/nfes/${id}/danfe`, "_blank");
-  if (w) w.opener = null;
-  return w;
-};
+import { Danfe } from "./danfe";
+import { brl, chaveFormatada, modalidadeFreteLabels, statusLabels, tipoLabels, type Nfe } from "./types";
 
 export function baixarXml(xml: string, nome: string) {
   const url = URL.createObjectURL(new Blob([xml], { type: "application/xml" }));
@@ -39,13 +37,88 @@ const Bloco = ({ titulo, children }: { titulo: string; children: React.ReactNode
   </section>
 );
 
+/** Valor de leitura como input somente leitura: entra na ordem do foco e a seta percorre a tela inteira. */
+const Dado = ({ rotulo, valor, className }: { rotulo: string; valor: string | number | null | undefined; className?: string }) => (
+  <Field className={className}>
+    <FieldLabel>{rotulo}</FieldLabel>
+    <Input readOnly inputSize="full" aria-label={rotulo} value={valor == null || valor === "" ? "-" : String(valor)} />
+  </Field>
+);
+
+const statusParcelaLabels: Record<string, string> = {
+  ABERTO: "Em aberto", PARCIAL: "Parcial", PAGO: "Paga", CANCELADO: "Cancelada",
+};
+
+/** Tabela de valores de leitura: cabeçalho único e uma linha por registro, cada célula um input navegável. */
+const GradeLeitura = ({ grade, colunas, linhas, onAbrir, rotuloAbrir, direita = [] }: {
+  grade: string; colunas: string[]; linhas: string[][];
+  /** Abre o registro da linha: Enter em qualquer célula ou o botão da última coluna. */
+  onAbrir?: (row: number) => void; rotuloAbrir?: string;
+  /** Índices das colunas numéricas/monetárias (alinhadas à direita). */
+  direita?: number[];
+}) => (
+  <div className="rounded-lg border bg-card overflow-clip">
+    <Table pageScroll>
+      <TableHeader>
+        <TableRow>
+          {colunas.map((c, i) => <TableHead key={c} className={direita.includes(i) ? "text-right" : undefined}>{c}</TableHead>)}
+          {onAbrir && <TableHead className="w-12" />}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {linhas.map((linha, row) => (
+          <TableRow key={row}>
+            {linha.map((valor, column) => (
+              <TableCell key={column}>
+                <Input
+                  {...navigationCell({ grid: grade, row, column })}
+                  readOnly
+                  inputSize="full"
+                  className={direita.includes(column) ? "text-right" : undefined}
+                  aria-label={`${colunas[column]} ${row + 1}`}
+                  value={valor}
+                  onKeyDown={(e) => {
+                    if (onAbrir && e.key === "Enter" && !e.altKey && !e.repeat) {
+                      e.preventDefault();
+                      onAbrir(row);
+                    }
+                  }}
+                />
+              </TableCell>
+            ))}
+            {onAbrir && (
+              <TableCell className="text-center">
+                <Button
+                  {...navigationCell({ grid: grade, row, column: colunas.length })}
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  className="size-8"
+                  title={rotuloAbrir ?? "Abrir"}
+                  aria-label={`${rotuloAbrir ?? "Abrir"} ${row + 1}`}
+                  onClick={() => onAbrir(row)}
+                >
+                  <ExternalLink className="size-4" />
+                </Button>
+              </TableCell>
+            )}
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  </div>
+);
+
 const Parte = ({ nome, doc, ie, endereco, bairro, tel }: {
   nome: string; doc: string; ie: string | null; endereco: string | null; bairro: string | null; tel: string | null;
 }) => (
-  <div className="text-sm">
-    <div className="font-medium">{nome}</div>
-    <div className="text-muted-foreground">CPF/CNPJ: {doc}{ie ? ` · IE: ${ie}` : ""}</div>
-    <div className="text-muted-foreground">{[endereco, bairro, tel].filter(Boolean).join(" · ")}</div>
+  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+    <Dado rotulo="Nome / Razão social" valor={nome} className="md:col-span-2" />
+    <Dado rotulo="CPF/CNPJ" valor={doc} />
+    <Dado rotulo="IE" valor={ie} />
+    <Dado rotulo="Endereço" valor={endereco} className="md:col-span-2" />
+    <Dado rotulo="Bairro" valor={bairro} />
+    <Dado rotulo="Telefone" valor={tel} />
   </div>
 );
 
@@ -129,23 +202,51 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
   const ui = useUi();
   const entrada = nfe.tipoOperacao === "ENTRADA";
   const t = nfe.nfesTransportes;
+  // NF-e de entrada não traz pagamento próprio: o pagamento é o das parcelas das contas a pagar da compra.
+  const { data: contasDaCompra } = useQuery({
+    queryKey: ["contas-pagar", "origem", "COMPRA", nfe.compraId],
+    queryFn: () => contasPagarApi.listByOrigem("COMPRA", nfe.compraId!),
+    enabled: entrada && !!nfe.compraId,
+  });
+  const { data: compraDaNfe } = useQuery({
+    queryKey: ["compras", "detail", nfe.compraId],
+    queryFn: () => comprasApi.getById(nfe.compraId!),
+    enabled: !!nfe.compraId,
+  });
+  const parcelasDaCompra = (contasDaCompra?.itens ?? []).flatMap((c) =>
+    (c.contasPagarParcelas ?? []).map((p) => ({ conta: c.descricao, contaId: c.id, ...p })),
+  );
   const abrirCompra = async () => {
     if (!nfe.compraId) return;
     await ui.windows.open<true, CompraWindowProps>({
       component: CompraWindow, props: { compraId: nfe.compraId }, title: `Compra #${nfe.compraId}`, size: "full",
     });
   };
+  const abrirConta = async (contaId: number) => {
+    try {
+      const conta = await contasPagarApi.getById(contaId);
+      await ui.windows.open<true, ContasPagarUpsertProps>({
+        component: ContasPagarUpsertForm,
+        props: { editingItem: conta, readOnly: true },
+        title: "Detalhes da Conta a Pagar",
+        size: "large",
+      });
+    } catch (error) {
+      ui.feedback.notifyError(error, { fallbackTitle: "Não foi possível abrir a conta a pagar." });
+    }
+  };
   const fechar = () => (alterada ? activeWindow.resolve(true) : activeWindow.dismiss("cancel"));
 
-  const imprimir = () => {
-    if (!abrirDanfe(nfe.id))
-      ui.feedback.notify({ type: "error", title: "O navegador bloqueou a janela do DANFE. Libere pop-ups para este site." });
+  const imprimir = async () => {
+    await ui.windows.open<true, { id: number }>({
+      component: Danfe, props: { id: nfe.id }, title: `DANFE - NF-e ${nfe.numero}`, size: "full",
+    });
   };
 
   useWindowCommands([
     { id: "nfe.xml", hotkey: "Alt+X", label: "Ver XML", run: (e) => { e.preventDefault(); void acoes.verXml(); } },
     { id: "nfe.baixar", hotkey: "Alt+B", label: "Baixar XML", run: (e) => { e.preventDefault(); void acoes.baixar(); } },
-    { id: "nfe.imprimir", hotkey: "Alt+I", label: "Imprimir DANFE", run: (e) => { e.preventDefault(); imprimir(); } },
+    { id: "nfe.imprimir", hotkey: "Alt+I", label: "Imprimir DANFE", run: (e) => { e.preventDefault(); void imprimir(); } },
     { id: "nfe.cancelar", hotkey: "Alt+K", label: "Cancelar NF-e", enabled: podeCancelar, run: (e) => { e.preventDefault(); void acoes.cancelar(); } },
   ]);
 
@@ -155,7 +256,7 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
         <div className="mr-auto flex gap-2">
           <Button type="button" variant="outline" onClick={() => void acoes.verXml()}><FileCode /> Ver XML <Kbd>Alt+X</Kbd></Button>
           <Button type="button" variant="outline" onClick={() => void acoes.baixar()}><Download /> Baixar XML <Kbd>Alt+B</Kbd></Button>
-          <Button type="button" variant="outline" onClick={imprimir}><Printer /> Imprimir DANFE <Kbd>Alt+I</Kbd></Button>
+          <Button type="button" variant="outline" onClick={() => void imprimir()}><Printer /> Imprimir DANFE <Kbd>Alt+I</Kbd></Button>
           <Button type="button" variant="destructive" disabled={!podeCancelar} title={podeCancelar ? undefined : motivo} onClick={() => void acoes.cancelar()}>
             <Ban /> Cancelar NF-e <Kbd>Alt+K</Kbd>
           </Button>
@@ -169,30 +270,58 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
         <Button type="button" variant="outline" onClick={fechar}>Fechar <Kbd>Esc</Kbd></Button>
       </WindowActions>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 -mx-1 overflow-auto px-1">
         <Bloco titulo={`NF-e ${nfe.numero} · série ${nfe.serie} · ${tipoLabels[nfe.tipoOperacao]}`}>
-          <div className="flex flex-wrap items-center gap-3 text-sm">
-            <NfeStatusBadge status={nfe.statusNfe} />
-            <span>Emissão: {formatToLocal(nfe.dataEmissao)}</span>
-            {nfe.vendaId && <span>Venda #{nfe.vendaId}</span>}
+          <div className="grid grid-cols-2 items-end gap-3 md:grid-cols-4">
+            <Dado rotulo="Situação" valor={statusLabels[nfe.statusNfe]} />
+            <Dado rotulo="Emissão" valor={formatToLocal(nfe.dataEmissao)} />
+            {nfe.vendaId && <Dado rotulo="Venda" valor={`#${nfe.vendaId}`} />}
             {nfe.compraId && (
-              <Button type="button" variant="link" className="h-auto p-0" onClick={() => void abrirCompra()}>
-                Compra #{nfe.compraId}
-              </Button>
+              <CompraInput
+                key={compraDaNfe?.id ?? "carregando"}
+                name="nfe-compra"
+                initialItem={compraDaNfe ?? null}
+              />
             )}
           </div>
-          <div className="mt-2 flex items-center gap-2">
-            <code className="break-all rounded bg-muted px-2 py-1 text-xs">{chaveFormatada(nfe.chaveAcesso) || "Sem chave de acesso"}</code>
-            {nfe.chaveAcesso && (
-              <Button type="button" size="icon-sm" variant="outline" title="Copiar chave de acesso" onClick={() => void acoes.copiarChave()}>
-                <Copy className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
+          <Field className="mt-3">
+            <FieldLabel>Chave de acesso</FieldLabel>
+            <div className="relative w-full">
+              <Input
+                readOnly
+                inputSize="full"
+                aria-label="Chave de acesso"
+                className="pr-9 font-mono"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.altKey && !e.repeat && nfe.chaveAcesso) {
+                    e.preventDefault();
+                    void acoes.copiarChave();
+                  }
+                }}
+                value={chaveFormatada(nfe.chaveAcesso) || "Sem chave de acesso"}
+              />
+              {nfe.chaveAcesso && (
+                <Button
+                  type="button"
+                  size="icon-xs"
+                  variant="ghost"
+                  title="Copiar chave de acesso"
+                  aria-label="Copiar chave de acesso"
+                  tabIndex={-1}
+                  className="text-muted-foreground hover:text-foreground absolute top-1 right-1 h-6 w-6 opacity-50 hover:opacity-100"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => void acoes.copiarChave()}
+                >
+                  <Copy className="size-4" />
+                </Button>
+              )}
+            </div>
+          </Field>
           {nfe.statusNfe === "CANCELADA" && (
-            <p className="mt-2 text-sm text-destructive">
-              Cancelada em {formatToLocal(nfe.dataCancelamento)}: {nfe.justificativaCancelamento}
-            </p>
+            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+              <Dado rotulo="Cancelada em" valor={formatToLocal(nfe.dataCancelamento)} />
+              <Dado className="md:col-span-2" rotulo="Justificativa" valor={nfe.justificativaCancelamento} />
+            </div>
           )}
         </Bloco>
 
@@ -206,7 +335,8 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
         </div>
 
         <Bloco titulo="Itens">
-          <Table>
+          <div className="rounded-lg border bg-card overflow-clip">
+          <Table pageScroll>
             <TableHeader>
               <TableRow>
                 <TableHead>#</TableHead><TableHead>SKU</TableHead><TableHead>Descrição</TableHead>
@@ -216,61 +346,95 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {nfe.nfesItens.map((i) => (
-                <TableRow key={i.numeroItem}>
-                  <TableCell>{i.numeroItem}</TableCell><TableCell>{i.sku.sku}</TableCell><TableCell>{i.descricaoItem}</TableCell>
-                  <TableCell className="text-right">{Number(i.quantidade).toLocaleString("pt-BR")}</TableCell><TableCell>{i.unidadeMedida.sigla}</TableCell>
-                  <TableCell className="text-right">{brl(i.valorUnitario)}</TableCell>
-                  <TableCell className="text-right">{brl(i.valorDesconto)}</TableCell>
-                  <TableCell className="text-right">{brl(i.valorTotal)}</TableCell>
-                </TableRow>
-              ))}
+              {nfe.nfesItens.map((i, row) => {
+                const campo = (coluna: number, rotulo: string, valor: string, direita = false) => (
+                  <TableCell>
+                    <Input
+                      {...navigationCell({ grid: "nfe-itens", row, column: coluna })}
+                      readOnly
+                      inputSize="full"
+                      aria-label={`${rotulo} do item ${i.numeroItem}`}
+                      value={valor}
+                      className={direita ? "text-right" : undefined}
+                    />
+                  </TableCell>
+                );
+                return (
+                  <TableRow key={i.numeroItem}>
+                    <TableCell>{i.numeroItem}</TableCell>
+                    {campo(0, "SKU", i.sku.sku)}
+                    {campo(1, "Descrição", i.descricaoItem)}
+                    {campo(2, "Quantidade", Number(i.quantidade).toLocaleString("pt-BR"), true)}
+                    {campo(3, "Unidade", i.unidadeMedida.sigla)}
+                    {campo(4, "Unitário", brl(i.valorUnitario), true)}
+                    {campo(5, "Desconto", brl(i.valorDesconto), true)}
+                    {campo(6, "Total", brl(i.valorTotal), true)}
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
+          </div>
         </Bloco>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <Bloco titulo="Totais">
-            <dl className="grid grid-cols-2 gap-1 text-sm">
-              <dt>Produtos</dt><dd className="text-right">{brl(nfe.valorProdutos)}</dd>
-              <dt>Desconto</dt><dd className="text-right">{brl(nfe.valorDesconto)}</dd>
-              <dt>Frete</dt><dd className="text-right">{brl(nfe.valorFrete)}</dd>
-              <dt>Seguro</dt><dd className="text-right">{brl(nfe.valorSeguro)}</dd>
-              <dt>Outras despesas</dt><dd className="text-right">{brl(nfe.valorOutrasDespesas)}</dd>
-              <dt className="font-semibold">Total da nota</dt><dd className="text-right font-semibold">{brl(nfe.valorTotal)}</dd>
-            </dl>
+          <Bloco titulo="Transporte">
+            {t ? (
+              <div className="grid grid-cols-2 gap-3">
+                <Dado className="col-span-2" rotulo="Modalidade do frete" valor={modalidadeFreteLabels[t.modalidadeFrete] ?? t.modalidadeFrete} />
+                {t.transportadoraNomeRazaosocial && <Dado rotulo="Transportadora" valor={t.transportadoraNomeRazaosocial} />}
+                {t.transportadoraCpfCnpj && <Dado rotulo="CPF/CNPJ" valor={t.transportadoraCpfCnpj} />}
+                {t.veiculoPlaca && <Dado rotulo="Placa" valor={t.veiculoPlaca} />}
+              </div>
+            ) : (
+              <Dado rotulo="Transporte" valor="Sem dados de transporte." />
+            )}
           </Bloco>
-          <div className="flex flex-col gap-4">
-            <Bloco titulo="Pagamentos">
-              {nfe.nfesPagamentos.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Sem pagamentos informados{entrada ? " (NF-e de entrada)" : ""}.</p>
-              ) : (
-                <ul className="text-sm">
-                  {nfe.nfesPagamentos.map((p, i) => (
-                    <li key={i} className="flex justify-between">
-                      <span>{p.metodosPagamento.descricao} ({p.indicadorPagamento === "A_VISTA" ? "à vista" : "a prazo"})</span>
-                      <span>{brl(p.valorPagamento)}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Bloco>
-            <Bloco titulo="Transporte">
-              {t ? (
-                <div className="text-sm">
-                  <div>{modalidadeFreteLabels[t.modalidadeFrete] ?? t.modalidadeFrete}</div>
-                  {t.transportadoraNomeRazaosocial && <div>{t.transportadoraNomeRazaosocial} {t.transportadoraCpfCnpj}</div>}
-                  {t.veiculoPlaca && <div>Placa: {t.veiculoPlaca}</div>}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">Sem dados de transporte.</p>
-              )}
-            </Bloco>
-          </div>
+          <Bloco titulo="Totais">
+            <div className="grid grid-cols-2 gap-3">
+              <Dado rotulo="Produtos" valor={brl(nfe.valorProdutos)} />
+              <Dado rotulo="Desconto" valor={brl(nfe.valorDesconto)} />
+              <Dado rotulo="Frete" valor={brl(nfe.valorFrete)} />
+              <Dado rotulo="Seguro" valor={brl(nfe.valorSeguro)} />
+              <Dado rotulo="Outras despesas" valor={brl(nfe.valorOutrasDespesas)} />
+              <Dado rotulo="Total da nota" valor={brl(nfe.valorTotal)} />
+            </div>
+          </Bloco>
         </div>
+
+        <Bloco titulo="Pagamentos">
+          {nfe.nfesPagamentos.length === 0 && parcelasDaCompra.length > 0 ? (
+            <GradeLeitura
+              grade="nfe-pagamentos"
+              onAbrir={(row) => void abrirConta(parcelasDaCompra[row].contaId)}
+              rotuloAbrir="Abrir conta a pagar"
+              colunas={["Parcela", "Vencimento", "Valor", "Situação"]}
+              direita={[2]}
+              linhas={parcelasDaCompra.map((p) => [
+                `${contasDaCompra!.itens.length > 1 ? `${p.conta} · ` : ""}${p.numeroParcela}`,
+                formatDateToLocal(p.dataVencimento),
+                brl(p.valorParcela),
+                statusParcelaLabels[p.status] ?? p.status,
+              ])}
+            />
+          ) : nfe.nfesPagamentos.length === 0 ? (
+            <Dado rotulo="Pagamentos" valor={`Sem pagamentos informados${entrada ? " (NF-e de entrada)" : ""}.`} />
+          ) : (
+            <GradeLeitura
+              grade="nfe-pagamentos"
+              colunas={["Método", "Forma", "Valor"]}
+              direita={[2]}
+              linhas={nfe.nfesPagamentos.map((p) => [
+                p.metodosPagamento.descricao,
+                p.indicadorPagamento === "A_VISTA" ? "À vista" : "A prazo",
+                brl(p.valorPagamento),
+              ])}
+            />
+          )}
+        </Bloco>
         {nfe.nfesInformacoesAdicionais?.informacoesComplementares && (
           <Bloco titulo="Informações complementares">
-            <p className="whitespace-pre-wrap text-sm">{nfe.nfesInformacoesAdicionais.informacoesComplementares}</p>
+            <Textarea readOnly aria-label="Informações complementares" value={nfe.nfesInformacoesAdicionais.informacoesComplementares} />
           </Bloco>
         )}
       </div>

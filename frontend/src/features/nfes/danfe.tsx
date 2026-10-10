@@ -16,10 +16,32 @@ const Campo = ({ rotulo, children }: { rotulo: string; children: React.ReactNode
   </div>
 );
 
+/**
+ * Imprime só o DANFE: copia o documento para fora da janela (modal ou página), esconde o resto do body
+ * durante a impressão e remove a cópia depois. Assim a caixa da janela (altura, rolagem, transform)
+ * nunca recorta a folha.
+ */
+function imprimirDanfe() {
+  const origem = document.getElementById("danfe");
+  if (!origem) return;
+  const copia = document.createElement("div");
+  copia.id = "danfe-print";
+  copia.innerHTML = origem.outerHTML.replace('id="danfe"', "");
+  document.body.appendChild(copia);
+  document.body.classList.add("imprimindo-danfe");
+  const limpar = () => {
+    document.body.classList.remove("imprimindo-danfe");
+    copia.remove();
+    window.removeEventListener("afterprint", limpar);
+  };
+  window.addEventListener("afterprint", limpar);
+  window.print();
+}
+
 /** DANFE simplificado (sem valor fiscal). Impressão pelo navegador: o CSS @media print em globals.css esconde o resto. */
 export function Danfe({ id }: { id: number }) {
   const { data: nfe, isLoading, error } = useQuery({ queryKey: ["nfes", id], queryFn: () => nfesApi.getById(id) });
-  useWindowCommands([{ id: "danfe.imprimir", hotkey: "Alt+I", label: "Imprimir", run: (e) => { e.preventDefault(); window.print(); } }]);
+  useWindowCommands([{ id: "danfe.imprimir", hotkey: "Alt+I", label: "Imprimir", run: (e) => { e.preventDefault(); imprimirDanfe(); } }]);
 
   if (isLoading) return <div className="flex justify-center py-10"><Spinner /></div>;
   if (error || !nfe) return <p className="p-6 text-destructive">Não foi possível carregar a NF-e para impressão.</p>;
@@ -28,7 +50,7 @@ export function Danfe({ id }: { id: number }) {
   return (
     <div className="p-4">
       <div className="mb-4 flex justify-end print:hidden">
-        <Button onClick={() => window.print()}><Printer /> Imprimir <Kbd>Alt+I</Kbd></Button>
+        <Button onClick={imprimirDanfe}><Printer /> Imprimir <Kbd>Alt+I</Kbd></Button>
       </div>
       <div id="danfe" className="mx-auto max-w-[800px] bg-white p-3 text-black">
         <div className="border-2 border-black bg-yellow-200 p-2 text-center text-sm font-bold">
