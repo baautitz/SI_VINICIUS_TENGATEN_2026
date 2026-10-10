@@ -125,15 +125,16 @@ export function ComprasList({
           icon={<PackagePlus />}
           onAdd={onAdd}
           addButtonLabel="Nova Compra"
+          actions={
+            <Button
+              variant="outline"
+              className="rounded-lg"
+              onClick={() => fireAndForget(async () => onImport())}
+            >
+              <FileUp /> Importar XML <Kbd>Alt+I</Kbd>
+            </Button>
+          }
         />
-        <div className="flex justify-end">
-          <Button
-            variant="outline"
-            onClick={() => fireAndForget(async () => onImport())}
-          >
-            <FileUp /> Importar XML <Kbd>Alt+I</Kbd>
-          </Button>
-        </div>
         <DataTable
           columns={columns}
           data={items}

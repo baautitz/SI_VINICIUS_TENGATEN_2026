@@ -10,6 +10,8 @@ interface FeatureHeaderProps {
   icon?: React.ReactNode;
   onAdd: () => void | Promise<void>;
   addButtonLabel: string;
+  /** Ações secundárias, lado a lado com o botão principal. */
+  actions?: React.ReactNode;
 }
 
 export function FeatureHeader({
@@ -17,6 +19,7 @@ export function FeatureHeader({
   icon,
   onAdd,
   addButtonLabel,
+  actions,
 }: FeatureHeaderProps) {
   useWindowCommands([
     {
@@ -41,14 +44,17 @@ export function FeatureHeader({
         </h1>
       </div>
 
-      <Button onClick={() => fireAndForget(onAdd)} className="gap-2 rounded-lg shadow-sm">
-        <Plus className="h-4 w-4" />
-        {addButtonLabel}{" "}
-        <KbdGroup>
-          <Kbd>Alt</Kbd>
-          <Kbd>N</Kbd>
-        </KbdGroup>
-      </Button>
+      <div className="flex items-center gap-2">
+        {actions}
+        <Button onClick={() => fireAndForget(onAdd)} className="gap-2 rounded-lg shadow-sm">
+          <Plus className="h-4 w-4" />
+          {addButtonLabel}{" "}
+          <KbdGroup>
+            <Kbd>Alt</Kbd>
+            <Kbd>N</Kbd>
+          </KbdGroup>
+        </Button>
+      </div>
     </div>
   );
 }
