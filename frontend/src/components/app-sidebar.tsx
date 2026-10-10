@@ -189,7 +189,7 @@ export function AppSidebar() {
   const ui = useUi();
   const [searchTerm, setSearchTerm] = React.useState("");
   const searchInputRef = React.useRef<HTMLInputElement>(null);
-  const { state, setOpen } = useSidebar();
+  const { state, setOpen, toggleSidebar } = useSidebar();
 
   const commands = React.useMemo(
     () => [
@@ -207,6 +207,16 @@ export function AppSidebar() {
         },
       },
       {
+        // Só vale sem janela aberta: o escopo raiz dos atalhos fica inativo com um modal no topo.
+        id: "sidebar.toggle",
+        hotkey: "Alt+B" as const,
+        label: "Recolher ou expandir o menu",
+        run: (event: KeyboardEvent) => {
+          event.preventDefault();
+          toggleSidebar();
+        },
+      },
+      {
         id: "sidebar.home",
         hotkey: "Alt+H" as const,
         label: "Ir para início",
@@ -216,7 +226,7 @@ export function AppSidebar() {
         },
       },
     ],
-    [setOpen, state, ui],
+    [setOpen, state, toggleSidebar, ui],
   );
   useWindowCommands(commands);
 
@@ -375,7 +385,13 @@ export function AppSidebar() {
           )}
         </SidebarContent>
         <SidebarFooter>
-          <SidebarTrigger className="ml-auto" />
+          <div className="flex items-center justify-end gap-2">
+            <KbdGroup className="group-data-[collapsible=icon]:hidden">
+              <Kbd>Alt</Kbd>
+              <Kbd>B</Kbd>
+            </KbdGroup>
+            <SidebarTrigger title="Recolher ou expandir o menu (Alt+B)" />
+          </div>
         </SidebarFooter>
         <SidebarRail />
       </div>
