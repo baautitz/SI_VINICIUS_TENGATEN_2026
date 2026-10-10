@@ -1,10 +1,12 @@
 "use client";
-import { VendasUpsertForm } from "@/features/vendas/upsert";
-import { vendasApi } from "@/api/vendas";
-import { useRelated } from "@/hooks/use-related";
-import { RelatedActions, type RelatedAction } from "@/components/related-actions";
-import { ClipboardList, ListChecks, ShoppingCart } from "lucide-react";
-import { BalancoWindow, type BalancoWindowProps } from "@/features/estoque/balancos/window";
+import { mapItens, useRelated } from "@/hooks/use-related";
+import { useOrigemAction } from "@/hooks/use-origem-action";
+import {
+  RelatedActions,
+  type RelatedAction,
+} from "@/components/related-actions";
+import { ClipboardList, Undo2 } from "lucide-react";
+import { formatToLocal } from "@/utils/date-utils";
 
 import { Kbd, KbdGroup } from "@/ui/primitives";
 import { WindowActions } from "@/imperative-ui";
@@ -13,6 +15,10 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/ui/primitives";
 import { Field, FieldGroup, FieldLabel } from "@/ui/primitives";
 import { NumberInput } from "@/ui/composites";
+import { Input } from "@/ui/primitives";
+
+const fmtQtd = (n: number, decimais?: boolean) =>
+  n.toLocaleString("pt-BR", { minimumFractionDigits: decimais ? 4 : 0 });
 import { Alert, AlertDescription } from "@/ui/primitives";
 import { FormFieldUI } from "@/ui/composites";
 import {
@@ -29,7 +35,7 @@ import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
 import { useQueryClient } from "@tanstack/react-query";
 import { estoqueApi } from "@/api/estoque";
 import type { Resultado } from "@/api/types";
-import { SkuViewLink } from "@/components/sku-view-link";
+import { SkuViewInput } from "@/components/entity-inputs/sku-view-input";
 import { SkuInput } from "@/components/entity-inputs/sku-input";
 import { Sku, getFullSkuName } from "@/features/catalogo/skus/types";
 import { Trash2 } from "lucide-react";
@@ -349,25 +355,59 @@ export function MovimentacoesUpsertForm({
   };
 
   const title = editingItem
-    ? `Visualizar Movimentação #${editingItem.id} [${origemMovimentacaoLabels[editingItem.origemTipo]}]`
+    ? `Visualizar Movimentação #${editingItem.id} [${origemMovimentacaoLabels[editingItem.origemTipo]}]${editingItem.estornada ? " - Estornado" : ""}`
     : "Lançamento Manual de Estoque";
 
   const related = useRelated();
   // Atalhos para o documento de origem da movimentação (só em visualização).
   const origemId = editingItem?.origemId;
-  const origemActions: RelatedAction[] = !origemId
-    ? []
-    : editingItem.origemTipo === "VENDA"
-      ? [{ id: "mov.venda", hotkey: "Alt+V", label: "Venda", icon: <ShoppingCart className="size-4" />, run: () => related.openView(() => vendasApi.getById(origemId), VendasUpsertForm, "Detalhes da Venda") }]
-      : editingItem.origemTipo === "BALANCO"
-        ? [{ id: "mov.balanco", hotkey: "Alt+B", label: "Balanço", icon: <ListChecks className="size-4" />, run: () => ui.windows.open<"saved" | "closed", BalancoWindowProps>({ component: BalancoWindow, props: { balancoId: origemId }, title: `Balanço #${origemId}`, size: "full" }) }]
-        : editingItem.origemTipo === "ESTORNO"
-          ? [{ id: "mov.original", hotkey: "Alt+M", label: "Movimentação original", icon: <ClipboardList className="size-4" />, run: () => related.openView(() => estoqueApi.getById(origemId), MovimentacoesUpsertForm, "Visualizar Movimentação") }]
-          : [];
+  // Documento de origem (compra, venda, devolução, balanço): botão dinâmico; o estorno abre a movimentação original.
+  const origemDocumento = useOrigemAction(editingItem?.origemTipo, origemId);
+  const origemActions: RelatedAction[] =
+    origemId && editingItem?.origemTipo === "ESTORNO"
+      ? [
+          {
+            id: "mov.original",
+            hotkey: "Alt+M",
+            label: "Movimentação original",
+            icon: <ClipboardList className="size-4" />,
+            run: () =>
+              related.openView(
+                () => estoqueApi.getById(origemId),
+                MovimentacoesUpsertForm,
+                "Visualizar Movimentação",
+              ),
+          },
+        ]
+      : origemDocumento;
+  // Movimentação estornada: atalho para a movimentação de estorno que a anulou.
+  const verEstorno: RelatedAction[] =
+    editingItem?.estornada && editingItem.origemTipo !== "ESTORNO"
+      ? [
+          {
+            id: "mov.estorno",
+            hotkey: "Alt+S",
+            label: "Ver estorno",
+            icon: <Undo2 className="size-4" />,
+            run: () =>
+              related.openList(
+                () =>
+                  estoqueApi
+                    .listByOrigem("ESTORNO", editingItem.id)
+                    .then(mapItens((m) => ({ id: m.id, descricao: `Estorno #${m.id}`, detalhe: formatToLocal(m.dataMovimentacao) }))),
+                estoqueApi.getById,
+                MovimentacoesUpsertForm,
+                "Visualizar Estorno",
+                "Estorno não encontrado.",
+              ),
+          },
+        ]
+      : [];
+  const acoesRelacionadas: RelatedAction[] = [...origemActions, ...verEstorno];
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        {readOnly && <RelatedActions actions={origemActions} />}
+        {readOnly && <RelatedActions actions={acoesRelacionadas} />}
         <Button type="button" variant="outline" onClick={handleCancel}>
           <span className="flex items-center gap-2">
             {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
@@ -448,7 +488,6 @@ export function MovimentacoesUpsertForm({
                       )}
                     </form.Field>
                   </div>
-
                 </>
               )}
             </form.Subscribe>
@@ -461,7 +500,7 @@ export function MovimentacoesUpsertForm({
                   field={field}
                   label="Motivo"
                   inputSize="full"
-                  disabled={readOnly}
+                  readOnly={readOnly}
                   placeholder="Perda, avaria, uso interno, acerto..."
                   getFieldError={(name, errors) =>
                     validationErrors["motivo"] || getFieldError(name, errors)
@@ -476,7 +515,7 @@ export function MovimentacoesUpsertForm({
                   field={field}
                   label="Observação"
                   inputSize="full"
-                  disabled={readOnly}
+                  readOnly={readOnly}
                   placeholder="Detalhes adicionais..."
                   getFieldError={getFieldError}
                   maxLength={500}
@@ -513,34 +552,33 @@ export function MovimentacoesUpsertForm({
                     </Alert>
                   )}
 
-                  <div className="bg-card overflow-x-auto rounded-lg border">
-                    <Table className="w-full">
-                      <TableHeader className="bg-muted border-b">
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableHead className="w-24 px-4 py-2 text-left">
-                            SKU
-                          </TableHead>
-                          <TableHead className="w-full px-4 py-2 text-left">
-                            Produto
-                          </TableHead>
-                          <TableHead className="w-36 px-4 py-2 text-right">
+                  <div className="bg-card overflow-clip rounded-lg border">
+                    <Table pageScroll>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="min-w-40">SKU</TableHead>
+                          <TableHead className="min-w-56">Produto</TableHead>
+                          <TableHead className="min-w-36 text-right">
                             Estoque
                           </TableHead>
-                          <TableHead className="min-w-32 px-4 py-2 text-right">
+                          <TableHead className="min-w-40 text-right">
+                            Preço de compra
+                          </TableHead>
+                          <TableHead className="min-w-32 text-right">
                             Qtde
                           </TableHead>
                           {comCusto && (
-                            <TableHead className="w-44 px-4 py-2 text-right">
+                            <TableHead className="min-w-40 text-right">
                               Custo Unit.
                             </TableHead>
                           )}
                           {comCusto && (
-                            <TableHead className="w-36 px-4 py-2 text-right">
+                            <TableHead className="min-w-40 text-right">
                               Total
                             </TableHead>
                           )}
                           {!readOnly && (
-                            <TableHead className="w-14 px-4 py-2 text-center">
+                            <TableHead className="w-14 text-center">
                               Ação
                             </TableHead>
                           )}
@@ -550,8 +588,10 @@ export function MovimentacoesUpsertForm({
                         {itens.length === 0 ? (
                           <TableRow>
                             <TableCell
-                              colSpan={comCusto ? 7 : 5}
-                              className="text-muted-foreground px-4 py-8 text-center"
+                              colSpan={
+                                5 + (comCusto ? 2 : 0) + (readOnly ? 0 : 1)
+                              }
+                              className="text-muted-foreground py-8 text-center"
                             >
                               Nenhum item adicionado ainda.
                             </TableCell>
@@ -594,14 +634,9 @@ export function MovimentacoesUpsertForm({
                               ];
 
                             return (
-                              <TableRow
-                                key={index}
-                                className="group hover:bg-muted/10 border-b last:border-0"
-                              >
-                                <TableCell className="px-4 py-2.5 align-middle">
-                                  <span className="text-foreground/90 font-mono text-sm font-bold">
-                                    <SkuViewLink sku={item.sku} enabled={readOnly} />
-                                  </span>
+                              <TableRow key={index}>
+                                <TableCell>
+                                  <SkuViewInput name={`mov-sku-${index}`} sku={item.sku} />
                                   {skuErr && (
                                     <p className="mt-0.5 text-xs text-red-500">
                                       {skuErr}
@@ -609,11 +644,9 @@ export function MovimentacoesUpsertForm({
                                   )}
                                 </TableCell>
 
-                                <TableCell className="px-4 py-2.5 align-middle">
+                                <TableCell>
                                   <div className="flex items-baseline gap-1.5">
-                                    <span className="text-foreground/90 text-sm font-medium">
-                                      {item.produtoNome}
-                                    </span>
+                                    <span>{item.produtoNome}</span>
                                     {item.unidadeMedidaSigla && (
                                       <span className="text-muted-foreground font-mono text-[10px] font-semibold uppercase">
                                         {item.unidadeMedidaSigla}
@@ -622,43 +655,55 @@ export function MovimentacoesUpsertForm({
                                   </div>
                                 </TableCell>
 
-                                <TableCell className="px-4 py-2.5 text-right align-middle">
-                                  <div className="flex items-baseline justify-end gap-1">
-                                    <span className="text-muted-foreground text-sm">
-                                      {item.estoqueAtual?.toLocaleString(
-                                        "pt-BR",
-                                        {
-                                          minimumFractionDigits:
-                                            item.permiteDecimais ? 4 : 0,
-                                        },
-                                      ) ?? "-"}
-                                    </span>
-                                    <span className="text-muted-foreground/60 text-xs">
-                                      →
-                                    </span>
-                                    <span
+                                <TableCell className="text-right">
+                                  <div
+                                    {...navigationCell({
+                                      grid: "estoque-movimentacao-itens",
+                                      row: index,
+                                      column: 0,
+                                    })}
+                                  >
+                                    <Input
+                                      inputSize="full"
+                                      readOnly
+                                      aria-label={`Estoque do item ${item.sku}`}
+                                      value={`${item.estoqueAtual != null ? fmtQtd(item.estoqueAtual, item.permiteDecimais) : "-"} → ${fmtQtd(estoqueApos, item.permiteDecimais)}`}
                                       className={cn(
-                                        "text-sm font-bold",
-                                        estoqueApos < 0
-                                          ? "text-destructive"
-                                          : "text-foreground",
+                                        "text-right font-bold",
+                                        estoqueApos < 0 && "text-destructive",
                                       )}
-                                    >
-                                      {estoqueApos.toLocaleString("pt-BR", {
-                                        minimumFractionDigits:
-                                          item.permiteDecimais ? 4 : 0,
-                                      })}
-                                    </span>
+                                    />
                                   </div>
                                 </TableCell>
 
-                                <TableCell className="w-44 px-4 py-2.5 text-right align-middle">
+                                <TableCell className="text-right">
+                                  <div
+                                    {...navigationCell({
+                                      grid: "estoque-movimentacao-itens",
+                                      row: index,
+                                      column: 1,
+                                    })}
+                                  >
+                                    <NumberInput
+                                      value={item.custoUltimaCompra ?? 0}
+                                      decimals={2}
+                                      inputSize="full"
+                                      inputMode="decimal"
+                                      aria-label={`Preço de compra do item ${item.sku}`}
+                                      readOnly
+                                      className="text-right font-semibold"
+                                      onNumberChange={() => {}}
+                                    />
+                                  </div>
+                                </TableCell>
+
+                                <TableCell className="text-right">
                                   <div className="flex flex-col items-end">
                                     <NumberInput
                                       {...navigationCell({
                                         grid: "estoque-movimentacao-itens",
                                         row: index,
-                                        column: 0,
+                                        column: 2,
                                       })}
                                       inputSize="full"
                                       value={item.quantidade}
@@ -669,12 +714,12 @@ export function MovimentacoesUpsertForm({
                                           : "numeric"
                                       }
                                       aria-invalid={!!qtdErr}
-                                      disabled={readOnly}
+                                      readOnly={readOnly}
                                       onNumberChange={(num) => {
                                         updateItemRow(index, "quantidade", num);
                                       }}
                                       className={cn(
-                                        "h-8 text-right text-sm font-bold",
+                                        "text-right font-bold",
                                         qtdErr &&
                                           "border-destructive focus-visible:ring-destructive",
                                       )}
@@ -688,20 +733,20 @@ export function MovimentacoesUpsertForm({
                                 </TableCell>
 
                                 {comCusto && (
-                                  <TableCell className="w-48 px-4 py-2.5 text-right align-middle">
+                                  <TableCell className="text-right">
                                     <div className="flex flex-col items-end">
                                       <NumberInput
                                         {...navigationCell({
                                           grid: "estoque-movimentacao-itens",
                                           row: index,
-                                          column: 1,
+                                          column: 3,
                                         })}
                                         inputSize="full"
                                         value={item.custoUnitario}
                                         decimals={2}
                                         inputMode="decimal"
                                         aria-invalid={!!custoErr}
-                                        disabled={
+                                        readOnly={
                                           readOnly ||
                                           tipoMovimentacao === "SAIDA"
                                         }
@@ -713,7 +758,7 @@ export function MovimentacoesUpsertForm({
                                           );
                                         }}
                                         className={cn(
-                                          "h-8 text-right text-sm font-bold",
+                                          "text-right font-bold",
                                           custoErr &&
                                             "border-destructive focus-visible:ring-destructive",
                                         )}
@@ -728,26 +773,40 @@ export function MovimentacoesUpsertForm({
                                 )}
 
                                 {comCusto && (
-                                  <TableCell className="text-primary/90 px-4 py-2.5 text-right align-middle text-sm font-bold">
-                                    {itemTotal.toLocaleString("pt-BR", {
-                                      style: "currency",
-                                      currency: "BRL",
-                                    })}
+                                  <TableCell className="text-right">
+                                    <div
+                                      {...navigationCell({
+                                        grid: "estoque-movimentacao-itens",
+                                        row: index,
+                                        column: 4,
+                                      })}
+                                    >
+                                      <NumberInput
+                                        value={itemTotal}
+                                        decimals={2}
+                                        inputSize="full"
+                                        inputMode="decimal"
+                                        aria-label={`Total do item ${item.sku}`}
+                                        readOnly
+                                        className="text-right font-bold"
+                                        onNumberChange={() => {}}
+                                      />
+                                    </div>
                                   </TableCell>
                                 )}
 
                                 {!readOnly && (
-                                  <TableCell className="px-4 py-2.5 text-center align-middle">
+                                  <TableCell className="text-center">
                                     <Button
                                       {...navigationCell({
                                         grid: "estoque-movimentacao-itens",
                                         row: index,
-                                        column: 2,
+                                        column: 5,
                                       })}
                                       type="button"
-                                      variant="ghost"
+                                      variant="outline"
                                       size="icon"
-                                      className="text-destructive hover:bg-destructive/10 h-7 w-7"
+                                      className="size-8"
                                       onClick={() => removeItemRow(index)}
                                     >
                                       <Trash2 className="h-4 w-4" />
@@ -760,19 +819,25 @@ export function MovimentacoesUpsertForm({
                         )}
                       </TableBody>
                       {comCusto && itens.length > 0 && (
-                        <TableFooter className="bg-muted/30 border-t font-semibold">
+                        <TableFooter>
                           <TableRow>
                             <TableCell
-                              colSpan={5}
-                              className="px-4 py-3 text-left text-sm font-bold uppercase"
+                              colSpan={6}
+                              className="font-bold uppercase"
                             >
                               Total Geral
                             </TableCell>
-                            <TableCell className="text-primary px-4 py-3 text-right text-base font-bold">
-                              {totalGeral.toLocaleString("pt-BR", {
-                                style: "currency",
-                                currency: "BRL",
-                              })}
+                            <TableCell className="text-right">
+                              <NumberInput
+                                value={totalGeral}
+                                decimals={2}
+                                inputSize="full"
+                                inputMode="decimal"
+                                aria-label="Total geral"
+                                readOnly
+                                className="text-right font-bold"
+                                onNumberChange={() => {}}
+                              />
                             </TableCell>
                             {!readOnly && <TableCell />}
                           </TableRow>

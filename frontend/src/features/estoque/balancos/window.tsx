@@ -6,12 +6,28 @@ import { Trash2 } from "lucide-react";
 import { balancosApi } from "@/api/estoque";
 import { WindowActions } from "@/imperative-ui";
 import { SkuInput } from "@/components/entity-inputs/sku-input";
-import { SkuViewLink } from "@/components/sku-view-link";
+import { SkuViewInput } from "@/components/entity-inputs/sku-view-input";
 import { Sku, getFullSkuName } from "@/features/catalogo/skus/types";
 import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
-import { Button, Field, FieldLabel, Input, Kbd, KbdGroup, Spinner } from "@/ui/primitives";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/ui/primitives";
+import {
+  Button,
+  Field,
+  FieldLabel,
+  Input,
+  Kbd,
+  KbdGroup,
+  Spinner,
+} from "@/ui/primitives";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/ui/primitives";
 import { NumberInput } from "@/ui/composites";
+import { navigationCell } from "@/ui/keyboard-navigation";
 import { cn } from "@/lib/utils";
 import { statusBalancoLabels } from "./types";
 
@@ -29,7 +45,8 @@ interface ItemLinha {
   quantidadeContada: number;
 }
 
-const fmt = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 4 });
+const fmt = (n: number) =>
+  n.toLocaleString("pt-BR", { maximumFractionDigits: 4 });
 
 // Balanço com itens escolhidos: adiciona SKUs com a quantidade contada, salva como rascunho (aberto) ou fecha,
 // o que lança as diferenças como movimentações de estoque.
@@ -71,7 +88,9 @@ function BalancoForm({
         sku: i.sku,
         produtoNome: i.produtoNome,
         unidadeMedidaSigla: i.unidadeMedidaSigla,
-        permiteDecimais: !Number.isInteger(i.quantidadeSistema) || !Number.isInteger(i.quantidadeContada ?? 0),
+        permiteDecimais:
+          !Number.isInteger(i.quantidadeSistema) ||
+          !Number.isInteger(i.quantidadeContada ?? 0),
         quantidadeSistema: Number(i.quantidadeSistema),
         quantidadeContada: Number(i.quantidadeContada ?? 0),
       })) ?? [],
@@ -84,13 +103,18 @@ function BalancoForm({
   const setSkuInput = React.useCallback(
     (element: HTMLInputElement | null) => {
       skuInputRef.current = element;
-      if (element && skuInputKey > 0) requestAnimationFrame(() => element.focus());
+      if (element && skuInputKey > 0)
+        requestAnimationFrame(() => element.focus());
     },
     [skuInputKey],
   );
 
   const registerDirty = React.useCallback(() => {
-    activeWindow.setDirtyCheck(() => !readOnly && (observacao !== (balanco?.observacao ?? "") || itens.length > 0));
+    activeWindow.setDirtyCheck(
+      () =>
+        !readOnly &&
+        (observacao !== (balanco?.observacao ?? "") || itens.length > 0),
+    );
     return () => activeWindow.setDirtyCheck(null);
   }, [activeWindow, readOnly, observacao, balanco, itens.length]);
 
@@ -103,7 +127,12 @@ function BalancoForm({
       if (existente) {
         return atual.map((i) =>
           i.sku === sku.sku
-            ? { ...i, quantidadeContada: Number(Math.max(0, i.quantidadeContada + quantidade).toFixed(4)) }
+            ? {
+                ...i,
+                quantidadeContada: Number(
+                  Math.max(0, i.quantidadeContada + quantidade).toFixed(4),
+                ),
+              }
             : i,
         );
       }
@@ -116,7 +145,9 @@ function BalancoForm({
           unidadeMedidaSigla: sku.produto?.unidadeMedida?.sigla ?? "",
           permiteDecimais,
           quantidadeSistema: Number(sku.estoque),
-          quantidadeContada: Number(quantidade.toFixed(permiteDecimais ? 4 : 0)),
+          quantidadeContada: Number(
+            quantidade.toFixed(permiteDecimais ? 4 : 0),
+          ),
         },
       ];
     });
@@ -127,7 +158,12 @@ function BalancoForm({
     setItens((atual) =>
       atual.map((item, i) =>
         i === index
-          ? { ...item, quantidadeContada: Number(Number(valor || 0).toFixed(item.permiteDecimais ? 4 : 0)) }
+          ? {
+              ...item,
+              quantidadeContada: Number(
+                Number(valor || 0).toFixed(item.permiteDecimais ? 4 : 0),
+              ),
+            }
           : item,
       ),
     );
@@ -146,16 +182,26 @@ function BalancoForm({
   // Cria ou atualiza o balanço; devolve o id salvo ou null se houve erro (já notificado).
   const salvar = async (): Promise<number | null> => {
     if (itens.length === 0) {
-      ui.feedback.notify({ type: "warning", title: "Adicione pelo menos um item ao balanço." });
+      ui.feedback.notify({
+        type: "warning",
+        title: "Adicione pelo menos um item ao balanço.",
+      });
       return null;
     }
     const payload = {
       observacao: observacao.trim() || null,
-      itens: itens.map((i) => ({ sku: i.sku, quantidadeContada: i.quantidadeContada })),
+      itens: itens.map((i) => ({
+        sku: i.sku,
+        quantidadeContada: i.quantidadeContada,
+      })),
     };
-    const res = balancoId ? await balancosApi.update(balancoId, payload) : await balancosApi.create(payload);
+    const res = balancoId
+      ? await balancosApi.update(balancoId, payload)
+      : await balancosApi.create(payload);
     if (res.success === false || !res.data) {
-      ui.feedback.notifyError(res, { fallbackTitle: "Não foi possível salvar o balanço." });
+      ui.feedback.notifyError(res, {
+        fallbackTitle: "Não foi possível salvar o balanço.",
+      });
       return null;
     }
     return res.data.id;
@@ -167,7 +213,9 @@ function BalancoForm({
     try {
       await acao();
     } catch (error) {
-      ui.feedback.notifyError(error, { fallbackTitle: "Operação não concluída." });
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Operação não concluída.",
+      });
     } finally {
       setBusy(false);
     }
@@ -191,7 +239,9 @@ function BalancoForm({
       if (id === null) return;
       const res = await balancosApi.fechar(id);
       if (res.success === false) {
-        ui.feedback.notifyError(res, { fallbackTitle: "Não foi possível fechar o balanço." });
+        ui.feedback.notifyError(res, {
+          fallbackTitle: "Não foi possível fechar o balanço.",
+        });
         return;
       }
       activeWindow.resolve("closed");
@@ -239,12 +289,21 @@ function BalancoForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => activeWindow.dismiss("cancel")}
+        >
           {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
         </Button>
         {!readOnly && (
           <>
-            <Button type="button" variant="secondary" disabled={busy} onClick={salvarRascunho}>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={busy}
+              onClick={salvarRascunho}
+            >
               Salvar Rascunho{" "}
               <KbdGroup>
                 <Kbd>Alt</Kbd>
@@ -267,9 +326,12 @@ function BalancoForm({
           {balanco && (
             <div className="flex w-fit flex-col gap-2">
               <FieldLabel>Código</FieldLabel>
-              <div className="bg-muted/50 text-foreground/80 flex h-8 items-center rounded-lg border px-3 font-mono text-sm">
-                {balanco.id} · {statusBalancoLabels[balanco.status]}
-              </div>
+              <Input
+                readOnly
+                aria-label="Código"
+                value={`${balanco.id} · ${statusBalancoLabels[balanco.status]}`}
+                className="font-mono"
+              />
             </div>
           )}
           <Field className="min-w-64 flex-1">
@@ -278,7 +340,7 @@ function BalancoForm({
               id="balanco-observacao"
               value={observacao}
               maxLength={500}
-              disabled={readOnly}
+              readOnly={readOnly}
               placeholder="Ex.: inventário geral de outubro..."
               onChange={(e) => setObservacao(e.target.value)}
             />
@@ -298,70 +360,112 @@ function BalancoForm({
             </div>
           )}
 
-          <div className="bg-card overflow-x-auto rounded-lg border">
-            <Table className="w-full">
-              <TableHeader className="bg-muted border-b">
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-24 px-4 py-2">SKU</TableHead>
-                  <TableHead className="w-full px-4 py-2">Produto</TableHead>
-                  <TableHead className="w-36 px-4 py-2 text-right">Sistema</TableHead>
-                  <TableHead className="min-w-40 px-4 py-2 text-right">Contado</TableHead>
-                  <TableHead className="w-36 px-4 py-2 text-right">Diferença</TableHead>
-                  {!readOnly && <TableHead className="w-14 px-4 py-2 text-center">Ação</TableHead>}
+          <div className="bg-card overflow-clip rounded-lg border">
+            <Table pageScroll>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-24">SKU</TableHead>
+                  <TableHead>Produto</TableHead>
+                  <TableHead className="w-36 text-right">Sistema</TableHead>
+                  <TableHead className="min-w-40 text-right">Contado</TableHead>
+                  <TableHead className="w-36 text-right">Diferença</TableHead>
+                  {!readOnly && (
+                    <TableHead className="w-14 text-center">Ação</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {itens.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={readOnly ? 5 : 6} className="text-muted-foreground px-4 py-8 text-center">
+                    <TableCell
+                      colSpan={readOnly ? 5 : 6}
+                      className="text-muted-foreground py-8 text-center"
+                    >
                       Nenhum item adicionado ainda.
                     </TableCell>
                   </TableRow>
                 ) : (
                   itens.map((item, index) => {
-                    const diferenca = Number((item.quantidadeContada - item.quantidadeSistema).toFixed(4));
+                    const diferenca = Number(
+                      (item.quantidadeContada - item.quantidadeSistema).toFixed(
+                        4,
+                      ),
+                    );
                     return (
-                      <TableRow key={item.sku} className="border-b last:border-0">
-                        <TableCell className="px-4 py-2 font-mono text-sm font-bold">
-                          <SkuViewLink sku={item.sku} enabled={readOnly} />
+                      <TableRow key={item.sku}>
+                        <TableCell className="font-mono font-bold">
+                          <SkuViewInput name={`balanco-sku-${item.sku}`} sku={item.sku} />
                         </TableCell>
-                        <TableCell className="px-4 py-2 text-sm">
+                        <TableCell>
                           {item.produtoNome}{" "}
                           <span className="text-muted-foreground font-mono text-[10px] font-semibold uppercase">
                             {item.unidadeMedidaSigla}
                           </span>
                         </TableCell>
-                        <TableCell className="text-muted-foreground px-4 py-2 text-right text-sm">
-                          {fmt(item.quantidadeSistema)}
+                        <TableCell className="text-right">
+                          <Input
+                            {...navigationCell({
+                              grid: "balanco-itens",
+                              row: index,
+                              column: 0,
+                            })}
+                            readOnly
+                            aria-label={`Sistema de ${item.sku}`}
+                            value={fmt(item.quantidadeSistema)}
+                            inputSize="full"
+                            className="text-right"
+                          />
                         </TableCell>
-                        <TableCell className="px-4 py-2 text-right">
+                        <TableCell className="text-right">
                           <NumberInput
+                            {...navigationCell({
+                              grid: "balanco-itens",
+                              row: index,
+                              column: 1,
+                            })}
                             inputSize="full"
                             value={item.quantidadeContada}
                             decimals={item.permiteDecimais ? 4 : 0}
-                            inputMode={item.permiteDecimais ? "decimal" : "numeric"}
-                            disabled={readOnly}
-                            onNumberChange={(num) => atualizarContagem(index, num)}
-                            className="h-8 text-right text-sm font-bold"
+                            inputMode={
+                              item.permiteDecimais ? "decimal" : "numeric"
+                            }
+                            readOnly={readOnly}
+                            onNumberChange={(num) =>
+                              atualizarContagem(index, num)
+                            }
+                            className="text-right font-bold"
                           />
                         </TableCell>
-                        <TableCell
-                          className={cn(
-                            "px-4 py-2 text-right text-sm font-bold",
-                            diferenca > 0 && "text-emerald-600",
-                            diferenca < 0 && "text-destructive",
-                          )}
-                        >
-                          {diferenca > 0 ? "+" : ""}
-                          {fmt(diferenca)}
+                        <TableCell className="text-right">
+                          <Input
+                            {...navigationCell({
+                              grid: "balanco-itens",
+                              row: index,
+                              column: 2,
+                            })}
+                            inputSize="full"
+                            readOnly
+                            aria-label={`Diferença de ${item.sku}`}
+                            value={`${diferenca > 0 ? "+" : ""}${fmt(diferenca)}`}
+                            className={cn(
+                              "text-right font-bold",
+                              diferenca > 0 && "text-emerald-600",
+                              diferenca < 0 && "text-destructive",
+                            )}
+                          />
                         </TableCell>
                         {!readOnly && (
-                          <TableCell className="px-4 py-2 text-center">
+                          <TableCell className="text-center">
                             <Button
+                              {...navigationCell({
+                                grid: "balanco-itens",
+                                row: index,
+                                column: 3,
+                              })}
                               type="button"
-                              variant="ghost"
+                              variant="outline"
                               size="icon"
-                              className="text-destructive hover:bg-destructive/10 h-7 w-7"
+                              className="size-8"
                               onClick={() => void removerItem(index)}
                             >
                               <Trash2 className="h-4 w-4" />
