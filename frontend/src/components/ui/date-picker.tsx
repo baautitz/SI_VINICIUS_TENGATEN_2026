@@ -25,6 +25,8 @@ interface DatePickerProps {
   onChange: (value: string | null) => void;
   placeholder?: string;
   disabled?: boolean;
+  /** Somente leitura: continua focável (entra na navegação por setas), mas não edita nem abre o calendário. */
+  readOnly?: boolean;
   className?: string;
   inputSize?: "sm" | "default" | "lg" | "full";
   /** Limites do calendário (YYYY-MM-DD); a digitação continua livre, valide no formulário. */
@@ -103,6 +105,7 @@ export function DatePicker({
   onChange,
   placeholder = "DD/MM/AAAA",
   disabled = false,
+  readOnly = false,
   className,
   inputSize = "full",
   min,
@@ -183,7 +186,7 @@ export function DatePicker({
   const hasError = invalid || className?.includes("border-destructive");
   const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     onKeyDown?.(event);
-    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) {
+    if (readOnly || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) {
       return;
     }
     // Enter and Space open the calendar from the focused field. Once the
@@ -215,6 +218,7 @@ export function DatePicker({
         onChange={handleInputChange}
         placeholder={placeholder}
         disabled={disabled}
+        readOnly={readOnly}
         aria-invalid={hasError || undefined}
         maxLength={10}
         inputMode="numeric"
@@ -230,7 +234,7 @@ export function DatePicker({
             type="button"
             variant="outline"
             size="icon"
-            disabled={disabled}
+            disabled={disabled || readOnly}
             tabIndex={-1}
             className={cn("shrink-0", isLarge ? "h-10 w-10" : "h-8 w-8")}
           >

@@ -10,6 +10,8 @@ import { useWindow, useUi } from "@/ui/imperative";
 interface EntityInputProps<T, TResumo = T, TId extends string | number = number> {
   name: string;
   label: string;
+  /** Mantém o rótulo só para leitores de tela (uso em células de tabela). */
+  hideLabel?: boolean;
   placeholder?: string;
   error?: string;
   initialItem?: T | TResumo | null;
@@ -67,6 +69,7 @@ function EntitySelectionWindow<T, TResumo>({
 export function EntityInput<T, TResumo = T, TId extends string | number = number>({
   name,
   label,
+  hideLabel = false,
   placeholder = "Digite, ou Enter para buscar...",
   error,
   initialItem = null,
@@ -90,7 +93,9 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
 
   const getLabel = (item: T | TResumo | null) => {
     if (!item) return "";
-    return `${getId(item)} - ${getDisplayLabel(item)}`;
+    const descricao = getDisplayLabel(item);
+    // Quando a descrição repete o id ou é vazia (ex.: SKU, cujo id é o próprio código), mostra só o id.
+    return descricao && descricao !== String(getId(item)) ? `${getId(item)} - ${descricao}` : String(getId(item));
   };
 
   // "12 - Nome" (rótulo exibido) pesquisa por "Nome"; o código sozinho vira busca por id.
@@ -265,19 +270,19 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
   return (
     <>
       <Field data-invalid={!!error}>
-        <FieldLabel htmlFor={name}>{label}</FieldLabel>
+        <FieldLabel htmlFor={name} className={hideLabel ? "sr-only" : undefined}>{label}</FieldLabel>
         <div className={`relative w-full`}>
           <Input
             ref={inputRef}
             id={name}
             placeholder={placeholder}
             value={searchText}
-            disabled={disabled && !viewable}
-            readOnly={viewable}
+            // Desabilitado vira somente leitura: segue focável e entra na navegação por setas.
+            readOnly={disabled || viewable}
             onClick={() => void openView()}
             onChange={(e) => setSearchText(e.target.value)}
             onKeyDown={(e) => {
-              if (viewable && e.key === "Enter") {
+              if (viewable && e.key === "Enter" && !e.altKey) {
                 e.preventDefault();
                 void openView();
                 return;
