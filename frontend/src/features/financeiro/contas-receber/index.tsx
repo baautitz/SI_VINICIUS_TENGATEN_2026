@@ -44,6 +44,8 @@ export function ContasReceberFeature() {
   };
 
   const openEditor = async (item: ContasReceber | null, readOnly = false) => {
+    // Título gerado por outro documento só se visualiza; o aviso aparece apenas ao tentar cancelar (openDelete).
+    if (item && item.origemTipo !== "MANUAL") readOnly = true;
     try {
       const editingItem = item ? await contasReceberApi.getById(item.id) : null;
       const result = await ui.windows.open<true, ContasReceberUpsertProps>({

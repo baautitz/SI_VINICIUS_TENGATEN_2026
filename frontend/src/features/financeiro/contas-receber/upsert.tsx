@@ -1,9 +1,7 @@
 "use client";
-import { VendasUpsertForm } from "@/features/vendas/upsert";
-import { vendasApi } from "@/api/vendas";
-import { useRelated } from "@/hooks/use-related";
+import { useOrigemAction } from "@/hooks/use-origem-action";
 import { RelatedActions } from "@/components/related-actions";
-import { FileText, ShoppingCart } from "lucide-react";
+import { FileText } from "lucide-react";
 
 import React, { useState, useCallback } from "react";
 import { WindowActions } from "@/imperative-ui";
@@ -16,9 +14,7 @@ import { Input } from "@/ui/primitives";
 import { NumberInput } from "@/ui/composites";
 import { DatePicker } from "@/ui/composites";
 import { TextoWindow, type TextoWindowProps } from "@/components/texto-window";
-import { Card, CardContent } from "@/ui/primitives";
 import { Separator } from "@/ui/primitives";
-import { Alert, AlertDescription } from "@/ui/primitives";
 import {
   Table,
   TableHeader,
@@ -60,8 +56,14 @@ import { toLocalISODate, todayLocalISODate } from "@/utils/date-utils";
 export interface ContasReceberUpsertProps {
   editingItem: ContasReceber | null;
   readOnly?: boolean;
-  onBaixa?: (contaId: number, parcela: ContasReceberParcela) => void | Promise<void>;
-  onEstorno?: (contaId: number, parcela: ContasReceberParcela) => void | Promise<void>;
+  onBaixa?: (
+    contaId: number,
+    parcela: ContasReceberParcela,
+  ) => void | Promise<void>;
+  onEstorno?: (
+    contaId: number,
+    parcela: ContasReceberParcela,
+  ) => void | Promise<void>;
 }
 
 export function ContasReceberUpsertForm({
@@ -76,7 +78,12 @@ export function ContasReceberUpsertForm({
 
   // Recarrega a conta apos baixa/estorno para nao reenviar parcelas antigas no PUT.
   const withRefresh =
-    (fn?: (contaId: number, parcela: ContasReceberParcela) => void | Promise<void>) =>
+    (
+      fn?: (
+        contaId: number,
+        parcela: ContasReceberParcela,
+      ) => void | Promise<void>,
+    ) =>
     async (contaId: number, parcela: ContasReceberParcela) => {
       await fn?.(contaId, parcela);
       try {
@@ -113,26 +120,41 @@ export function ContasReceberUpsertForm({
     onSuccessCallback: () => activeWindow.resolve(true),
   });
 
-  const related = useRelated();
+  // Documento que gerou o título (venda, devolução, compra): botão dinâmico, só em leitura.
+  const origemActions = useOrigemAction(editingItem?.origemTipo, editingItem?.origemId);
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        {readOnly && editingItem && editingItem.origemTipo === "VENDA" && !!editingItem.origemId && <RelatedActions actions={[{ id: "cr.venda", hotkey: "Alt+V", label: "Venda", icon: <ShoppingCart className="size-4" />, run: () => related.openView(() => vendasApi.getById(editingItem.origemId!), VendasUpsertForm, "Detalhes da Venda") }]} />}
-        <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>
+        {readOnly && <RelatedActions actions={origemActions} />}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => activeWindow.dismiss("cancel")}
+        >
           {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
         </Button>
         {!readOnly && (
-          <Button type="submit" form="upsert-contas-receber" disabled={mutation.isPending}>
-            {mutation.isPending ? "Salvando..." : <span className="flex items-center gap-2">Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup></span>}
+          <Button
+            type="submit"
+            form="upsert-contas-receber"
+            disabled={mutation.isPending}
+          >
+            {mutation.isPending ? (
+              "Salvando..."
+            ) : (
+              <span className="flex items-center gap-2">
+                Salvar{" "}
+                <KbdGroup>
+                  <Kbd>Alt</Kbd>
+                  <Kbd>Enter</Kbd>
+                </KbdGroup>
+              </span>
+            )}
           </Button>
         )}
       </WindowActions>
       <ContasReceberFormBody
-        key={
-          editingItem
-            ? `${editingItem.id}-${version}`
-            : "new"
-        }
+        key={editingItem ? `${editingItem.id}-${version}` : "new"}
         editingItem={editingItem}
         readOnly={readOnly}
         onBaixa={onBaixa}
@@ -148,8 +170,14 @@ export function ContasReceberUpsertForm({
 interface ContasReceberFormBodyProps {
   editingItem: ContasReceber | null;
   readOnly: boolean;
-  onBaixa?: (contaId: number, parcela: ContasReceberParcela) => void | Promise<void>;
-  onEstorno?: (contaId: number, parcela: ContasReceberParcela) => void | Promise<void>;
+  onBaixa?: (
+    contaId: number,
+    parcela: ContasReceberParcela,
+  ) => void | Promise<void>;
+  onEstorno?: (
+    contaId: number,
+    parcela: ContasReceberParcela,
+  ) => void | Promise<void>;
   mutation: UseMutationResult<
     BackendResult<ContasReceber>,
     unknown,
@@ -176,6 +204,8 @@ function ContasReceberFormBody({
   const ui = useUi();
   const parcelasEditadas = React.useRef(false);
   const isEditMode = !!editingItem;
+  // Sem ações disponíveis (ex.: conta aberta em leitura a partir de outro documento) a coluna não aparece.
+  const temColunaAcoes = isEditMode && (!!onBaixa || !!onEstorno);
 
   const [parcelas, setParcelas] = useState<ContasReceberParcela[]>(
     editingItem?.contasReceberParcelas?.map((p) => ({
@@ -216,7 +246,10 @@ function ContasReceberFormBody({
       observacao: editingItem?.observacao ?? "",
       parcelas: parcelas,
     } as ContasReceberFormValues,
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value, formApi }) => {
+      // Barreira final: botão, Enter e atalho passam por aqui, então nada inválido é salvo.
+      if (!contasReceberSchema.safeParse(value).success)
+        return void formApi.validateAllFields("submit");
       resetErrors();
       setLocalErrors({});
       const payload = {
@@ -375,7 +408,8 @@ function ContasReceberFormBody({
   const [initialParcelasJson] = useState(() => JSON.stringify(parcelas));
   const registerDirty = useCallback(() => {
     activeWindow.setDirtyCheck(
-      () => form.state.isDirty || JSON.stringify(parcelas) !== initialParcelasJson,
+      () =>
+        form.state.isDirty || JSON.stringify(parcelas) !== initialParcelasJson,
     );
     return () => activeWindow.setDirtyCheck(null);
   }, [activeWindow, form, parcelas, initialParcelasJson]);
@@ -437,7 +471,7 @@ function ContasReceberFormBody({
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
-                    disabled={readOnly}
+                    readOnly={readOnly}
                     inputSize="full"
                     maxLength={150}
                     className={cn(
@@ -486,7 +520,9 @@ function ContasReceberFormBody({
             >
               {(field) => (
                 <div className="flex flex-col gap-2">
-                  <FieldLabel htmlFor={field.name}>Valor Original (R$)</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>
+                    Valor Original (R$)
+                  </FieldLabel>
                   <NumberInput
                     id={field.name}
                     name={field.name}
@@ -509,7 +545,7 @@ function ContasReceberFormBody({
                         field.handleChange(num);
                       }
                     }}
-                    disabled={readOnly || temParcelaPagaOuParcial}
+                    readOnly={readOnly || temParcelaPagaOuParcial}
                     className={cn(
                       "text-right font-semibold",
                       getFieldError(field.name, field.state.meta.errors) &&
@@ -576,7 +612,7 @@ function ContasReceberFormBody({
                         );
                       }
                     }}
-                    disabled={readOnly || temParcelaPagaOuParcial}
+                    readOnly={readOnly || temParcelaPagaOuParcial}
                   />
                 </div>
               )}
@@ -595,7 +631,11 @@ function ContasReceberFormBody({
                   onClick={async () => {
                     const r = await ui.windows.open<string, TextoWindowProps>({
                       component: TextoWindow,
-                      props: { label: "Observações", value: field.state.value ?? "", readOnly },
+                      props: {
+                        label: "Observações",
+                        value: field.state.value ?? "",
+                        readOnly,
+                      },
                       title: "Observações",
                       size: "large",
                     });
@@ -603,7 +643,10 @@ function ContasReceberFormBody({
                   }}
                 >
                   <FileText />
-                  <span className="truncate">{field.state.value || (readOnly ? "Sem observações" : "Adicionar observações")}</span>
+                  <span className="truncate">
+                    {field.state.value ||
+                      (readOnly ? "Sem observações" : "Adicionar observações")}
+                  </span>
                 </Button>
               </div>
             )}
@@ -648,222 +691,259 @@ function ContasReceberFormBody({
                         </EmptyHeader>
                       </Empty>
                     ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="hover:bg-transparent">
-                            <TableHead className="w-16 px-2 text-left">
-                              Parcela
-                            </TableHead>
-                            <TableHead className="px-2 text-left">
-                              Vencimento
-                            </TableHead>
-                            <TableHead className="px-2 text-right">
-                              Valor Parcela (R$)
-                            </TableHead>
-                            <TableHead className="px-2 text-right">
-                              Valor Recebido (R$)
-                            </TableHead>
-                            <TableHead className="px-2 text-center">
-                              Status
-                            </TableHead>
-                            {isEditMode && (
-                              <TableHead className="w-24 px-2 text-right">
-                                Ações
+                      <div className="bg-card overflow-clip rounded-lg border">
+                        <Table pageScroll>
+                          <TableHeader>
+                            <TableRow className="hover:bg-transparent">
+                              <TableHead className="w-16">Parcela</TableHead>
+                              <TableHead>Vencimento</TableHead>
+                              <TableHead className="text-right">
+                                Valor Parcela (R$)
                               </TableHead>
-                            )}
-                            {!readOnly && !temParcelaPagaOuParcial && (
-                              <TableHead className="w-12 px-2 text-right" />
-                            )}
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {parcelas.map((p, index) => (
-                            <TableRow
-                              key={`parcela-${p.numeroParcela}`}
-                              className="hover:bg-transparent"
-                            >
-                              <TableCell className="px-2 py-2 align-middle font-semibold">
-                                #{p.numeroParcela}
-                              </TableCell>
-                              <TableCell className="px-2 py-2 align-middle">
-                                <div className="flex w-full flex-col gap-1">
-                                  <div
-                                    className="contents"
-                                    {...navigationCell({
-                                      grid: "contas-receber-parcelas",
-                                      row: index,
-                                      column: 0,
-                                    })}
-                                  >
-                                    <DatePicker
-                                      id={`parcela-${index}-dataVencimento`}
-                                    name={`parcelas.${index}.dataVencimento`}
-                                    value={p.dataVencimento}
-                                    onChange={(val) =>
-                                      handleUpdateParcela(
-                                        index,
-                                        "dataVencimento",
-                                        val ?? "",
-                                      )
-                                    }
-                                    onFocus={(e) => e.target.select()}
-                                    disabled={
-                                      readOnly ||
-                                      temParcelaPagaOuParcial ||
-                                      p.status === "PAGO"
-                                    }
-                                    className={cn(
-                                      "h-8 text-xs",
-                                      localErrors[
-                                        `parcelas.${index}.dataVencimento`
-                                      ] &&
-                                        "border-destructive focus-visible:ring-destructive",
-                                    )}
-                                    aria-invalid={
-                                      !!localErrors[`parcelas.${index}.dataVencimento`]
-                                    }
-                                    />
-                                  </div>
-                                  {localErrors[`parcelas.${index}.dataVencimento`] && (
-                                    <span className="text-destructive mt-1 block text-right text-xs">
-                                      {localErrors[`parcelas.${index}.dataVencimento`]}
-                                    </span>
-                                  )}
-                                </div>
-                              </TableCell>
-                              <TableCell className="px-2 py-2 align-middle">
-                                <div className="flex w-full flex-col gap-1">
-                                  <NumberInput
-                                    {...navigationCell({
-                                      grid: "contas-receber-parcelas",
-                                      row: index,
-                                      column: 1,
-                                    })}
-                                    id={`parcela-${index}-valorParcela`}
-                                    name={`parcelas.${index}.valorParcela`}
-                                    inputSize="full"
-                                    value={p.valorParcela}
-                                    decimals={2}
-                                    inputMode="decimal"
-                                    onNumberChange={(num) =>
-                                      handleUpdateParcela(
-                                        index,
-                                        "valorParcela",
-                                        num,
-                                      )
-                                    }
-                                    onFocus={(e) => e.target.select()}
-                                    disabled={
-                                      readOnly ||
-                                      temParcelaPagaOuParcial ||
-                                      p.status === "PAGO"
-                                    }
-                                    className={cn(
-                                      "h-8 text-right font-semibold",
-                                      localErrors[
-                                        `parcelas.${index}.valorParcela`
-                                      ] &&
-                                        "border-destructive focus-visible:ring-destructive",
-                                    )}
-                                    aria-invalid={
-                                      !!localErrors[`parcelas.${index}.valorParcela`]
-                                    }
-                                  />
-                                  {localErrors[`parcelas.${index}.valorParcela`] && (
-                                    <span className="text-destructive mt-1 block text-right text-xs">
-                                      {localErrors[`parcelas.${index}.valorParcela`]}
-                                    </span>
-                                  )}
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-muted-foreground px-2 py-2 text-right align-middle font-medium">
-                                {new Intl.NumberFormat("pt-BR", {
-                                  style: "currency",
-                                  currency: "BRL",
-                                }).format(p.valorRecebido || 0)}
-                              </TableCell>
-                              <TableCell className="px-2 py-2 text-center align-middle">
-                                <span className="text-xs font-semibold uppercase">
-                                  {p.status}
-                                </span>
-                              </TableCell>
-                              {isEditMode && (
-                                <TableCell className="px-2 py-2 text-right align-middle">
-                                  <div className="flex justify-end gap-2">
-                                    {(p.status === "ABERTO" ||
-                                      p.status === "PARCIAL") &&
-                                      onBaixa && (
-                                        <Button
-                                          {...navigationCell({
-                                            grid: "contas-receber-parcelas",
-                                            row: index,
-                                            column: 2,
-                                          })}
-                                          type="button"
-                                          size="icon"
-                                          variant="ghost"
-                                          tabIndex={-1}
-                                          className="h-8 w-8 text-green-600 hover:bg-green-50 hover:text-green-700 dark:text-green-400 dark:hover:bg-green-950"
-                                          onClick={() =>
-                                            onBaixa(editingItem!.id, p)
-                                          }
-                                          title="Receber Parcela"
-                                        >
-                                          <Coins className="h-4 w-4" />
-                                        </Button>
-                                      )}
-                                    {(p.status === "PAGO" ||
-                                      p.status === "PARCIAL") &&
-                                      onEstorno && (
-                                        <Button
-                                          {...navigationCell({
-                                            grid: "contas-receber-parcelas",
-                                            row: index,
-                                            column: 2,
-                                          })}
-                                          type="button"
-                                          size="icon"
-                                          variant="ghost"
-                                          tabIndex={-1}
-                                          className="text-destructive hover:bg-destructive/10 h-8 w-8"
-                                          onClick={() =>
-                                            onEstorno(editingItem!.id, p)
-                                          }
-                                          title="Estornar Recebimento"
-                                        >
-                                          <RotateCcw className="h-4 w-4" />
-                                        </Button>
-                                      )}
-                                  </div>
-                                </TableCell>
+                              <TableHead className="text-right">
+                                Valor Recebido (R$)
+                              </TableHead>
+                              <TableHead className="text-center">
+                                Status
+                              </TableHead>
+                              {temColunaAcoes && (
+                                <TableHead className="w-24 text-right">
+                                  Ações
+                                </TableHead>
                               )}
                               {!readOnly && !temParcelaPagaOuParcial && (
-                                <TableCell className="px-2 py-2 text-right align-middle">
-                                  <Button
+                                <TableHead className="w-12 text-right" />
+                              )}
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {parcelas.map((p, index) => (
+                              <TableRow
+                                key={`parcela-${p.numeroParcela}`}
+                                className="hover:bg-transparent"
+                              >
+                                <TableCell className="font-semibold">
+                                  #{p.numeroParcela}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex w-full flex-col gap-1">
+                                    <div
+                                      className="contents"
+                                      {...navigationCell({
+                                        grid: "contas-receber-parcelas",
+                                        row: index,
+                                        column: 0,
+                                      })}
+                                    >
+                                      <DatePicker
+                                        id={`parcela-${index}-dataVencimento`}
+                                        name={`parcelas.${index}.dataVencimento`}
+                                        value={p.dataVencimento}
+                                        onChange={(val) =>
+                                          handleUpdateParcela(
+                                            index,
+                                            "dataVencimento",
+                                            val ?? "",
+                                          )
+                                        }
+                                        onFocus={(e) => e.target.select()}
+                                        readOnly={
+                                          readOnly ||
+                                          temParcelaPagaOuParcial ||
+                                          p.status === "PAGO"
+                                        }
+                                        className={cn(
+                                          "h-8 text-xs",
+                                          localErrors[
+                                            `parcelas.${index}.dataVencimento`
+                                          ] &&
+                                            "border-destructive focus-visible:ring-destructive",
+                                        )}
+                                        aria-invalid={
+                                          !!localErrors[
+                                            `parcelas.${index}.dataVencimento`
+                                          ]
+                                        }
+                                      />
+                                    </div>
+                                    {localErrors[
+                                      `parcelas.${index}.dataVencimento`
+                                    ] && (
+                                      <span className="text-destructive mt-1 block text-right text-xs">
+                                        {
+                                          localErrors[
+                                            `parcelas.${index}.dataVencimento`
+                                          ]
+                                        }
+                                      </span>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex w-full flex-col gap-1">
+                                    <NumberInput
+                                      {...navigationCell({
+                                        grid: "contas-receber-parcelas",
+                                        row: index,
+                                        column: 1,
+                                      })}
+                                      id={`parcela-${index}-valorParcela`}
+                                      name={`parcelas.${index}.valorParcela`}
+                                      inputSize="full"
+                                      value={p.valorParcela}
+                                      decimals={2}
+                                      inputMode="decimal"
+                                      onNumberChange={(num) =>
+                                        handleUpdateParcela(
+                                          index,
+                                          "valorParcela",
+                                          num,
+                                        )
+                                      }
+                                      onFocus={(e) => e.target.select()}
+                                      readOnly={
+                                        readOnly ||
+                                        temParcelaPagaOuParcial ||
+                                        p.status === "PAGO"
+                                      }
+                                      className={cn(
+                                        "h-8 text-right font-semibold",
+                                        localErrors[
+                                          `parcelas.${index}.valorParcela`
+                                        ] &&
+                                          "border-destructive focus-visible:ring-destructive",
+                                      )}
+                                      aria-invalid={
+                                        !!localErrors[
+                                          `parcelas.${index}.valorParcela`
+                                        ]
+                                      }
+                                    />
+                                    {localErrors[
+                                      `parcelas.${index}.valorParcela`
+                                    ] && (
+                                      <span className="text-destructive mt-1 block text-right text-xs">
+                                        {
+                                          localErrors[
+                                            `parcelas.${index}.valorParcela`
+                                          ]
+                                        }
+                                      </span>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div
+                                    {...navigationCell({
+                                      grid: "contas-receber-parcelas",
+                                      row: index,
+                                      column: 2,
+                                    })}
+                                  >
+                                    <NumberInput
+                                      value={p.valorRecebido || 0}
+                                      decimals={2}
+                                      inputSize="full"
+                                      inputMode="decimal"
+                                      aria-label={`Parcela ${p.numeroParcela} valor`}
+                                      readOnly
+                                      className="h-8 text-right font-medium"
+                                      onNumberChange={() => {}}
+                                    />
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div
                                     {...navigationCell({
                                       grid: "contas-receber-parcelas",
                                       row: index,
                                       column: 3,
                                     })}
-                                    type="button"
-                                    size="icon"
-                                    variant="ghost"
-                                    tabIndex={-1}
-                                    className="text-destructive hover:bg-destructive/10 h-8 w-8"
-                                    onClick={() => handleRemoveParcela(index)}
-                                    disabled={
-                                      p.status === "PAGO" ||
-                                      p.status === "PARCIAL"
-                                    }
                                   >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                                    <Input
+                                      value={p.status ?? ""}
+                                      aria-label={`Parcela ${p.numeroParcela} status`}
+                                      readOnly
+                                      inputSize="full"
+                                      className="h-8 text-center text-xs font-semibold uppercase"
+                                    />
+                                  </div>
                                 </TableCell>
-                              )}
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                                {temColunaAcoes && (
+                                  <TableCell className="text-right">
+                                    <div className="flex justify-end gap-2">
+                                      {(p.status === "ABERTO" ||
+                                        p.status === "PARCIAL") &&
+                                        onBaixa && (
+                                          <Button
+                                            {...navigationCell({
+                                              grid: "contas-receber-parcelas",
+                                              row: index,
+                                              column: 4,
+                                            })}
+                                            type="button"
+                                            size="icon"
+                                            variant="outline"
+                                            className="h-8 w-8 text-green-600 hover:bg-green-50 hover:text-green-700 dark:text-green-400 dark:hover:bg-green-950"
+                                            onClick={() =>
+                                              onBaixa(editingItem!.id, p)
+                                            }
+                                            title="Receber Parcela"
+                                          >
+                                            <Coins className="h-4 w-4" />
+                                          </Button>
+                                        )}
+                                      {(p.status === "PAGO" ||
+                                        p.status === "PARCIAL") &&
+                                        onEstorno && (
+                                          <Button
+                                            {...navigationCell({
+                                              grid: "contas-receber-parcelas",
+                                              row: index,
+                                              column: 5,
+                                            })}
+                                            type="button"
+                                            size="icon"
+                                            variant="outline"
+                                            className="text-destructive hover:bg-destructive/10 size-8"
+                                            onClick={() =>
+                                              onEstorno(editingItem!.id, p)
+                                            }
+                                            title="Estornar Recebimento"
+                                          >
+                                            <RotateCcw className="h-4 w-4" />
+                                          </Button>
+                                        )}
+                                    </div>
+                                  </TableCell>
+                                )}
+                                {!readOnly && !temParcelaPagaOuParcial && (
+                                  <TableCell className="text-right">
+                                    <Button
+                                      {...navigationCell({
+                                        grid: "contas-receber-parcelas",
+                                        row: index,
+                                        column: 6,
+                                      })}
+                                      type="button"
+                                      size="icon"
+                                      variant="outline"
+                                      className="text-destructive hover:bg-destructive/10 size-8"
+                                      onClick={() => handleRemoveParcela(index)}
+                                      disabled={
+                                        p.status === "PAGO" ||
+                                        p.status === "PARCIAL"
+                                      }
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </TableCell>
+                                )}
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
                     )}
                   </ScrollArea>
 
@@ -873,46 +953,29 @@ function ContasReceberFormBody({
             }}
           </form.Field>
 
-          <Card className="bg-muted/50 mt-2">
-            <CardContent className="flex flex-col gap-2">
-              <div className="flex items-center justify-between text-sm">
-                <span>Valor Original da Conta:</span>
-                <span className="text-foreground font-semibold">
-                  {new Intl.NumberFormat("pt-BR", {
-                    style: "currency",
-                    currency: "BRL",
-                  }).format(valorOriginalForm)}
-                </span>
+          <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-3">
+            {[
+              ["Valor Original da Conta (R$)", valorOriginalForm],
+              ["Soma das Parcelas (R$)", totalParcelasSum],
+              ["Diferença (R$)", valorOriginalForm - totalParcelasSum],
+            ].map(([rotulo, v]) => (
+              <div key={rotulo as string} className="flex flex-col gap-2">
+                <FieldLabel>{rotulo}</FieldLabel>
+                <NumberInput
+                  value={v as number}
+                  decimals={2}
+                  inputSize="full"
+                  inputMode="decimal"
+                  aria-label={rotulo as string}
+                  readOnly
+                  className="h-8 text-right font-semibold"
+                  onNumberChange={() => {}}
+                />
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span>Soma das Parcelas:</span>
-                <span
-                  className={cn(
-                    "font-semibold",
-                    Math.abs(totalParcelasSum - valorOriginalForm) > 0.01
-                      ? "text-amber-600"
-                      : "text-emerald-600",
-                  )}
-                >
-                  {new Intl.NumberFormat("pt-BR", {
-                    style: "currency",
-                    currency: "BRL",
-                  }).format(totalParcelasSum)}
-                </span>
-              </div>
-              {Math.abs(totalParcelasSum - valorOriginalForm) > 0.01 && (
-                <Alert variant="destructive" className="mt-1 py-2">
-                  <AlertDescription className="text-right text-xs">
-                    Diferença: R${" "}
-                    {(valorOriginalForm - totalParcelasSum).toFixed(2)}
-                  </AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-          </Card>
+            ))}
+          </div>
         </div>
       </div>
-
     </form>
   );
 }

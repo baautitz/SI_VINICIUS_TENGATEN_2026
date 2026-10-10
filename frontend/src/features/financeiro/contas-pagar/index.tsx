@@ -41,10 +41,8 @@ export function ContasPagarFeature() {
   };
 
   const openEditor = async (item: ContasPagar | null, readOnly = false) => {
-    if (item && item.origemTipo !== "MANUAL" && !readOnly) {
-      ui.feedback.notify({ type: "warning", title: avisoTituloExterno(item.origemTipo, item.origemId) });
-      readOnly = true;
-    }
+    // Título gerado por outro documento só se visualiza; o aviso aparece apenas ao tentar cancelar (openDelete).
+    if (item && item.origemTipo !== "MANUAL") readOnly = true;
     try {
       const editingItem = item ? await contasPagarApi.getById(item.id) : null;
       const result = await ui.windows.open<true, ContasPagarUpsertProps>({

@@ -14,6 +14,7 @@ export const vendasApi = {
   getById: (id: number) => http.get<Venda>(`/api/vendas/${id}`),
   create: (data: VendaFormValues) =>
     http.post<Resultado<Venda>>("/api/vendas", data),
+  getDevolucaoById: (id: number) => http.get<Devolucao>(`/api/devolucoes/${id}`),
   listDevolucoes: (vendaId: number) =>
     http.get<Devolucao[]>(`/api/vendas/${vendaId}/devolucoes`),
   createDevolucao: (vendaId: number, data: CriarDevolucaoValues) =>
