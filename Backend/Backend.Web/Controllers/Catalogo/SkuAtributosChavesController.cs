@@ -63,7 +63,11 @@ public class SkuAtributosChavesController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteAtributo(int id)
     {
-        var deleted = await _atributosService.DeletarAtributo(id);
-        return deleted ? NoContent() : NotFound();
+        var result = await _atributosService.DeletarAtributo(id);
+        if (result.Success) return NoContent();
+        if (result.Errors is not null && result.Errors.Any(error => error.Code == "ATRIBUTO_NAO_ENCONTRADO"))
+            return NotFound(result);
+
+        return Conflict(result);
     }
 }

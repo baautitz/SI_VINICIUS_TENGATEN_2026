@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -136,20 +137,54 @@ public class SkuAtributosChavesRepository : ISkuAtributosChavesRepository
                 transaction: _session.Transaction
             );
 
-            const string deleteValSql = "DELETE FROM sku_atributos_valores WHERE chave_id = @Id;";
-            await _session.Connection.ExecuteAsync(deleteValSql, new { Id = id }, transaction: _session.Transaction);
+            // Nunca apaga tudo e reinsere: valor com Id mantém o registro (e os vínculos com SKUs), mesmo renomeado.
+            const string existentesSql = "SELECT id, valor FROM sku_atributos_valores WHERE chave_id = @Id;";
+            var existentes = (await _session.Connection.QueryAsync<(int Id, string Valor)>(
+                existentesSql, new { Id = id }, transaction: _session.Transaction)).ToList();
+
+            var desejados = atributo.SkuAtributosValores.ToList();
+            var idsDesejados = desejados.Where(d => d.Id > 0).Select(d => d.Id).ToHashSet();
+
+            // O serviço já recusa remover valor com SKU; a FK (RESTRICT) é a segunda barreira.
+            foreach (var removido in existentes.Where(e => !idsDesejados.Contains(e.Id)))
+            {
+                await _session.Connection.ExecuteAsync(
+                    "DELETE FROM sku_atributos_valores WHERE id = @ValorId;",
+                    new { ValorId = removido.Id }, transaction: _session.Transaction);
+            }
+
+            // Renomeação em duas fases: trocar nomes entre valores não esbarra na unicidade (chave, valor).
+            var renomeados = desejados
+                .Where(d => d.Id > 0)
+                .Join(existentes, d => d.Id, e => e.Id, (d, e) => (d.Id, Novo: d.Valor, Atual: e.Valor))
+                .Where(r => !string.Equals(r.Novo, r.Atual, StringComparison.Ordinal))
+                .ToList();
+            foreach (var r in renomeados)
+            {
+                await _session.Connection.ExecuteAsync(
+                    "UPDATE sku_atributos_valores SET valor = @Temp WHERE id = @ValorId;",
+                    new { Temp = $"__renomeando_{r.Id}", ValorId = r.Id }, transaction: _session.Transaction);
+            }
+            foreach (var r in renomeados)
+            {
+                await _session.Connection.ExecuteAsync(
+                    "UPDATE sku_atributos_valores SET valor = @Novo WHERE id = @ValorId;",
+                    new { r.Novo, ValorId = r.Id }, transaction: _session.Transaction);
+            }
 
             var chaveAtualizada = new SkuAtributosChaves(id, atributo.Chave);
-
-            foreach (var val in atributo.SkuAtributosValores)
+            foreach (var desejado in desejados)
             {
-                const string valSql = "INSERT INTO sku_atributos_valores (chave_id, valor) VALUES (@ChaveId, @Valor) RETURNING id;";
-                var valId = await _session.Connection.ExecuteScalarAsync<int>(
-                    valSql,
-                    new { ChaveId = id, val.Valor },
-                    transaction: _session.Transaction
-                );
-                chaveAtualizada.AdicionarValor(new SkuAtributosValores(valId, id, val.Valor));
+                var valorId = desejado.Id;
+                if (valorId <= 0)
+                {
+                    valorId = await _session.Connection.ExecuteScalarAsync<int>(
+                        "INSERT INTO sku_atributos_valores (chave_id, valor) VALUES (@ChaveId, @Valor) RETURNING id;",
+                        new { ChaveId = id, desejado.Valor },
+                        transaction: _session.Transaction
+                    );
+                }
+                chaveAtualizada.AdicionarValor(new SkuAtributosValores(valorId, id, desejado.Valor));
             }
 
             return chaveAtualizada;
@@ -249,6 +284,32 @@ public class SkuAtributosChavesRepository : ISkuAtributosChavesRepository
         var rows = await _session.Connection.QueryAsync<ValoresDbRow>(
             sql, new { Ids = ids.ToArray() }, transaction: _session.Transaction);
         return rows.Select(d => new SkuAtributosValores(d.Id, d.ChaveId, d.Valor)).ToList();
+    }
+
+    public async Task<IReadOnlyDictionary<int, int>> ContarSkusPorValor(IEnumerable<int> valorIds)
+    {
+        var ids = valorIds.ToArray();
+        if (ids.Length == 0) return new Dictionary<int, int>();
+
+        const string sql = @"
+            SELECT valor_id AS ValorId, COUNT(DISTINCT sku) AS Total
+            FROM skus_atributos_valores_relacionamento
+            WHERE valor_id = ANY(@Ids)
+            GROUP BY valor_id;";
+        var rows = await _session.Connection.QueryAsync<(int ValorId, int Total)>(
+            sql, new { Ids = ids }, transaction: _session.Transaction);
+        return rows.ToDictionary(r => r.ValorId, r => r.Total);
+    }
+
+    public async Task<int> ContarSkusPorChave(int chaveId)
+    {
+        const string sql = @"
+            SELECT COUNT(DISTINCT r.sku)
+            FROM skus_atributos_valores_relacionamento r
+            JOIN sku_atributos_valores v ON v.id = r.valor_id
+            WHERE v.chave_id = @ChaveId;";
+        return await _session.Connection.ExecuteScalarAsync<int>(
+            sql, new { ChaveId = chaveId }, transaction: _session.Transaction);
     }
 
     private sealed record ValoresDbRow(int Id, int ChaveId, string Valor);

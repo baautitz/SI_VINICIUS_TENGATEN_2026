@@ -20,7 +20,7 @@ import {
 } from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { atributosApi } from "@/api/catalogo";
-import { Plus, X } from "lucide-react";
+import { Pencil, Plus, X } from "lucide-react";
 import { Input } from "@/ui/primitives";
 import { Badge } from "@/ui/primitives";
 import { Card, CardContent } from "@/ui/primitives";
@@ -78,9 +78,11 @@ function AtributosUpsertForm({
   const form = useForm({
     defaultValues: {
       chave: editingItem?.chave ?? "",
-      valores: editingItem?.skuAtributosValores?.map((v) => v.valor) ?? [],
+      valores: editingItem?.skuAtributosValores?.map((v) => ({ id: v.id, valor: v.valor })) ?? [],
     } as SkuAtributoChaveFormValues,
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value, formApi }) => {
+      // Barreira final: botão, Enter e atalho passam por aqui, então nada inválido é salvo.
+      if (!skuAtributoChaveSchema.safeParse(value).success) return void formApi.validateAllFields("submit");
       resetErrors();
       try {
         await mutation.mutateAsync(value);
@@ -91,6 +93,8 @@ function AtributosUpsertForm({
   });
 
   const [newValue, setNewValue] = React.useState("");
+  const [editIdx, setEditIdx] = React.useState<number | null>(null);
+  const [editText, setEditText] = React.useState("");
 
 
   const registerDirty = React.useCallback(() => {
@@ -168,7 +172,7 @@ function AtributosUpsertForm({
                   <FieldLabel>Código</FieldLabel>
                   <Input
                     value={editingItem.id}
-                    disabled
+                    readOnly aria-label="Código"
                     className="h-8 text-xs"
                     inputSize="small"
                   />
@@ -186,7 +190,7 @@ function AtributosUpsertForm({
                     label="Atributo"
                     inputSize="full"
                     getFieldError={getFieldError}
-                    disabled={readOnly}
+                    readOnly={readOnly}
                     maxLength={100}
                     placeholder="Ex: Cor, Voltagem, Tamanho..."
                   />
@@ -203,7 +207,7 @@ function AtributosUpsertForm({
               const error =
                 getFieldError(field.name, field.state.meta.errors) ||
                 field.state.meta.errors?.[0]?.message;
-              const currentValues: string[] = field.state.value || [];
+              const currentValues: Array<{ id?: number; valor: string }> = field.state.value || [];
 
               const handleAddValue = (
                 e: React.MouseEvent | React.KeyboardEvent,
@@ -214,14 +218,28 @@ function AtributosUpsertForm({
                 if (trimmed) {
                   if (
                     currentValues.some(
-                      (v) => v.toLowerCase() === trimmed.toLowerCase(),
+                      (v) => v.valor.toLowerCase() === trimmed.toLowerCase(),
                     )
                   ) {
                     return;
                   }
-                  field.setValue([...currentValues, trimmed]);
+                  field.setValue([...currentValues, { valor: trimmed }]);
                   setNewValue("");
                 }
+              };
+
+              const commitRename = () => {
+                if (editIdx === null) return;
+                const trimmed = editText.trim();
+                const duplicado = currentValues.some(
+                  (v, i) => i !== editIdx && v.valor.toLowerCase() === trimmed.toLowerCase(),
+                );
+                if (trimmed && !duplicado) {
+                  field.setValue(
+                    currentValues.map((v, i) => (i === editIdx ? { ...v, valor: trimmed } : v)),
+                  );
+                }
+                setEditIdx(null);
               };
 
               const handleRemoveValue = (indexToRemove: number) => {
@@ -239,7 +257,7 @@ function AtributosUpsertForm({
                       inputSize="full"
                       placeholder="Adicionar valor... (ex: Bivolt, Azul, G)"
                       value={newValue}
-                      disabled={readOnly}
+                      readOnly={readOnly}
                       onChange={(e) => setNewValue(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.altKey) {
@@ -273,7 +291,45 @@ function AtributosUpsertForm({
                             variant="secondary"
                             className="flex h-7 items-center gap-1 rounded-md py-1 pr-1 pl-3 text-sm font-medium"
                           >
-                            {val}
+                            {editIdx === idx ? (
+                              <Input
+                                autoFocus
+                                value={editText}
+                                maxLength={150}
+                                className="h-5 w-32 px-1 text-sm"
+                                onChange={(e) => setEditText(e.target.value)}
+                                onBlur={commitRename}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" && !e.altKey) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    commitRename();
+                                  } else if (e.key === "Escape") {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setEditIdx(null);
+                                  }
+                                }}
+                              />
+                            ) : (
+                              val.valor
+                            )}
+                            {!readOnly && editIdx !== idx && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-xs"
+                                className="text-muted-foreground hover:text-foreground hover:bg-muted/80 h-5 w-5 rounded-sm p-0"
+                                title="Renomear valor"
+                                aria-label={`Renomear ${val.valor}`}
+                                onClick={() => {
+                                  setEditIdx(idx);
+                                  setEditText(val.valor);
+                                }}
+                              >
+                                <Pencil className="size-3" />
+                              </Button>
+                            )}
                             <Button
                               type="button"
                               variant="ghost"

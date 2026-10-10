@@ -14,7 +14,10 @@ export interface SkuAtributoValor {
 
 export const skuAtributoChaveSchema = z.object({
   chave: z.string().min(1, "Chave é obrigatória.").max(100, "Máximo 100 caracteres."),
-  valores: z.array(z.string()).min(1, "Pelo menos um valor é obrigatório."),
+  // Valor existente carrega o id: renomear mantém o registro e os vínculos com SKUs.
+  valores: z
+    .array(z.object({ id: z.number().optional(), valor: z.string().min(1, "Valor é obrigatório.") }))
+    .min(1, "Pelo menos um valor é obrigatório."),
 });
 
 export type SkuAtributoChaveFormValues = z.infer<typeof skuAtributoChaveSchema>;

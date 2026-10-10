@@ -13,4 +13,8 @@ public interface ISkuAtributosChavesRepository
     public Task<ResultadoPaginado<SkuAtributosChaves>> PesquisarAtributos(string termo, int pagina = 1, int tamanhoDaPagina = 20);
     public Task<bool> ExisteChave(string chave, int? ignorarId = null);
     public Task<List<SkuAtributosValores>> ObterValoresPorIds(IEnumerable<int> ids);
+    /// <summary>Quantidade de SKUs vinculados a cada valor (só valores com vínculo aparecem).</summary>
+    public Task<IReadOnlyDictionary<int, int>> ContarSkusPorValor(IEnumerable<int> valorIds);
+    /// <summary>Quantidade de SKUs vinculados a qualquer valor do atributo.</summary>
+    public Task<int> ContarSkusPorChave(int chaveId);
 }

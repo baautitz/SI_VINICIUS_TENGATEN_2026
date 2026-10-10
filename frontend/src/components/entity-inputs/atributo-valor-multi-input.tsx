@@ -64,7 +64,10 @@ export function AtributoValorMultiInput({
 
     const payload = {
       chave: detail.chave,
-      valores: [...detail.skuAtributosValores.map((v) => v.valor), trimmed],
+      valores: [
+        ...detail.skuAtributosValores.map((v) => ({ id: v.id, valor: v.valor })),
+        { valor: trimmed },
+      ],
     };
 
     try {

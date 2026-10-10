@@ -11,5 +11,5 @@ CREATE TABLE IF NOT EXISTS skus_atributos_valores_relacionamento (
   CONSTRAINT skus_atributos_valores_relacionamento_valor_fk 
     FOREIGN KEY (valor_id) 
     REFERENCES sku_atributos_valores (id) 
-    ON DELETE CASCADE
+    ON DELETE RESTRICT
 );
