@@ -15,13 +15,12 @@ import {
   Input,
   Kbd,
   KbdGroup,
-  Textarea,
 } from "@/ui/primitives";
 import type { ImportacaoXml } from "./upsert";
 
 const MAX_BYTES = 2 * 1024 * 1024;
 
-/** Cole ou escolha o XML da NF-e; devolve a prévia (nada é gravado ainda). */
+/** Escolha o XML da NF-e; devolve a prévia (nada é gravado ainda). */
 export function ImportarXmlWindow() {
   const activeWindow = useWindow<ImportacaoXml>();
   const ui = useUi();
@@ -31,6 +30,8 @@ export function ImportarXmlWindow() {
   const [erroEmitente, setErroEmitente] = React.useState<string>();
   const [arquivo, setArquivo] = React.useState<string>();
   const emitenteRef = React.useRef<HTMLDivElement>(null);
+  const seletor = React.useRef<HTMLInputElement>(null);
+  const escolherArquivo = () => seletor.current?.click();
   const foco = React.useCallback((el: HTMLDivElement | null) => {
     el?.querySelector("input")?.focus();
   }, []);
@@ -44,7 +45,7 @@ export function ImportarXmlWindow() {
     if (!xml.trim())
       return void ui.feedback.notify({
         type: "error",
-        title: "Cole o XML ou escolha um arquivo.",
+        title: "Escolha o arquivo XML da NF-e.",
       });
     if (new Blob([xml]).size > MAX_BYTES)
       return void ui.feedback.notify({ type: "error", title: "XML maior que 2 MB." });
@@ -86,34 +87,57 @@ export function ImportarXmlWindow() {
       </div>
       <Field>
         <FieldLabel htmlFor="xml-arquivo">Arquivo XML</FieldLabel>
-        <Input
-          id="xml-arquivo"
+        {/* O seletor nativo mostra "Choose file" no idioma do navegador: fica oculto e o campo abaixo o aciona. */}
+        <input
+          ref={seletor}
           type="file"
           accept=".xml,text/xml,application/xml"
+          className="hidden"
+          tabIndex={-1}
           onChange={async (e) => {
             const f = e.target.files?.[0];
             if (!f) return;
             if (f.size > MAX_BYTES) {
               e.target.value = "";
               setArquivo(undefined);
+              setXml("");
               return void ui.feedback.notify({ type: "error", title: "Arquivo maior que 2 MB." });
             }
             setArquivo(f.name);
             setXml(await f.text());
           }}
         />
-        <FieldDescription>{arquivo ? `Arquivo: ${arquivo}` : "Escolha o XML da NF-e (até 2 MB)."}</FieldDescription>
-      </Field>
-      <Field>
-        <FieldLabel htmlFor="xml-texto">ou cole o conteúdo</FieldLabel>
-        <Textarea
-          id="xml-texto"
-          value={xml}
-          rows={10}
-          className="font-mono text-xs"
-          placeholder="<nfeProc>...</nfeProc>"
-          onChange={(e) => setXml(e.target.value)}
-        />
+        <div className="relative w-full">
+          <Input
+            id="xml-arquivo"
+            readOnly
+            inputSize="full"
+            className="cursor-pointer pr-10"
+            value={arquivo ?? ""}
+            placeholder="Nenhum arquivo selecionado. Clique ou pressione Enter para escolher."
+            onClick={escolherArquivo}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.altKey && !e.repeat) {
+                e.preventDefault();
+                escolherArquivo();
+              }
+            }}
+          />
+          <Button
+            type="button"
+            size="icon-xs"
+            variant="ghost"
+            tabIndex={-1}
+            title="Escolher arquivo"
+            aria-label="Escolher arquivo"
+            className="text-muted-foreground hover:text-foreground absolute top-1 right-1 h-6 w-6"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={escolherArquivo}
+          >
+            <FileUp className="size-4" />
+          </Button>
+        </div>
+        <FieldDescription>XML da NF-e, até 2 MB.</FieldDescription>
       </Field>
       <WindowActions>
         <Button
