@@ -75,7 +75,9 @@ function CategoriasUpsertForm({
       descricao: editingItem?.descricao ?? "",
       ativo: editingItem?.ativo ?? true,
     } as CategoriaFormValues,
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value, formApi }) => {
+      // Barreira final: botão, Enter e atalho passam por aqui, então nada inválido é salvo.
+      if (!categoriaSchema.safeParse(value).success) return void formApi.validateAllFields("submit");
       resetErrors();
       try {
         await mutation.mutateAsync(value);
@@ -159,7 +161,7 @@ function CategoriasUpsertForm({
                   <FieldLabel>Código</FieldLabel>
                   <Input
                     value={editingItem.id}
-                    disabled
+                    readOnly aria-label="Código"
                     className="h-8 text-xs"
                     inputSize="small"
                   />
@@ -177,7 +179,7 @@ function CategoriasUpsertForm({
                     label="Categoria"
                     inputSize="full"
                     getFieldError={getFieldError}
-                    disabled={readOnly}
+                    readOnly={readOnly}
                     maxLength={100}
                   />
                 )}
@@ -195,7 +197,7 @@ function CategoriasUpsertForm({
                 label="Descrição"
                 inputSize="full"
                 getFieldError={getFieldError}
-                disabled={readOnly}
+                readOnly={readOnly}
                 maxLength={255}
               />
             )}

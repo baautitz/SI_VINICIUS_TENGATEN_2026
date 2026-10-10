@@ -73,7 +73,9 @@ function CidadesUpsertForm({
       ddd: editingItem?.ddd ?? "",
       estadoId: editingItem?.estado?.id ?? null,
     } as CidadeFormValues,
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value, formApi }) => {
+      // Barreira final: botão, Enter e atalho passam por aqui, então nada inválido é salvo.
+      if (!cidadeSchema.safeParse(value).success) return void formApi.validateAllFields("submit");
       resetErrors();
       const payload = {
         ...value,
@@ -155,7 +157,8 @@ function CidadesUpsertForm({
                   <FieldLabel>Código</FieldLabel>
                   <Input
                     value={editingItem.id}
-                    disabled
+                    readOnly
+                    aria-label="Código"
                     className="h-8 text-xs"
                     inputSize="small"
                   />
@@ -173,7 +176,7 @@ function CidadesUpsertForm({
                     label="Cidade"
                     inputSize="full"
                     getFieldError={getFieldError}
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -191,7 +194,7 @@ function CidadesUpsertForm({
                 inputSize="small"
                 type="text"
                 inputMode="numeric"
-                disabled={readOnly}
+                readOnly={readOnly}
                 onChangeOverride={(val) => val.replace(/\D/g, "")}
                 getFieldError={getFieldError}
               />

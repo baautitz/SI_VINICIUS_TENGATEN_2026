@@ -1,5 +1,6 @@
 "use client";
 
+import { navigationCell } from "@/ui/keyboard-navigation";
 import React from "react";
 import { WindowActions } from "@/imperative-ui";
 import { useQuery } from "@tanstack/react-query";
@@ -138,7 +139,8 @@ export function DevolucaoWindow({ venda, total: devolucaoTotal }: DevolucaoWindo
         saldo em aberto da conta a receber; o que já foi recebido gera uma conta
         a pagar ao cliente.
       </p>
-      <Table>
+      <div className="rounded-lg border bg-card overflow-clip">
+      <Table pageScroll>
         <TableHeader>
           <TableRow>
             <TableHead>Item</TableHead>
@@ -166,7 +168,8 @@ export function DevolucaoWindow({ venda, total: devolucaoTotal }: DevolucaoWindo
                     decimals={decimais ? 4 : 0}
                     inputSize="full"
                     inputMode={decimais ? "decimal" : "numeric"}
-                    disabled={saldo <= 0}
+                    readOnly={saldo <= 0}
+                    {...navigationCell({ grid: "devolucao-itens", row: itens.indexOf(item), column: 0 })}
                     aria-invalid={qtd > saldo}
                     onNumberChange={(v) => {
                       setError("");
@@ -180,9 +183,20 @@ export function DevolucaoWindow({ venda, total: devolucaoTotal }: DevolucaoWindo
           })}
         </TableBody>
       </Table>
-      <div className="text-right text-sm">
-        Total a devolver: <strong className="text-lg">{brl(total)}</strong>
       </div>
+      <Field>
+        <FieldLabel htmlFor="total-devolver">Total a devolver</FieldLabel>
+        <NumberInput
+          id="total-devolver"
+          value={total}
+          decimals={2}
+          inputSize="full"
+          inputMode="decimal"
+          readOnly
+          className="text-right font-semibold"
+          onNumberChange={() => {}}
+        />
+      </Field>
       <Field data-invalid={!!error}>
         <FieldLabel htmlFor="motivo-devolucao">Motivo da Devolução</FieldLabel>
         <Textarea

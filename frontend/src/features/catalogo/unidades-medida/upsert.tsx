@@ -86,7 +86,9 @@ function UnidadesMedidaUpsertForm({
       permiteDecimais: editingItem?.permiteDecimais ?? false,
       ativo: editingItem?.ativo ?? true,
     } as UnidadeMedidaFormValues,
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value, formApi }) => {
+      // Barreira final: botão, Enter e atalho passam por aqui, então nada inválido é salvo.
+      if (!unidadeMedidaSchema.safeParse(value).success) return void formApi.validateAllFields("submit");
       if (readOnly) return;
       resetErrors();
       try {
@@ -172,7 +174,7 @@ function UnidadesMedidaUpsertForm({
                 <FieldLabel>Código</FieldLabel>
                 <Input
                   value={editingItem.id}
-                  disabled
+                  readOnly aria-label="Código"
                   className="h-8 text-xs"
                   inputSize="small"
                 />
@@ -190,7 +192,7 @@ function UnidadesMedidaUpsertForm({
                   label="Sigla"
                   getFieldError={getFieldError}
                   inputSize="full"
-                  disabled={readOnly}
+                  readOnly={readOnly}
                   maxLength={10}
                 />
               )}
@@ -207,7 +209,7 @@ function UnidadesMedidaUpsertForm({
                   label="Descrição"
                   getFieldError={getFieldError}
                   inputSize="full"
-                  disabled={readOnly}
+                  readOnly={readOnly}
                   maxLength={100}
                 />
               )}
@@ -227,7 +229,7 @@ function UnidadesMedidaUpsertForm({
                   label="Categoria (ex: Peso, Volume)"
                   getFieldError={getFieldError}
                   inputSize="full"
-                  disabled={readOnly}
+                  readOnly={readOnly}
                   maxLength={50}
                 />
               )}

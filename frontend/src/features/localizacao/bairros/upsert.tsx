@@ -67,7 +67,9 @@ function BairrosUpsertForm({
       bairro: editingItem?.bairro ?? "",
       cidadeId: editingItem?.cidade?.id ?? null,
     } as BairroFormValues,
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value, formApi }) => {
+      // Barreira final: botão, Enter e atalho passam por aqui, então nada inválido é salvo.
+      if (!bairroSchema.safeParse(value).success) return void formApi.validateAllFields("submit");
       resetErrors();
       const payload = {
         ...value,
@@ -146,7 +148,8 @@ function BairrosUpsertForm({
                   <FieldLabel>Código</FieldLabel>
                   <Input
                     value={editingItem.id}
-                    disabled
+                    readOnly
+                    aria-label="Código"
                     className="h-8 text-xs"
                     inputSize="small"
                   />
@@ -164,7 +167,7 @@ function BairrosUpsertForm({
                     label="Bairro"
                     inputSize="full"
                     getFieldError={getFieldError}
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>

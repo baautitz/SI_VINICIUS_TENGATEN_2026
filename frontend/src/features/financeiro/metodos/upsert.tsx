@@ -178,7 +178,7 @@ function MetodosUpsertForm({
                 inputSize="full"
                 getFieldError={getFieldError}
                 maxLength={10}
-                disabled={!!editingItem || readOnly}
+                readOnly={!!editingItem || readOnly}
               />
             )}
           </form.Field>
@@ -194,7 +194,7 @@ function MetodosUpsertForm({
                 inputSize="full"
                 getFieldError={getFieldError}
                 maxLength={100}
-                disabled={readOnly}
+                readOnly={readOnly}
               />
             )}
           </form.Field>

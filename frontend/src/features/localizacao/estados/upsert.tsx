@@ -73,7 +73,9 @@ function EstadosUpsertForm({
       uf: editingItem?.uf ?? "",
       paisId: editingItem?.pais?.id ?? null,
     } as EstadoFormValues,
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value, formApi }) => {
+      // Barreira final: botão, Enter e atalho passam por aqui, então nada inválido é salvo.
+      if (!estadoSchema.safeParse(value).success) return void formApi.validateAllFields("submit");
       resetErrors();
       const payload = {
         ...value,
@@ -154,7 +156,8 @@ function EstadosUpsertForm({
                   <FieldLabel>Código</FieldLabel>
                   <Input
                     value={editingItem.id}
-                    disabled
+                    readOnly
+                    aria-label="Código"
                     className="h-8 text-xs"
                     inputSize="small"
                   />
@@ -172,7 +175,7 @@ function EstadosUpsertForm({
                     label="Estado"
                     inputSize="full"
                     getFieldError={getFieldError}
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -189,7 +192,7 @@ function EstadosUpsertForm({
                 label="UF"
                 inputSize="small"
                 getFieldError={getFieldError}
-                disabled={readOnly}
+                readOnly={readOnly}
                 maxLength={2}
                 onChangeOverride={(val) => val.toUpperCase()}
               />

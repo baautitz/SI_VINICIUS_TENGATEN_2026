@@ -22,7 +22,6 @@ import {
 } from "@/ui/primitives";
 import { ScrollArea } from "@/ui/primitives";
 import { Separator } from "@/ui/primitives";
-import { Card, CardContent } from "@/ui/primitives";
 import {
   Empty,
   EmptyHeader,
@@ -61,7 +60,11 @@ export function CondicoesUpsert(props: CondicoesUpsertProps) {
   });
 
   if (isEditMode && isLoading) {
-    return <div className="flex min-h-48 items-center justify-center"><Spinner className="size-6" /></div>;
+    return (
+      <div className="flex min-h-48 items-center justify-center">
+        <Spinner className="size-6" />
+      </div>
+    );
   }
 
   return (
@@ -118,7 +121,10 @@ function CondicoesUpsertForm({
       ativo: editingItem?.ativo ?? true,
       parcelas: parcelas,
     } as CondicaoPagamentoFormValues,
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value, formApi }) => {
+      // Barreira final: botão, Enter e atalho passam por aqui, então nada inválido é salvo.
+      if (!condicaoPagamentoSchema.safeParse(value).success)
+        return void formApi.validateAllFields("submit");
       resetErrors();
       setLocalErrors({});
       const payload = {
@@ -158,7 +164,8 @@ function CondicoesUpsertForm({
   const [initialParcelasJson] = useState(() => JSON.stringify(parcelas));
   const registerDirty = useCallback(() => {
     activeWindow.setDirtyCheck(
-      () => form.state.isDirty || JSON.stringify(parcelas) !== initialParcelasJson,
+      () =>
+        form.state.isDirty || JSON.stringify(parcelas) !== initialParcelasJson,
     );
     return () => activeWindow.setDirtyCheck(null);
   }, [activeWindow, form, parcelas, initialParcelasJson]);
@@ -301,7 +308,11 @@ function CondicoesUpsertForm({
                   "Salvando..."
                 ) : (
                   <span className="flex items-center gap-2">
-                    Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup>
+                    Salvar{" "}
+                    <KbdGroup>
+                      <Kbd>Alt</Kbd>
+                      <Kbd>Enter</Kbd>
+                    </KbdGroup>
                   </span>
                 )}
               </Button>
@@ -335,7 +346,8 @@ function CondicoesUpsertForm({
                     <FieldLabel>ID</FieldLabel>
                     <Input
                       value={editingItem.id}
-                      disabled
+                      readOnly
+                      aria-label="ID"
                       className="h-8 text-xs"
                       inputSize="full"
                     />
@@ -357,7 +369,7 @@ function CondicoesUpsertForm({
                       inputSize="full"
                       getFieldError={getFieldError}
                       maxLength={150}
-                      disabled={readOnly}
+                      readOnly={readOnly}
                     />
                   )}
                 </form.Field>
@@ -423,7 +435,7 @@ function CondicoesUpsertForm({
                                 type="number"
                                 inputSize="full"
                                 getFieldError={getFieldError}
-                                disabled={readOnly || isChecked}
+                                readOnly={readOnly || isChecked}
                                 min={0}
                                 max={100}
                               />
@@ -463,7 +475,7 @@ function CondicoesUpsertForm({
                             type="number"
                             inputSize="full"
                             getFieldError={getFieldError}
-                            disabled={readOnly || hasAcrescimo}
+                            readOnly={readOnly || hasAcrescimo}
                           />
                         )}
                       </form.Field>
@@ -485,7 +497,7 @@ function CondicoesUpsertForm({
                             type="number"
                             inputSize="full"
                             getFieldError={getFieldError}
-                            disabled={readOnly || hasDesconto}
+                            readOnly={readOnly || hasDesconto}
                           />
                         )}
                       </form.Field>
@@ -504,7 +516,7 @@ function CondicoesUpsertForm({
                             type="number"
                             inputSize="full"
                             getFieldError={getFieldError}
-                            disabled={readOnly}
+                            readOnly={readOnly}
                           />
                         )}
                       </form.Field>
@@ -524,7 +536,7 @@ function CondicoesUpsertForm({
                             type="number"
                             inputSize="full"
                             getFieldError={getFieldError}
-                            disabled={readOnly}
+                            readOnly={readOnly}
                           />
                         )}
                       </form.Field>
@@ -623,155 +635,154 @@ function CondicoesUpsertForm({
                             </EmptyHeader>
                           </Empty>
                         ) : (
-                          <Table>
-                            <TableHeader>
-                              <TableRow className="hover:bg-transparent">
-                                <TableHead className="h-9 w-20 px-2 text-left">
-                                  Nº
-                                </TableHead>
-                                <TableHead className="h-9 px-2 text-right">
-                                  Percentual (%)
-                                </TableHead>
-                                <TableHead className="h-9 px-2 text-right">
-                                  Prazo (Dias)
-                                </TableHead>
-                                {!readOnly && (
-                                  <TableHead className="h-9 w-12 px-2 text-right" />
-                                )}
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {parcelas.map((p, index) => (
-                                <TableRow
-                                  key={index}
-                                  className="hover:bg-transparent"
-                                >
-                                  <TableCell className="px-2 py-2 font-semibold">
-                                    #{p.numeroParcela}
-                                  </TableCell>
-                                  <TableCell className="px-2 py-2">
-                                    <div className="flex w-full flex-col gap-1">
-                                      <NumberInput
-                                        {...navigationCell({
-                                          grid: "condicao-parcelas",
-                                          row: index,
-                                          column: 0,
-                                        })}
-                                        id={`parcela-${index}-percentual`}
-                                        name={`parcelas.${index}.percentual`}
-                                        inputSize="full"
-                                        value={p.percentual}
-                                        decimals={2}
-                                        inputMode="decimal"
-                                        onNumberChange={(num) =>
-                                          handleUpdateParcelaField(
-                                            index,
-                                            "percentual",
-                                            num,
-                                          )
-                                        }
-                                        onFocus={(e) => e.target.select()}
-                                        className={cn(
-                                          "h-8 text-right font-semibold",
-                                          localErrors[
-                                            `parcelas.${index}.percentual`
-                                          ] &&
-                                            "border-destructive focus-visible:ring-destructive",
-                                        )}
-                                        aria-invalid={
-                                          !!localErrors[
-                                            `parcelas.${index}.percentual`
-                                          ]
-                                        }
-                                        disabled={readOnly}
-                                      />
-                                      {localErrors[
-                                        `parcelas.${index}.percentual`
-                                      ] && (
-                                        <span className="text-destructive mt-1 block text-right text-xs">
-                                          {
+                          <div className="bg-card overflow-clip rounded-lg border">
+                            <Table pageScroll>
+                              <TableHeader>
+                                <TableRow className="hover:bg-transparent">
+                                  <TableHead className="w-20">Nº</TableHead>
+                                  <TableHead className="text-right">
+                                    Percentual (%)
+                                  </TableHead>
+                                  <TableHead className="text-right">
+                                    Prazo (Dias)
+                                  </TableHead>
+                                  {!readOnly && (
+                                    <TableHead className="w-12 text-right" />
+                                  )}
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {parcelas.map((p, index) => (
+                                  <TableRow
+                                    key={index}
+                                    className="hover:bg-transparent"
+                                  >
+                                    <TableCell className="font-semibold">
+                                      #{p.numeroParcela}
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex w-full flex-col gap-1">
+                                        <NumberInput
+                                          {...navigationCell({
+                                            grid: "condicao-parcelas",
+                                            row: index,
+                                            column: 0,
+                                          })}
+                                          id={`parcela-${index}-percentual`}
+                                          name={`parcelas.${index}.percentual`}
+                                          inputSize="full"
+                                          value={p.percentual}
+                                          decimals={2}
+                                          inputMode="decimal"
+                                          onNumberChange={(num) =>
+                                            handleUpdateParcelaField(
+                                              index,
+                                              "percentual",
+                                              num,
+                                            )
+                                          }
+                                          onFocus={(e) => e.target.select()}
+                                          className={cn(
+                                            "h-8 text-right font-semibold",
                                             localErrors[
+                                              `parcelas.${index}.percentual`
+                                            ] &&
+                                              "border-destructive focus-visible:ring-destructive",
+                                          )}
+                                          aria-invalid={
+                                            !!localErrors[
                                               `parcelas.${index}.percentual`
                                             ]
                                           }
-                                        </span>
-                                      )}
-                                    </div>
-                                  </TableCell>
-                                  <TableCell className="px-2 py-2">
-                                    <div className="flex w-full flex-col gap-1">
-                                      <NumberInput
-                                        {...navigationCell({
-                                          grid: "condicao-parcelas",
-                                          row: index,
-                                          column: 1,
-                                        })}
-                                        id={`parcela-${index}-prazo`}
-                                        name={`parcelas.${index}.prazo`}
-                                        inputSize="full"
-                                        value={p.prazoDias}
-                                        decimals={0}
-                                        inputMode="numeric"
-                                        onNumberChange={(num) =>
-                                          handleUpdateParcelaField(
-                                            index,
-                                            "prazoDias",
-                                            num,
-                                          )
-                                        }
-                                        onFocus={(e) => e.target.select()}
-                                        className={cn(
-                                          "h-8 text-right font-semibold",
-                                          localErrors[
-                                            `parcelas.${index}.prazoDias`
-                                          ] &&
-                                            "border-destructive focus-visible:ring-destructive",
+                                          readOnly={readOnly}
+                                        />
+                                        {localErrors[
+                                          `parcelas.${index}.percentual`
+                                        ] && (
+                                          <span className="text-destructive mt-1 block text-right text-xs">
+                                            {
+                                              localErrors[
+                                                `parcelas.${index}.percentual`
+                                              ]
+                                            }
+                                          </span>
                                         )}
-                                        aria-invalid={
-                                          !!localErrors[
-                                            `parcelas.${index}.prazoDias`
-                                          ]
-                                        }
-                                        disabled={readOnly}
-                                      />
-                                      {localErrors[
-                                        `parcelas.${index}.prazoDias`
-                                      ] && (
-                                        <span className="text-destructive mt-1 block text-right text-xs">
-                                          {
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex w-full flex-col gap-1">
+                                        <NumberInput
+                                          {...navigationCell({
+                                            grid: "condicao-parcelas",
+                                            row: index,
+                                            column: 1,
+                                          })}
+                                          id={`parcela-${index}-prazo`}
+                                          name={`parcelas.${index}.prazo`}
+                                          inputSize="full"
+                                          value={p.prazoDias}
+                                          decimals={0}
+                                          inputMode="numeric"
+                                          onNumberChange={(num) =>
+                                            handleUpdateParcelaField(
+                                              index,
+                                              "prazoDias",
+                                              num,
+                                            )
+                                          }
+                                          onFocus={(e) => e.target.select()}
+                                          className={cn(
+                                            "h-8 text-right font-semibold",
                                             localErrors[
+                                              `parcelas.${index}.prazoDias`
+                                            ] &&
+                                              "border-destructive focus-visible:ring-destructive",
+                                          )}
+                                          aria-invalid={
+                                            !!localErrors[
                                               `parcelas.${index}.prazoDias`
                                             ]
                                           }
-                                        </span>
-                                      )}
-                                    </div>
-                                  </TableCell>
-                                  {!readOnly && (
-                                    <TableCell className="px-2 py-2 text-right">
-                                      <Button
-                                        {...navigationCell({
-                                          grid: "condicao-parcelas",
-                                          row: index,
-                                          column: 2,
-                                        })}
-                                        type="button"
-                                        size="icon"
-                                        variant="ghost"
-                                        tabIndex={-1}
-                                        className="text-destructive hover:bg-destructive/10 h-8 w-8"
-                                        onClick={() =>
-                                          handleRemoveParcela(index)
-                                        }
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                      </Button>
+                                          readOnly={readOnly}
+                                        />
+                                        {localErrors[
+                                          `parcelas.${index}.prazoDias`
+                                        ] && (
+                                          <span className="text-destructive mt-1 block text-right text-xs">
+                                            {
+                                              localErrors[
+                                                `parcelas.${index}.prazoDias`
+                                              ]
+                                            }
+                                          </span>
+                                        )}
+                                      </div>
                                     </TableCell>
-                                  )}
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
+                                    {!readOnly && (
+                                      <TableCell className="text-right">
+                                        <Button
+                                          {...navigationCell({
+                                            grid: "condicao-parcelas",
+                                            row: index,
+                                            column: 2,
+                                          })}
+                                          type="button"
+                                          size="icon"
+                                          variant="outline"
+                                          className="text-destructive hover:bg-destructive/10 size-8"
+                                          onClick={() =>
+                                            handleRemoveParcela(index)
+                                          }
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </TableCell>
+                                    )}
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
                         )}
                       </ScrollArea>
                       {error && (
@@ -782,54 +793,33 @@ function CondicoesUpsertForm({
                 }}
               </form.Field>
 
-              <Card size="sm" className="bg-muted/50 mt-auto">
-                <CardContent className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <span>Entrada Mínima:</span>
-                    <span className="font-semibold">
-                      {(entradaMinimaPercentual ?? 0).toFixed(2)}%
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Soma das Parcelas:</span>
-                    <span
-                      className={`font-semibold ${
-                        totalParcelasPercent > 100 ? "text-destructive" : ""
-                      }`}
-                    >
-                      {totalParcelasPercent.toFixed(2)}%
-                    </span>
-                  </div>
-                  <Separator />
-                  <div className="flex items-center justify-between text-sm font-semibold">
-                    <span>Total (Entrada + Parcelas):</span>
-                    <span
-                      className={
-                        Math.abs(
-                          (entradaMinimaPercentual ?? 0) +
-                            totalParcelasPercent -
-                            100,
-                        ) <= 0.0001
-                          ? "text-emerald-600"
-                          : (entradaMinimaPercentual ?? 0) +
-                                totalParcelasPercent >
-                              100
-                            ? "text-destructive"
-                            : "text-amber-600"
-                      }
-                    >
-                      {(
-                        (entradaMinimaPercentual ?? 0) + totalParcelasPercent
-                      ).toFixed(2)}
-                      % / 100.00%
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="mt-auto grid grid-cols-3 gap-4">
+                {[
+                  ["Entrada Mínima (%)", entradaMinimaPercentual ?? 0],
+                  ["Soma das Parcelas (%)", totalParcelasPercent],
+                  [
+                    "Total Entrada + Parcelas (%)",
+                    (entradaMinimaPercentual ?? 0) + totalParcelasPercent,
+                  ],
+                ].map(([rotulo, v]) => (
+                  <Field key={rotulo as string}>
+                    <FieldLabel>{rotulo}</FieldLabel>
+                    <NumberInput
+                      value={v as number}
+                      decimals={2}
+                      inputSize="full"
+                      inputMode="decimal"
+                      aria-label={rotulo as string}
+                      readOnly
+                      className="h-8 text-right font-semibold"
+                      onNumberChange={() => {}}
+                    />
+                  </Field>
+                ))}
+              </div>
             </div>
           )}
         </div>
-
       </form>
     </div>
   );

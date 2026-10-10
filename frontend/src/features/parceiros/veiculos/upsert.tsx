@@ -77,7 +77,9 @@ function VeiculosUpsertForm({
       observacao: editingItem?.observacao ?? "",
       ativo: editingItem?.ativo ?? true,
     } as VeiculoFormValues,
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value, formApi }) => {
+      // Barreira final: botão, Enter e atalho passam por aqui, então nada inválido é salvo.
+      if (!veiculoSchema.safeParse(value).success) return void formApi.validateAllFields("submit");
       if (readOnly) return;
       resetErrors();
       const payload = {
@@ -166,7 +168,8 @@ function VeiculosUpsertForm({
                   <FieldLabel>Código</FieldLabel>
                   <Input
                     value={editingItem.id}
-                    disabled
+                    readOnly
+                    aria-label="Código"
                     className="h-8 text-xs"
                     inputSize="small"
                   />
@@ -184,7 +187,7 @@ function VeiculosUpsertForm({
                     label="Placa"
                     getFieldError={getFieldError}
                     inputSize="small"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -224,7 +227,7 @@ function VeiculosUpsertForm({
                     label="Marca / Modelo"
                     getFieldError={getFieldError}
                     inputSize="full"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -268,7 +271,7 @@ function VeiculosUpsertForm({
                     label="RNTRC"
                     getFieldError={getFieldError}
                     inputSize="medium"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -284,7 +287,7 @@ function VeiculosUpsertForm({
                     label="Renavam"
                     getFieldError={getFieldError}
                     inputSize="medium"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -300,7 +303,7 @@ function VeiculosUpsertForm({
                     label="Tipo de Veículo"
                     getFieldError={getFieldError}
                     inputSize="medium"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -318,7 +321,7 @@ function VeiculosUpsertForm({
               label="Observação"
               getFieldError={getFieldError}
               inputSize="full"
-              disabled={readOnly}
+              readOnly={readOnly}
             />
           )}
         </form.Field>

@@ -80,7 +80,9 @@ function PaisesUpsertForm({
       codigoIsoMoeda: editingItem?.codigoIsoMoeda ?? "",
       simboloMoeda: editingItem?.simboloMoeda ?? "",
     },
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value, formApi }) => {
+      // Barreira final: botão, Enter e atalho passam por aqui, então nada inválido é salvo.
+      if (!paisSchema.safeParse(value).success) return void formApi.validateAllFields("submit");
       resetErrors();
       try {
         await mutation.mutateAsync(value);
@@ -157,7 +159,8 @@ function PaisesUpsertForm({
                   <FieldLabel>Código</FieldLabel>
                   <Input
                     value={editingItem.id}
-                    disabled
+                    readOnly
+                    aria-label="Código"
                     className="h-8 text-xs"
                     inputSize="small"
                   />
@@ -175,7 +178,7 @@ function PaisesUpsertForm({
                     label="País"
                     inputSize="full"
                     getFieldError={getFieldError}
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -192,7 +195,7 @@ function PaisesUpsertForm({
                 label="Código ISO do país"
                 inputSize="small"
                 getFieldError={getFieldError}
-                disabled={readOnly}
+                readOnly={readOnly}
                 maxLength={3}
                 onChangeOverride={(val) => val.toUpperCase()}
               />
@@ -209,7 +212,7 @@ function PaisesUpsertForm({
                 label="DDI"
                 inputSize="small"
                 getFieldError={getFieldError}
-                disabled={readOnly}
+                readOnly={readOnly}
               />
             )}
           </form.Field>
@@ -224,7 +227,7 @@ function PaisesUpsertForm({
                 label="Código ISO da moeda"
                 inputSize="medium"
                 getFieldError={getFieldError}
-                disabled={readOnly}
+                readOnly={readOnly}
               />
             )}
           </form.Field>
@@ -239,7 +242,7 @@ function PaisesUpsertForm({
                 label="Símbolo da Moeda"
                 inputSize="small"
                 getFieldError={getFieldError}
-                disabled={readOnly}
+                readOnly={readOnly}
               />
             )}
           </form.Field>

@@ -106,7 +106,9 @@ function ClientesUpsertForm({
       observacao: editingItem?.observacao ?? "",
       ativo: editingItem?.ativo ?? true,
     } as ClienteFormValues,
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value, formApi }) => {
+      // Barreira final: botão, Enter e atalho passam por aqui, então nada inválido é salvo.
+      if (!clienteSchema.safeParse(value).success) return void formApi.validateAllFields("submit");
       resetErrors();
       const payload = {
         ...value,
@@ -213,7 +215,8 @@ function ClientesUpsertForm({
                   <FieldLabel>Código</FieldLabel>
                   <Input
                     value={editingItem.id}
-                    disabled
+                    readOnly
+                    aria-label="Código"
                     className="h-8 text-xs"
                     inputSize="small"
                   />
@@ -273,7 +276,7 @@ function ClientesUpsertForm({
                     label="Nome / Razão Social"
                     getFieldError={getFieldError}
                     inputSize="full"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -294,7 +297,7 @@ function ClientesUpsertForm({
                     label="Apelido / Nome Fantasia"
                     getFieldError={getFieldError}
                     inputSize="full"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -322,7 +325,7 @@ function ClientesUpsertForm({
                       label={label}
                       getFieldError={getFieldError}
                       inputSize="medium"
-                      disabled={readOnly}
+                      readOnly={readOnly}
                     />
                   );
                 }}
@@ -344,7 +347,7 @@ function ClientesUpsertForm({
                       }
                       getFieldError={getFieldError}
                       inputSize="medium"
-                      disabled={readOnly}
+                      readOnly={readOnly}
                     />
                   )}
                 </form.Field>
@@ -364,7 +367,7 @@ function ClientesUpsertForm({
                     label="Telefone"
                     getFieldError={getFieldError}
                     inputSize="medium"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -380,7 +383,7 @@ function ClientesUpsertForm({
                     label="E-mail"
                     getFieldError={getFieldError}
                     inputSize="full"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -397,7 +400,7 @@ function ClientesUpsertForm({
                     type="number"
                     getFieldError={getFieldError}
                     inputSize="medium"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -442,7 +445,7 @@ function ClientesUpsertForm({
                         onBlur={field.handleBlur}
                         value={field.state.value}
                         onChange={(val) => field.handleChange(val || "")}
-                        disabled={readOnly}
+                        readOnly={readOnly}
                         className={cn("h-8", error && "border-destructive")}
                       />
                       {error && <FieldError>{error}</FieldError>}
@@ -465,7 +468,7 @@ function ClientesUpsertForm({
                     label="Logradouro"
                     getFieldError={getFieldError}
                     inputSize="full"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -481,7 +484,7 @@ function ClientesUpsertForm({
                     label="Número"
                     getFieldError={getFieldError}
                     inputSize="full"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -521,7 +524,7 @@ function ClientesUpsertForm({
               label="Observação"
               getFieldError={getFieldError}
               inputSize="full"
-              disabled={readOnly}
+              readOnly={readOnly}
             />
           )}
         </form.Field>

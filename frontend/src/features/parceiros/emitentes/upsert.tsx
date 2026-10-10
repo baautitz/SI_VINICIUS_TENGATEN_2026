@@ -106,7 +106,9 @@ function EmitentesUpsertForm({
       observacao: editingItem?.observacao ?? "",
       ativo: editingItem?.ativo ?? true,
     } as EmitenteFormValues,
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value, formApi }) => {
+      // Barreira final: botão, Enter e atalho passam por aqui, então nada inválido é salvo.
+      if (!emitenteSchema.safeParse(value).success) return void formApi.validateAllFields("submit");
       resetErrors();
       const payload = {
         ...value,
@@ -202,7 +204,8 @@ function EmitentesUpsertForm({
                   <FieldLabel>Código</FieldLabel>
                   <Input
                     value={editingItem.id}
-                    disabled
+                    readOnly
+                    aria-label="Código"
                     className="h-8 text-xs"
                     inputSize="small"
                   />
@@ -262,7 +265,7 @@ function EmitentesUpsertForm({
                     label="Nome / Razão Social"
                     getFieldError={getFieldError}
                     inputSize="full"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -283,7 +286,7 @@ function EmitentesUpsertForm({
                     label="Apelido / Nome Fantasia"
                     getFieldError={getFieldError}
                     inputSize="full"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -311,7 +314,7 @@ function EmitentesUpsertForm({
                       label={label}
                       getFieldError={getFieldError}
                       inputSize="medium"
-                      disabled={readOnly}
+                      readOnly={readOnly}
                     />
                   );
                 }}
@@ -333,7 +336,7 @@ function EmitentesUpsertForm({
                       }
                       getFieldError={getFieldError}
                       inputSize="medium"
-                      disabled={readOnly}
+                      readOnly={readOnly}
                     />
                   )}
                 </form.Field>
@@ -355,7 +358,7 @@ function EmitentesUpsertForm({
                     label="Inscrição Municipal"
                     getFieldError={getFieldError}
                     inputSize="medium"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -371,7 +374,7 @@ function EmitentesUpsertForm({
                     label="Regime Tributário"
                     getFieldError={getFieldError}
                     inputSize="medium"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -387,7 +390,7 @@ function EmitentesUpsertForm({
                     label="Telefone"
                     getFieldError={getFieldError}
                     inputSize="medium"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -403,7 +406,7 @@ function EmitentesUpsertForm({
                     label="E-mail"
                     getFieldError={getFieldError}
                     inputSize="full"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -448,7 +451,7 @@ function EmitentesUpsertForm({
                         onBlur={field.handleBlur}
                         value={field.state.value}
                         onChange={(val) => field.handleChange(val || "")}
-                        disabled={readOnly}
+                        readOnly={readOnly}
                         className={cn("h-8", error && "border-destructive")}
                       />
                       {error && <FieldError>{error}</FieldError>}
@@ -471,7 +474,7 @@ function EmitentesUpsertForm({
                     label="Logradouro"
                     getFieldError={getFieldError}
                     inputSize="full"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -487,7 +490,7 @@ function EmitentesUpsertForm({
                     label="Número"
                     getFieldError={getFieldError}
                     inputSize="full"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -527,7 +530,7 @@ function EmitentesUpsertForm({
               label="Observação"
               getFieldError={getFieldError}
               inputSize="full"
-              disabled={readOnly}
+              readOnly={readOnly}
             />
           )}
         </form.Field>

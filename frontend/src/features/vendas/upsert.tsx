@@ -30,7 +30,7 @@ import {
 import { ClienteInput } from "@/components/entity-inputs/cliente-input";
 import { EmitenteInput } from "@/components/entity-inputs/emitente-input";
 import { CondicaoPagamentoInput } from "@/components/entity-inputs/condicao-pagamento-input";
-import { SkuViewLink } from "@/components/sku-view-link";
+import { SkuViewInput } from "@/components/entity-inputs/sku-view-input";
 import { SkuInput } from "@/components/entity-inputs/sku-input";
 import {
   useUpsertMutation,
@@ -932,7 +932,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                           val || todayLocalISODate();
                         field.handleChange(newVal);
                       }}
-                      disabled={readOnly}
+                      readOnly={readOnly}
                     />
                     {getFieldError(field.name, field.state.meta.errors) && (
                       <FieldError>
@@ -997,47 +997,54 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
             <Card className="flex min-h-0 flex-1 flex-col p-0">
               <CardContent className="flex min-h-0 flex-1 flex-col p-0">
                 <div className="flex min-h-0 w-full flex-1 flex-col">
-                  <Table className="min-w-250">
-                    <TableHeader className="bg-muted sticky top-0 z-10 border-b">
-                      <TableRow className="border-b hover:bg-transparent">
-                        <TableHead className="w-28 px-4 text-left">
+                  <Table pageScroll className="min-w-250">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-28">
                           SKU
                         </TableHead>
-                        <TableHead className="w-full px-4 text-left">
+                        <TableHead className="w-full">
                           Produto
                         </TableHead>
-                        <TableHead className="w-36 px-4 text-right">
+                        <TableHead className="w-36 text-right">
                           Quantidade
                         </TableHead>
-                        <TableHead className="w-28 px-4 text-right">
+                        <TableHead className="w-28 text-right">
                           Preço Base
                         </TableHead>
-                        <TableHead className="w-28 px-4 text-right">
+                        <TableHead className="w-28 text-right">
                           Desconto (%)
                         </TableHead>
-                        <TableHead className="w-28 px-4 text-right">
+                        <TableHead className="w-28 text-right">
                           Preço Final
                         </TableHead>
-                        <TableHead className="w-28 px-4 text-right">
+                        <TableHead className="w-28 text-right">
                           Total
                         </TableHead>
                         {!readOnly && (
-                          <TableHead className="w-12 px-4 text-center"></TableHead>
+                          <TableHead className="w-12 text-center"></TableHead>
                         )}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
+                      {itens.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={readOnly ? 7 : 8} className="text-muted-foreground text-center">
+                            Nenhum item adicionado.
+                          </TableCell>
+                        </TableRow>
+                      )}
                       {itens.length != 0 &&
                         itens.map((item, index) => (
-                          <TableRow key={item.sku} className="hover:/30">
-                            <TableCell className="px-4 py-1 font-mono text-xs font-medium">
-                              <SkuViewLink sku={item.sku} enabled={readOnly} />
+                          <TableRow key={item.sku}>
+                            <TableCell className="font-mono">
+                              <SkuViewInput name={`venda-sku-${index}`} sku={item.sku} />
                             </TableCell>
-                            <TableCell className="px-4 py-1 text-xs font-medium">
+                            <TableCell>
                               {item.produtoNome}
                             </TableCell>
 
-                            <TableCell className="px-4 py-1 text-right">
+                            <TableCell className="text-right">
                               <div className="flex flex-col items-end">
                                 <NumberInput
                                   {...navigationCell({
@@ -1056,12 +1063,12 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                                     item.quantidade > item.estoqueAtual
                                   }
                                   className={cn(
-                                    "h-7 text-right text-xs font-semibold",
+                                    "text-right",
                                     (item.quantidade <= 0 ||
                                       item.quantidade > item.estoqueAtual) &&
                                       "border-destructive focus-visible:ring-destructive",
                                   )}
-                                  disabled={readOnly}
+                                  readOnly={readOnly}
                                   onNumberChange={(val) =>
                                     updateItemRow(index, "quantidade", val)
                                   }
@@ -1077,11 +1084,11 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                               </div>
                             </TableCell>
 
-                            <TableCell className="px-4 py-1 text-right text-xs font-semibold">
+                            <TableCell className="text-right">
                               {formatCurrency(item.valorUnitario)}
                             </TableCell>
 
-                            <TableCell className="px-4 py-1 text-right">
+                            <TableCell className="text-right">
                               <div className="flex flex-col items-end">
                                 <NumberInput
                                   {...navigationCell({
@@ -1096,12 +1103,12 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                                   allowNegative
                                   aria-invalid={item.percentualDesconto > 100}
                                   className={cn(
-                                    "h-7 text-right text-xs font-semibold text-red-500",
+                                    "text-right text-red-500",
                                     item.percentualDesconto > 100
                                       ? "border-destructive focus-visible:ring-destructive"
                                       : "border-red-200 focus-visible:ring-red-500",
                                   )}
-                                  disabled={readOnly}
+                                  readOnly={readOnly}
                                   onNumberChange={(val) =>
                                     updateItemRow(
                                       index,
@@ -1118,7 +1125,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                               </div>
                             </TableCell>
 
-                            <TableCell className="px-4 py-1 text-right">
+                            <TableCell className="text-right">
                               <div className="flex flex-col items-end">
                                 <NumberInput
                                   {...navigationCell({
@@ -1132,11 +1139,11 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                                   inputMode="decimal"
                                   aria-invalid={item.precoFinal < 0}
                                   className={cn(
-                                    "h-7 text-right text-xs font-semibold",
+                                    "text-right",
                                     item.precoFinal < 0 &&
                                       "border-destructive focus-visible:ring-destructive",
                                   )}
-                                  disabled={readOnly}
+                                  readOnly={readOnly}
                                   onNumberChange={(val) =>
                                     updateItemRow(index, "precoFinal", val)
                                   }
@@ -1149,7 +1156,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                               </div>
                             </TableCell>
 
-                            <TableCell className="px-4 py-1 text-right text-xs font-bold">
+                            <TableCell className="text-right">
                               {new Intl.NumberFormat("pt-BR", {
                                 style: "currency",
                                 currency: "BRL",
@@ -1157,19 +1164,19 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                             </TableCell>
 
                             {!readOnly && (
-                              <TableCell className="px-4 py-1 text-center">
+                              <TableCell className="text-center">
                                 <Button
                                   {...navigationCell({
                                     grid: "venda-itens",
                                     row: index,
                                     column: 3,
                                   })}
-                                  size="icon-xs"
-                                  variant="ghost"
-                                  className="text-red-500 hover:bg-red-50 hover:text-red-600"
+                                  size="icon"
+                                  variant="outline"
+                                  className="size-8"
                                   onClick={() => handleRemoveItem(index)}
                                 >
-                                  <Trash2 className="size-3.5" />
+                                  <Trash2 className="size-4" />
                                 </Button>
                               </TableCell>
                             )}
@@ -1180,45 +1187,34 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                 </div>
 
                 <div className="/50 /10 grid grid-cols-1 divide-y border-t md:grid-cols-4 md:divide-x md:divide-y-0">
-                  <div className="flex flex-col px-4 py-2 text-end">
-                    <span className="text-2xs text-muted-foreground font-semibold tracking-wider uppercase">
-                      Itens Totais
-                    </span>
-                    <span className="text-lg font-bold">{totalItensCount}</span>
-                  </div>
-                  <div className="flex flex-col px-4 py-2 text-end">
-                    <span className="text-2xs text-muted-foreground font-semibold tracking-wider uppercase">
-                      Subtotal
-                    </span>
-                    <span className="text-lg font-bold">
-                      {new Intl.NumberFormat("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
-                      }).format(subtotalGross)}
-                    </span>
-                  </div>
-                  <div className="flex flex-col px-4 py-2 text-end">
-                    <span className="text-2xs font-semibold tracking-wider text-red-500 uppercase">
-                      Desconto Total
-                    </span>
-                    <span className="text-lg font-bold text-red-500">
-                      {new Intl.NumberFormat("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
-                      }).format(totalDiscount)}
-                    </span>
-                  </div>
-                  <div className="flex flex-col bg-emerald-500/5 px-4 py-2 text-end">
-                    <span className="text-2xs font-bold tracking-wider text-emerald-600 uppercase">
-                      Total Líquido
-                    </span>
-                    <span className="text-lg font-bold text-emerald-600">
-                      {new Intl.NumberFormat("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
-                      }).format(totalNet)}
-                    </span>
-                  </div>
+                  {[
+                    ["Itens Totais", totalItensCount, 0, "text-muted-foreground", ""],
+                    ["Subtotal", subtotalGross, 2, "text-muted-foreground", ""],
+                    ["Desconto Total", totalDiscount, 2, "text-red-500", "text-red-500"],
+                    ["Total Líquido", totalNet, 2, "text-emerald-600", "text-emerald-600"],
+                  ].map(([rotulo, valor, decimals, labelCls, valueCls]) => (
+                    <div
+                      key={rotulo as string}
+                      className={cn(
+                        "flex flex-col px-4 py-2 text-end",
+                        rotulo === "Total Líquido" && "bg-emerald-500/5",
+                      )}
+                    >
+                      <span className={cn("text-2xs font-semibold tracking-wider uppercase", labelCls as string)}>
+                        {rotulo}
+                      </span>
+                      <NumberInput
+                        value={valor as number}
+                        decimals={decimals as number}
+                        inputSize="full"
+                        inputMode="decimal"
+                        aria-label={rotulo as string}
+                        readOnly
+                        className={cn("h-8 text-right text-lg font-bold", valueCls as string)}
+                        onNumberChange={() => {}}
+                      />
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>

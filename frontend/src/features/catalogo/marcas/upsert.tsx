@@ -73,7 +73,9 @@ function MarcasUpsertForm({
       descricao: editingItem?.descricao ?? "",
       ativo: editingItem?.ativo ?? true,
     } as MarcaFormValues,
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value, formApi }) => {
+      // Barreira final: botão, Enter e atalho passam por aqui, então nada inválido é salvo.
+      if (!marcaSchema.safeParse(value).success) return void formApi.validateAllFields("submit");
       resetErrors();
       try {
         await mutation.mutateAsync(value);
@@ -145,7 +147,7 @@ function MarcasUpsertForm({
                   <FieldLabel>Código</FieldLabel>
                   <Input
                     value={editingItem.id}
-                    disabled
+                    readOnly aria-label="Código"
                     className="h-8 text-xs"
                     inputSize="small"
                   />
@@ -163,7 +165,7 @@ function MarcasUpsertForm({
                     label="Marca"
                     inputSize="full"
                     getFieldError={getFieldError}
-                    disabled={readOnly}
+                    readOnly={readOnly}
                     maxLength={100}
                   />
                 )}
@@ -181,7 +183,7 @@ function MarcasUpsertForm({
                 label="Descrição"
                 inputSize="full"
                 getFieldError={getFieldError}
-                disabled={readOnly}
+                readOnly={readOnly}
                 maxLength={255}
               />
             )}
