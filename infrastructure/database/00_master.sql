@@ -3,6 +3,7 @@
 BEGIN;
 
 CREATE EXTENSION IF NOT EXISTS unaccent;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 CREATE SCHEMA IF NOT EXISTS projeto_sistemas;
 SET search_path TO projeto_sistemas, public;

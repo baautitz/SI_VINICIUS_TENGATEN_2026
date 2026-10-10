@@ -36,7 +36,18 @@ public class SkusRepository : ISkusRepository
             JOIN categorias c ON c.id = p.categoria_id
             JOIN marcas m ON m.id = p.marca_id
             JOIN unidades_medida u ON u.id = p.unidade_medida_id
-            ORDER BY s.sku DESC
+            ORDER BY
+                CASE
+                    WHEN @Raw = '' THEN 0
+                    WHEN s.sku::text = @Raw OR s.gtin_ean::text = @Raw THEN 100
+                    WHEN unaccent(s.sku::text) ILIKE unaccent(@Prefixo::text) OR unaccent(s.gtin_ean::text) ILIKE unaccent(@Prefixo::text) THEN 80
+                    WHEN unaccent(s.sku::text) ILIKE unaccent(@Termo::text) OR unaccent(s.gtin_ean::text) ILIKE unaccent(@Termo::text) THEN 60
+                    ELSE 0
+                END
+                + CASE WHEN @Raw = '' THEN 0 ELSE
+                    50 * GREATEST(word_similarity(unaccent(lower(@Raw)), unaccent(lower(p.produto || ' ' || m.marca))), word_similarity(unaccent(lower(p.produto)), unaccent(lower(@Raw))), similarity(unaccent(lower(@Raw)), unaccent(lower(p.produto))))
+                  END DESC,
+                s.sku DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
@@ -296,7 +307,8 @@ public class SkusRepository : ISkusRepository
             SELECT COUNT(*)
             FROM skus s
             JOIN produtos p ON p.id = s.produto_id
-            WHERE unaccent(s.sku::text) ILIKE unaccent(@Termo::text) OR unaccent(s.gtin_ean::text) ILIKE unaccent(@Termo::text) OR unaccent(p.produto::text) ILIKE unaccent(@Termo::text);";
+            JOIN marcas m ON m.id = p.marca_id
+            WHERE (@Raw = '' OR unaccent(s.sku::text) ILIKE unaccent(@Termo::text) OR unaccent(s.gtin_ean::text) ILIKE unaccent(@Termo::text) OR unaccent(p.produto::text) ILIKE unaccent(@Termo::text) OR GREATEST(word_similarity(unaccent(lower(@Raw)), unaccent(lower(p.produto || ' ' || m.marca))), word_similarity(unaccent(lower(p.produto)), unaccent(lower(@Raw))), similarity(unaccent(lower(@Raw)), unaccent(lower(p.produto)))) >= 0.3);";
 
         const string sqlData = @"
             SELECT 
@@ -310,15 +322,15 @@ public class SkusRepository : ISkusRepository
             JOIN categorias c ON c.id = p.categoria_id
             JOIN marcas m ON m.id = p.marca_id
             JOIN unidades_medida u ON u.id = p.unidade_medida_id
-            WHERE unaccent(s.sku::text) ILIKE unaccent(@Termo::text) OR unaccent(s.gtin_ean::text) ILIKE unaccent(@Termo::text) OR unaccent(p.produto::text) ILIKE unaccent(@Termo::text)
+            WHERE (@Raw = '' OR unaccent(s.sku::text) ILIKE unaccent(@Termo::text) OR unaccent(s.gtin_ean::text) ILIKE unaccent(@Termo::text) OR unaccent(p.produto::text) ILIKE unaccent(@Termo::text) OR GREATEST(word_similarity(unaccent(lower(@Raw)), unaccent(lower(p.produto || ' ' || m.marca))), word_similarity(unaccent(lower(p.produto)), unaccent(lower(@Raw))), similarity(unaccent(lower(@Raw)), unaccent(lower(p.produto)))) >= 0.3)
             ORDER BY s.sku DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
-        var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
+        var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Raw = termo.Trim(), Termo = $"%{termo.Trim()}%" }, transaction: _session.Transaction);
 
         var rows = (await _session.Connection.QueryAsync<SkuFullDbRow>(
             sqlData,
-            new { Termo = $"%{termo}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
+            new { Raw = termo.Trim(), Termo = $"%{termo.Trim()}%", Prefixo = $"{termo.Trim()}%", TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
             transaction: _session.Transaction)).ToList();
 
         var skus = rows.Select(BuildSkuFromFullDbRow).ToList();
