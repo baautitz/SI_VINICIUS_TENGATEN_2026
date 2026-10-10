@@ -6,12 +6,7 @@ import { useState, useRef, useMemo, useCallback } from "react";
 import type { FormEvent } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/ui/primitives";
-import {
-  Field,
-  FieldGroup,
-  FieldLabel,
-  FieldError,
-} from "@/ui/primitives";
+import { Field, FieldGroup, FieldLabel, FieldError } from "@/ui/primitives";
 import { FormFieldUI } from "@/ui/composites";
 import { Textarea } from "@/ui/primitives";
 import { useForm } from "@tanstack/react-form";
@@ -68,7 +63,11 @@ export function ProdutosUpsert(props: ProdutosUpsertProps) {
   });
 
   if (isEditMode && isLoading) {
-    return <div className="text-muted-foreground p-6 text-center">Carregando produto...</div>;
+    return (
+      <div className="text-muted-foreground p-6 text-center">
+        Carregando produto...
+      </div>
+    );
   }
 
   return (
@@ -87,6 +86,11 @@ function ProdutosUpsertForm({
   const ui = useUi();
   const isEditMode = !!editingItem;
 
+  const getUltimaCompra = (skuCode: string) => {
+    const match = editingItem?.skus?.find((s) => s.sku === skuCode);
+    return match ? Number(match.custoUltimaCompra) || 0 : 0;
+  };
+
   const getCustoMedio = (skuCode: string) => {
     if (!editingItem || !editingItem.skus) return 0;
     const match = editingItem.skus.find((s) => s.sku === skuCode);
@@ -104,18 +108,17 @@ function ProdutosUpsertForm({
     queryFn: () => atributosApi.list(undefined, 1, 100),
   });
 
-  const { mutation, getFieldError, resetErrors } =
-    useUpsertMutation({
-      mutationFn: async (value: ProdutoFormValues) => {
-        return editingItem
-          ? await produtosApi.update(editingItem.id, value)
-          : await produtosApi.create(value);
-      },
-      queryKey: [["produtos"], ["skus"]],
-      onSuccessCallback: () => {
-        activeWindow.resolve(true);
-      },
-    });
+  const { mutation, getFieldError, resetErrors } = useUpsertMutation({
+    mutationFn: async (value: ProdutoFormValues) => {
+      return editingItem
+        ? await produtosApi.update(editingItem.id, value)
+        : await produtosApi.create(value);
+    },
+    queryKey: [["produtos"], ["skus"]],
+    onSuccessCallback: () => {
+      activeWindow.resolve(true);
+    },
+  });
 
   const [hasVariants, setHasVariants] = useState<boolean>(() => {
     if (editingItem && editingItem.skus) {
@@ -202,7 +205,10 @@ function ProdutosUpsertForm({
       unidadeMedidaId: editingItem?.unidadeMedida?.id ?? 0,
       skus: getInitialSkus(),
     } as ProdutoFormValues,
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value, formApi }) => {
+      // Barreira final: botão, Enter e atalho passam por aqui, então nada inválido é salvo.
+      if (!produtoSchema.safeParse(value).success)
+        return void formApi.validateAllFields("submit");
       if (readOnly) return;
       resetErrors();
 
@@ -276,9 +282,7 @@ function ProdutosUpsertForm({
     };
 
     const combinations = combine(0, []);
-    const productId = editingItem?.id || "";
-
-    return combinations.map((combo, index) => {
+    return combinations.map((combo) => {
       const currentSkus = form.getFieldValue("skus") || [];
       const valueIds = combo.map((c) => c.id).sort();
 
@@ -294,10 +298,10 @@ function ProdutosUpsertForm({
         };
       }
 
-      const generatedSku = productId ? `${productId}${index + 1}` : "";
-
+      // SKU novo vai sem código: o backend gera. Um código calculado aqui podia colidir com o de um SKU
+      // existente e sobrescrever seus atributos.
       return {
-        sku: generatedSku,
+        sku: "",
         preco: 0,
         gtinEan: "",
         ativo: true,
@@ -307,26 +311,48 @@ function ProdutosUpsertForm({
   };
 
   const handleUpdateOptions = (newOptions: VariantOption[]) => {
+    const newCombinations = generateCartesianCombinations(newOptions);
+    // SKU já gravado e vinculado a valor de opção não some por edição das opções: removê-lo apagaria
+    // estoque, preço e histórico. Quem quiser tirá-lo de venda desativa o SKU.
+    const atuais = (form.getFieldValue("skus") ?? []) as SkuFormValues[];
+    const vinculadosPerdidos = atuais.filter(
+      (s) =>
+        s.sku &&
+        (s.atributoValorIds?.length ?? 0) > 0 &&
+        !newCombinations.some((c) => c.sku === s.sku),
+    );
+    if (editingItem && vinculadosPerdidos.length > 0) {
+      ui.feedback.notify({
+        type: "error",
+        title: `Não é possível remover valores ou opções vinculados a SKUs existentes (${vinculadosPerdidos
+          .map((s) => s.sku)
+          .join(", ")}). Desative o SKU na grade de variações.`,
+      });
+      return false;
+    }
     hasLocalChanges.current = true;
     setOptions(newOptions);
-    const newCombinations = generateCartesianCombinations(newOptions);
     form.setFieldValue("skus", newCombinations);
+    return true;
   };
 
-  const getVariationLabel = useCallback((valueIds: number[] | undefined) => {
-    if (!valueIds || valueIds.length === 0) return "";
+  const getVariationLabel = useCallback(
+    (valueIds: number[] | undefined) => {
+      if (!valueIds || valueIds.length === 0) return "";
 
-    const labels: string[] = [];
+      const labels: string[] = [];
 
-    for (const option of options) {
-      const foundVal = option.valores.find((v) => valueIds.includes(v.id));
-      if (foundVal) {
-        labels.push(foundVal.valor);
+      for (const option of options) {
+        const foundVal = option.valores.find((v) => valueIds.includes(v.id));
+        if (foundVal) {
+          labels.push(foundVal.valor);
+        }
       }
-    }
 
-    return labels.join(" / ");
-  }, [options]);
+      return labels.join(" / ");
+    },
+    [options],
+  );
 
   const openCopyPriceConfirmation = useCallback(async () => {
     const skus = form.getFieldValue("skus");
@@ -341,7 +367,15 @@ function ProdutosUpsertForm({
       cancelLabel: "Cancelar",
     });
     if (result) handleCopyPrice();
-  }, [focusedSkuIndex, form, getVariationLabel, handleCopyPrice, hasVariants, readOnly, ui]);
+  }, [
+    focusedSkuIndex,
+    form,
+    getVariationLabel,
+    handleCopyPrice,
+    hasVariants,
+    readOnly,
+    ui,
+  ]);
 
   const requestCancel = async () => {
     activeWindow.dismiss("cancel");
@@ -350,10 +384,7 @@ function ProdutosUpsertForm({
   const addOption = useCallback(async () => {
     hasLocalChanges.current = true;
     setHasVariants(true);
-    setOptions((prev) => [
-      ...prev,
-      { keyId: 0, keyName: "", valores: [] },
-    ]);
+    setOptions((prev) => [...prev, { keyId: 0, keyName: "", valores: [] }]);
   }, []);
 
   const removeOption = (optionIndex: number) => {
@@ -368,7 +399,9 @@ function ProdutosUpsertForm({
   };
 
   const registerDirty = useCallback(() => {
-    activeWindow.setDirtyCheck(() => !readOnly && (form.state.isDirty || hasLocalChanges.current));
+    activeWindow.setDirtyCheck(
+      () => !readOnly && (form.state.isDirty || hasLocalChanges.current),
+    );
     return () => activeWindow.setDirtyCheck(null);
   }, [activeWindow, form, readOnly]);
 
@@ -405,7 +438,14 @@ function ProdutosUpsertForm({
         },
       },
     ],
-    [addOption, form, hasVariants, mutation.isPending, openCopyPriceConfirmation, readOnly],
+    [
+      addOption,
+      form,
+      hasVariants,
+      mutation.isPending,
+      openCopyPriceConfirmation,
+      readOnly,
+    ],
   );
 
   useWindowCommands(commands);
@@ -413,36 +453,34 @@ function ProdutosUpsertForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={requestCancel}
-        >
+        <Button type="button" variant="outline" onClick={requestCancel}>
           {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
         </Button>
-        {!readOnly && (<form.Subscribe
-          selector={(state) => [state.canSubmit, state.isSubmitting]}
-        >
-          {([canSubmit, isSubmitting]) => (
-            <Button
-              type="submit"
-              form="upsert-produtos"
-              disabled={readOnly || !canSubmit || isSubmitting}
-            >
-              {isSubmitting ? (
-                "Salvando..."
-              ) : (
-                <span className="flex items-center gap-2">
-                  Salvar Produto{" "}
-                  <KbdGroup>
-                    <Kbd>Alt</Kbd>
-                    <Kbd>Enter</Kbd>
-                  </KbdGroup>
-                </span>
-              )}
-            </Button>
-          )}
-        </form.Subscribe>)}
+        {!readOnly && (
+          <form.Subscribe
+            selector={(state) => [state.canSubmit, state.isSubmitting]}
+          >
+            {([canSubmit, isSubmitting]) => (
+              <Button
+                type="submit"
+                form="upsert-produtos"
+                disabled={readOnly || !canSubmit || isSubmitting}
+              >
+                {isSubmitting ? (
+                  "Salvando..."
+                ) : (
+                  <span className="flex items-center gap-2">
+                    Salvar Produto{" "}
+                    <KbdGroup>
+                      <Kbd>Alt</Kbd>
+                      <Kbd>Enter</Kbd>
+                    </KbdGroup>
+                  </span>
+                )}
+              </Button>
+            )}
+          </form.Subscribe>
+        )}
       </WindowActions>
       <form
         ref={registerDirty}
@@ -458,7 +496,8 @@ function ProdutosUpsertForm({
                   <FieldLabel>Código</FieldLabel>
                   <Input
                     value={editingItem.id}
-                    disabled
+                    readOnly
+                    aria-label="Código"
                     className="h-8 text-xs"
                     inputSize="small"
                   />
@@ -475,7 +514,7 @@ function ProdutosUpsertForm({
                     field={field}
                     label="Nome do Produto"
                     inputSize="full"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                     getFieldError={getFieldError}
                     maxLength={150}
                     placeholder="Ex: Camiseta"
@@ -499,7 +538,7 @@ function ProdutosUpsertForm({
                     rows={3}
                     value={field.state.value ?? ""}
                     onChange={(e) => field.handleChange(e.target.value)}
-                    disabled={readOnly}
+                    readOnly={readOnly}
                     placeholder="Descrição do produto..."
                   />
                   {error && <FieldError>{error}</FieldError>}
@@ -594,7 +633,7 @@ function ProdutosUpsertForm({
           <form.Field name="ativo">
             {(field) => (
               <Field orientation="horizontal">
-              <Checkbox
+                <Checkbox
                   id={field.name}
                   checked={field.state.value}
                   disabled={readOnly}
@@ -613,8 +652,8 @@ function ProdutosUpsertForm({
           <div className="flex items-center gap-2 pt-2">
             <Checkbox
               id="toggle-variantes"
-                checked={hasVariants}
-                disabled={readOnly}
+              checked={hasVariants}
+              disabled={readOnly}
               onCheckedChange={(checked) => {
                 const val = !!checked;
                 setHasVariants(val);
@@ -659,7 +698,7 @@ function ProdutosUpsertForm({
                     label="Código SKU"
                     inputSize="full"
                     getFieldError={getFieldError}
-                    disabled={readOnly}
+                    readOnly={readOnly}
                     maxLength={50}
                     placeholder="Ex: 104082"
                   />
@@ -678,7 +717,7 @@ function ProdutosUpsertForm({
                     type="number"
                     decimals={2}
                     getFieldError={getFieldError}
-                    disabled={readOnly}
+                    readOnly={readOnly}
                     placeholder="0,00"
                   />
                 )}
@@ -694,7 +733,7 @@ function ProdutosUpsertForm({
                     label="Código de Barras (EAN)"
                     inputSize="full"
                     getFieldError={getFieldError}
-                    disabled={readOnly}
+                    readOnly={readOnly}
                     maxLength={14}
                     placeholder="EAN / GTIN"
                   />
@@ -707,8 +746,9 @@ function ProdutosUpsertForm({
                     <FieldLabel>Estoque Atual</FieldLabel>
                     <Input
                       value={field.state.value}
-                      disabled
-                      className="bg-muted/50 h-8 font-mono text-xs"
+                      readOnly
+                      aria-label="Estoque atual"
+                      className="h-8 font-mono text-xs"
                       inputSize="full"
                     />
                   </div>
@@ -728,8 +768,29 @@ function ProdutosUpsertForm({
                         currency: "BRL",
                       },
                     )}
-                    disabled
-                    className="bg-muted/50 h-8 text-right font-semibold"
+                    readOnly
+                    aria-label="Custo médio"
+                    className="h-8 text-right font-semibold"
+                    inputSize="full"
+                  />
+                </div>
+              )}
+
+              {isEditMode && editingItem && editingItem.skus?.[0] && (
+                <div className="flex flex-col gap-2">
+                  <FieldLabel className="text-right font-semibold">
+                    Preço de Compra
+                  </FieldLabel>
+                  <Input
+                    value={getUltimaCompra(
+                      editingItem.skus[0].sku,
+                    ).toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}
+                    readOnly
+                    aria-label="Preço de compra"
+                    className="h-8 text-right font-semibold"
                     inputSize="full"
                   />
                 </div>
@@ -786,6 +847,9 @@ function ProdutosUpsertForm({
                             // the selector, before that list query refetches.
                             onSelectId={() => {}}
                             onSelectItem={(item) => {
+                              // O campo notifica a seleção também ao reidratar/blur com o mesmo item:
+                              // só trocar de atributo zera os valores escolhidos.
+                              if ((item?.id ?? 0) === option.keyId) return;
                               const updated = [...options];
                               updated[optIdx] = item
                                 ? {
@@ -816,7 +880,10 @@ function ProdutosUpsertForm({
                               disabled={readOnly}
                               onChange={(newVals) => {
                                 const updated = [...options];
-                                updated[optIdx].valores = newVals;
+                                updated[optIdx] = {
+                                  ...option,
+                                  valores: newVals,
+                                };
                                 handleUpdateOptions(updated);
                               }}
                             />
@@ -864,42 +931,36 @@ function ProdutosUpsertForm({
                       )}
                     </div>
 
-                    <div className="bg-card overflow-hidden rounded-lg border">
-                      <Table>
-                        <TableHeader className="bg-muted border-b">
-                          <TableRow className="border-b hover:bg-transparent">
-                            <TableHead className="text-foreground h-10 px-4 py-2 text-left text-sm font-semibold">
-                              Código SKU
-                            </TableHead>
-                            <TableHead className="text-foreground h-10 px-4 py-2 text-left text-sm font-semibold">
-                              Variação
-                            </TableHead>
-                            <TableHead className="text-foreground h-10 px-4 py-2 text-left text-sm font-semibold">
+                    <div className="bg-card overflow-clip rounded-lg border">
+                      <Table pageScroll>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Código SKU</TableHead>
+                            <TableHead>Variação</TableHead>
+                            <TableHead className="text-right">
                               Preço (R$)
                             </TableHead>
-                            <TableHead className="text-foreground h-10 px-4 py-2 text-left text-sm font-semibold">
-                              Barras (EAN)
-                            </TableHead>
-                            <TableHead className="text-foreground h-10 px-4 py-2 text-right text-sm font-semibold">
+                            <TableHead>Barras (EAN)</TableHead>
+                            <TableHead className="text-right">
                               Estoque
                             </TableHead>
                             {isEditMode && (
-                              <TableHead className="text-foreground h-10 px-4 py-2 text-right text-sm font-semibold">
+                              <TableHead className="text-right">
                                 Custo Médio
                               </TableHead>
                             )}
-                            <TableHead className="text-foreground h-10 px-4 py-2 text-center text-sm font-semibold">
-                              Ativo
-                            </TableHead>
+                            {isEditMode && (
+                              <TableHead className="text-right">
+                                Preço de Compra
+                              </TableHead>
+                            )}
+                            <TableHead className="text-center">Ativo</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {form.getFieldValue("skus").map((sku, index) => (
-                            <TableRow
-                              key={index}
-                              className="group hover:bg-muted/10 border-b last:border-0"
-                            >
-                              <TableCell className="px-4 py-2.5 align-middle">
+                            <TableRow key={index}>
+                              <TableCell>
                                 <form.Field
                                   name={`skus[${index}].sku`}
                                   validators={{
@@ -927,11 +988,11 @@ function ProdutosUpsertForm({
                                           onFocus={() =>
                                             setFocusedSkuIndex(index)
                                           }
-                                          disabled={readOnly}
+                                          readOnly={readOnly}
                                           maxLength={50}
                                           placeholder="Ex: 104082"
                                           className={cn(
-                                            "text-foreground/90 h-8 font-mono text-sm font-bold",
+                                            "font-mono font-bold",
                                             error &&
                                               "border-destructive focus-visible:ring-destructive",
                                           )}
@@ -946,11 +1007,11 @@ function ProdutosUpsertForm({
                                   }}
                                 </form.Field>
                               </TableCell>
-                              <TableCell className="text-foreground/90 px-4 py-2.5 align-middle text-sm font-medium">
+                              <TableCell>
                                 {getVariationLabel(sku.atributoValorIds) ||
                                   `Variante #${index + 1}`}
                               </TableCell>
-                              <TableCell className="px-4 py-2.5 align-middle">
+                              <TableCell>
                                 <form.Field
                                   name={`skus[${index}].preco`}
                                   validators={{
@@ -976,13 +1037,13 @@ function ProdutosUpsertForm({
                                           onFocus={() =>
                                             setFocusedSkuIndex(index)
                                           }
-                                          disabled={readOnly}
+                                          readOnly={readOnly}
                                           onNumberChange={(num) => {
                                             field.handleChange(num);
                                           }}
                                           placeholder="0,00"
                                           className={cn(
-                                            "h-8 text-sm font-medium",
+                                            "text-right",
                                             error &&
                                               "border-destructive focus-visible:ring-destructive",
                                           )}
@@ -997,7 +1058,7 @@ function ProdutosUpsertForm({
                                   }}
                                 </form.Field>
                               </TableCell>
-                              <TableCell className="px-4 py-2.5 align-middle">
+                              <TableCell>
                                 <form.Field
                                   name={`skus[${index}].gtinEan`}
                                   validators={{
@@ -1025,11 +1086,10 @@ function ProdutosUpsertForm({
                                           onFocus={() =>
                                             setFocusedSkuIndex(index)
                                           }
-                                          disabled={readOnly}
+                                          readOnly={readOnly}
                                           maxLength={14}
                                           placeholder="EAN"
                                           className={cn(
-                                            "h-8 text-sm",
                                             error &&
                                               "border-destructive focus-visible:ring-destructive",
                                           )}
@@ -1044,35 +1104,74 @@ function ProdutosUpsertForm({
                                   }}
                                 </form.Field>
                               </TableCell>
-                              <TableCell className="px-4 py-2.5 text-right align-middle">
+                              <TableCell className="text-right">
                                 <form.Field name={`skus[${index}].estoque`}>
                                   {(field) => (
-                                    <span className="text-foreground/90 font-mono text-sm font-bold">
-                                      {field.state.value ?? 0}
-                                    </span>
+                                    <Input
+                                      {...navigationCell({
+                                        grid: "produto-skus",
+                                        row: index,
+                                        column: 3,
+                                      })}
+                                      readOnly
+                                      aria-label="Estoque"
+                                      inputSize="full"
+                                      value={field.state.value ?? 0}
+                                      className="text-right font-mono font-bold"
+                                    />
                                   )}
                                 </form.Field>
                               </TableCell>
                               {isEditMode && (
-                                <TableCell className="px-4 py-2.5 text-right align-middle">
-                                  <span className="text-foreground/90 font-semibold">
-                                    {getCustoMedio(
+                                <TableCell className="text-right">
+                                  <Input
+                                    {...navigationCell({
+                                      grid: "produto-skus",
+                                      row: index,
+                                      column: 4,
+                                    })}
+                                    readOnly
+                                    aria-label="Custo médio"
+                                    inputSize="full"
+                                    value={getCustoMedio(
                                       sku.sku || "",
                                     ).toLocaleString("pt-BR", {
                                       style: "currency",
                                       currency: "BRL",
                                     })}
-                                  </span>
+                                    className="text-right font-semibold"
+                                  />
                                 </TableCell>
                               )}
-                              <TableCell className="px-4 py-2.5 text-center align-middle">
+                              {isEditMode && (
+                                <TableCell className="text-right">
+                                  <Input
+                                    {...navigationCell({
+                                      grid: "produto-skus",
+                                      row: index,
+                                      column: 5,
+                                    })}
+                                    readOnly
+                                    aria-label="Preço de compra"
+                                    inputSize="full"
+                                    value={getUltimaCompra(
+                                      sku.sku || "",
+                                    ).toLocaleString("pt-BR", {
+                                      style: "currency",
+                                      currency: "BRL",
+                                    })}
+                                    className="text-right font-semibold"
+                                  />
+                                </TableCell>
+                              )}
+                              <TableCell className="text-center">
                                 <form.Field name={`skus[${index}].ativo`}>
                                   {(field) => (
                                     <Checkbox
                                       {...navigationCell({
                                         grid: "produto-skus",
                                         row: index,
-                                        column: 3,
+                                        column: 6,
                                       })}
                                       checked={field.state.value}
                                       disabled={readOnly}
@@ -1107,9 +1206,7 @@ function ProdutosUpsertForm({
             </div>
           )}
         </FieldGroup>
-
       </form>
-
     </div>
   );
 }
