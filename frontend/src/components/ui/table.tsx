@@ -4,11 +4,24 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+function Table({
+  className,
+  pageScroll = false,
+  ...props
+}: React.ComponentProps<"table"> & {
+  /**
+   * A tabela rola junto com a página/janela (não tem rolagem própria): o cabeçalho fica sticky
+   * em relação à área rolável de fora. Sem isso a tabela é o próprio container de rolagem.
+   */
+  pageScroll?: boolean;
+}) {
   return (
     <div
       data-slot="table-container"
-      className="relative w-full overflow-auto flex-1 min-h-0 flex flex-col"
+      className={cn(
+        "relative flex w-full flex-col",
+        pageScroll ? "overflow-visible" : "min-h-0 flex-1 overflow-auto",
+      )}
     >
       <table
         data-slot="table"
@@ -23,7 +36,7 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   return (
     <thead
       data-slot="table-header"
-      className={cn("[&_tr]:border-b", className)}
+      className={cn("bg-muted sticky top-0 z-10 [&_tr]:border-b", className)}
       {...props}
     />
   );
@@ -70,7 +83,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "h-12 px-4 text-left align-middle font-bold whitespace-nowrap text-foreground has-[[role=checkbox]]:pr-0",
+        "h-9 px-3 text-left align-middle text-xs font-semibold tracking-wide whitespace-nowrap text-muted-foreground uppercase has-[[role=checkbox]]:pr-0",
         className,
       )}
       {...props}
@@ -83,7 +96,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
     <td
       data-slot="table-cell"
       className={cn(
-        "p-4 align-middle whitespace-nowrap has-[[role=checkbox]]:pr-0",
+        "px-3 py-1.5 align-middle whitespace-nowrap has-[[role=checkbox]]:pr-0",
         className,
       )}
       {...props}

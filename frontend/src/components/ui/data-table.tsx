@@ -254,7 +254,7 @@ export function DataTable<TData, TValue>({
 
       <div className="bg-card relative flex max-h-full flex-1 flex-col overflow-hidden rounded-xl border">
         <Table>
-          <TableHeader className="bg-muted sticky top-0 z-10">
+          <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 key={headerGroup.id}
@@ -264,7 +264,6 @@ export function DataTable<TData, TValue>({
                   return (
                     <TableHead
                       key={header.id}
-                      className="text-foreground h-10 py-2 font-bold whitespace-nowrap"
                       style={{
                         width:
                           header.column.getSize() !== 150
@@ -292,7 +291,7 @@ export function DataTable<TData, TValue>({
                 <TableRow className="bg-muted/30 hover:bg-muted/30 border-b">
                   <TableCell
                     colSpan={columns.length}
-                    className="py-3 text-center text-sm"
+                    className="text-center text-sm"
                   >
                     {selectAllAcrossPages ? (
                       <>
@@ -372,7 +371,6 @@ export function DataTable<TData, TValue>({
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
-                      className="py-3"
                       style={{
                         width:
                           cell.column.getSize() !== 150
