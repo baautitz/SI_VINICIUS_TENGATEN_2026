@@ -117,6 +117,15 @@
 }
 
 @layer base {
+  /* Foco por teclado rola com folga: o campo focado não fica colado nem cortado na borda da área rolável. */
+  input,
+  textarea,
+  select,
+  button,
+  [tabindex] {
+    scroll-margin-block: 1.5rem;
+  }
+
   * {
     @apply border-border outline-ring/50;
     }

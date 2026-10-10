@@ -68,6 +68,8 @@ interface FocusedNavigationSnapshot {
   element: HTMLElement
   rect: DOMRect
   cell: NavigationCell | null
+  /** Identifica o "tipo" do controle (ex.: botão Remover parcela) para achar o equivalente após a remoção. */
+  signature: string
 }
 
 interface NavigationContextValue {
@@ -193,13 +195,29 @@ export function KeyboardNavigationProvider({ children }: { children: React.React
           index,
           cell: readCell(candidate.element),
         }))
+        // Remoção de linha: o foco vai para o mesmo controle (ex.: o Remover) da linha que ocupou o lugar
+        // da removida (a seguinte) e, se era a última, para o da anterior. Só então vale a geometria.
+        const sameKind = candidates.filter(
+          (candidate) =>
+            candidate.element.isConnected &&
+            controlSignature(candidate.element) === snapshot.signature &&
+            candidate.rect.left < snapshot.rect.right &&
+            snapshot.rect.left < candidate.rect.right,
+        )
+        const next = sameKind
+          .filter((candidate) => candidate.rect.top >= snapshot.rect.top - 2)
+          .sort((a, b) => a.rect.top - b.rect.top)[0]
+        const previous = sameKind
+          .filter((candidate) => candidate.rect.top < snapshot.rect.top - 2)
+          .sort((a, b) => b.rect.top - a.rect.top)[0]
         const destinationId =
           chooseSpatialDestination(source, geometryCandidates, "down") ??
           chooseSpatialDestination(source, geometryCandidates, "up")
         const destination =
-          destinationId === null
+          (next ?? previous)?.element ??
+          (destinationId === null
             ? null
-            : candidates[Number(destinationId)]?.element ?? null
+            : candidates[Number(destinationId)]?.element ?? null)
         if (!destination) return
 
         destination.scrollIntoView({ block: "nearest", inline: "nearest" })
@@ -247,6 +265,7 @@ export function KeyboardNavigationProvider({ children }: { children: React.React
         element: target,
         rect: target.getBoundingClientRect(),
         cell: readCell(target),
+        signature: controlSignature(target),
       }
     }
 
@@ -476,6 +495,21 @@ function findDestination(
     : direction === "forward" || direction === "backward"
       ? horizontalCandidates
       : allCandidates
+  // Da sidebar, seta para a direita entra sempre no campo principal da página: a pesquisa da listagem
+  // ou, sem ela, o primeiro campo de formulário — nunca no controle geometricamente mais próximo.
+  if (sidebar && direction === "right") {
+    const search = root.querySelector<HTMLElement>("[data-navigation-list-search='true']")
+    if (search && isEligible(search)) return search
+    const first = candidates
+      .filter(
+        (candidate) =>
+          !sidebar.contains(candidate.element) &&
+          candidate.element.matches("input:not([type='checkbox']):not([type='radio']),textarea,select"),
+      )
+      .sort((a, b) => a.rect.top - b.rect.top || a.rect.left - b.rect.left)[0]
+    if (first) return first.element
+  }
+
   const listSearch = source.matches("[data-navigation-list-search='true']")
   if (listSearch && direction === "down") {
     return candidates.find((candidate) =>
@@ -515,12 +549,20 @@ function findDestination(
       cell: readCell(candidate.element),
     }),
   )
-  const destinationId = chooseSpatialDestination(
-    sourceCandidate,
-    geometryCandidates,
-    direction,
-    goalX,
-  )
+  // A hierarquia do DOM vale mais que a distância: dentro de uma área rolável (etapa de um assistente,
+  // corpo de uma janela) o foco só sai dela — para abas, sidebar, rodapé — quando não há mais
+  // nada a percorrer ali dentro. Sem isso, ao rolar, um controle de fora fica geometricamente "mais perto".
+  const scroller = nearestScrollContainer(source, root)
+  const inScroller = scroller
+    ? geometryCandidates.filter((candidate) =>
+        scroller.contains(candidates[Number(candidate.id)].element),
+      )
+    : []
+  const destinationId =
+    (inScroller.length > 0
+      ? chooseSpatialDestination(sourceCandidate, inScroller, direction, goalX)
+      : null) ??
+    chooseSpatialDestination(sourceCandidate, geometryCandidates, direction, goalX)
   const destination =
     destinationId === null
       ? null
@@ -529,10 +571,13 @@ function findDestination(
   // Returning from the content should restore the current route in the
   // sidebar, instead of landing on its unrelated collapse button or another
   // group trigger. Internal sidebar navigation keeps its normal geometry.
+  // Seta para a esquerda no conteúdo também volta à sidebar: sem nada mais à esquerda na linha (ou com a
+  // sidebar como vizinho geométrico), vai direto ao item da página atual.
   if (
-    direction === "backward" &&
     !sidebar &&
-    destination?.closest("[data-navigation-sidebar='true']")
+    ((direction === "backward" && destination?.closest("[data-navigation-sidebar='true']")) ||
+      (direction === "left" &&
+        (destination === null || destination.closest("[data-navigation-sidebar='true']"))))
   ) {
     const currentPage = Array.from(
       root.querySelectorAll<HTMLElement>(
@@ -545,6 +590,25 @@ function findDestination(
   return destination === null
     ? null
     : destination
+}
+
+/** Ancestral rolável mais próximo da origem (dentro do escopo), ou null. */
+function nearestScrollContainer(element: HTMLElement, root: HTMLElement): HTMLElement | null {
+  for (let node = element.parentElement; node && node !== root; node = node.parentElement) {
+    const { overflowY } = window.getComputedStyle(node)
+    if ((overflowY === "auto" || overflowY === "scroll") && node.scrollHeight > node.clientHeight) {
+      return node
+    }
+  }
+  return null
+}
+
+/** Tipo do controle: tag, tipo e rótulo acessível (título/aria-label); iguala botões Remover de linhas diferentes. */
+function controlSignature(element: HTMLElement): string {
+  const label =
+    element.getAttribute("aria-label") ?? element.getAttribute("title") ?? element.getAttribute("name") ?? ""
+  const type = element instanceof HTMLInputElement ? element.type : ""
+  return `${element.tagName}|${type}|${label}`
 }
 
 function collectCandidates(root: HTMLElement): RectWithElement[] {
