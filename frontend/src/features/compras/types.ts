@@ -13,6 +13,7 @@ export interface Compra {
   valorOutrasDespesas: number;
   valorDesconto: number;
   valorFreteTerceiro: number;
+  transportadoraId?: number | null;
   valorTotal: number;
   observacao?: string | null;
   estornada: boolean;

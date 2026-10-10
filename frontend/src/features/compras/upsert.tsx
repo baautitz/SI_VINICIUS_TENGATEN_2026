@@ -2,14 +2,14 @@
 
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, RefreshCw, Trash2, TriangleAlert, Undo2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, CornerDownLeft, Plus, RefreshCw, Trash2, TriangleAlert, Undo2 } from "lucide-react";
 import { WindowActions } from "@/imperative-ui";
 import { fornecedoresApi, transportadorasApi } from "@/api/parceiros";
 import { FornecedoresUpsert } from "@/features/parceiros/fornecedores/upsert";
 import { TransportadorasUpsert } from "@/features/parceiros/transportadoras/upsert";
 import type { FornecedorFormValues } from "@/features/parceiros/fornecedores/types";
 import type { TransportadoraFormValues } from "@/features/parceiros/transportadoras/types";
-import { ParteXmlCard, valoresDaParteXml, erroDoCadastro } from "./parte-xml";
+import { CadastroSugeridoCard, valoresDoCadastroSugerido, erroDoCadastro } from "@/components/entity-inputs/cadastro-sugerido";
 import { fornecedorSchema, type ItensSelecionados } from "@/features/parceiros/fornecedores/types";
 import { transportadoraSchema } from "@/features/parceiros/transportadoras/types";
 import { comprasApi } from "@/api/compras";
@@ -35,10 +35,10 @@ import {
   AlertDescription,
   Badge,
   Button,
-  Checkbox,
   Field,
   FieldError,
   FieldLabel,
+  Input,
   Kbd,
   KbdGroup,
   Spinner,
@@ -56,7 +56,7 @@ import { DatePicker, NumberInput } from "@/ui/composites";
 import { navigationCell } from "@/ui/keyboard-navigation";
 import { todayLocalISODate, todayBrasiliaISODate, toLocalISODate } from "@/utils/date-utils";
 import { cn } from "@/lib/utils";
-import { SkuPicker } from "./sku-picker";
+import { ItensXml } from "./itens-xml";
 import {
   moeda,
   ratearCompra,
@@ -86,6 +86,7 @@ interface Linha {
   /** Importação: item do XML. */
   numeroItem?: number;
   codigoProduto?: string | null;
+  ean?: string | null;
   descricao?: string;
   skuOriginal?: string | null;
   sugestao?: string | null;
@@ -117,7 +118,7 @@ export function CompraWindow(props: CompraWindowProps) {
 }
 
 let proximaChave = 1;
-const ETAPAS = ["Fornecedor", "Dados gerais", "Produtos", "Custos e pagamento"];
+const ETAPAS = ["Fornecedor e transporte", "Dados gerais", "Produtos", "Custos e pagamento"];
 
 function gerarParcelas(
   total: number,
@@ -233,6 +234,12 @@ function CompraForm({
     queryFn: () => transportadorasApi.getById(previa!.transportadoraId!),
     enabled: !!previa?.transportadoraId,
   });
+  // Visualização: a transportadora gravada na compra.
+  const { data: transportadoraCompra } = useQuery({
+    queryKey: ["transportadoras", "detail", compra?.transportadoraId],
+    queryFn: () => transportadorasApi.getById(compra!.transportadoraId!),
+    enabled: !!compra?.transportadoraId,
+  });
   const [observacao, setObservacao] = React.useState(
     compra?.observacao ?? dados?.informacoesComplementares ?? "",
   );
@@ -262,6 +269,7 @@ function CompraForm({
           descricao: `${i.descricao} (${i.codigoProduto}${i.ean ? ` · EAN ${i.ean}` : ""})`,
           numeroItem: i.numeroItem,
           codigoProduto: i.codigoProduto,
+          ean: i.ean,
           quantidade: Number(i.quantidade),
           valorUnitario: Number(i.valorUnitario),
           valorDesconto: Number(i.valorDesconto),
@@ -299,8 +307,18 @@ function CompraForm({
   const [transportadoraId, setTransportadoraId] = React.useState<number | null>(
     previa?.transportadoraId ?? null,
   );
+  // Transportadora escolhida no campo: a etapa desmonta ao navegar, então o item é reidratado pelo id.
+  const { data: transportadoraEscolhida } = useQuery({
+    queryKey: ["transportadoras", "detail", transportadoraId],
+    queryFn: () => transportadorasApi.getById(transportadoraId!),
+    enabled: !!transportadoraId,
+  });
+  // Transportadora do XML segue o fornecedor: existente é reaproveitada, nova é cadastrada ao confirmar.
+  // Cadastro existente editado pela janela: salvo direto na API, só sinaliza o badge.
+  const [fornecedorEditadoNaApi, setFornecedorEditadoNaApi] = React.useState(false);
+  const [transportadoraEditadaNaApi, setTransportadoraEditadaNaApi] = React.useState(false);
   const [cadastrarTransportadora, setCadastrarTransportadora] =
-    React.useState(false);
+    React.useState(!!modoXml && !previa?.transportadoraId);
   const [vencFrete, setVencFrete] = React.useState(todayLocalISODate());
   const [condicaoEscolhida, setCondicao] = React.useState<CondicaoPagamento | null | undefined>(
     undefined,
@@ -322,8 +340,8 @@ function CompraForm({
     },
     [],
   );
-  // XML com parcelas (cobr/dup) tem prioridade sobre a condição do fornecedor; sem elas, vale a do XML, a do cadastro novo editado ou a do fornecedor existente.
-  const condicaoXmlId = dados && dados.parcelas.length === 0
+  // A condição (XML, cadastro novo editado ou fornecedor existente) sempre aparece; com duplicatas (cobr/dup) no XML elas é que geram as parcelas.
+  const condicaoXmlId = dados
       ? (previa?.condicaoPagamentoId ?? fornecedorDados?.condicaoPagamentoId ?? fornecedorXml?.condicaoPagamento?.id)
       : null;
   const { data: condicaoXmlQuery } = useQuery({
@@ -333,7 +351,8 @@ function CompraForm({
   });
   const condicaoXml = condicaoXmlQuery?.ativo ? condicaoXmlQuery : null;
   const condicao = condicaoEscolhida !== undefined ? condicaoEscolhida : condicaoXml;
-  const gerarParcelasDaCondicao = gerarDoFornecedor || (!!condicaoXml && condicaoEscolhida === undefined);
+  const gerarParcelasDaCondicao =
+    gerarDoFornecedor || (!!condicaoXml && condicaoEscolhida === undefined && dados?.parcelas.length === 0);
   const [parcelas, setParcelas] = React.useState<ParcelaCompra[]>(() =>
     dados
       ? dados.parcelas.map((p, i) => ({
@@ -457,22 +476,52 @@ function CompraForm({
     setParcelas(gerarParcelas(valorNota, dataCompra, condicao));
   };
 
+  // Igual às parcelas de contas a pagar/receber: lança quantas precisar (o saldo restante, ou zero);
+  // a divergência com a nota aparece nos próprios lançamentos e em "Redistribuir" (Alt+C).
   const adicionarParcela = () => {
-    if (round2(valorNota - somaParcelas) <= 0) {
-      ui.feedback.notify({
-        type: "error",
-        title: "Não há saldo para uma nova parcela: ajuste as parcelas existentes.",
-      });
-      return;
-    }
+    const base = new Date(dataCompra + "T12:00:00");
+    base.setDate(base.getDate() + (parcelas.length + 1) * 30);
     setParcelas((p) => [
       ...p,
       {
         numeroParcela: p.length + 1,
-        dataVencimento: dataCompra,
-        valorParcela: round2(valorNota - somaParcelas),
+        dataVencimento: toLocalISODate(base),
+        valorParcela: Math.max(0, round2(valorNota - somaParcelas)),
       },
     ]);
+    requestAnimationFrame(() =>
+      document
+        .querySelector<HTMLElement>(
+          `[data-navigation-grid="compra-parcelas"][data-navigation-row="${parcelas.length}"][data-navigation-column="1"] input`,
+        )
+        ?.focus(),
+    );
+  };
+
+  /** Divide o valor da nota igualmente entre as parcelas existentes (a última fecha a diferença). */
+  const redistribuirParcelas = async () => {
+    if (parcelas.length === 0 || valorNota <= 0) {
+      ui.feedback.notify({
+        type: "error",
+        title: "Adicione ao menos uma parcela e informe os itens para redistribuir.",
+      });
+      return;
+    }
+    const ok = await ui.windows.confirm({
+      title: "Redistribuir parcelas?",
+      description: `O valor da nota (${moeda(valorNota)}) será dividido igualmente entre as ${parcelas.length} parcela(s); os vencimentos são mantidos.`,
+      confirmLabel: "Redistribuir",
+      cancelLabel: "Cancelar",
+    });
+    if (!ok) return;
+    const parte = round2(valorNota / parcelas.length);
+    setParcelas((a) =>
+      a.map((x, i) => ({
+        ...x,
+        valorParcela:
+          i === a.length - 1 ? round2(valorNota - parte * (a.length - 1)) : parte,
+      })),
+    );
   };
 
   const iso = (d: string) => new Date(d + "T12:00:00").toISOString();
@@ -502,7 +551,7 @@ function CompraForm({
       !transportadoraId &&
       !(modoXml && cadastrarTransportadora)
     )
-      return "Frete de terceiro exige a transportadora.";
+      return "Frete de terceiro exige a transportadora (etapa Fornecedor e transporte).";
     if (parcelas.length === 0)
       return "Informe ao menos uma parcela (use Recalcular parcelas).";
     if (parcelas.some((p) => !(p.valorParcela > 0)))
@@ -592,6 +641,7 @@ function CompraForm({
     if (etapa === 0 && !modoXml && !fornecedor)
       return "Selecione o fornecedor.";
     if (etapa === 0 && erroFornecedorNovo) return `Fornecedor: ${erroFornecedorNovo}`;
+    if (etapa === 0 && erroTransportadoraNova) return `Transportadora: ${erroTransportadoraNova}`;
     if (etapa === 1 && !emitente) return "Emitente é obrigatório.";
     if (etapa === 1 && erroData) return erroData;
     if (etapa === 2) {
@@ -610,7 +660,7 @@ function CompraForm({
       ui.feedback.notify({ type: "error", title: b });
       if (etapa === 2 && pendentes > 0)
         document
-          .querySelector<HTMLInputElement>("[data-sem-sku] input")
+          .querySelector<HTMLElement>("[data-sem-sku] input,[data-sem-sku] button")
           ?.focus();
     } else {
       if (etapa === 2 && gerarParcelasDaCondicao) {
@@ -651,13 +701,53 @@ function CompraForm({
       },
     },
     {
+      id: "compras.focus-sku",
+      hotkey: "Alt+K" as const,
+      label: "Adicionar SKU",
+      enabled: !readOnly && !modoXml && etapa === 2,
+      run: (e: KeyboardEvent) => {
+        e.preventDefault();
+        skuInputRef.current?.focus();
+      },
+    },
+    {
+      id: "compras.back",
+      hotkey: "Alt+ArrowLeft" as const,
+      label: "Voltar etapa",
+      enabled: etapa > 0 && !mutation.isPending,
+      run: (e: KeyboardEvent) => {
+        e.preventDefault();
+        setEtapa((v) => Math.max(0, v - 1));
+      },
+    },
+    {
       id: "compras.next",
-      hotkey: "Alt+Enter" as const,
-      label: "Avançar / confirmar",
-      enabled: !mutation.isPending,
+      hotkey: "Alt+ArrowRight" as const,
+      label: "Avançar etapa",
+      enabled: etapa < 3 && !mutation.isPending,
       run: (e: KeyboardEvent) => {
         e.preventDefault();
         avancar();
+      },
+    },
+    {
+      id: "compras.confirmar",
+      hotkey: "Alt+Enter" as const,
+      label: "Confirmar",
+      enabled: etapa === 3 && !mutation.isPending,
+      run: (e: KeyboardEvent) => {
+        e.preventDefault();
+        avancar();
+      },
+    },
+    {
+      id: "compras.redistribuir-parcelas",
+      hotkey: "Alt+C" as const,
+      label: "Redistribuir parcelas",
+      enabled: !readOnly && etapa === 3,
+      run: (e: KeyboardEvent) => {
+        e.preventDefault();
+        void redistribuirParcelas();
       },
     },
     {
@@ -689,6 +779,20 @@ function CompraForm({
     return () => activeWindow.setDirtyCheck(null);
   };
 
+  /** Valor calculado: input somente leitura, para o foco e as setas percorrerem a tela até o fim. */
+  const valorFixo = (valor: number, decimals: number, rotulo: string, className?: string) => (
+    <NumberInput
+      value={valor}
+      decimals={decimals}
+      inputSize="full"
+      inputMode="decimal"
+      aria-label={rotulo}
+      readOnly
+      className={cn("h-8 text-right text-xs font-semibold", className)}
+      onNumberChange={() => {}}
+    />
+  );
+
   const despesaCampo = (
     label: string,
     valor: number,
@@ -704,7 +808,7 @@ function CompraForm({
         inputSize="full"
         inputMode="decimal"
         className="h-8 text-right text-xs font-semibold"
-        disabled={readOnly || desabilitado}
+        readOnly={readOnly || desabilitado}
         onNumberChange={(n) => set(Number.isNaN(n) ? 0 : n)}
       />
     </Field>
@@ -747,20 +851,19 @@ function CompraForm({
             variant="outline"
             onClick={() => setEtapa(etapa - 1)}
           >
-            Voltar
+            Voltar{" "}
+            <KbdGroup>
+              <Kbd>Alt</Kbd>
+              <Kbd><ArrowLeft className="size-3" /></Kbd>
+            </KbdGroup>
           </Button>
-        )}
-        {!readOnly && bloqueioEtapa() && (
-          <span role="status" className="text-destructive self-center text-xs">
-            {bloqueioEtapa()}
-          </span>
         )}
         {etapa < 3 ? (
           <Button type="button" onClick={avancar}>
             Avançar{" "}
             <KbdGroup>
               <Kbd>Alt</Kbd>
-              <Kbd>Enter</Kbd>
+              <Kbd><ArrowRight className="size-3" /></Kbd>
             </KbdGroup>
           </Button>
         ) : (
@@ -777,7 +880,7 @@ function CompraForm({
                   : "Fechar compra"}
               <KbdGroup>
                 <Kbd>Alt</Kbd>
-                <Kbd>Enter</Kbd>
+                <Kbd><CornerDownLeft className="size-3" /></Kbd>
               </KbdGroup>
             </Button>
           )
@@ -811,28 +914,30 @@ function CompraForm({
         <div
           key={etapa}
           ref={focoEtapa}
-          className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1"
+          className="flex min-h-0 flex-1 flex-col gap-4 -mx-1 overflow-y-auto px-1"
         >
           {etapa === 0 && (
             <>
               {modoXml ? (
-                <ParteXmlCard
+                <CadastroSugeridoCard
                   titulo="Fornecedor do XML"
                   nome={fornecedorXml?.nomeRazaosocial ?? fornecedorDados?.nomeRazaosocial ?? dados!.emitente.nome}
                   documento={fornecedorXml?.cpfCnpj ?? fornecedorDados?.cpfCnpj ?? dados!.emitente.documento}
                   existente={!!previa?.fornecedorId}
-                  editado={!!fornecedorDados}
+                  editado={!!fornecedorDados || fornecedorEditadoNaApi}
                   erro={erroFornecedorNovo}
                   onEditar={async () => {
                     if (previa?.fornecedorId) {
                       // Existente: salva direto na API; a query do cadastro é invalidada pelo upsert.
-                      if (fornecedorXml)
-                        await ui.windows.open({
+                      if (fornecedorXml) {
+                        const r = await ui.windows.open({
                           component: FornecedoresUpsert,
                           props: { editingItem: fornecedorXml },
                           title: "Editar Fornecedor",
                           size: "full",
                         });
+                        if (r.status === "confirmed") setFornecedorEditadoNaApi(true);
+                      }
                       return;
                     }
                     const r = await ui.windows.open<true | FornecedorFormValues, React.ComponentProps<typeof FornecedoresUpsert>>({
@@ -840,7 +945,7 @@ function CompraForm({
                       props: {
                         editingItem: null,
                         controlado: true,
-                        valoresIniciais: fornecedorDados ?? valoresDaParteXml(dados!.emitente),
+                        valoresIniciais: fornecedorDados ?? valoresDoCadastroSugerido(dados!.emitente),
                         itensIniciais: fornecedorItens,
                         onItens: setFornecedorItens,
                       },
@@ -861,6 +966,71 @@ function CompraForm({
                   onSelectId={() => {}}
                   disabled={readOnly}
                 />
+              )}
+              {readOnly && (
+                <TransportadoraInput
+                  key={transportadoraCompra?.id ?? "sem"}
+                  name="compra-transportadora"
+                  label="Transportadora do frete"
+                  initialItem={transportadoraCompra ?? null}
+                  onSelectId={() => {}}
+                  disabled
+                />
+              )}
+              {!readOnly && (
+                <div className="w-full">
+                      {!(modoXml && dados?.transportadora) && (
+                        <TransportadoraInput
+                          key={transportadoraEscolhida?.id ?? "sem"}
+                          name="compra-transportadora"
+                          initialItem={transportadoraEscolhida ?? null}
+                          onSelectId={setTransportadoraId}
+                          label="Transportadora do frete"
+                        />
+                      )}
+                      {modoXml && dados?.transportadora && (
+                        <div>
+                          <CadastroSugeridoCard
+                            titulo="Transportadora do XML"
+                            nome={transportadoraXml?.nomeRazaosocial ?? transportadoraDados?.nomeRazaosocial ?? dados.transportadora.nome}
+                            documento={transportadoraXml?.cpfCnpj ?? transportadoraDados?.cpfCnpj ?? dados.transportadora.documento}
+                            existente={!!previa?.transportadoraId}
+                            editado={!!transportadoraDados || transportadoraEditadaNaApi}
+                            erro={erroTransportadoraNova}
+                            onEditar={async () => {
+                              if (previa?.transportadoraId) {
+                                if (transportadoraXml) {
+                                  const r = await ui.windows.open({
+                                    component: TransportadorasUpsert,
+                                    props: { editingItem: transportadoraXml },
+                                    title: "Editar Transportadora",
+                                    size: "full",
+                                  });
+                                  if (r.status === "confirmed") setTransportadoraEditadaNaApi(true);
+                                }
+                                return;
+                              }
+                              const r = await ui.windows.open<true | TransportadoraFormValues, React.ComponentProps<typeof TransportadorasUpsert>>({
+                                component: TransportadorasUpsert,
+                                props: {
+                                  editingItem: null,
+                                  controlado: true,
+                                  valoresIniciais: transportadoraDados ?? valoresDoCadastroSugerido(dados.transportadora!),
+                                  itensIniciais: transportadoraItens,
+                                  onItens: setTransportadoraItens,
+                                },
+                                title: "Editar Transportadora",
+                                size: "full",
+                              });
+                              if (r.status === "confirmed" && r.value !== true) {
+                                setTransportadoraDados(r.value);
+                                setCadastrarTransportadora(true);
+                              }
+                            }}
+                          />
+                        </div>
+                      )}
+                </div>
               )}
             </>
           )}
@@ -901,7 +1071,7 @@ function CompraForm({
                     <DatePicker
                       value={dataCompra}
                       onChange={mudarChegada}
-                      disabled={readOnly}
+                      readOnly={readOnly}
                       max={hoje}
                       min={emissaoXml}
                       invalid={!!erroChegada}
@@ -922,9 +1092,15 @@ function CompraForm({
 
               {emissaoXml && (
                 <div className="flex flex-col gap-1 text-sm">
-                  <span>
-                    <b>Emissão da NF-e:</b> {dataBr(emissaoXml)}
-                  </span>
+                  <Field>
+                    <FieldLabel htmlFor="compra-emissao-nfe">Emissão da NF-e</FieldLabel>
+                    <Input
+                      id="compra-emissao-nfe"
+                      readOnly
+                      value={dataBr(emissaoXml)}
+                      className="h-8"
+                    />
+                  </Field>
                   {erroEmissao && (
                     <Alert variant="destructive">
                       <TriangleAlert />
@@ -945,7 +1121,8 @@ function CompraForm({
                   value={observacao}
                   maxLength={500}
                   rows={3}
-                  disabled={readOnly}
+                  readOnly={readOnly}
+                  className=""
                   onChange={(e) => setObservacao(e.target.value)}
                 />
               </Field>
@@ -963,42 +1140,51 @@ function CompraForm({
                 />
               )}
 
-              <div className="rounded-lg border">
-                <Table className="min-w-250" aria-label="Itens da compra">
-                  <TableHeader className="bg-muted">
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-10 px-2">#</TableHead>
-                      <TableHead className="w-48 px-2">
+              {modoXml ? (
+                <ItensXml
+                  itens={itens}
+                  onVincular={(key, sku, permiteDecimais) =>
+                    atualizar(key, { sku, ...(permiteDecimais === undefined ? {} : { permiteDecimais }) })
+                  }
+                />
+              ) : (
+                <>
+              <div className="rounded-lg border bg-card overflow-clip">
+                <Table pageScroll className="min-w-250" aria-label="Itens da compra">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-10">#</TableHead>
+                      <TableHead className="w-48">
                         SKU {!readOnly && <Kbd>Enter</Kbd>}
                       </TableHead>
-                      <TableHead className="px-2">Produto</TableHead>
-                      <TableHead className="w-28 px-2 text-right">
+                      <TableHead>Produto</TableHead>
+                      <TableHead className="w-28 text-right">
                         Quantidade
                       </TableHead>
-                      <TableHead className="w-28 px-2 text-right">
+                      <TableHead className="w-28 text-right">
                         Valor unit.
                       </TableHead>
-                      <TableHead className="w-24 px-2 text-right">
+                      <TableHead className="w-24 text-right">
                         Desconto
                       </TableHead>
-                      <TableHead className="w-24 px-2 text-right">
+                      <TableHead className="w-24 text-right">
                         Rateio
                       </TableHead>
-                      <TableHead className="w-28 px-2 text-right">
+                      <TableHead className="w-28 text-right">
                         Custo unit. final
                       </TableHead>
-                      <TableHead className="w-24 px-2 text-right">
+                      <TableHead className="w-24 text-right">
                         Total
                       </TableHead>
-                      {!readOnly && !modoXml && <TableHead className="w-10" />}
+                      {!readOnly && !modoXml && <TableHead className="w-12" />}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {itens.length === 0 && (
                       <TableRow>
                         <TableCell
-                          colSpan={10}
-                          className="text-muted-foreground py-8 text-center text-sm"
+                          colSpan={readOnly || modoXml ? 9 : 10}
+                          className="text-muted-foreground py-8 text-center"
                         >
                           Nenhum item. Digite um SKU acima e pressione Enter
                           para adicionar.
@@ -1036,8 +1222,8 @@ function CompraForm({
                           decimals={dec}
                           inputSize="full"
                           inputMode="decimal"
-                          className="h-7 text-right text-xs font-semibold"
-                          disabled={readOnly || modoXml || off}
+                          className="text-right"
+                          readOnly={readOnly || modoXml || off}
                           onNumberChange={(n) =>
                             onChange(Number.isNaN(n) ? 0 : n)
                           }
@@ -1049,53 +1235,13 @@ function CompraForm({
                           data-sem-sku={!item.sku && !readOnly ? "" : undefined}
                           className={!item.sku && !readOnly ? "bg-destructive/10" : undefined}
                         >
-                          <TableCell className="px-2 text-xs">
+                          <TableCell>
                             {item.numeroItem ?? idx + 1}
                           </TableCell>
-                          <TableCell className="px-2 py-1">
-                            {readOnly ? (
-                              <span className="font-mono text-xs">
-                                {item.sku}
-                              </span>
-                            ) : (
-                              <div className="flex flex-col gap-1">
-                                <SkuPicker
-                                  value={item.sku}
-                                  inputProps={navigationCell({
-                                    grid: "compra-itens",
-                                    row: idx,
-                                    column: 0,
-                                  })}
-                                  onPick={(s) =>
-                                    atualizar(item.key, {
-                                      sku: s.sku,
-                                      permiteDecimais:
-                                        !!s.produto?.unidadeMedida
-                                          ?.permiteDecimais,
-                                      ...(modoXml
-                                        ? {}
-                                        : { produtoNome: getFullSkuName(s) }),
-                                    })
-                                  }
-                                />
-                                {!item.sku && item.sugestao && (
-                                  <Button
-                                    type="button"
-                                    size="xs"
-                                    variant="outline"
-                                    onClick={() =>
-                                      atualizar(item.key, {
-                                        sku: item.sugestao!,
-                                      })
-                                    }
-                                  >
-                                    Usar {item.sugestao}
-                                  </Button>
-                                )}
-                              </div>
-                            )}
+                          <TableCell>
+                            <span className="font-mono text-xs">{item.sku}</span>
                           </TableCell>
-                          <TableCell className="px-2 py-1 text-xs">
+                          <TableCell>
                             <div className="flex flex-col gap-1">
                               <span>{item.descricao ?? item.produtoNome}</span>
                               {modoXml && (
@@ -1114,7 +1260,7 @@ function CompraForm({
                               )}
                             </div>
                           </TableCell>
-                          <TableCell className="px-2 py-1">
+                          <TableCell>
                             {numCell(
                               1,
                               item.quantidade,
@@ -1122,7 +1268,7 @@ function CompraForm({
                               item.permiteDecimais ? 4 : 0,
                             )}
                           </TableCell>
-                          <TableCell className="px-2 py-1">
+                          <TableCell>
                             {numCell(
                               2,
                               item.valorUnitario,
@@ -1130,7 +1276,7 @@ function CompraForm({
                               4,
                             )}
                           </TableCell>
-                          <TableCell className="px-2 py-1">
+                          <TableCell>
                             {numCell(
                               3,
                               item.valorDesconto,
@@ -1138,26 +1284,26 @@ function CompraForm({
                               2,
                             )}
                           </TableCell>
-                          <TableCell className="px-2 text-right text-xs">
+                          <TableCell className="text-right">
                             {moeda(rateio)}
                           </TableCell>
-                          <TableCell className="px-2 text-right text-xs font-bold">
+                          <TableCell className="text-right font-bold">
                             {new Intl.NumberFormat("pt-BR", {
                               style: "currency",
                               currency: "BRL",
                               minimumFractionDigits: 4,
                             }).format(custo)}
                           </TableCell>
-                          <TableCell className="px-2 text-right text-xs font-bold">
+                          <TableCell className="text-right font-bold">
                             {moeda(valoresItens[idx])}
                           </TableCell>
                           {!readOnly && !modoXml && (
-                            <TableCell className="px-1">
+                            <TableCell>
                               <Button
                                 type="button"
-                                size="icon-xs"
-                                variant="ghost"
-                                className="text-red-500"
+                                size="icon"
+                                variant="outline"
+                                className="size-8 text-red-500"
                                 title="Remover item"
                                 onClick={() => void removerItem(item.key)}
                               >
@@ -1171,283 +1317,253 @@ function CompraForm({
                   </TableBody>
                 </Table>
               </div>
+                </>
+              )}
             </>
           )}
           {etapa === 3 && (
-            <>
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-                {despesaCampo("Frete (na nota)", frete, setFrete, modoXml)}
-                {despesaCampo("Seguro", seguro, setSeguro, modoXml)}
-                {despesaCampo("Outras despesas", outras, setOutras, modoXml)}
-                {despesaCampo("Desconto geral", desconto, setDesconto, modoXml)}
-                {despesaCampo(
-                  "Frete de terceiro",
-                  freteTerceiro,
-                  setFreteTerceiro,
-                )}
-              </div>
-
-              {(freteTerceiro > 0 ||
-                (modoXml && previa?.dados.modalidadeFrete === 1)) &&
-                !readOnly && (
-                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                    <div>
-                      <TransportadoraInput
-                        name="compra-transportadora"
-                        initialItem={null}
-                        onSelectId={setTransportadoraId}
-                        label="Transportadora do frete"
-                      />
-                      {modoXml && dados?.transportadora && (
-                        <div className="mt-2">
-                          <ParteXmlCard
-                            titulo="Transportadora do XML"
-                            nome={transportadoraXml?.nomeRazaosocial ?? transportadoraDados?.nomeRazaosocial ?? dados.transportadora.nome}
-                            documento={transportadoraXml?.cpfCnpj ?? transportadoraDados?.cpfCnpj ?? dados.transportadora.documento}
-                            existente={!!previa?.transportadoraId}
-                            editado={!!transportadoraDados}
-                            erro={erroTransportadoraNova}
-                            onEditar={async () => {
-                              if (previa?.transportadoraId) {
-                                if (transportadoraXml)
-                                  await ui.windows.open({
-                                    component: TransportadorasUpsert,
-                                    props: { editingItem: transportadoraXml },
-                                    title: "Editar Transportadora",
-                                    size: "full",
-                                  });
-                                return;
-                              }
-                              const r = await ui.windows.open<true | TransportadoraFormValues, React.ComponentProps<typeof TransportadorasUpsert>>({
-                                component: TransportadorasUpsert,
-                                props: {
-                                  editingItem: null,
-                                  controlado: true,
-                                  valoresIniciais: transportadoraDados ?? valoresDaParteXml(dados.transportadora!),
-                                  itensIniciais: transportadoraItens,
-                                  onItens: setTransportadoraItens,
-                                },
-                                title: "Editar Transportadora",
-                                size: "full",
-                              });
-                              if (r.status === "confirmed" && r.value !== true) {
-                                setTransportadoraDados(r.value);
-                                setCadastrarTransportadora(true);
-                              }
-                            }}
-                          />
-                        </div>
-                      )}
-                      {modoXml &&
-                        dados?.transportadora &&
-                        !previa?.transportadoraId && (
-                          <label className="mt-2 flex items-center gap-2 text-xs">
-                            <Checkbox
-                              checked={cadastrarTransportadora}
-                              onCheckedChange={(c) =>
-                                setCadastrarTransportadora(c === true)
-                              }
-                            />
-                            Cadastrar a transportadora do XML (
-                            {dados.transportadora.nome})
-                          </label>
-                        )}
-                    </div>
-                    <Field>
+            <div className="flex flex-col gap-4">
+                <section className="flex flex-col gap-3 rounded-lg border p-4">
+                  <h3 className="text-sm font-semibold">Despesas da nota</h3>
+                  <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+                    {despesaCampo("Frete (na nota)", frete, setFrete, modoXml)}
+                    {despesaCampo("Seguro", seguro, setSeguro, modoXml)}
+                    {despesaCampo("Outras despesas", outras, setOutras, modoXml)}
+                    {despesaCampo("Desconto geral", desconto, setDesconto, modoXml)}
+                    {despesaCampo("Frete de terceiro", freteTerceiro, setFreteTerceiro)}
+                  </div>
+                  {freteTerceiro > 0 && !readOnly && (
+                    <Field className="md:w-1/3">
                       <FieldLabel>Vencimento do frete de terceiro</FieldLabel>
                       <DatePicker
                         value={vencFrete}
                         onChange={(v) => setVencFrete(v || todayLocalISODate())}
                       />
                     </Field>
-                  </div>
-                )}
-
-              {!readOnly && (
-                <div className="flex flex-col gap-2 rounded-lg border p-3">
-                  <div className="flex flex-wrap items-end gap-3">
-                    <div className="w-72">
-                      <CondicaoPagamentoInput
-                        name="compra-condicao"
-                        initialItem={condicao}
-                        onSelectItem={(c) => {
-                          setCondicao(c);
-                          if (c && valorNota > 0)
-                            setParcelas(
-                              gerarParcelas(valorNota, dataCompra, c),
-                            );
-                        }}
-                        onSelectId={() => {}}
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={recalcularParcelas}
-                    >
-                      <RefreshCw /> Recalcular parcelas <Kbd>Alt+G</Kbd>
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={adicionarParcela}
-                    >
-                      <Plus /> Parcela <Kbd>Alt+A</Kbd>
-                    </Button>
-                  </div>
-                  {parcelas.length === 0 && (
-                    <p className="text-muted-foreground text-xs">
-                      Nenhuma parcela. Escolha uma condição ou use Recalcular
-                      parcelas.
-                    </p>
                   )}
-                  {parcelas.map((p, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <span className="w-16 text-xs font-semibold">
-                        Parcela {p.numeroParcela}
-                      </span>
-                      <div className="w-40">
-                        <DatePicker
-                          value={p.dataVencimento}
-                          onChange={(v) =>
-                            setParcelas((a) =>
-                              a.map((x, j) =>
-                                j === i
-                                  ? { ...x, dataVencimento: v || dataCompra }
-                                  : x,
-                              ),
-                            )
-                          }
+                </section>
+
+                {!readOnly && (
+                  <section className="flex flex-col gap-3 rounded-lg border p-4">
+                    <h3 className="text-sm font-semibold">Pagamento</h3>
+                    <div className="flex items-end gap-2">
+                      <div className="min-w-0 flex-1">
+                        <CondicaoPagamentoInput
+                          name="compra-condicao"
+                          initialItem={condicao}
+                          onSelectItem={(c) => {
+                            setCondicao(c);
+                            if (c && valorNota > 0)
+                              setParcelas(gerarParcelas(valorNota, dataCompra, c));
+                          }}
+                          onSelectId={() => {}}
                         />
-                      </div>
-                      <div className="w-36">
-                        <NumberInput
-                          value={p.valorParcela}
-                          decimals={2}
-                          inputSize="full"
-                          inputMode="decimal"
-                          className="h-8 text-right text-xs font-semibold"
-                          onNumberChange={(n) =>
-                            setParcelas((a) =>
-                              a.map((x, j) =>
-                                j === i
-                                  ? {
-                                      ...x,
-                                      valorParcela: Number.isNaN(n) ? 0 : n,
-                                    }
-                                  : x,
-                              ),
-                            )
-                          }
-                        />
-                        {!(p.valorParcela > 0) && (
-                          <FieldError>Informe um valor maior que zero.</FieldError>
-                        )}
                       </div>
                       <Button
                         type="button"
-                        size="icon-xs"
-                        variant="ghost"
-                        className="text-red-500"
-                        title="Remover parcela"
-                        onClick={() =>
-                          setParcelas((a) =>
-                            a
-                              .filter((_, j) => j !== i)
-                              .map((x, j) => ({ ...x, numeroParcela: j + 1 })),
-                          )
-                        }
+                        variant="outline"
+                        className="h-8"
+                        title="Refaz as parcelas a partir da condição e do valor da nota, descartando as atuais"
+                        onClick={recalcularParcelas}
                       >
-                        <Trash2 className="size-3.5" />
+                        <RefreshCw /> Gerar parcelas <Kbd>Alt+G</Kbd>
                       </Button>
                     </div>
-                  ))}
-                  {divergeDoXml && (
-                    <Alert>
-                      <TriangleAlert />
-                      <AlertDescription>
-                        As parcelas foram alteradas e divergem das duplicatas
-                        (cobr/dup) do XML da NF-e.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  {parcelasDivergem && (
-                    <Alert variant="destructive">
-                      <TriangleAlert />
-                      <AlertDescription>
-                        Soma das parcelas {moeda(somaParcelas)} x valor da nota{" "}
-                        {moeda(valorNota)}: diferença de{" "}
-                        {moeda(round2(valorNota - somaParcelas))}. Ajuste para
-                        fechar a compra.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </div>
-              )}
+                    <p className="text-muted-foreground text-xs">
+                      {dados && dados.parcelas.length > 0 && !divergeDoXml
+                        ? "Parcelas vindas das duplicatas (cobr/dup) do XML. Gerar parcelas refaz pela condição escolhida."
+                        : "Gerar parcelas divide o valor da nota conforme a condição escolhida e descarta as parcelas atuais."}
+                    </p>
 
-              <div className="rounded-lg border text-sm">
-                <div className="bg-muted grid grid-cols-4 px-3 py-2 font-semibold">
-                  <span className="col-span-2">Item</span>
-                  <span className="text-right">Rateio</span>
-                  <span className="text-right">Custo unit. final</span>
-                </div>
-                {itens.map((it, i) => (
-                  <div
-                    key={it.key}
-                    className="grid grid-cols-4 border-t px-3 py-2"
-                  >
-                    <span className="col-span-2 truncate">
-                      {it.sku} - {it.produtoNome}
-                    </span>
-                    <span className="text-right">
-                      {moeda(it.rateioFixo ?? rateios[i])}
-                    </span>
-                    <span className="text-right font-bold">
-                      {(
-                        it.custoFixo ??
-                        (it.quantidade > 0
-                          ? (valoresItens[i] + rateios[i]) / it.quantidade
-                          : 0)
-                      ).toLocaleString("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
-                        minimumFractionDigits: 4,
-                      })}
-                    </span>
-                  </div>
-                ))}
-              </div>
+                    <div className="rounded-lg border bg-card overflow-clip">
+                      <Table pageScroll aria-label="Parcelas">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-20">Parcela</TableHead>
+                            <TableHead>Vencimento</TableHead>
+                            <TableHead className="w-40 text-right">Valor</TableHead>
+                            <TableHead className="w-12" />
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {parcelas.length === 0 && (
+                            <TableRow>
+                              <TableCell colSpan={4} className="text-muted-foreground py-6 text-center">
+                                Nenhuma parcela. Escolha uma condição e use Gerar parcelas, ou adicione manualmente.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                          {parcelas.map((p, i) => (
+                            <TableRow key={i}>
+                              <TableCell className="font-semibold">{p.numeroParcela}</TableCell>
+                              <TableCell>
+                                <div
+                                  className="max-w-48"
+                                  {...navigationCell({ grid: "compra-parcelas", row: i, column: 0 })}
+                                >
+                                  <DatePicker
+                                    value={p.dataVencimento}
+                                    className="h-8"
+                                    onChange={(v) =>
+                                      setParcelas((a) =>
+                                        a.map((x, j) =>
+                                          j === i ? { ...x, dataVencimento: v || dataCompra } : x,
+                                        ),
+                                      )
+                                    }
+                                  />
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div {...navigationCell({ grid: "compra-parcelas", row: i, column: 1 })}>
+                                  <NumberInput
+                                    value={p.valorParcela}
+                                    decimals={2}
+                                    inputSize="full"
+                                    inputMode="decimal"
+                                    className={cn(
+                                      "text-right",
+                                      (!(p.valorParcela > 0) || parcelasDivergem) && "border-destructive",
+                                    )}
+                                    aria-invalid={!(p.valorParcela > 0) || parcelasDivergem || undefined}
+                                    title={
+                                      !(p.valorParcela > 0)
+                                        ? "O valor da parcela deve ser maior que zero."
+                                        : parcelasDivergem
+                                          ? "A soma das parcelas diverge do valor da nota. Ajuste ou use Redistribuir (Alt+C)."
+                                          : undefined
+                                    }
+                                    onNumberChange={(n) =>
+                                      setParcelas((a) =>
+                                        a.map((x, j) =>
+                                          j === i
+                                            ? { ...x, valorParcela: Number.isNaN(n) ? 0 : n }
+                                            : x,
+                                        ),
+                                      )
+                                    }
+                                  />
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="outline"
+                                  className="size-8 text-red-500"
+                                  title="Remover parcela"
+                                  {...navigationCell({ grid: "compra-parcelas", row: i, column: 2 })}
+                                  onClick={() =>
+                                    setParcelas((a) =>
+                                      a
+                                        .filter((_, j) => j !== i)
+                                        .map((x, j) => ({ ...x, numeroParcela: j + 1 })),
+                                    )
+                                  }
+                                >
+                                  <Trash2 className="size-3.5" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                      <div className="flex items-center justify-between gap-3 border-t px-3 py-2">
+                        <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={adicionarParcela}
+                        >
+                          <Plus /> Parcela <Kbd>Alt+A</Kbd>
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => void redistribuirParcelas()}
+                        >
+                          Redistribuir <Kbd>Alt+C</Kbd>
+                        </Button>
+                        </div>
+                        <span
+                          className={cn(
+                            "text-xs font-semibold",
+                            parcelasDivergem ? "text-destructive" : "text-muted-foreground",
+                          )}
+                        >
+                          {parcelasDivergem
+                            ? `Parcelas ${moeda(somaParcelas)} · nota ${moeda(valorNota)} · diferença ${moeda(round2(valorNota - somaParcelas))}`
+                            : `Parcelas ${moeda(somaParcelas)} = valor da nota`}
+                        </span>
+                      </div>
+                    </div>
 
-              <div
-                className={cn(
-                  "grid grid-cols-2 divide-x rounded-lg border md:grid-cols-4",
+                    {divergeDoXml && (
+                      <Alert>
+                        <TriangleAlert />
+                        <AlertDescription>
+                          As parcelas foram alteradas e divergem das duplicatas (cobr/dup) do XML da NF-e.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </section>
                 )}
-              >
-                {[
-                  ["Produtos", produtos],
-                  ["Despesas líquidas (rateadas)", despesas],
-                  ["Valor da nota (fornecedor)", valorNota],
-                  [
-                    "Custo total (c/ frete de terceiro)",
-                    round2(valorNota + freteTerceiro),
-                  ],
-                ].map(([rotulo, v]) => (
-                  <div
-                    key={rotulo as string}
-                    className="flex flex-col px-4 py-2 text-end"
-                  >
-                    <span className="text-muted-foreground text-xs font-semibold uppercase">
-                      {rotulo}
-                    </span>
-                    <span className="text-lg font-bold">
-                      {moeda(v as number)}
-                    </span>
+
+                <section className="flex flex-col gap-2 rounded-lg border p-4">
+                  <h3 className="text-sm font-semibold">Custo por item</h3>
+                  <div className="rounded-lg border bg-card overflow-clip">
+                    <Table pageScroll aria-label="Custo por item">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Item</TableHead>
+                          <TableHead className="w-40 text-right">Rateio</TableHead>
+                          <TableHead className="w-40 text-right">Custo unit. final</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {itens.map((it, i) => (
+                          <TableRow key={it.key}>
+                            <TableCell className="max-w-0 truncate">
+                              {it.sku} - {it.produtoNome}
+                            </TableCell>
+                            <TableCell>
+                              <div {...navigationCell({ grid: "compra-custos", row: i, column: 0 })}>
+                                {valorFixo(it.rateioFixo ?? rateios[i], 2, `Rateio de ${it.produtoNome}`)}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div {...navigationCell({ grid: "compra-custos", row: i, column: 1 })}>
+                                {valorFixo(
+                                  it.custoFixo ??
+                                    (it.quantidade > 0 ? (valoresItens[i] + rateios[i]) / it.quantidade : 0),
+                                  4,
+                                  `Custo unitário final de ${it.produtoNome}`,
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
-                ))}
-              </div>
-            </>
+                </section>
+
+                <section className="grid grid-cols-2 gap-3 rounded-lg border p-4 md:grid-cols-4">
+                  {[
+                    ["Produtos", produtos],
+                    ["Despesas líquidas (rateadas)", despesas],
+                    ["Valor da nota (fornecedor)", valorNota],
+                    ["Custo total (c/ frete de terceiro)", round2(valorNota + freteTerceiro)],
+                  ].map(([rotulo, v]) => (
+                    <Field key={rotulo as string}>
+                      <FieldLabel>{rotulo}</FieldLabel>
+                      {valorFixo(v as number, 2, rotulo as string, "text-sm")}
+                    </Field>
+                  ))}
+                </section>
+            </div>
           )}
         </div>
       </div>

@@ -78,7 +78,7 @@ function SkuSelectionWindow({
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col p-4">
+    <div className="flex h-full min-h-0 flex-col">
       <SkusFeature
         selectionMode
         onSelect={handleSelect}
@@ -234,7 +234,6 @@ export const SkuInput = ({
         props: { initialSearchTerm },
         title: "Selecionar Produto (SKU)",
         size: "full",
-        chrome: "plain",
       });
 
       return result.status === "confirmed" ? result.value : null;
