@@ -46,6 +46,13 @@ public class AtualizarTransportadoraCommandValidator : AbstractValidator<Atualiz
         RuleFor(x => x.Observacao)
             .MaximumLength(500).WithMessage("Observação deve ter no máximo 500 caracteres.");
 
+        RuleFor(x => x.Logradouro).NotEmpty().WithMessage("Logradouro é obrigatório.");
+        RuleFor(x => x.Numero).NotEmpty().WithMessage("Número é obrigatório.");
+        RuleFor(x => x.BairroId).NotNull().WithMessage("Bairro é obrigatório.");
+        RuleFor(x => x.Telefone).NotEmpty().WithMessage("Telefone é obrigatório.");
+        RuleFor(x => x.Email).NotEmpty().WithMessage("E-mail é obrigatório.");
+        RuleFor(x => x.DataNascimento).NotNull().WithMessage("Data de nascimento/fundação é obrigatória.");
+
         RuleFor(x => x.Sexo)
             .Must(s => string.IsNullOrEmpty(s) || s == "M" || s == "F" || s == "O")
             .WithMessage("Sexo inválido. Escolha entre M, F ou O.");

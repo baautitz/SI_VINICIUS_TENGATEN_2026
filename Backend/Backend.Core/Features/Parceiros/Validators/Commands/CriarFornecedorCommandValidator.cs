@@ -26,6 +26,13 @@ public class CriarFornecedorCommandValidator : AbstractValidator<CriarFornecedor
             .GreaterThan(0).When(x => x.CondicaoPagamentoId.HasValue)
             .WithMessage("Condição de pagamento inválida.");
 
+        RuleFor(x => x.Logradouro).NotEmpty().WithMessage("Logradouro é obrigatório.");
+        RuleFor(x => x.Numero).NotEmpty().WithMessage("Número é obrigatório.");
+        RuleFor(x => x.BairroId).NotNull().WithMessage("Bairro é obrigatório.");
+        RuleFor(x => x.Telefone).NotEmpty().WithMessage("Telefone é obrigatório.");
+        RuleFor(x => x.Email).NotEmpty().WithMessage("E-mail é obrigatório.");
+        RuleFor(x => x.DataNascimento).NotNull().WithMessage("Data de nascimento/fundação é obrigatória.");
+
         RuleFor(x => x.Sexo)
             .Must(s => string.IsNullOrEmpty(s) || s == "M" || s == "F" || s == "O")
             .WithMessage("Sexo inválido. Escolha entre M, F ou O.");

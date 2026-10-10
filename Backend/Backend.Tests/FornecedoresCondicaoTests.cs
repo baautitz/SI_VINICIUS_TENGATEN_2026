@@ -23,10 +23,10 @@ public class FornecedoresCondicaoTests
     {
         var service = new FornecedoresService(
             Criar<IFornecedoresRepository>(_ => { }),
-            Criar<IBairrosRepository>(_ => { }),
+            Criar<IBairrosRepository>(h => h["ObterBairroPorId"] = _ => (Bairros)Activator.CreateInstance(typeof(Bairros), nonPublic: true)!),
             Criar<IPaisesRepository>(h => h["ObterPaisPorId"] = _ => (Paises)Activator.CreateInstance(typeof(Paises), nonPublic: true)!),
             Criar<ICondicoesPagamentosRepository>(h => h["ObterCondicaoPagamentoPorId"] = _ => condicao));
-        var r = await service.CriarFornecedor(new CriarFornecedorCommand(TipoPessoa.JURIDICA, "Forn", "123", null, null, null, null, null, 1, null, null, null, true, null, null, 5));
+        var r = await service.CriarFornecedor(new CriarFornecedorCommand(TipoPessoa.JURIDICA, "Forn", "123", null, null, "Rua A", "1", 1, 1, "11999999999", "f@f.com", null, true, null, new DateTime(2000, 1, 1), 5));
         return r.Errors?.FirstOrDefault()?.Code;
     }
 

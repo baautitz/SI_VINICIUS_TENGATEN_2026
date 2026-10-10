@@ -120,7 +120,7 @@ function TransportadorasUpsertForm({
       apelidoNomefantasia: editingItem?.apelidoNomefantasia ?? "",
       logradouro: editingItem?.logradouro ?? "",
       numero: editingItem?.numero ?? "",
-      bairroId: editingItem?.bairro?.id ?? null,
+      bairroId: editingItem?.bairro?.id || null,
       nacionalidadeId: editingItem?.nacionalidade?.id ?? 0,
       telefone: editingItem?.telefone ?? "",
       email: editingItem?.email ?? "",
@@ -132,7 +132,9 @@ function TransportadorasUpsertForm({
       ativo: editingItem?.ativo ?? true,
       ...valoresIniciais,
     } as TransportadoraFormValues,
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value, formApi }) => {
+      // Barreira final: botão, Enter e Alt+Enter passam por aqui, então nada inválido é salvo.
+      if (!transportadoraSchema.safeParse(value).success) return void formApi.validateAllFields("submit");
       if (readOnly) return;
       resetErrors();
       const payload = {
@@ -154,9 +156,9 @@ function TransportadorasUpsertForm({
     },
   });
 
-  // Cadastro novo vindo do XML: mostra de cara os obrigatórios que faltam.
+  // Cadastro vindo do XML ou existente incompleto: mostra de cara os obrigatórios que faltam.
   React.useEffect(() => {
-    if (valoresIniciais) void form.validateAllFields("change");
+    if ((valoresIniciais || editingItem) && !readOnly) void form.validateAllFields("change");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -199,7 +201,7 @@ function TransportadorasUpsertForm({
           </Button>
           {!readOnly && (
 <form.Subscribe
-            selector={(state) => [state.canSubmit, state.isSubmitting]}
+            selector={(state) => [state.canSubmit && state.isFieldsValid, state.isSubmitting]}
           >
             {([canSubmit, isSubmitting]) => (
               <Button
@@ -241,7 +243,8 @@ function TransportadorasUpsertForm({
                   <FieldLabel>Código</FieldLabel>
                   <Input
                     value={editingItem.id}
-                    disabled
+                    readOnly
+                    aria-label="Código"
                     className="h-8 text-xs"
                     inputSize="small"
                   />
@@ -308,7 +311,7 @@ function TransportadorasUpsertForm({
                     label="Nome / Razão Social"
                     getFieldError={getFieldError}
                     inputSize="full"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -329,7 +332,7 @@ function TransportadorasUpsertForm({
                     label="Apelido / Nome Fantasia"
                     getFieldError={getFieldError}
                     inputSize="full"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -357,7 +360,7 @@ function TransportadorasUpsertForm({
                       label={label}
                       getFieldError={getFieldError}
                       inputSize="medium"
-                      disabled={readOnly}
+                      readOnly={readOnly}
                     />
                   );
                 }}
@@ -379,7 +382,7 @@ function TransportadorasUpsertForm({
                       }
                       getFieldError={getFieldError}
                       inputSize="medium"
-                      disabled={readOnly}
+                      readOnly={readOnly}
                     />
                   )}
                 </form.Field>
@@ -399,7 +402,7 @@ function TransportadorasUpsertForm({
                     label="Telefone"
                     getFieldError={getFieldError}
                     inputSize="medium"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -415,7 +418,7 @@ function TransportadorasUpsertForm({
                     label="E-mail"
                     getFieldError={getFieldError}
                     inputSize="full"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -431,7 +434,7 @@ function TransportadorasUpsertForm({
                     label="RNTRC"
                     getFieldError={getFieldError}
                     inputSize="medium"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -476,7 +479,7 @@ function TransportadorasUpsertForm({
                         onBlur={field.handleBlur}
                         value={field.state.value}
                         onChange={(val) => field.handleChange(val || "")}
-                        disabled={readOnly}
+                        readOnly={readOnly}
                         className={cn("h-8", error && "border-destructive")}
                       />
                       {error && <FieldError>{error}</FieldError>}
@@ -499,7 +502,7 @@ function TransportadorasUpsertForm({
                     label="Logradouro"
                     getFieldError={getFieldError}
                     inputSize="full"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -515,7 +518,7 @@ function TransportadorasUpsertForm({
                     label="Número"
                     getFieldError={getFieldError}
                     inputSize="full"
-                    disabled={readOnly}
+                    readOnly={readOnly}
                   />
                 )}
               </form.Field>
@@ -534,9 +537,9 @@ function TransportadorasUpsertForm({
                     <BairroInput
                       name={field.name}
                       error={error}
-                      initialItem={editingItem?.bairro ?? itensIniciais?.bairro}
+                      initialItem={(editingItem?.bairro?.id ? editingItem.bairro : null) ?? itensIniciais?.bairro}
                       onSelectItem={(item) => { itens.current.bairro = item; }}
-                      onSelectId={(id) => field.handleChange(id)}
+                      onSelectId={(id) => field.handleChange(id ?? 0)}
                       disabled={readOnly}
                     />
                   );
@@ -556,7 +559,7 @@ function TransportadorasUpsertForm({
               label="Observação"
               getFieldError={getFieldError}
               inputSize="full"
-              disabled={readOnly}
+              readOnly={readOnly}
             />
           )}
         </form.Field>
