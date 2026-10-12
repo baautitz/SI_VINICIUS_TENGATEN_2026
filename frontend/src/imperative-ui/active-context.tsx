@@ -2,6 +2,7 @@
 
 import { createContext, useContext } from "react"
 import { createPortal } from "react-dom"
+import { Button, Kbd } from "@/ui/primitives"
 import type { RefObject, ReactNode } from "react"
 import type { WindowCloseReason } from "./types"
 
@@ -61,4 +62,14 @@ export function WindowActions({ children }: { children: ReactNode }) {
     </div>
   )
   return slot ? createPortal(content, slot) : content
+}
+
+/** Saída padrão da janela: Esc. Somente leitura usa "Fechar". */
+export function WindowCancelButton({ readOnly = false }: { readOnly?: boolean }) {
+  const { dismiss } = useActiveWindow()
+  return (
+    <Button type="button" variant="outline" onClick={() => dismiss("cancel")}>
+      {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
+    </Button>
+  )
 }

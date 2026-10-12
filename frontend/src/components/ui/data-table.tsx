@@ -430,39 +430,39 @@ export function DataTable<TData, TValue>({
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
-              className="hidden h-9 w-9 rounded-lg p-0 lg:flex"
+              size="icon-lg" className="hidden lg:flex"
               onClick={() => onPageChange(1)}
               disabled={pageIndex <= 1 || loading}
             >
               <span className="sr-only">Ir para primeira página</span>
-              <ChevronsLeft className="h-4 w-4" />
+              <ChevronsLeft />
             </Button>
             <Button
               variant="outline"
-              className="h-9 w-9 rounded-lg p-0"
+              size="icon-lg"
               onClick={() => onPageChange(pageIndex - 1)}
               disabled={pageIndex <= 1 || loading}
             >
               <span className="sr-only">Página anterior</span>
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft />
             </Button>
             <Button
               variant="outline"
-              className="h-9 w-9 rounded-lg p-0"
+              size="icon-lg"
               onClick={() => onPageChange(pageIndex + 1)}
               disabled={pageIndex >= pageCount || loading}
             >
               <span className="sr-only">Próxima página</span>
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight />
             </Button>
             <Button
               variant="outline"
-              className="hidden h-9 w-9 rounded-lg p-0 lg:flex"
+              size="icon-lg" className="hidden lg:flex"
               onClick={() => onPageChange(pageCount)}
               disabled={pageIndex >= pageCount || loading}
             >
               <span className="sr-only">Ir para última página</span>
-              <ChevronsRight className="h-4 w-4" />
+              <ChevronsRight />
             </Button>
           </div>
         </div>

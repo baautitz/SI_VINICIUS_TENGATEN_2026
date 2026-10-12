@@ -10,7 +10,7 @@ import { SkusFeature } from "@/features/catalogo/skus";
 import { Sku } from "@/features/catalogo/skus/types";
 import { NumberInput } from "@/ui/composites";
 import { Kbd, KbdGroup } from "@/ui/primitives";
-import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
+import { useWindow, useWindowCommands, useUi, WindowActions } from "@/ui/imperative";
 
 interface SkuInputProps {
   name: string;
@@ -154,7 +154,7 @@ function QuantityWindow({ sku, initialQuantity }: QuantityWindowProps) {
           onKeyDown={handleQuantityKeyDown}
         />
       </div>
-      <div data-window-actions className="flex justify-end gap-2">
+      <WindowActions>
         <Button variant="outline" type="button" onClick={cancel}>
           Cancelar <Kbd>Esc</Kbd>
         </Button>
@@ -165,7 +165,7 @@ function QuantityWindow({ sku, initialQuantity }: QuantityWindowProps) {
             <Kbd>Enter</Kbd>
           </KbdGroup>
         </Button>
-      </div>
+      </WindowActions>
     </div>
   );
 }
@@ -502,11 +502,12 @@ export const SkuInput = ({
           type="button"
           disabled={disabled}
           tabIndex={-1}
-          className="text-muted-foreground hover:text-foreground absolute top-1 right-1 h-6 w-6"
+          className="text-muted-foreground hover:text-foreground absolute top-1 right-1 size-6"
+          aria-label="Buscar SKU"
           onMouseDown={(event) => event.preventDefault()}
           onClick={handleSearchClick}
         >
-          <Search className="size-4" />
+          <Search />
         </Button>
       </div>
       {error && <FieldError>{error}</FieldError>}

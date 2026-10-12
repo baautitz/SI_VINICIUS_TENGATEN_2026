@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { WindowActions } from "@/imperative-ui";
+import { WindowActions } from "@/ui/imperative";
 import { Button, Kbd, Field, FieldLabel, Textarea } from "@/ui/primitives";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
 

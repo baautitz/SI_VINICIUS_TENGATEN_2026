@@ -14,6 +14,17 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     ".agents/**"
   ]),
+  {
+    files: ["src/features/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": ["error", {
+        patterns: [
+          { group: ["@/imperative-ui", "@/imperative-ui/*"], message: "Use @/ui/imperative." },
+          { group: ["@/components/ui/*"], message: "Use @/ui/primitives ou @/ui/composites." },
+        ],
+      }],
+    },
+  },
 ]);
 
 export default eslintConfig;

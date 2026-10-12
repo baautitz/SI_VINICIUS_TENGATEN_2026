@@ -10,6 +10,8 @@ interface ActionColumnOptions<T> {
   onDelete?: (item: T) => void;
   selectionMode?: boolean;
   onSelect?: (item: T) => void;
+  /** Ações adicionais renderizadas antes de Editar/Excluir. */
+  extra?: (item: T) => React.ReactNode;
 }
 
 export function getActionsColumn<T>({
@@ -18,6 +20,7 @@ export function getActionsColumn<T>({
   onDelete,
   selectionMode = false,
   onSelect,
+  extra,
 }: ActionColumnOptions<T>): ColumnDef<T> {
   return {
     id: "actions",
@@ -26,6 +29,7 @@ export function getActionsColumn<T>({
       const item = row.original;
       return (
         <div className="flex justify-end gap-2 px-4">
+          {extra?.(item)}
           {onEdit && (
             <Button
               size="icon-sm"
@@ -51,6 +55,7 @@ export function getActionsColumn<T>({
             <Button
               size="icon-sm"
               variant="destructive"
+              aria-label="Excluir"
               onClick={() => fireAndForget(() => onDelete(item))}
             >
               <Trash2 className="size-4" />

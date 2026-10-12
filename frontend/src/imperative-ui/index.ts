@@ -2,6 +2,7 @@ export {
   ActiveWindowContext,
   ActiveWindowProvider,
   WindowActions,
+  WindowCancelButton,
   WindowFooterContext,
   useActiveWindow,
   useWindow,
