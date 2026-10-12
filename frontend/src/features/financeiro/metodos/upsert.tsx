@@ -1,7 +1,7 @@
 "use client";
 
 import { Kbd, KbdGroup } from "@/ui/primitives";
-import { WindowActions } from "@/imperative-ui";
+import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import React from "react";
 import { Button } from "@/ui/primitives";
 import { Field, FieldGroup, FieldLabel } from "@/ui/primitives";
@@ -100,7 +100,7 @@ function MetodosUpsertForm({
       {
         id: "metodosPagamento.save",
         hotkey: "Alt+Enter" as const,
-        label: "Salvar método de pagamento",
+        label: "Salvar",
         enabled: !readOnly && !mutation.isPending,
         run: async (event: KeyboardEvent) => {
           event.preventDefault();
@@ -113,10 +113,6 @@ function MetodosUpsertForm({
 
   useWindowCommands(commands);
 
-  const cancelForm = async () => {
-    activeWindow.dismiss("cancel");
-  };
-
   const submitFormEvent = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     event.stopPropagation();
@@ -126,13 +122,7 @@ function MetodosUpsertForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={cancelForm}
-        >
-          {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
-        </Button>
+        <WindowCancelButton readOnly={readOnly} />
         {!readOnly && (
           <form.Subscribe
             selector={(state) => [state.canSubmit, state.isSubmitting]}

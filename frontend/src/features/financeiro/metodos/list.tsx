@@ -5,9 +5,8 @@ import { getActionsColumn } from "@/utils/table-columns";
 import { FeatureHeader } from "@/ui/composites";
 import { Landmark } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
-import { DataTable } from "@/ui/composites";
+import { StatusBadge, DataTable } from "@/ui/composites";
 import { FeatureLayout } from "@/ui/composites";
-import { Badge } from "@/ui/primitives";
 import { MetodoPagamento } from "./types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 
@@ -51,14 +50,7 @@ export function MetodosList({
       accessorKey: "ativo",
       header: "Status",
       size: 100,
-      cell: ({ row }) => {
-        const ativo = row.getValue("ativo") as boolean;
-        return (
-          <Badge variant={ativo ? "outline" : "secondary"}>
-            {ativo ? "Ativo" : "Inativo"}
-          </Badge>
-        );
-      },
+      cell: ({ row }) => <StatusBadge ativo={row.getValue("ativo") as boolean} />,
     },
     getActionsColumn<MetodoPagamento>({ onEdit, onView, onDelete, selectionMode, onSelect }),
   ];

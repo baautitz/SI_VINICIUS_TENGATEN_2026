@@ -4,7 +4,7 @@ import { RelatedActions } from "@/components/related-actions";
 import { FileText } from "lucide-react";
 
 import React, { useState, useCallback } from "react";
-import { WindowActions } from "@/imperative-ui";
+import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import { useForm } from "@tanstack/react-form";
 import { useSelector } from "@tanstack/react-store";
 import { Button } from "@/ui/primitives";
@@ -47,7 +47,7 @@ import {
   ContasReceberParcela,
   ContasReceberFormValues,
 } from "./types";
-import { Plus, Trash2, Coins, RotateCcw } from "lucide-react";
+import { Plus, Trash2, Check, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUi, useWindow, useWindowCommands } from "@/ui/imperative";
 import { navigationCell } from "@/ui/keyboard-navigation";
@@ -126,13 +126,7 @@ export function ContasReceberUpsertForm({
     <div className="flex flex-col gap-4">
       <WindowActions>
         {readOnly && <RelatedActions actions={origemActions} />}
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => activeWindow.dismiss("cancel")}
-        >
-          {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
-        </Button>
+        <WindowCancelButton readOnly={readOnly} />
         {!readOnly && (
           <Button
             type="submit"
@@ -418,7 +412,7 @@ function ContasReceberFormBody({
     {
       id: "contas-receber.save",
       hotkey: "Alt+Enter",
-      label: "Salvar conta a receber",
+      label: "Salvar",
       enabled: !readOnly && !mutation.isPending,
       run: async (event) => {
         event.preventDefault();
@@ -664,7 +658,7 @@ function ContasReceberFormBody({
                 variant="outline"
                 onClick={handleAddParcela}
               >
-                <Plus className="mr-1 h-4 w-4" /> Adicionar Parcela{" "}
+                <Plus /> Adicionar Parcela{" "}
                 <KbdGroup>
                   <Kbd>Alt</Kbd>
                   <Kbd>P</Kbd>
@@ -882,15 +876,15 @@ function ContasReceberFormBody({
                                               column: 4,
                                             })}
                                             type="button"
-                                            size="icon"
-                                            variant="outline"
-                                            className="h-8 w-8 text-green-600 hover:bg-green-50 hover:text-green-700 dark:text-green-400 dark:hover:bg-green-950"
+                                            size="icon-sm"
+ variant="ghost"
                                             onClick={() =>
                                               onBaixa(editingItem!.id, p)
                                             }
-                                            title="Receber Parcela"
+                                            title="Receber parcela"
+ aria-label="Receber parcela"
                                           >
-                                            <Coins className="h-4 w-4" />
+                                            <Check />
                                           </Button>
                                         )}
                                       {(p.status === "PAGO" ||
@@ -903,15 +897,15 @@ function ContasReceberFormBody({
                                               column: 5,
                                             })}
                                             type="button"
-                                            size="icon"
-                                            variant="outline"
-                                            className="text-destructive hover:bg-destructive/10 size-8"
+                                            size="icon-sm"
+ variant="destructive"
                                             onClick={() =>
                                               onEstorno(editingItem!.id, p)
                                             }
                                             title="Estornar Recebimento"
+ aria-label="Estornar Recebimento"
                                           >
-                                            <RotateCcw className="h-4 w-4" />
+                                            <RotateCcw />
                                           </Button>
                                         )}
                                     </div>
@@ -926,16 +920,16 @@ function ContasReceberFormBody({
                                         column: 6,
                                       })}
                                       type="button"
-                                      size="icon"
-                                      variant="outline"
-                                      className="text-destructive hover:bg-destructive/10 size-8"
+                                      size="icon-sm"
+ variant="ghost"
+ aria-label="Remover"
                                       onClick={() => handleRemoveParcela(index)}
                                       disabled={
                                         p.status === "PAGO" ||
                                         p.status === "PARCIAL"
                                       }
                                     >
-                                      <Trash2 className="h-4 w-4" />
+                                      <Trash2 />
                                     </Button>
                                   </TableCell>
                                 )}

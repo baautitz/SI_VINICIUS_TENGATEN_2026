@@ -1,7 +1,7 @@
 "use client";
 
 import { Kbd, KbdGroup } from "@/ui/primitives";
-import { WindowActions } from "@/imperative-ui";
+import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import React, { useCallback, useState } from "react";
 import { Button } from "@/ui/primitives";
 import { Field, FieldLabel, FieldError } from "@/ui/primitives";
@@ -238,7 +238,7 @@ function CondicoesUpsertForm({
       {
         id: "condicoesPagamento.save",
         hotkey: "Alt+Enter" as const,
-        label: "Salvar condição de pagamento",
+        label: "Salvar",
         enabled: !readOnly && !mutation.isPending,
         run: async (event: KeyboardEvent) => {
           event.preventDefault();
@@ -287,13 +287,7 @@ function CondicoesUpsertForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => activeWindow.dismiss("cancel")}
-        >
-          {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
-        </Button>
+        <WindowCancelButton readOnly={readOnly} />
         {!readOnly && (
           <form.Subscribe
             selector={(state) => [state.canSubmit, state.isSubmitting]}
@@ -601,7 +595,7 @@ function CondicoesUpsertForm({
                         variant="outline"
                         onClick={handleAddParcela}
                       >
-                        <Plus className="mr-1 h-4 w-4" /> Adicionar Parcela{" "}
+                        <Plus /> Adicionar Parcela{" "}
                         <KbdGroup>
                           <Kbd>Alt</Kbd>
                           <Kbd>P</Kbd>
@@ -767,14 +761,14 @@ function CondicoesUpsertForm({
                                             column: 2,
                                           })}
                                           type="button"
-                                          size="icon"
-                                          variant="outline"
-                                          className="text-destructive hover:bg-destructive/10 size-8"
+                                          size="icon-sm"
+ variant="ghost"
+ aria-label="Remover"
                                           onClick={() =>
                                             handleRemoveParcela(index)
                                           }
                                         >
-                                          <Trash2 className="h-4 w-4" />
+                                          <Trash2 />
                                         </Button>
                                       </TableCell>
                                     )}

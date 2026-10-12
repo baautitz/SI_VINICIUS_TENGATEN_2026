@@ -2,16 +2,16 @@
 
 import { origemTituloLabels } from "../origem";
 import React from "react";
-import { ColumnDef } from "@tanstack/react-table";
+import { ColumnDef, flexRender } from "@tanstack/react-table";
 import { Button } from "@/ui/primitives";
 import { DataTable } from "@/ui/composites";
 import { FeatureLayout } from "@/ui/composites";
 import { FeatureHeader } from "@/ui/composites";
-import { Badge } from "@/ui/primitives";
+import { getActionsColumn } from "@/utils/table-columns";
+import { StatusTituloBadge } from "../components/status-titulo-badge";
 import { formatDateToLocal } from "@/utils/date-utils";
-import { Landmark, Pencil, Trash2, Eye, Coins } from "lucide-react";
+import { Landmark, Check } from "lucide-react";
 import { ContasReceber, ContasReceberParcela } from "./types";
-import { statusTituloLabels, StatusTituloFinanceiro } from "../contas-pagar/types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 import { fireAndForget } from "@/lib/utils";
 
@@ -34,6 +34,27 @@ export function ContasReceberList({
   onPageChange,
   onBaixa,
 }: ContasReceberListProps) {
+  const extra = (item: ContasReceber) => {
+    const firstUnpaid = item.contasReceberParcelas
+      ?.filter((p) => p.status === "ABERTO" || p.status === "PARCIAL")
+      ?.sort((a, b) => a.numeroParcela - b.numeroParcela)[0];
+    return (
+      firstUnpaid && (
+        <Button
+          size="icon-sm"
+          variant="ghost"
+          aria-label="Receber parcela"
+          title="Receber parcela"
+          onClick={() => fireAndForget(() => onBaixa(item.id, firstUnpaid))}
+        >
+          <Check />
+        </Button>
+      )
+    );
+  };
+  const editColumn = getActionsColumn({ onEdit, onDelete, extra });
+  const viewColumn = getActionsColumn({ onView, extra });
+
   const columns: ColumnDef<ContasReceber>[] = [
     {
       accessorKey: "id",
@@ -145,85 +166,15 @@ export function ContasReceberList({
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => {
-        const status = row.getValue("status") as string;
-        let variant: "default" | "secondary" | "destructive" | "outline" = "secondary";
-        let className = "";
-
-        if (status === "PAGO") {
-          className = "bg-emerald-500 hover:bg-emerald-600 text-white border-none";
-          variant = "default";
-        } else if (status === "PARCIAL") {
-          className = "bg-blue-500 hover:bg-blue-600 text-white border-none";
-          variant = "default";
-        } else if (status === "ABERTO") {
-          className = "bg-amber-500 hover:bg-amber-600 text-white border-none";
-          variant = "default";
-        } else if (status === "CANCELADO") {
-          variant = "destructive";
-        }
-
-        return (
-          <Badge variant={variant} className={className}>
-            {statusTituloLabels[status as StatusTituloFinanceiro] || status}
-          </Badge>
-        );
-      },
+      cell: ({ row }) => <StatusTituloBadge status={row.getValue("status") as string} />,
     },
     {
       id: "actions",
       header: () => <div className="text-right px-4">Ações</div>,
-      cell: ({ row }) => {
-        const item = row.original;
+      cell: (ctx) => {
+        const item = ctx.row.original;
         const canEdit = item.status === "ABERTO" || item.status === "PARCIAL";
-        const firstUnpaid = item.contasReceberParcelas
-          ?.filter((p) => p.status === "ABERTO" || p.status === "PARCIAL")
-          ?.sort((a, b) => a.numeroParcela - b.numeroParcela)[0];
-
-        return (
-          <div className="flex justify-end gap-2 px-4">
-            {firstUnpaid && (
-              <Button
-                size="icon-sm"
-                variant="outline"
-                className="text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950 dark:text-green-400"
-                title="Receber Parcela"
-                onClick={() => fireAndForget(() => onBaixa(item.id, firstUnpaid))}
-              >
-                <Coins className="h-4 w-4" />
-              </Button>
-            )}
-            {canEdit ? (
-              <>
-                <Button
-                  size="icon-sm"
-                  variant="outline"
-                  title="Editar Conta"
-                  onClick={() => fireAndForget(() => onEdit(item))}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="icon-sm"
-                  variant="destructive"
-                  title="Excluir Conta"
-                  onClick={() => fireAndForget(() => onDelete(item))}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </>
-            ) : (
-              <Button
-                size="icon-sm"
-                variant="outline"
-                title="Visualizar Conta"
-                onClick={() => fireAndForget(() => onView(item))}
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        );
+        return flexRender((canEdit ? editColumn : viewColumn).cell, ctx);
       },
     },
   ];

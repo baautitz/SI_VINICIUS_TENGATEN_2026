@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { WindowActions } from "@/imperative-ui";
+import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import { useForm } from "@tanstack/react-form";
 import { useSelector } from "@tanstack/react-store";
 import { Button } from "@/ui/primitives";
@@ -44,7 +44,7 @@ import {
   ContasPagarParcela,
   ContasPagarFormValues,
 } from "./types";
-import { FileText, Plus, Trash2, Coins, RotateCcw } from "lucide-react";
+import { FileText, Plus, Trash2, Check, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUi, useWindow, useWindowCommands } from "@/ui/imperative";
 import { navigationCell } from "@/ui/keyboard-navigation";
@@ -125,13 +125,7 @@ export function ContasPagarUpsertForm({
     <div className="flex flex-col gap-4">
       <WindowActions>
         {readOnly && <RelatedActions actions={origemActions} />}
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => activeWindow.dismiss("cancel")}
-        >
-          {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
-        </Button>
+        <WindowCancelButton readOnly={readOnly} />
         {!readOnly && (
           <Button
             type="submit"
@@ -409,7 +403,7 @@ function ContasPagarFormBody({
       {
         id: "contas-pagar.save",
         hotkey: "Alt+Enter" as const,
-        label: "Salvar conta a pagar",
+        label: "Salvar",
         enabled: !readOnly && !mutation.isPending,
         run: async (event: KeyboardEvent) => {
           event.preventDefault();
@@ -688,7 +682,7 @@ function ContasPagarFormBody({
                 variant="outline"
                 onClick={handleAddParcela}
               >
-                <Plus className="mr-1 h-4 w-4" /> Adicionar Parcela{" "}
+                <Plus /> Adicionar Parcela{" "}
                 <KbdGroup>
                   <Kbd>Alt</Kbd>
                   <Kbd>P</Kbd>
@@ -906,15 +900,15 @@ function ContasPagarFormBody({
                                               column: 4,
                                             })}
                                             type="button"
-                                            size="icon"
-                                            variant="outline"
-                                            className="h-8 w-8 text-green-600 hover:bg-green-50 hover:text-green-700 dark:text-green-400 dark:hover:bg-green-950"
+                                            size="icon-sm"
+ variant="ghost"
                                             onClick={() =>
                                               onBaixa(editingItem!.id, p)
                                             }
-                                            title="Pagar Parcela"
+                                            title="Pagar parcela"
+ aria-label="Pagar parcela"
                                           >
-                                            <Coins className="h-4 w-4" />
+                                            <Check />
                                           </Button>
                                         )}
                                       {(p.status === "PAGO" ||
@@ -927,15 +921,15 @@ function ContasPagarFormBody({
                                               column: 5,
                                             })}
                                             type="button"
-                                            size="icon"
-                                            variant="outline"
-                                            className="text-destructive hover:bg-destructive/10 size-8"
+                                            size="icon-sm"
+ variant="destructive"
                                             onClick={() =>
                                               onEstorno(editingItem!.id, p)
                                             }
                                             title="Estornar Pagamento"
+ aria-label="Estornar Pagamento"
                                           >
-                                            <RotateCcw className="h-4 w-4" />
+                                            <RotateCcw />
                                           </Button>
                                         )}
                                     </div>
@@ -950,16 +944,16 @@ function ContasPagarFormBody({
                                         column: 6,
                                       })}
                                       type="button"
-                                      size="icon"
-                                      variant="outline"
-                                      className="text-destructive hover:bg-destructive/10 size-8"
+                                      size="icon-sm"
+ variant="ghost"
+ aria-label="Remover"
                                       onClick={() => handleRemoveParcela(index)}
                                       disabled={
                                         p.status === "PAGO" ||
                                         p.status === "PARCIAL"
                                       }
                                     >
-                                      <Trash2 className="h-4 w-4" />
+                                      <Trash2 />
                                     </Button>
                                   </TableCell>
                                 )}

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { WindowActions } from "@/imperative-ui";
+import { WindowActions } from "@/ui/imperative";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/ui/primitives";
 import { Kbd, KbdGroup } from "@/ui/primitives";
@@ -114,7 +114,7 @@ export function BaixaParcelaWindow({
       {
         id: "financeiro.baixa-parcela.confirm",
         hotkey: "Alt+Enter" as const,
-        label: "Confirmar baixa da parcela",
+        label: "Baixar parcela",
         enabled: !mutation.isPending,
         run: async (event: KeyboardEvent) => {
           event.preventDefault();
@@ -206,7 +206,7 @@ export function BaixaParcelaWindow({
             "Processando..."
           ) : (
             <span className="flex items-center gap-2">
-              Confirmar
+              Baixar parcela
               <KbdGroup>
                 <Kbd>Alt</Kbd>
                 <Kbd>Enter</Kbd>
