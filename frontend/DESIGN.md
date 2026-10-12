@@ -172,6 +172,71 @@ Os componentes são compactos, uniformes e desenhados para responder de forma im
 - **Sidebar**: Fundo quase branco (`bg-sidebar`), texto escuro, itens ativos destacados em azul suave (`bg-sidebar-accent`).
 - **Behavior:** Navegação de fluxo que possa precisar encerrar superfícies usa `ui.navigation`; links sem ciclo de vida adicional podem usar `next/link`. A escolha deve preservar foco, descarte e estado de janela previstos pelo fluxo.
 
+### Action grammar (ações, ícones, badges, atalhos)
+
+Regras para que a mesma ação tenha sempre o mesmo rótulo, ícone, variant e atalho em todas as telas.
+
+#### 1. Vocabulário (verbo = significado, sempre)
+| Verbo | Significa | Reversível? | Não usar para |
+|---|---|---|---|
+| Salvar | persiste cadastro/rascunho | sim | movimentar estoque/financeiro |
+| Lançar | gera efeito em estoque/financeiro (movimentação, título) | só por estorno | cadastro |
+| Confirmar | confirmação genérica (ConfirmWindow) ou etapa final de wizard | n/a | ação que já tem nome ("Estornar", não "Confirmar estorno") |
+| Excluir | apaga registro gravado | não | linha ainda em edição |
+| Remover | tira item de coleção não gravada (linha de grid/itens) | sim, até salvar | registro persistido |
+| Estornar | reverte lançamento efetivado com contra-lançamento; mantém histórico | não | cadastros |
+| Cancelar (sozinho) | sai da janela sem fazer nada | n/a | mudar status de documento |
+| Cancelar <Objeto> | encerra documento sem apagar (NF-e, balanço, venda); sempre com substantivo | não | sair de janela |
+| Fechar | sai de janela só-leitura | n/a | janela editável; mudar status ("Finalizar balanço") |
+| Voltar | navegar entre etapas de wizard | sim | sair de diálogo |
+
+#### 2. Ações: ícone / variant / size / atalho
+| Ação | Ícone (lucide) | Variant | Size | Atalho | Observação |
+|---|---|---|---|---|---|
+| Novo registro (header) | Plus | default | default | Alt+N | |
+| Adicionar linha/parcela | Plus | outline | default/sm | contextual | `<Plus />` sem classe |
+| Salvar / Lançar / Confirmar | Check (opcional) | default | default | Alt+Enter | 1 primário por janela |
+| Editar | Pencil | ghost | icon-sm | Alt+E | nunca junto de Eye |
+| Visualizar | Eye | ghost | icon-sm | | só quando não há Editar |
+| Excluir | Trash2 | destructive | icon-sm | Delete | confirmação obrigatória |
+| Remover item de formulário | Trash2 ou X | ghost | icon-sm | | rótulo "Remover" |
+| Estornar / Devolver | Undo2 | outline (abre janela) / destructive (confirma) | icon-sm | Alt+Z na janela; Delete na listagem | Delete na listagem = ação destrutiva da linha (excluir ou estornar), sempre com janela/confirmação (decidido) |
+| Cancelar documento | Ban | destructive | default/icon-sm | sem tecla única | com motivo |
+| Reabrir baixa de parcela | RotateCcw | ghost | icon-sm | | |
+| Baixar/Pagar título | Check | ghost | icon-sm | | sem verde cru |
+| Buscar | Search | outline | default | Alt+Q | |
+| Saída da janela | sem ícone | outline | default | Esc | Cancelar/Fechar |
+| Navegação textual | sem ícone | link | default | | |
+
+Regras: ícone-only sempre com `aria-label`; Kbd só em Cancelar/Fechar (Esc), primário (Alt+Enter) e ações principais da janela, nunca em botão de linha; sem `h-/w-` manual nem cores cruas (`text-red-*`, `bg-emerald-*`).
+
+#### 3. Badges (não existe Chip; Badge cobre)
+| Estado | Variant |
+|---|---|
+| Ativo, Pago, Emitida | success |
+| Aberto, Pendente | warning |
+| Parcial | info |
+| Cancelado, Estornado | destructive |
+| Inativo, Rascunho | secondary |
+| Categoria (ex.: Física/Jurídica) | outline (sem cor) |
+Texto capitalizado ("Estornada"), um mapa status → variant, sem `hover` (Badge não é clicável). Exceção legítima: `ComboboxChip` em multi-seleção.
+
+#### 4. Rodapé de janela
+Esquerda (`mr-auto`): ações relacionadas/navegação. Direita: saída (Cancelar/Fechar, Esc) e depois o primário (Alt+Enter). Destrutivo nunca misturado ao grupo neutro. Sempre `WindowActions`; sem rodapé próprio por feature.
+
+#### 5. Atalhos
+- Globais reservados: N (novo), Q (busca), S/B/H (sidebar). Janelas não os reutilizam.
+- Alt+Enter sempre submete a janela; Alt+→/← navega etapas.
+- Destrutivo sem atalho de tecla única em janela; na listagem, Delete dispara a ação destrutiva da linha (Excluir ou Estornar) e sempre abre confirmação (decidido).
+- Sidebar mantém Alt+S ("Buscar no menu") e Alt+B ("Recolher menu") (decidido). Quem cede: "Salvar rascunho" em balanços → Alt+R; "Ver estorno" em movimentações → Alt+V; "Baixar XML" na NF-e → Alt+D.
+- Tabela de atalhos por escopo mantida no DESIGN.md; conflitos: Alt+S resolvido (sidebar mantém); falta decidir Alt+K (Cancelar NF-e) e estorno (Alt+S/Z/D → Alt+Z).
+
+#### 6. O que NÃO usar
+Chip genérico; Trash2 para cancelar/estornar; Pencil para visualizar; "Voltar" como saída de diálogo; "Fechar" para mudar status; `secondary` no lugar de `outline`; `title=` sem `aria-label`; `border-none hover:*` em Badge; cores fora dos tokens.
+
+#### 7. Usos duplos legítimos
+Plus (linha inline e novo registro); Eye (ver e "consultar" em modal só-leitura); Undo2 (estorno e devolução parcial); "Cancelar" (sair) e "Cancelar NF-e" (status) desde que o segundo leve o substantivo; "Baixar/Estornar" alternando por estado.
+
 ## 6. Do's and Don'ts
 
 ### Do:
