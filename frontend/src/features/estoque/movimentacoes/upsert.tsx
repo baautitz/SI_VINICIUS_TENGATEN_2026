@@ -22,6 +22,7 @@ export interface ItemLinha {
 export interface MovimentacoesUpsertProps {
   editingItem: MovimentacaoEstoque | null;
   readOnly?: boolean;
+  onEstornar?: (item: MovimentacaoEstoque) => Promise<boolean>;
 }
 
 export function MovimentacoesUpsert(props: MovimentacoesUpsertProps) {

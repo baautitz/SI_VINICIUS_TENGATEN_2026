@@ -3,7 +3,7 @@
 import * as React from "react";
 
 import { FeatureHeader } from "@/ui/composites";
-import { ClipboardList, Eye, Ban } from "lucide-react";
+import { ClipboardList, Undo2 } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/ui/primitives";
 import { DataTable } from "@/ui/composites";
@@ -18,6 +18,7 @@ import {
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 import { formatToLocal } from "@/utils/date-utils";
 import { fireAndForget } from "@/lib/utils";
+import { getActionsColumn } from "@/utils/table-columns";
 
 interface MovimentacoesListProps extends Omit<FeatureListProps<MovimentacaoEstoque>, "onEdit" | "onDelete"> {
   onEstornar: (item: MovimentacaoEstoque) => void;
@@ -112,36 +113,20 @@ export function MovimentacoesList({
         );
       },
     },
-    {
-      id: "actions",
-      header: () => <div className="px-4 text-right">Ações</div>,
-      cell: ({ row }) => {
-        const item = row.original;
-        return (
-          <div className="flex justify-end gap-2 px-4">
-            <Button
-              size="icon-sm"
-              variant="outline"
-              title="Visualizar Detalhes"
-              onClick={() => fireAndForget(() => onView(item))}
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-            {podeEstornar(item) && (
-              <Button
-                size="icon-sm"
-                variant="outline"
-                className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                title="Estornar"
-                onClick={() => fireAndForget(() => onEstornar(item))}
-              >
-                <Ban className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        );
-      },
-    },
+    getActionsColumn<MovimentacaoEstoque>({
+      onView,
+      extra: (item) =>
+        podeEstornar(item) && (
+          <Button
+            size="icon-sm"
+            variant="outline"
+            aria-label="Estornar"
+            onClick={() => fireAndForget(() => onEstornar(item))}
+          >
+            <Undo2 className="size-4" />
+          </Button>
+        ),
+    }),
   ];
 
   return (

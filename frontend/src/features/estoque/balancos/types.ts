@@ -22,6 +22,6 @@ export interface Balanco {
 
 export const statusBalancoLabels: Record<StatusBalanco, string> = {
   ABERTO: "Aberto",
-  FECHADO: "Fechado",
+  FECHADO: "Finalizado",
   CANCELADO: "Cancelado",
 };

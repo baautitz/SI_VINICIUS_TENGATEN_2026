@@ -4,11 +4,11 @@ import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Trash2 } from "lucide-react";
 import { balancosApi } from "@/api/estoque";
-import { WindowActions } from "@/imperative-ui";
+import { WindowActions } from "@/ui/imperative";
 import { SkuInput } from "@/components/entity-inputs/sku-input";
 import { SkuViewInput } from "@/components/entity-inputs/sku-view-input";
 import { Sku, getFullSkuName } from "@/features/catalogo/skus/types";
-import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
+import { useWindow, useWindowCommands, useUi, WindowCancelButton } from "@/ui/imperative";
 import {
   Button,
   Field,
@@ -229,10 +229,10 @@ function BalancoForm({
   const fecharBalanco = () =>
     run(async () => {
       const ok = await ui.windows.confirm({
-        title: "Fechar balanço?",
+        title: "Finalizar balanço?",
         description:
           "As diferenças entre a contagem e o saldo atual serão lançadas como movimentações de estoque (origem Balanço). Esta ação não pode ser desfeita, só estornada.",
-        confirmLabel: "Fechar balanço",
+        confirmLabel: "Finalizar balanço",
       });
       if (!ok) return;
       const id = await salvar();
@@ -240,7 +240,7 @@ function BalancoForm({
       const res = await balancosApi.fechar(id);
       if (res.success === false) {
         ui.feedback.notifyError(res, {
-          fallbackTitle: "Não foi possível fechar o balanço.",
+          fallbackTitle: "Não foi possível finalizar o balanço.",
         });
         return;
       }
@@ -262,7 +262,7 @@ function BalancoForm({
         },
         {
           id: "balancos.save-draft",
-          hotkey: "Alt+S" as const,
+          hotkey: "Alt+R" as const,
           label: "Salvar rascunho",
           enabled: !readOnly && !busy,
           run: async (event: KeyboardEvent) => {
@@ -273,7 +273,7 @@ function BalancoForm({
         {
           id: "balancos.close",
           hotkey: "Alt+Enter" as const,
-          label: "Fechar balanço",
+          label: "Finalizar balanço",
           enabled: !readOnly && !busy,
           run: async (event: KeyboardEvent) => {
             event.preventDefault();
@@ -289,13 +289,7 @@ function BalancoForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => activeWindow.dismiss("cancel")}
-        >
-          {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
-        </Button>
+        <WindowCancelButton readOnly={readOnly} />
         {!readOnly && (
           <>
             <Button
@@ -307,11 +301,11 @@ function BalancoForm({
               Salvar Rascunho{" "}
               <KbdGroup>
                 <Kbd>Alt</Kbd>
-                <Kbd>S</Kbd>
+                <Kbd>R</Kbd>
               </KbdGroup>
             </Button>
             <Button type="button" disabled={busy} onClick={fecharBalanco}>
-              Fechar Balanço{" "}
+              Finalizar balanço{" "}
               <KbdGroup>
                 <Kbd>Alt</Kbd>
                 <Kbd>Enter</Kbd>
@@ -449,7 +443,7 @@ function BalancoForm({
                             value={`${diferenca > 0 ? "+" : ""}${fmt(diferenca)}`}
                             className={cn(
                               "text-right font-bold",
-                              diferenca > 0 && "text-emerald-600",
+                              diferenca > 0 && "text-success",
                               diferenca < 0 && "text-destructive",
                             )}
                           />
@@ -463,12 +457,12 @@ function BalancoForm({
                                 column: 3,
                               })}
                               type="button"
-                              variant="outline"
-                              size="icon"
-                              className="size-8"
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-label="Remover Item"
                               onClick={() => void removerItem(index)}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="size-4" />
                             </Button>
                           </TableCell>
                         )}

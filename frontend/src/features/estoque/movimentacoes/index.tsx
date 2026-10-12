@@ -4,8 +4,8 @@ import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { estoqueApi } from "@/api/estoque";
 import { useFeatureList } from "@/hooks/use-feature-list";
-import { WindowActions } from "@/imperative-ui";
-import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
+import { WindowActions } from "@/ui/imperative";
+import { useWindow, useWindowCommands, useUi, WindowCancelButton } from "@/ui/imperative";
 import { Button, Field, FieldError, FieldLabel, Kbd, KbdGroup, Textarea } from "@/ui/primitives";
 import { MovimentacoesList } from "./list";
 import { MovimentacoesUpsert } from "./upsert";
@@ -57,16 +57,16 @@ export function MovimentacoesFeature() {
   const openView = async (item: MovimentacaoEstoque) => {
     await ui.windows.open<true, MovimentacoesUpsertProps>({
       component: MovimentacoesUpsert,
-      props: { editingItem: item, readOnly: true },
+      props: { editingItem: item, readOnly: true, onEstornar: estornar },
       title: `Visualizar Movimentação #${item.id}`,
       size: "full",
     });
   };
 
-  const estornar = async (item: MovimentacaoEstoque) => {
+  const estornar = async (item: MovimentacaoEstoque): Promise<boolean> => {
     if (!podeEstornar(item)) {
       ui.feedback.notify({ type: "warning", title: avisoNaoEstornavel(item) });
-      return;
+      return false;
     }
     const result = await ui.windows.open<string, EstornoWindowProps>({
       component: EstornoWindow,
@@ -77,21 +77,23 @@ export function MovimentacoesFeature() {
       title: "Estornar Movimentação",
       size: "small",
     });
-    if (result.status !== "confirmed") return;
+    if (result.status !== "confirmed") return false;
     try {
       const response = await estoqueApi.estornar(item.id, result.value);
       if (response.success === false) {
         ui.feedback.notifyError(response, {
           fallbackTitle: "Não foi possível estornar a movimentação.",
         });
-        return;
+        return false;
       }
       await invalidate();
       ui.feedback.notify({ type: "success", title: "Movimentação estornada com sucesso!" });
+      return true;
     } catch (error) {
       ui.feedback.notifyError(error, {
         fallbackTitle: "Não foi possível estornar a movimentação.",
       });
+      return false;
     }
   };
 
@@ -119,6 +121,7 @@ export function MovimentacoesFeature() {
 export interface MovimentacoesUpsertProps {
   editingItem: MovimentacaoEstoque | null;
   readOnly?: boolean;
+  onEstornar?: (item: MovimentacaoEstoque) => Promise<boolean>;
 }
 
 export interface EstornoWindowProps {
@@ -160,7 +163,7 @@ export function EstornoWindow({ pergunta, aviso }: EstornoWindowProps) {
         {
           id: "movimentacoes.estorno.confirm",
           hotkey: "Alt+Enter" as const,
-          label: "Confirmar estorno",
+          label: "Estornar",
           run: (event: KeyboardEvent) => {
             event.preventDefault();
             confirm();
@@ -190,11 +193,9 @@ export function EstornoWindow({ pergunta, aviso }: EstornoWindowProps) {
         {error && <FieldError>{error}</FieldError>}
       </Field>
       <WindowActions>
-        <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>
-          Cancelar <Kbd>Esc</Kbd>
-        </Button>
+        <WindowCancelButton />
         <Button type="button" variant="destructive" onClick={confirm}>
-          Confirmar Estorno
+          Estornar
           <KbdGroup className="ml-2">
             <Kbd>Alt</Kbd>
             <Kbd>Enter</Kbd>

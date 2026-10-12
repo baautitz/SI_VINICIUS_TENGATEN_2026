@@ -9,7 +9,7 @@ import { ClipboardList, Undo2 } from "lucide-react";
 import { formatToLocal } from "@/utils/date-utils";
 
 import { Kbd, KbdGroup } from "@/ui/primitives";
-import { WindowActions } from "@/imperative-ui";
+import { WindowActions } from "@/ui/imperative";
 import React, { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/ui/primitives";
@@ -46,13 +46,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/ui/primitives";
-import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
+import { useWindow, useWindowCommands, useUi, WindowCancelButton } from "@/ui/imperative";
 import {
   MovimentacaoEstoque,
   MovimentacaoEstoqueFormValues,
   MovimentacaoEstoqueItemFormValues,
   movimentacaoEstoqueSchema,
   origemMovimentacaoLabels,
+  podeEstornar,
 } from "./types";
 import { ItemLinha } from "./upsert";
 import { navigationCell } from "@/ui/keyboard-navigation";
@@ -60,11 +61,13 @@ import { navigationCell } from "@/ui/keyboard-navigation";
 interface MovimentacoesUpsertFormProps {
   editingItem: MovimentacaoEstoque | null;
   readOnly: boolean;
+  onEstornar?: (item: MovimentacaoEstoque) => Promise<boolean>;
 }
 
 export function MovimentacoesUpsertForm({
   editingItem,
   readOnly,
+  onEstornar,
 }: MovimentacoesUpsertFormProps) {
   const activeWindow = useWindow<true>();
   const ui = useUi();
@@ -170,10 +173,6 @@ export function MovimentacoesUpsertForm({
     },
   });
 
-  const handleCancel = async () => {
-    activeWindow.dismiss("cancel");
-  };
-
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     event.stopPropagation();
@@ -207,9 +206,29 @@ export function MovimentacoesUpsertForm({
     return () => activeWindow.setDirtyCheck(null);
   }, [activeWindow, form, itens.length, readOnly]);
 
+  const estornarAqui = React.useMemo(
+    () =>
+      readOnly && editingItem && onEstornar && podeEstornar(editingItem)
+        ? async () => {
+            if (await onEstornar(editingItem)) activeWindow.dismiss("cancel");
+          }
+        : null,
+    [readOnly, editingItem, onEstornar, activeWindow],
+  );
+
   useWindowCommands(
     React.useMemo(
       () => [
+        {
+          id: "movimentacoes.estornar",
+          hotkey: "Alt+Z" as const,
+          label: "Estornar movimentação",
+          enabled: !!estornarAqui,
+          run: (event: KeyboardEvent) => {
+            event.preventDefault();
+            void estornarAqui?.();
+          },
+        },
         {
           id: "movimentacoes.focus-sku",
           hotkey: "Alt+K" as const,
@@ -231,7 +250,7 @@ export function MovimentacoesUpsertForm({
           },
         },
       ],
-      [form, mutation.isPending, readOnly],
+      [form, mutation.isPending, readOnly, estornarAqui],
     ),
   );
 
@@ -386,7 +405,7 @@ export function MovimentacoesUpsertForm({
       ? [
           {
             id: "mov.estorno",
-            hotkey: "Alt+S",
+            hotkey: "Alt+V",
             label: "Ver estorno",
             icon: <Undo2 className="size-4" />,
             run: () =>
@@ -407,12 +426,18 @@ export function MovimentacoesUpsertForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
+        {estornarAqui && (
+          <Button
+            type="button"
+            variant="destructive"
+            className="mr-auto"
+            onClick={() => void estornarAqui()}
+          >
+            <Undo2 /> Estornar movimentação <Kbd>Alt+Z</Kbd>
+          </Button>
+        )}
         {readOnly && <RelatedActions actions={acoesRelacionadas} />}
-        <Button type="button" variant="outline" onClick={handleCancel}>
-          <span className="flex items-center gap-2">
-            {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
-          </span>
-        </Button>
+        <WindowCancelButton readOnly={readOnly} />
         {!readOnly && (
           <form.Subscribe
             selector={(state) => [state.canSubmit, state.isSubmitting]}
@@ -638,7 +663,7 @@ export function MovimentacoesUpsertForm({
                                 <TableCell>
                                   <SkuViewInput name={`mov-sku-${index}`} sku={item.sku} />
                                   {skuErr && (
-                                    <p className="mt-0.5 text-xs text-red-500">
+                                    <p className="mt-0.5 text-xs text-destructive">
                                       {skuErr}
                                     </p>
                                   )}
@@ -725,7 +750,7 @@ export function MovimentacoesUpsertForm({
                                       )}
                                     />
                                     {qtdErr && (
-                                      <p className="text-right text-xs text-red-500">
+                                      <p className="text-right text-xs text-destructive">
                                         {qtdErr}
                                       </p>
                                     )}
@@ -764,7 +789,7 @@ export function MovimentacoesUpsertForm({
                                         )}
                                       />
                                       {custoErr && (
-                                        <p className="text-right text-xs text-red-500">
+                                        <p className="text-right text-xs text-destructive">
                                           {custoErr}
                                         </p>
                                       )}
@@ -804,12 +829,12 @@ export function MovimentacoesUpsertForm({
                                         column: 5,
                                       })}
                                       type="button"
-                                      variant="outline"
-                                      size="icon"
-                                      className="size-8"
+                                      variant="ghost"
+                                      size="icon-sm"
+                                      aria-label="Remover Item"
                                       onClick={() => removeItemRow(index)}
                                     >
-                                      <Trash2 className="h-4 w-4" />
+                                      <Trash2 className="size-4" />
                                     </Button>
                                   </TableCell>
                                 )}

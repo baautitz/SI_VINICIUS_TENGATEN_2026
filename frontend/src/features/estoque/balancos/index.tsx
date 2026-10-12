@@ -3,7 +3,7 @@
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
-import { Ban, Eye, ListChecks } from "lucide-react";
+import { Ban, ListChecks } from "lucide-react";
 import { balancosApi } from "@/api/estoque";
 import { useFeatureList } from "@/hooks/use-feature-list";
 import { useUi } from "@/ui/imperative";
@@ -11,6 +11,7 @@ import { Badge, Button } from "@/ui/primitives";
 import { DataTable, FeatureHeader, FeatureLayout } from "@/ui/composites";
 import { formatToLocal } from "@/utils/date-utils";
 import { fireAndForget } from "@/lib/utils";
+import { getActionsColumn } from "@/utils/table-columns";
 import { Balanco, statusBalancoLabels } from "./types";
 import { EstornoWindow, type EstornoWindowProps } from "@/features/estoque/movimentacoes";
 import { BalancoWindow, type BalancoWindowProps } from "./window";
@@ -49,7 +50,7 @@ export function BalancosFeature() {
     await invalidate();
     ui.feedback.notify({
       type: "success",
-      title: result.value === "closed" ? "Balanço fechado e ajustes lançados." : "Balanço salvo como rascunho.",
+      title: result.value === "closed" ? "Balanço finalizado e ajustes lançados." : "Balanço salvo como rascunho.",
     });
   };
 
@@ -104,10 +105,7 @@ export function BalancosFeature() {
       cell: ({ row }) => {
         const status = row.original.status;
         return (
-          <Badge
-            variant={status === "CANCELADO" ? "destructive" : status === "FECHADO" ? "default" : "secondary"}
-            className={status === "FECHADO" ? "border-none bg-emerald-500 text-white hover:bg-emerald-600" : ""}
-          >
+          <Badge variant={status === "CANCELADO" ? "destructive" : status === "FECHADO" ? "success" : "warning"}>
             {statusBalancoLabels[status]}
           </Badge>
         );
@@ -119,22 +117,15 @@ export function BalancosFeature() {
       header: "Observação",
       cell: ({ row }) => <span className="text-muted-foreground">{row.original.observacao || "-"}</span>,
     },
-    {
-      id: "actions",
-      header: () => <div className="px-4 text-right">Ações</div>,
-      cell: ({ row }) => (
-        <div className="flex justify-end gap-2 px-4">
-          <Button size="icon-sm" variant="outline" title={row.original.status === "ABERTO" ? "Contar" : "Visualizar"} onClick={() => fireAndForget(() => abrir(row.original))}>
-            <Eye className="h-4 w-4" />
+    getActionsColumn<Balanco>({
+      onView: abrir,
+      extra: (item) =>
+        item.status !== "CANCELADO" && (
+          <Button size="icon-sm" variant="destructive" aria-label="Cancelar balanço" onClick={() => fireAndForget(() => cancelar(item))}>
+            <Ban className="size-4" />
           </Button>
-          {row.original.status !== "CANCELADO" && (
-            <Button size="icon-sm" variant="outline" className="text-red-600" title="Cancelar balanço" onClick={() => fireAndForget(() => cancelar(row.original))}>
-              <Ban className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      ),
-    },
+        ),
+    }),
   ];
 
   return (
