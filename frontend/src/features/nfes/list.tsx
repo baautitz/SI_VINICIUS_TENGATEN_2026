@@ -2,13 +2,12 @@
 
 import React from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Eye, FileText } from "lucide-react";
-import { Button } from "@/ui/primitives";
+import { FileText } from "lucide-react";
+import { getActionsColumn } from "@/utils/table-columns";
 import { DataTable, FeatureLayout } from "@/ui/composites";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/ui/primitives";
-import { fireAndForget } from "@/lib/utils";
 import { formatToLocal } from "@/utils/date-utils";
 import { NfeStatusBadge } from "./status-badge";
 import {
@@ -64,16 +63,7 @@ export function NfesList({
     },
     { id: "total", header: () => <div className="text-right">Total</div>, cell: ({ row }) => <div className="text-right font-semibold">{brl(row.original.valorTotal)}</div> },
     { id: "status", header: "Status", cell: ({ row }) => <NfeStatusBadge status={row.original.statusNfe} /> },
-    {
-      id: "actions", header: () => <div className="px-4 text-right">Ações</div>,
-      cell: ({ row }) => (
-        <div className="flex justify-end gap-2 px-4">
-          <Button size="icon-sm" variant="outline" title="Visualizar" onClick={() => fireAndForget(() => onView(row.original))}>
-            <Eye className="h-4 w-4" />
-          </Button>
-        </div>
-      ),
-    },
+    getActionsColumn<NfeResumo>({ onView }),
   ];
 
   return (

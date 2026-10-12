@@ -3,7 +3,7 @@
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ban, Copy, Download, ExternalLink, FileCode, Printer } from "lucide-react";
-import { WindowActions } from "@/imperative-ui";
+import { WindowActions } from "@/ui/imperative";
 import { nfesApi } from "@/api/nfes";
 import { contasPagarApi } from "@/api/financeiro";
 import { comprasApi } from "@/api/compras";
@@ -13,7 +13,7 @@ import {
   Button, Field, FieldLabel, Input, Kbd, Spinner, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Textarea,
 } from "@/ui/primitives";
 import { navigationCell } from "@/ui/keyboard-navigation";
-import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
+import { useWindow, useWindowCommands, useUi, WindowCancelButton } from "@/ui/imperative";
 import { formatDateToLocal, formatToLocal } from "@/utils/date-utils";
 import { CompraWindow, type CompraWindowProps } from "@/features/compras/upsert";
 import { ContasPagarUpsertForm, type ContasPagarUpsertProps } from "@/features/financeiro/contas-pagar/upsert";
@@ -126,7 +126,6 @@ const Parte = ({ nome, doc, ie, endereco, bairro, tel }: {
 export function NfeDetalheWindow({ nfeId }: { nfeId: number }) {
   const ui = useUi();
   const queryClient = useQueryClient();
-  const activeWindow = useWindow<true>();
   const [alterada, setAlterada] = React.useState(false);
   const { data: nfe, isLoading, error, refetch } = useQuery({
     queryKey: ["nfes", nfeId],
@@ -141,7 +140,7 @@ export function NfeDetalheWindow({ nfeId }: { nfeId: number }) {
         <p className="text-destructive">Não foi possível carregar a NF-e.</p>
         <div className="flex gap-2">
           <Button onClick={() => void refetch()}>Tentar novamente</Button>
-          <Button variant="outline" onClick={() => activeWindow.dismiss("cancel")}>Fechar <Kbd>Esc</Kbd></Button>
+          <WindowCancelButton readOnly />
         </div>
       </div>
     );
@@ -245,9 +244,8 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
 
   useWindowCommands([
     { id: "nfe.xml", hotkey: "Alt+X", label: "Ver XML", run: (e) => { e.preventDefault(); void acoes.verXml(); } },
-    { id: "nfe.baixar", hotkey: "Alt+B", label: "Baixar XML", run: (e) => { e.preventDefault(); void acoes.baixar(); } },
+    { id: "nfe.baixar", hotkey: "Alt+D", label: "Baixar XML", run: (e) => { e.preventDefault(); void acoes.baixar(); } },
     { id: "nfe.imprimir", hotkey: "Alt+I", label: "Imprimir DANFE", run: (e) => { e.preventDefault(); void imprimir(); } },
-    { id: "nfe.cancelar", hotkey: "Alt+K", label: "Cancelar NF-e", enabled: podeCancelar, run: (e) => { e.preventDefault(); void acoes.cancelar(); } },
   ]);
 
   return (
@@ -255,11 +253,8 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
       <WindowActions>
         <div className="mr-auto flex gap-2">
           <Button type="button" variant="outline" onClick={() => void acoes.verXml()}><FileCode /> Ver XML <Kbd>Alt+X</Kbd></Button>
-          <Button type="button" variant="outline" onClick={() => void acoes.baixar()}><Download /> Baixar XML <Kbd>Alt+B</Kbd></Button>
+          <Button type="button" variant="outline" onClick={() => void acoes.baixar()}><Download /> Baixar XML <Kbd>Alt+D</Kbd></Button>
           <Button type="button" variant="outline" onClick={() => void imprimir()}><Printer /> Imprimir DANFE <Kbd>Alt+I</Kbd></Button>
-          <Button type="button" variant="destructive" disabled={!podeCancelar} title={podeCancelar ? undefined : motivo} onClick={() => void acoes.cancelar()}>
-            <Ban /> Cancelar NF-e <Kbd>Alt+K</Kbd>
-          </Button>
           {!podeCancelar && <span role="status" className="text-muted-foreground self-center text-xs">{motivo}</span>}
           {!podeCancelar && entrada && nfe.compraId && (
             <Button type="button" variant="link" className="self-center px-0 text-xs" onClick={() => void abrirCompra()}>
@@ -267,6 +262,9 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
             </Button>
           )}
         </div>
+        <Button type="button" variant="destructive" disabled={!podeCancelar} title={podeCancelar ? undefined : motivo} onClick={() => void acoes.cancelar()}>
+          <Ban /> Cancelar NF-e
+        </Button>
         <Button type="button" variant="outline" onClick={fechar}>Fechar <Kbd>Esc</Kbd></Button>
       </WindowActions>
 
@@ -308,7 +306,7 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
                   title="Copiar chave de acesso"
                   aria-label="Copiar chave de acesso"
                   tabIndex={-1}
-                  className="text-muted-foreground hover:text-foreground absolute top-1 right-1 h-6 w-6 opacity-50 hover:opacity-100"
+                  className="text-muted-foreground hover:text-foreground absolute top-1 right-1 opacity-50 hover:opacity-100"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => void acoes.copiarChave()}
                 >

@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { WindowActions } from "@/imperative-ui";
+import { WindowActions } from "@/ui/imperative";
 import { Button, Field, FieldDescription, FieldLabel, Kbd, KbdGroup, Textarea } from "@/ui/primitives";
-import { useWindow, useWindowCommands } from "@/ui/imperative";
+import { useWindow, useWindowCommands, WindowCancelButton } from "@/ui/imperative";
 import { MIN_JUSTIFICATIVA } from "./types";
 
 /** Pede a justificativa (>= 15 caracteres) e resolve com o texto; quem chama faz o POST. */
@@ -46,9 +46,7 @@ export function CancelarNfeWindow({ numero }: { numero: number }) {
         </FieldDescription>
       </Field>
       <WindowActions>
-        <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>
-          Voltar <Kbd>Esc</Kbd>
-        </Button>
+        <WindowCancelButton />
         <Button type="button" variant="destructive" disabled={!valido} onClick={confirmar}>
           Cancelar NF-e
           <KbdGroup>
