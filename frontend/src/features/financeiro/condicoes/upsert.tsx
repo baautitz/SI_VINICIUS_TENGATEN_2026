@@ -121,10 +121,10 @@ function CondicoesUpsertForm({
       ativo: editingItem?.ativo ?? true,
       parcelas: parcelas,
     } as CondicaoPagamentoFormValues,
-    onSubmit: async ({ value, formApi }) => {
+    onSubmit: async ({ value }) => {
       // Barreira final: botão, Enter e atalho passam por aqui, então nada inválido é salvo.
-      if (!condicaoPagamentoSchema.safeParse(value).success)
-        return void formApi.validateAllFields("submit");
+      // As parcelas vivem em estado próprio (value.parcelas fica no valor inicial), por isso a
+      // validação roda sobre o payload montado abaixo.
       resetErrors();
       setLocalErrors({});
       const payload = {
