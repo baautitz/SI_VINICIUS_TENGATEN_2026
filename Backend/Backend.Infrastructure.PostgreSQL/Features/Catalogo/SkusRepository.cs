@@ -307,7 +307,7 @@ public class SkusRepository : ISkusRepository
             WHERE NOT EXISTS (
                 SELECT 1 FROM unnest(@Tokens) t(palavra)
                 WHERE NOT (h.texto LIKE '%' || unaccent(lower(t.palavra)) || '%'
-                           OR (length(t.palavra) >= 4 AND word_similarity(unaccent(lower(t.palavra)), h.texto) >= 0.5)))";
+                           OR (length(t.palavra) >= 4 AND word_similarity(unaccent(lower(t.palavra)), h.texto) >= 0.6)))";
 
     public async Task<ResultadoPaginado<Skus>> PesquisarSkus(string termo, int pagina = 1, int tamanhoDaPagina = 20)
     {
