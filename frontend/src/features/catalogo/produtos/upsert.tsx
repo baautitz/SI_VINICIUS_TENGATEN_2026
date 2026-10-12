@@ -1,7 +1,7 @@
 "use client";
 
 import { Kbd, KbdGroup } from "@/ui/primitives";
-import { WindowActions } from "@/imperative-ui";
+import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import { useState, useRef, useMemo, useCallback } from "react";
 import type { FormEvent } from "react";
 import { cn } from "@/lib/utils";
@@ -377,10 +377,6 @@ function ProdutosUpsertForm({
     ui,
   ]);
 
-  const requestCancel = async () => {
-    activeWindow.dismiss("cancel");
-  };
-
   const addOption = useCallback(async () => {
     hasLocalChanges.current = true;
     setHasVariants(true);
@@ -430,7 +426,7 @@ function ProdutosUpsertForm({
       {
         id: "produtos.save",
         hotkey: "Alt+Enter" as const,
-        label: "Salvar produto",
+        label: "Salvar",
         enabled: !readOnly && !mutation.isPending,
         run: async (event: KeyboardEvent) => {
           event.preventDefault();
@@ -453,9 +449,7 @@ function ProdutosUpsertForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        <Button type="button" variant="outline" onClick={requestCancel}>
-          {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
-        </Button>
+        <WindowCancelButton readOnly={readOnly} />
         {!readOnly && (
           <form.Subscribe
             selector={(state) => [state.canSubmit, state.isSubmitting]}
@@ -470,7 +464,7 @@ function ProdutosUpsertForm({
                   "Salvando..."
                 ) : (
                   <span className="flex items-center gap-2">
-                    Salvar Produto{" "}
+                    Salvar{" "}
                     <KbdGroup>
                       <Kbd>Alt</Kbd>
                       <Kbd>Enter</Kbd>
@@ -894,12 +888,12 @@ function ProdutosUpsertForm({
                           <Button
                             type="button"
                             variant="ghost"
-                            size="icon"
-                            className="text-muted-foreground hover:text-destructive h-8 w-8"
+                            size="icon-sm"
+                            aria-label="Remover"
                             onClick={() => removeOption(optIdx)}
                             disabled={readOnly}
                           >
-                            <Trash2 className="size-4" />
+                            <Trash2 />
                           </Button>
                         </div>
                       </div>
@@ -998,7 +992,7 @@ function ProdutosUpsertForm({
                                           )}
                                         />
                                         {error && (
-                                          <span className="text-[10px] font-medium text-red-500">
+                                          <span className="text-[10px] font-medium text-destructive">
                                             {error}
                                           </span>
                                         )}
@@ -1049,7 +1043,7 @@ function ProdutosUpsertForm({
                                           )}
                                         />
                                         {error && (
-                                          <span className="text-[10px] font-medium text-red-500">
+                                          <span className="text-[10px] font-medium text-destructive">
                                             {error}
                                           </span>
                                         )}
@@ -1095,7 +1089,7 @@ function ProdutosUpsertForm({
                                           )}
                                         />
                                         {error && (
-                                          <span className="text-[10px] font-medium text-red-500">
+                                          <span className="text-[10px] font-medium text-destructive">
                                             {error}
                                           </span>
                                         )}

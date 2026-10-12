@@ -7,7 +7,7 @@ import { Package } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/ui/composites";
 import { FeatureLayout } from "@/ui/composites";
-import { Badge } from "@/ui/primitives";
+import { StatusBadge } from "@/ui/composites";
 import { Marca } from "./types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 
@@ -55,9 +55,7 @@ export function MarcasList({
       cell: ({ row }) => {
         const ativo = row.getValue("ativo") as boolean;
         return (
-          <Badge variant={ativo ? "default" : "secondary"}>
-            {ativo ? "Ativo" : "Inativo"}
-          </Badge>
+          <StatusBadge ativo={ativo} />
         );
       },
     },

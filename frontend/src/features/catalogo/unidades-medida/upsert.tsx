@@ -6,7 +6,7 @@ import { RelatedActions } from "@/components/related-actions";
 import { Package } from "lucide-react";
 
 import React from "react";
-import { WindowActions } from "@/imperative-ui";
+import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import { Kbd, KbdGroup } from "@/ui/primitives";
 import { Button } from "@/ui/primitives";
 import { FieldLabel } from "@/ui/primitives";
@@ -108,7 +108,7 @@ function UnidadesMedidaUpsertForm({
       {
         id: "unidades-medida.save",
         hotkey: "Alt+Enter" as const,
-        label: "Salvar unidade de medida",
+        label: "Salvar",
         enabled: !readOnly && !mutation.isPending,
         run: async (event: KeyboardEvent) => {
           event.preventDefault();
@@ -126,13 +126,7 @@ function UnidadesMedidaUpsertForm({
     <div className="flex flex-col gap-4">
       <WindowActions>
         {readOnly && editingItem && <RelatedActions actions={[{ id: "unidade.produtos", hotkey: "Alt+R", label: "Produtos", icon: <Package className="size-4" />, run: () => related.openList(() => produtosApi.listByFiltro({ unidadeMedidaId: editingItem.id }).then(mapItens((x) => ({ id: x.id, descricao: x.produto }))), produtosApi.getById, ProdutosUpsert, "Produtos (unidade)", "Nenhum produto nesta unidade.", false) }]} />}
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => activeWindow.dismiss("cancel")}
-        >
-          {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
-        </Button>
+        <WindowCancelButton readOnly={readOnly} />
         {!readOnly && (<form.Subscribe
           selector={(state) => [state.canSubmit, state.isSubmitting]}
         >

@@ -1,7 +1,7 @@
 "use client";
 
 import { Kbd, KbdGroup } from "@/ui/primitives";
-import { WindowActions } from "@/imperative-ui";
+import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import React from "react";
 import { Button } from "@/ui/primitives";
 import {
@@ -107,7 +107,7 @@ function AtributosUpsertForm({
       {
         id: "atributos.save",
         hotkey: "Alt+Enter" as const,
-        label: "Salvar atributo",
+        label: "Salvar",
         enabled: !readOnly && !mutation.isPending,
         run: async (event: KeyboardEvent) => {
           event.preventDefault();
@@ -123,13 +123,7 @@ function AtributosUpsertForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => activeWindow.dismiss("cancel")}
-        >
-          {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
-        </Button>
+        <WindowCancelButton readOnly={readOnly} />
         {!readOnly && (<form.Subscribe
           selector={(state) => [state.canSubmit, state.isSubmitting]}
         >
@@ -275,7 +269,7 @@ function AtributosUpsertForm({
                       onClick={handleAddValue}
                       disabled={readOnly}
                     >
-                      <Plus className="size-4" />
+                      <Plus />
                     </Button>
                   </div>
 
@@ -319,7 +313,7 @@ function AtributosUpsertForm({
                                 type="button"
                                 variant="ghost"
                                 size="icon-xs"
-                                className="text-muted-foreground hover:text-foreground hover:bg-muted/80 h-5 w-5 rounded-sm p-0"
+                                className="text-muted-foreground hover:text-foreground hover:bg-muted/80 size-5 rounded-sm p-0"
                                 title="Renomear valor"
                                 aria-label={`Renomear ${val.valor}`}
                                 onClick={() => {
@@ -334,7 +328,8 @@ function AtributosUpsertForm({
                               type="button"
                               variant="ghost"
                               size="icon-xs"
-                              className="text-muted-foreground hover:text-foreground hover:bg-muted/80 h-5 w-5 rounded-sm p-0"
+                              className="text-muted-foreground hover:text-foreground hover:bg-muted/80 size-5 rounded-sm p-0"
+                              aria-label="Remover"
                               onClick={() => handleRemoveValue(idx)}
                               disabled={readOnly}
                             >
