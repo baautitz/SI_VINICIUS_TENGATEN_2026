@@ -10,6 +10,9 @@ import {
 import { cn } from "@/lib/utils";
 import { selectInputTextOnFocus } from "@/ui/keyboard-navigation";
 
+const semAcento = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+
 interface ComboboxContextType {
   multiple?: boolean;
   disabled: boolean;
@@ -75,7 +78,7 @@ export function Combobox({
                   (item as Record<string, unknown>).value ||
                   "",
               );
-        return label.toLowerCase() === createText.toLowerCase();
+        return semAcento(label) === semAcento(createText);
       }),
     [createText, items],
   );
@@ -98,7 +101,7 @@ export function Combobox({
                 (item as Record<string, unknown>).value ||
                 "",
             );
-      return label.toLowerCase().includes(searchText.toLowerCase());
+      return semAcento(label).includes(semAcento(searchText));
     });
   }, [items, searchText]);
 
