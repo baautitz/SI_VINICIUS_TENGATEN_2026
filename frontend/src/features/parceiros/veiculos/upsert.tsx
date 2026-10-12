@@ -1,7 +1,7 @@
 "use client";
 
 import { Kbd, KbdGroup } from "@/ui/primitives";
-import { WindowActions } from "@/imperative-ui";
+import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import React from "react";
 import { Button } from "@/ui/primitives";
 import { FieldLabel } from "@/ui/primitives";
@@ -105,7 +105,7 @@ function VeiculosUpsertForm({
       {
         id: "veiculos.save",
         hotkey: "Alt+Enter" as const,
-        label: "Salvar veículo",
+        label: "Salvar",
         enabled: !readOnly && !mutation.isPending,
         run: async (event: KeyboardEvent) => {
           event.preventDefault();
@@ -121,13 +121,7 @@ function VeiculosUpsertForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => activeWindow.dismiss("cancel")}
-        >
-          {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
-        </Button>
+        <WindowCancelButton readOnly={readOnly} />
         {!readOnly && (
 <form.Subscribe
           selector={(state) => [state.canSubmit, state.isSubmitting]}

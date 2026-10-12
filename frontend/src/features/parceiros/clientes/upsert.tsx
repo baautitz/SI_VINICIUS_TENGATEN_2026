@@ -9,7 +9,7 @@ import { RelatedActions } from "@/components/related-actions";
 import { Receipt, ShoppingCart } from "lucide-react";
 
 import { Kbd, KbdGroup } from "@/ui/primitives";
-import { WindowActions } from "@/imperative-ui";
+import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import React, { useState } from "react";
 import { Button } from "@/ui/primitives";
 import { Field, FieldLabel, FieldError } from "@/ui/primitives";
@@ -129,10 +129,6 @@ function ClientesUpsertForm({
     await form.handleSubmit();
   }, [form]);
 
-  const cancelForm = async () => {
-    activeWindow.dismiss("cancel");
-  };
-
   const submitFormEvent = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     event.stopPropagation();
@@ -150,7 +146,7 @@ function ClientesUpsertForm({
       {
         id: "clientes.save",
         hotkey: "Alt+Enter" as const,
-        label: "Salvar cliente",
+        label: "Salvar",
         enabled: !readOnly && !mutation.isPending,
         run: async (event: KeyboardEvent) => {
           event.preventDefault();
@@ -172,9 +168,7 @@ function ClientesUpsertForm({
     <div className="flex flex-col gap-4">
       <WindowActions>
         {readOnly && editingItem && <RelatedActions actions={[{ id: "cliente.titulos", hotkey: "Alt+T", label: "Títulos", icon: <Receipt className="size-4" />, run: () => related.openList(() => contasReceberApi.listByCliente(editingItem.id).then(mapItens((x) => ({ id: x.id, descricao: x.descricao, detalhe: x.status }))), contasReceberApi.getById, ContasReceberUpsertForm, "Títulos a receber", "Nenhum título deste cliente.", false) }, { id: "cliente.reembolsos", hotkey: "Alt+B", label: "Reembolsos", icon: <Receipt className="size-4" />, run: () => related.openList(() => contasPagarApi.listByCliente(editingItem.id).then(mapItens((x) => ({ id: x.id, descricao: x.descricao, detalhe: x.status }))), contasPagarApi.getById, ContasPagarUpsertForm, "Reembolsos a pagar", "Nenhum reembolso deste cliente.", false) }, { id: "cliente.vendas", hotkey: "Alt+V", label: "Vendas", icon: <ShoppingCart className="size-4" />, run: () => related.openList(() => vendasApi.listByCliente(editingItem.id).then(mapItens((x) => ({ id: x.id, descricao: `Venda #${x.id}`, detalhe: String(x.valorTotal) }))), vendasApi.getById, VendasUpsertForm, "Vendas", "Nenhuma venda deste cliente.") }]} />}
-        <Button type="button" variant="outline" onClick={cancelForm}>
-          {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
-        </Button>
+        <WindowCancelButton readOnly={readOnly} />
           {!readOnly && (
 <form.Subscribe
             selector={(state) => [state.canSubmit, state.isSubmitting]}

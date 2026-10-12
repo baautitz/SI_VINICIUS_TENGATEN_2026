@@ -6,7 +6,7 @@ import { RelatedActions } from "@/components/related-actions";
 import { Receipt } from "lucide-react";
 
 import { Kbd, KbdGroup } from "@/ui/primitives";
-import { WindowActions } from "@/imperative-ui";
+import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import React, { useState } from "react";
 import { Button } from "@/ui/primitives";
 import { Field, FieldLabel, FieldError } from "@/ui/primitives";
@@ -151,10 +151,6 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
     await form.handleSubmit();
   }, [form]);
 
-  const cancelForm = async () => {
-    activeWindow.dismiss("cancel");
-  };
-
 
   const registerDirty = React.useCallback(() => {
     activeWindow.setDirtyCheck(() => form.state.isDirty);
@@ -167,7 +163,7 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
         {
           id: "fornecedores.save",
           hotkey: "Alt+Enter" as const,
-          label: "Salvar fornecedor",
+          label: "Salvar",
           enabled: !readOnly && !mutation.isPending,
           run: async (event: KeyboardEvent) => {
             event.preventDefault();
@@ -184,9 +180,7 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
     <div className="flex flex-col gap-4">
       <WindowActions>
         {readOnly && editingItem && <RelatedActions actions={[{ id: "fornecedor.titulos", hotkey: "Alt+T", label: "Títulos", icon: <Receipt className="size-4" />, run: () => related.openList(() => contasPagarApi.listByFornecedor(editingItem.id).then(mapItens((x) => ({ id: x.id, descricao: x.descricao, detalhe: x.status }))), contasPagarApi.getById, ContasPagarUpsertForm, "Títulos a pagar", "Nenhum título deste fornecedor.", false) }]} />}
-        <Button type="button" variant="outline" onClick={cancelForm}>
-          {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
-        </Button>
+        <WindowCancelButton readOnly={readOnly} />
           {!readOnly && (
 <form.Subscribe
             selector={(state) => [state.canSubmit && state.isFieldsValid, state.isSubmitting]}

@@ -9,7 +9,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/ui/composites";
 
 import { FeatureLayout } from "@/ui/composites";
-import { Badge } from "@/ui/primitives";
+import { TipoPessoaBadge } from "../tipo-pessoa-badge";
 import { Emitente } from "./types";
 import { TipoPessoa } from "@/api/types";
 
@@ -51,9 +51,7 @@ export function EmitentesList({
       cell: ({ row }) => {
         const tipo = row.getValue("tipoPessoa") as TipoPessoa;
         return (
-          <Badge variant={tipo === TipoPessoa.FISICA ? "secondary" : "outline"}>
-            {tipo === TipoPessoa.FISICA ? "Física" : "Jurídica"}
-          </Badge>
+          <TipoPessoaBadge tipo={tipo} />
         );
       },
     },

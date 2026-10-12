@@ -1,7 +1,7 @@
 "use client";
 
 import { Kbd, KbdGroup } from "@/ui/primitives";
-import { WindowActions } from "@/imperative-ui";
+import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import React, { useState } from "react";
 import { Button } from "@/ui/primitives";
 import { Field, FieldLabel, FieldError } from "@/ui/primitives";
@@ -131,10 +131,6 @@ function EmitentesUpsertForm({
     await form.handleSubmit();
   }, [form]);
 
-  const cancel = React.useCallback(async () => {
-    activeWindow.dismiss("cancel");
-  }, [activeWindow]);
-
   const registerDirty = React.useCallback(() => {
     activeWindow.setDirtyCheck(() => form.state.isDirty);
     return () => activeWindow.setDirtyCheck(null);
@@ -145,7 +141,7 @@ function EmitentesUpsertForm({
       {
         id: "emitentes.save",
         hotkey: "Alt+Enter" as const,
-        label: "Salvar emitente",
+        label: "Salvar",
         enabled: !readOnly && !mutation.isPending,
         run: async (event: KeyboardEvent) => {
           event.preventDefault();
@@ -165,13 +161,7 @@ function EmitentesUpsertForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={cancel}
-        >
-          {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
-        </Button>
+        <WindowCancelButton readOnly={readOnly} />
         {!readOnly && (
 <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
