@@ -2,13 +2,14 @@
 
 import * as React from "react";
 import { FeatureHeader } from "@/ui/composites";
-import { ShoppingBag, Eye, Undo2 } from "lucide-react";
+import { ShoppingBag, Undo2 } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/ui/primitives";
 import { DataTable } from "@/ui/composites";
 import { FeatureLayout } from "@/ui/composites";
 import { Badge } from "@/ui/primitives";
 import { fireAndForget } from "@/lib/utils";
+import { getActionsColumn } from "@/utils/table-columns";
 import type { Venda } from "./types";
 import type { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 import { formatToLocal } from "@/utils/date-utils";
@@ -73,7 +74,7 @@ export function VendasList({
       cell: ({ row }) => {
         const total = Number(row.getValue("valorTotal"));
         return (
-          <div className={"text-right font-semibold text-emerald-600 dark:text-emerald-400"}>
+          <div className={"text-right font-semibold"}>
             {new Intl.NumberFormat("pt-BR", {
               style: "currency",
               currency: "BRL",
@@ -88,7 +89,15 @@ export function VendasList({
       size: 100,
       cell: ({ row }) => {
         return (
-          <Badge variant="outline">
+          <Badge
+            variant={
+              row.original.statusDevolucao === "TOTAL"
+                ? "destructive"
+                : row.original.statusDevolucao === "PARCIAL"
+                  ? "info"
+                  : "success"
+            }
+          >
             {row.original.statusDevolucao === "TOTAL"
               ? "Devolvida"
               : row.original.statusDevolucao === "PARCIAL"
@@ -98,35 +107,20 @@ export function VendasList({
         );
       },
     },
-    {
-      id: "actions",
-      header: () => <div className="px-4 text-right">Ações</div>,
-      cell: ({ row }) => {
-        const item = row.original;
-        return (
-          <div className="flex justify-end gap-2 px-4">
-            <Button
-              size="icon-sm"
-              variant="outline"
-              title="Visualizar Detalhes"
-              onClick={() => fireAndForget(() => onView(item))}
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-            {item.statusDevolucao !== "TOTAL" && (
-              <Button
-                size="icon-sm"
-                variant="outline"
-                title="Devolver Itens (Del)"
-                onClick={() => fireAndForget(() => onDelete(item))}
-              >
-                <Undo2 className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        );
-      },
-    },
+    getActionsColumn<Venda>({
+      onView,
+      extra: (item) =>
+        item.statusDevolucao !== "TOTAL" && (
+          <Button
+            size="icon-sm"
+            variant="outline"
+            aria-label="Devolver itens"
+            onClick={() => fireAndForget(() => onDelete(item))}
+          >
+            <Undo2 className="size-4" />
+          </Button>
+        ),
+    }),
   ];
 
   return (

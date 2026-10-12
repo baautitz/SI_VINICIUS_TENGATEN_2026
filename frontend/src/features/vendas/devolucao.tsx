@@ -2,7 +2,7 @@
 
 import { navigationCell } from "@/ui/keyboard-navigation";
 import React from "react";
-import { WindowActions } from "@/imperative-ui";
+import { WindowActions } from "@/ui/imperative";
 import { useQuery } from "@tanstack/react-query";
 import { NumberInput } from "@/ui/composites";
 import {
@@ -21,7 +21,7 @@ import {
   TableRow,
   Textarea,
 } from "@/ui/primitives";
-import { useWindow, useWindowCommands } from "@/ui/imperative";
+import { useWindow, useWindowCommands, WindowCancelButton } from "@/ui/imperative";
 import { vendasApi } from "@/api/vendas";
 import { getFullSkuName } from "@/features/catalogo/skus/types";
 import { formatToLocal } from "@/utils/date-utils";
@@ -42,9 +42,7 @@ export function DevolucaoTipoWindow() {
     <div className="flex flex-col gap-4">
       <p className="text-sm">Escolha o tipo de devolução.</p>
       <WindowActions>
-        <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>
-          Cancelar <Kbd>Esc</Kbd>
-        </Button>
+        <WindowCancelButton />
         <Button type="button" variant="outline" onClick={() => activeWindow.resolve("parcial")}>
           Devolução parcial
         </Button>
@@ -210,9 +208,7 @@ export function DevolucaoWindow({ venda, total: devolucaoTotal }: DevolucaoWindo
         {error && <FieldError>{error}</FieldError>}
       </Field>
       <WindowActions>
-        <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>
-          Cancelar <Kbd>Esc</Kbd>
-        </Button>
+        <WindowCancelButton />
         <Button type="button" onClick={confirm}>
           Confirmar Devolução
           <KbdGroup className="ml-2">

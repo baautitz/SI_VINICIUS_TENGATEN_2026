@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { useState, useRef, useMemo, useCallback } from "react";
-import { WindowActions } from "@/imperative-ui";
+import { WindowActions } from "@/ui/imperative";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FilePlus2 } from "lucide-react";
@@ -54,7 +54,7 @@ import { ContasReceberUpsertForm } from "@/features/financeiro/contas-receber/up
 import { useRelated, mapItens } from "@/hooks/use-related";
 import { contasReceberApi } from "@/api/financeiro";
 import { MovimentacoesUpsert } from "@/features/estoque/movimentacoes/upsert";
-import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
+import { useWindow, useWindowCommands, useUi, WindowCancelButton } from "@/ui/imperative";
 import { Spinner } from "@/ui/primitives";
 import { navigationCell } from "@/ui/keyboard-navigation";
 import { toLocalISODate, todayLocalISODate } from "@/utils/date-utils";
@@ -180,12 +180,12 @@ function VendasCheckout({
           <span className="text-muted-foreground font-medium">Subtotal</span>
           <span className="font-semibold">{formatCurrency(subtotalGross)}</span>
         </div>
-        <div className="flex items-center justify-between text-red-500">
+        <div className="flex items-center justify-between text-destructive">
           <span className="font-medium">Descontos:</span>
           <span className="font-bold">{formatCurrency(-totalDiscount)}</span>
         </div>
         <Separator />
-        <div className="flex items-center justify-between font-bold text-emerald-600">
+        <div className="flex items-center justify-between font-bold text-success">
           <span>Total:</span>
           <span className="text-lg">{formatCurrency(totalNet)}</span>
         </div>
@@ -256,13 +256,7 @@ function VendasCheckout({
         </Field>
       </div>
       <WindowActions>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => activeWindow.dismiss("cancel")}
-        >
-          Voltar <Kbd>Esc</Kbd>
-        </Button>
+        <WindowCancelButton />
         <Button type="button" onClick={finish} disabled={!canFinish}>
           Concluir{" "}
           <KbdGroup>
@@ -875,13 +869,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
             </Button>
           </div>
         )}
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => activeWindow.dismiss("cancel")}
-        >
-          Cancelar <Kbd>Esc</Kbd>
-        </Button>
+        <WindowCancelButton readOnly={readOnly} />
         {!readOnly && (
           <Button
             type="submit"
@@ -1103,7 +1091,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                                   allowNegative
                                   aria-invalid={item.percentualDesconto > 100}
                                   className={cn(
-                                    "text-right text-red-500",
+                                    "text-right text-destructive",
                                     item.percentualDesconto > 100
                                       ? "border-destructive focus-visible:ring-destructive"
                                       : "border-red-200 focus-visible:ring-red-500",
@@ -1171,9 +1159,9 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                                     row: index,
                                     column: 3,
                                   })}
-                                  size="icon"
-                                  variant="outline"
-                                  className="size-8"
+                                  size="icon-sm"
+                                  variant="ghost"
+                                  aria-label="Remover Item"
                                   onClick={() => handleRemoveItem(index)}
                                 >
                                   <Trash2 className="size-4" />
@@ -1190,8 +1178,8 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                   {[
                     ["Itens Totais", totalItensCount, 0, "text-muted-foreground", ""],
                     ["Subtotal", subtotalGross, 2, "text-muted-foreground", ""],
-                    ["Desconto Total", totalDiscount, 2, "text-red-500", "text-red-500"],
-                    ["Total Líquido", totalNet, 2, "text-emerald-600", "text-emerald-600"],
+                    ["Desconto Total", totalDiscount, 2, "text-destructive", "text-destructive"],
+                    ["Total Líquido", totalNet, 2, "text-success", "text-success"],
                   ].map(([rotulo, valor, decimals, labelCls, valueCls]) => (
                     <div
                       key={rotulo as string}
