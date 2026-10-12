@@ -8,6 +8,7 @@ import {
   type ImportacaoXml,
 } from "./upsert";
 import { ImportarXmlWindow } from "./importar";
+import { EstornarCompraWindow, type EstornarCompraWindowProps } from "./estornar";
 import type { Compra } from "./types";
 import { useFeatureList } from "@/hooks/use-feature-list";
 import { comprasApi } from "@/api/compras";
@@ -59,6 +60,23 @@ export function ComprasFeature() {
     });
   };
 
+  const estornar = async (c: Compra) => {
+    if (c.estornada) return;
+    const r = await ui.windows.open<true, EstornarCompraWindowProps>({
+      component: EstornarCompraWindow,
+      props: { compraId: c.id, temNfe: !!c.nfeId },
+      title: `Estornar compra #${c.id}`,
+      size: "small",
+    });
+    if (r.status !== "confirmed") return;
+    await Promise.all(
+      ["compras", "skus", "produtos", "movimentacoes", "contas-pagar", "nfes"].map((k) =>
+        queryClient.invalidateQueries({ queryKey: [k] }),
+      ),
+    );
+    ui.feedback.notify({ type: "success", title: `Compra #${c.id} estornada.` });
+  };
+
   const importar = async () => {
     const r = await ui.windows.open<ImportacaoXml, Record<string, never>>({
       component: ImportarXmlWindow,
@@ -85,7 +103,7 @@ export function ComprasFeature() {
       onAdd={() => abrir({}, "Nova compra")}
       onEdit={(c) => abrir({ compraId: c.id }, `Compra #${c.id}`)}
       onView={(c) => abrir({ compraId: c.id }, `Compra #${c.id}`)}
-      onDelete={async () => {}}
+      onDelete={estornar}
       onImport={importar}
       onPageChange={list.setPage}
       rowSelection={list.rowSelection}

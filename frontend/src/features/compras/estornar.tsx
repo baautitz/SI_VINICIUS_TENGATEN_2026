@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { WindowActions } from "@/imperative-ui";
+import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import { comprasApi } from "@/api/compras";
 import {
   Alert,
@@ -55,7 +55,7 @@ export function EstornarCompraWindow({ compraId, temNfe }: EstornarCompraWindowP
     {
       id: "compras.estornar.confirmar",
       hotkey: "Alt+Enter",
-      label: "Confirmar estorno",
+      label: "Estornar compra",
       enabled: pode,
       run: (e) => {
         e.preventDefault();
@@ -102,9 +102,7 @@ export function EstornarCompraWindow({ compraId, temNfe }: EstornarCompraWindowP
         </Alert>
       )}
       <WindowActions>
-        <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>
-          Voltar <Kbd>Esc</Kbd>
-        </Button>
+        <WindowCancelButton />
         <Button type="button" variant="destructive" disabled={!pode} onClick={() => void estornar()}>
           {enviando ? "Estornando..." : "Estornar compra"}
           <KbdGroup>

@@ -2,11 +2,12 @@
 
 import React from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Eye, FileUp, PackagePlus } from "lucide-react";
+import { FileUp, PackagePlus, Undo2 } from "lucide-react";
 import { Badge, Button, Kbd } from "@/ui/primitives";
 import { DataTable, FeatureLayout } from "@/ui/composites";
 import { FeatureHeader } from "@/ui/composites";
 import { useWindowCommands } from "@/ui/imperative";
+import { getActionsColumn } from "@/utils/table-columns";
 import { fireAndForget } from "@/lib/utils";
 import { formatDateToLocal } from "@/utils/date-utils";
 import type { FeatureListProps } from "@/hooks/use-feature-orchestrator";
@@ -27,6 +28,7 @@ export function ComprasList({
   onSearchChange,
   onAdd,
   onView,
+  onDelete,
   onImport,
   onPageChange,
 }: ComprasListProps) {
@@ -57,7 +59,7 @@ export function ComprasList({
       size: 110,
       cell: ({ row }) =>
         row.original.estornada ? (
-          <Badge variant="destructive">ESTORNADA</Badge>
+          <Badge variant="destructive">Estornada</Badge>
         ) : null,
     },
     {
@@ -99,22 +101,21 @@ export function ComprasList({
         </div>
       ),
     },
-    {
-      id: "actions",
-      header: () => <div className="px-4 text-right">Ações</div>,
-      cell: ({ row }) => (
-        <div className="flex justify-end gap-2 px-4">
+    getActionsColumn<Compra>({
+      onView,
+      extra: (item) =>
+        !item.estornada && (
           <Button
             size="icon-sm"
             variant="outline"
-            title="Visualizar"
-            onClick={() => fireAndForget(() => onView(row.original))}
+            title="Estornar compra (Del)"
+            aria-label="Estornar compra"
+            onClick={() => fireAndForget(() => onDelete(item))}
           >
-            <Eye className="h-4 w-4" />
+            <Undo2 />
           </Button>
-        </div>
-      ),
-    },
+        ),
+    }),
   ];
 
   return (
@@ -148,6 +149,7 @@ export function ComprasList({
           searchPlaceholder="Pesquisar compras por fornecedor..."
           getRowId={(row) => row.id.toString()}
           onEditRow={onView}
+          onDeleteRow={onDelete}
         />
       </FeatureLayout>
     </div>

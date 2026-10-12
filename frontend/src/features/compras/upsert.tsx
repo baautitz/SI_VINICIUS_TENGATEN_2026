@@ -3,7 +3,7 @@
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, CornerDownLeft, Plus, RefreshCw, Trash2, TriangleAlert, Undo2 } from "lucide-react";
-import { WindowActions } from "@/imperative-ui";
+import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import { fornecedoresApi, transportadorasApi } from "@/api/parceiros";
 import { FornecedoresUpsert } from "@/features/parceiros/fornecedores/upsert";
 import { TransportadorasUpsert } from "@/features/parceiros/transportadoras/upsert";
@@ -15,6 +15,7 @@ import { transportadoraSchema } from "@/features/parceiros/transportadoras/types
 import { comprasApi } from "@/api/compras";
 import { condicoesApi } from "@/api/financeiro";
 import { SkuInput } from "@/components/entity-inputs/sku-input";
+import { SkuViewInput } from "@/components/entity-inputs/sku-view-input";
 import { EmitenteInput } from "@/components/entity-inputs/emitente-input";
 import { FornecedorInput } from "@/components/entity-inputs/fornecedor-input";
 import { TransportadoraInput } from "@/components/entity-inputs/transportadora-input";
@@ -820,7 +821,7 @@ function CompraForm({
         <Alert variant="destructive" role="status">
           <AlertDescription>
             <Badge variant="destructive" className="mr-2">
-              ESTORNADA
+              Estornada
             </Badge>
             em {formatToLocal(compra.estornadaEm)}: {compra.motivoEstorno}
           </AlertDescription>
@@ -838,13 +839,7 @@ function CompraForm({
             <Undo2 /> Estornar compra <Kbd>Alt+Z</Kbd>
           </Button>
         )}
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => activeWindow.dismiss("cancel")}
-        >
-          {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
-        </Button>
+        <WindowCancelButton readOnly={readOnly} />
         {etapa > 0 && (
           <Button
             type="button"
@@ -1239,7 +1234,11 @@ function CompraForm({
                             {item.numeroItem ?? idx + 1}
                           </TableCell>
                           <TableCell>
-                            <span className="font-mono text-xs">{item.sku}</span>
+                            {readOnly && item.sku ? (
+                              <SkuViewInput name={`compra-sku-${idx}`} sku={item.sku} />
+                            ) : (
+                              <span className="font-mono text-xs">{item.sku}</span>
+                            )}
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-col gap-1">
@@ -1301,13 +1300,13 @@ function CompraForm({
                             <TableCell>
                               <Button
                                 type="button"
-                                size="icon"
-                                variant="outline"
-                                className="size-8 text-red-500"
-                                title="Remover item"
+                                size="icon-sm"
+ variant="ghost"
+ title="Remover item"
+ aria-label="Remover"
                                 onClick={() => void removerItem(item.key)}
                               >
-                                <Trash2 className="size-3.5" />
+                                <Trash2 />
                               </Button>
                             </TableCell>
                           )}
@@ -1448,10 +1447,10 @@ function CompraForm({
                               <TableCell>
                                 <Button
                                   type="button"
-                                  size="icon"
-                                  variant="outline"
-                                  className="size-8 text-red-500"
-                                  title="Remover parcela"
+                                  size="icon-sm"
+ variant="ghost"
+ title="Remover parcela"
+ aria-label="Remover"
                                   {...navigationCell({ grid: "compra-parcelas", row: i, column: 2 })}
                                   onClick={() =>
                                     setParcelas((a) =>
@@ -1461,7 +1460,7 @@ function CompraForm({
                                     )
                                   }
                                 >
-                                  <Trash2 className="size-3.5" />
+                                  <Trash2 />
                                 </Button>
                               </TableCell>
                             </TableRow>

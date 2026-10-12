@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/ui/primitives";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Checkbox } from "@/ui/primitives";
 import { EntityInput } from "@/ui/composites";
 import { SkusFeature } from "@/features/catalogo/skus";
 import { useUi } from "@/ui/imperative";
@@ -177,19 +177,18 @@ export function ItensXml({
                     <div className="flex min-w-0 items-center gap-2">
                       {!item.sku && item.sugestao && (
                         <span className="flex shrink-0 items-center gap-1">
-                          <TriangleAlert className="size-4 text-amber-600" />
+                          <TriangleAlert className="size-4 text-warning" />
                           <span className="text-muted-foreground text-xs">Sugestão:</span>
                           <span className="font-mono text-xs">{item.sugestao}</span>
                           <Button
                             type="button"
-                            size="icon"
+                            size="icon-sm"
                             variant="outline"
-                            className="size-8"
                             title="Usar sugestão"
                             aria-label="Usar sugestão"
                             onClick={() => onVincular(item.key, item.sugestao!)}
                           >
-                            <Check className="size-3.5" />
+                            <Check />
                           </Button>
                         </span>
                       )}

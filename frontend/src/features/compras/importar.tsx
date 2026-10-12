@@ -2,7 +2,7 @@
 
 import React from "react";
 import { FileUp } from "lucide-react";
-import { WindowActions } from "@/imperative-ui";
+import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import { comprasApi } from "@/api/compras";
 import { EmitenteInput } from "@/components/entity-inputs/emitente-input";
 import type { Emitente } from "@/features/parceiros/emitentes/types";
@@ -130,23 +130,17 @@ export function ImportarXmlWindow() {
             tabIndex={-1}
             title="Escolher arquivo"
             aria-label="Escolher arquivo"
-            className="text-muted-foreground hover:text-foreground absolute top-1 right-1 h-6 w-6"
+            className="text-muted-foreground hover:text-foreground absolute top-1 right-1"
             onMouseDown={(e) => e.preventDefault()}
             onClick={escolherArquivo}
           >
-            <FileUp className="size-4" />
+            <FileUp />
           </Button>
         </div>
         <FieldDescription>XML da NF-e, até 2 MB.</FieldDescription>
       </Field>
       <WindowActions>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => activeWindow.dismiss("cancel")}
-        >
-          Cancelar <Kbd>Esc</Kbd>
-        </Button>
+        <WindowCancelButton />
         <Button type="button" disabled={busy} onClick={() => void ler()}>
           <FileUp /> {busy ? "Lendo..." : "Ler XML"}
           <KbdGroup>
