@@ -6,7 +6,7 @@ import { RelatedActions } from "@/components/related-actions";
 import { MapPin } from "lucide-react";
 
 import React from "react";
-import { WindowActions } from "@/imperative-ui";
+import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import { Kbd, KbdGroup } from "@/ui/primitives";
 import { Button } from "@/ui/primitives";
 import { FieldGroup, FieldLabel } from "@/ui/primitives";
@@ -97,7 +97,7 @@ function EstadosUpsertForm({
     {
       id: "estados.save",
       hotkey: "Alt+Enter" as const,
-      label: "Salvar estado",
+      label: "Salvar",
       enabled: !readOnly && !mutation.isPending,
       run: async (event) => {
         event.preventDefault();
@@ -111,9 +111,7 @@ function EstadosUpsertForm({
     <div className="flex flex-col gap-4">
       <WindowActions>
         {readOnly && editingItem && <RelatedActions actions={[{ id: "estado.cidades", hotkey: "Alt+L", label: "Cidades", icon: <MapPin className="size-4" />, run: () => related.openList(() => cidadesApi.listByEstado(editingItem.id).then(mapItens((x) => ({ id: x.id, descricao: x.cidade, detalhe: x.ddd }))), cidadesApi.getById, CidadesUpsert, "Cidades", "Nenhuma cidade neste estado.", false) }]} />}
-        <Button type="button" variant="outline" onClick={() => activeWindow.dismiss("cancel")}>
-          {readOnly ? "Fechar" : "Cancelar"} <Kbd>Esc</Kbd>
-        </Button>
+        <WindowCancelButton readOnly={readOnly} />
           {!readOnly && (<form.Subscribe
             selector={(state) => [state.canSubmit, state.isSubmitting]}
           >
