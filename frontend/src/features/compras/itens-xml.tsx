@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Check, Link2, TriangleAlert } from "lucide-react";
+import { Check, TriangleAlert } from "lucide-react";
 import { skusApi } from "@/api/catalogo";
 import { getFullSkuName, type Sku } from "@/features/catalogo/skus/types";
 import {
@@ -15,9 +15,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/ui/primitives";
+import { Checkbox } from "@/components/ui/checkbox";
+import { EntityInput } from "@/ui/composites";
+import { SkusFeature } from "@/features/catalogo/skus";
 import { useUi } from "@/ui/imperative";
 import { cn } from "@/lib/utils";
-import { SkuSelecaoWindow } from "./sku-selecao";
 
 export interface ItemXml {
   key: number;
@@ -37,20 +39,60 @@ export interface ItemXml {
 const moeda = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-/** Nome completo do SKU do sistema (busca por código, em cache). */
-function NomeSku({ sku }: { sku: string }) {
+/** Campo de SKU digitável (código, EAN ou nome; Enter abre a busca). Selecionar vincula o item. */
+function VinculoSku({
+  item,
+  onSelecionar,
+}: {
+  item: ItemXml;
+  onSelecionar: (sku: Sku) => void;
+}) {
+  const ui = useUi();
   const { data } = useQuery({
-    queryKey: ["skus", "por-codigo", sku],
-    queryFn: () => skusApi.getBySku(sku),
+    queryKey: ["skus", "por-codigo", item.sku],
+    queryFn: () => skusApi.getBySku(item.sku!),
+    enabled: !!item.sku,
     staleTime: 5 * 60_000,
   });
   return (
-    <span className="min-w-0">
-      <span className="block truncate text-sm font-semibold">
-        {data ? getFullSkuName(data) : "Carregando..."}
-      </span>
-      <span className="text-muted-foreground font-mono text-xs">SKU {sku}</span>
-    </span>
+    <EntityInput<Sku, Sku, string>
+      key={item.sku ? (data?.sku ?? "carregando") : "vazio"}
+      name={`sku-item-${item.key}`}
+      label={`Produto do item ${item.numeroItem ?? item.key}`}
+      hideLabel
+      placeholder="Digite o SKU, EAN ou nome..."
+      initialItem={data ?? null}
+     
+      onSelectId={() => {}}
+      onSelectItem={(sku) => {
+        if (!sku || sku.sku === item.sku) return;
+        if (!sku.ativo) {
+          ui.feedback.notify({ type: "error", title: "Este SKU está inativo." });
+          return;
+        }
+        onSelecionar(sku);
+      }}
+      modalTitle="Selecionar Produto (SKU)"
+      getDisplayLabel={(s) => getFullSkuName(s)}
+      getSearchTerm={(s) => s.sku}
+      getId={(s) => s.sku}
+      fetchById={async (id) => {
+        try {
+          return await skusApi.getBySku(id);
+        } catch {
+          return null;
+        }
+      }}
+      fetchList={async (term) => {
+        try {
+          const r = await skusApi.list(term.trim() || undefined, 1, 10);
+          return r ? { itens: r.itens } : null;
+        } catch {
+          return null;
+        }
+      }}
+      renderFeature={(props) => <SkusFeature {...props} />}
+    />
   );
 }
 
@@ -70,21 +112,6 @@ export function ItensXml({
   const pendentes = itens.filter((i) => !i.sku).length;
   const visiveis = soPendentes ? itens.filter((i) => !i.sku) : itens;
 
-  const buscar = async (item: ItemXml) => {
-    const r = await ui.windows.open<Sku, { initialSearchTerm?: string }>({
-      component: SkuSelecaoWindow,
-      props: { initialSearchTerm: item.produtoNome },
-      title: "Selecionar Produto (SKU)",
-      size: "full",
-    });
-    if (r.status !== "confirmed") return;
-    if (!r.value.ativo) {
-      ui.feedback.notify({ type: "error", title: "Este SKU está inativo." });
-      return;
-    }
-    onVincular(item.key, r.value.sku, !!r.value.produto?.unidadeMedida?.permiteDecimais);
-  };
-
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-3 text-sm">
@@ -96,15 +123,13 @@ export function ItensXml({
             <span className="text-muted-foreground text-xs">
               Vincule cada item da nota a um produto do sistema para avançar.
             </span>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="ml-auto"
-              onClick={() => setSoPendentes((v) => !v)}
-            >
-              {soPendentes ? "Mostrar todos" : `Só pendentes (${pendentes})`}
-            </Button>
+            <label className="ml-auto flex cursor-pointer items-center gap-2 text-sm">
+              <Checkbox
+                checked={soPendentes}
+                onCheckedChange={(v) => setSoPendentes(v === true)}
+              />
+              Só pendentes ({pendentes})
+            </label>
           </>
         )}
       </div>
@@ -117,13 +142,12 @@ export function ItensXml({
               <TableHead>Na nota (fornecedor)</TableHead>
               <TableHead>Produto no sistema</TableHead>
               <TableHead className="w-40 text-right">Qtd × valor</TableHead>
-              <TableHead className="w-24 text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {visiveis.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-muted-foreground py-6 text-center">
+                <TableCell colSpan={4} className="text-muted-foreground py-6 text-center">
                   Nenhum item.
                 </TableCell>
               </TableRow>
@@ -151,24 +175,32 @@ export function ItensXml({
                   </TableCell>
                   <TableCell>
                     <div className="flex min-w-0 items-center gap-2">
-                      {item.sku ? (
-                        <>
-                          <Check className="size-4 shrink-0 text-emerald-600" />
-                          <NomeSku sku={item.sku} />
-                        </>
-                      ) : item.sugestao ? (
-                        <>
-                          <TriangleAlert className="size-4 shrink-0 text-amber-600" />
-                          <span className="flex min-w-0 flex-col">
-                            <span className="text-muted-foreground text-xs">Sugestão</span>
-                            <NomeSku sku={item.sugestao} />
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-destructive text-sm font-semibold">
-                          Sem vínculo
+                      {!item.sku && item.sugestao && (
+                        <span className="flex shrink-0 items-center gap-1">
+                          <TriangleAlert className="size-4 text-amber-600" />
+                          <span className="text-muted-foreground text-xs">Sugestão:</span>
+                          <span className="font-mono text-xs">{item.sugestao}</span>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="outline"
+                            className="size-8"
+                            title="Usar sugestão"
+                            aria-label="Usar sugestão"
+                            onClick={() => onVincular(item.key, item.sugestao!)}
+                          >
+                            <Check className="size-3.5" />
+                          </Button>
                         </span>
                       )}
+                      <div className="min-w-0 flex-1">
+                        <VinculoSku
+                          item={item}
+                          onSelecionar={(sku) =>
+                            onVincular(item.key, sku.sku, !!sku.produto?.unidadeMedida?.permiteDecimais)
+                          }
+                        />
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
@@ -178,34 +210,6 @@ export function ItensXml({
                       </span>
                       <span className="font-semibold">{moeda(total)}</span>
                     </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center justify-end gap-1">
-                      {!item.sku && item.sugestao && (
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="outline"
-                          className="size-8"
-                          title="Usar sugestão"
-                          aria-label="Usar sugestão"
-                          onClick={() => onVincular(item.key, item.sugestao!)}
-                        >
-                          <Check className="size-3.5" />
-                        </Button>
-                      )}
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="outline"
-                        className={cn("size-8", !item.sku && "border-destructive text-destructive")}
-                        title={item.sku ? "Trocar produto vinculado" : "Vincular produto"}
-                        aria-label={item.sku ? "Trocar produto vinculado" : "Vincular produto"}
-                        onClick={() => void buscar(item)}
-                      >
-                        <Link2 className="size-3.5" />
-                      </Button>
-                    </div>
                   </TableCell>
                 </TableRow>
               );
