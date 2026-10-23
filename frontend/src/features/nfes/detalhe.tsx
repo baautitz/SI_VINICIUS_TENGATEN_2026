@@ -203,8 +203,14 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
   const t = nfe.nfesTransportes;
   // NF-e de entrada não traz pagamento próprio: o pagamento é o das parcelas das contas a pagar da compra.
   const { data: contasDaCompra } = useQuery({
-    queryKey: ["contas-pagar", "origem", "COMPRA", nfe.compraId],
-    queryFn: () => contasPagarApi.listByOrigem("COMPRA", nfe.compraId!),
+    queryKey: ["contas-pagar", "origem", "COMPRA+FRETE_COMPRA", nfe.compraId],
+    queryFn: async () => {
+      const [compra, frete] = await Promise.all([
+        contasPagarApi.listByOrigem("COMPRA", nfe.compraId!),
+        contasPagarApi.listByOrigem("FRETE_COMPRA", nfe.compraId!),
+      ]);
+      return { itens: [...compra.itens, ...frete.itens] };
+    },
     enabled: entrada && !!nfe.compraId,
   });
   const { data: compraDaNfe } = useQuery({
@@ -212,9 +218,7 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
     queryFn: () => comprasApi.getById(nfe.compraId!),
     enabled: !!nfe.compraId,
   });
-  const parcelasDaCompra = (contasDaCompra?.itens ?? []).flatMap((c) =>
-    (c.contasPagarParcelas ?? []).map((p) => ({ conta: c.descricao, contaId: c.id, ...p })),
-  );
+  const parcelasDaCompra = contasDaCompra?.itens ?? [];
   const abrirCompra = async () => {
     if (!nfe.compraId) return;
     await ui.windows.open<true, CompraWindowProps>({
@@ -404,14 +408,14 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
           {nfe.nfesPagamentos.length === 0 && parcelasDaCompra.length > 0 ? (
             <GradeLeitura
               grade="nfe-pagamentos"
-              onAbrir={(row) => void abrirConta(parcelasDaCompra[row].contaId)}
+              onAbrir={(row) => void abrirConta(parcelasDaCompra[row].id)}
               rotuloAbrir="Abrir conta a pagar"
               colunas={["Parcela", "Vencimento", "Valor", "Situação"]}
               direita={[2]}
               linhas={parcelasDaCompra.map((p) => [
-                `${contasDaCompra!.itens.length > 1 ? `${p.conta} · ` : ""}${p.numeroParcela}`,
+                `${p.numeroDocumento} · ${p.numeroParcela}/${p.totalParcelas}`,
                 formatDateToLocal(p.dataVencimento),
-                brl(p.valorParcela),
+                brl(p.valor),
                 statusParcelaLabels[p.status] ?? p.status,
               ])}
             />

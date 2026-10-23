@@ -3,9 +3,9 @@
 import { avisoTituloExterno } from "../origem";
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ContasPagarList } from "./list";
+import { ContasPagarList, TODOS } from "./list";
 import { ContasPagarUpsertForm, type ContasPagarUpsertProps } from "./upsert";
-import { ContasPagar, ContasPagarParcela } from "./types";
+import { ContasPagar } from "./types";
 import {
   BaixaParcelaWindow,
   type BaixaParcelaWindowProps,
@@ -20,14 +20,21 @@ export function ContasPagarFeature() {
   const ui = useUi();
   const queryClient = useQueryClient();
   const list = useFeatureList<ContasPagar>();
+  const [status, setStatus] = React.useState(TODOS);
+  const [origem, setOrigem] = React.useState(TODOS);
+  const [numeroDocumento, setNumeroDocumento] = React.useState("");
+  const { setPage } = list;
   const { data, isLoading } = useQuery({
-    queryKey: ["contas-pagar", list.deferredSearch, list.page],
+    queryKey: ["contas-pagar", list.deferredSearch, status, origem, numeroDocumento, list.page],
     queryFn: async () => {
-      const res = await contasPagarApi.list(
-        list.deferredSearch.trim() || undefined,
-        list.page,
-        50,
-      );
+      const res = await contasPagarApi.list({
+        search: list.deferredSearch.trim() || undefined,
+        status: status === TODOS ? undefined : status,
+        origemTipo: origem === TODOS ? undefined : origem,
+        numeroDocumento: numeroDocumento || undefined,
+        page: list.page,
+        pageSize: 50,
+      });
       return {
         itens: res?.itens ?? [],
         totalPages: res?.totalDePaginas ?? 1,
@@ -50,8 +57,6 @@ export function ContasPagarFeature() {
         props: {
           editingItem,
           readOnly,
-          onBaixa: (contaId, parcela) => openBaixa(contaId, parcela),
-          onEstorno: (contaId, parcela) => openBaixa(contaId, parcela, true),
         },
         title: readOnly
           ? "Detalhes da Conta a Pagar"
@@ -65,7 +70,7 @@ export function ContasPagarFeature() {
         ui.feedback.notify({
           type: "success",
           title: editingItem
-            ? "Conta atualizada com sucesso."
+            ? "Parcela atualizada com sucesso."
             : "Conta criada com sucesso.",
         });
       }
@@ -84,7 +89,7 @@ export function ContasPagarFeature() {
     }
     const result = await ui.windows.confirm({
       title: "Excluir Conta a Pagar",
-      description: `Deseja realmente excluir a conta a pagar #${item.id} - ${item.descricao}? Esta ação não poderá ser desfeita.`,
+      description: `Deseja realmente excluir a parcela ${item.numeroParcela}/${item.totalParcelas} do documento ${item.numeroDocumento} - ${item.descricao}? Esta ação não poderá ser desfeita.`,
       confirmLabel: "Excluir",
       confirmVariant: "destructive",
     });
@@ -103,28 +108,22 @@ export function ContasPagarFeature() {
     }
   };
 
-  async function openBaixa(
-    contaId: number,
-    parcela: ContasPagarParcela,
-    isEstorno = false,
-  ) {
+  async function openBaixa(item: ContasPagar, isEstorno = false) {
     const result = await ui.windows.open<true, BaixaParcelaWindowProps>({
       component: BaixaParcelaWindow,
       props: {
-        contaId,
+        contaId: item.id,
         parcela: {
-          numeroParcela: parcela.numeroParcela,
-          valorParcela: parcela.valorParcela,
-          valorPagoOuRecebido: parcela.valorPago,
-          status: parcela.status,
+          numeroParcela: item.numeroParcela,
+          valorParcela: item.valor,
+          valorPagoOuRecebido: item.valorPago,
+          status: item.status,
         },
         tipo: "PAGAR",
         isEstorno,
       },
       title: isEstorno ? "Estornar Pagamento" : "Registrar Pagamento",
-      description: isEstorno
-        ? `Informe o valor a estornar para a parcela #${parcela.numeroParcela} da conta #${contaId}.`
-        : `Informe o valor pago para a parcela #${parcela.numeroParcela} da conta #${contaId}.`,
+      description: `${isEstorno ? "Informe o valor a estornar" : "Informe o valor pago"} da parcela ${item.numeroParcela}/${item.totalParcelas} do documento ${item.numeroDocumento}.`,
       size: "small",
     });
     if (result.status === "confirmed") await invalidate();
@@ -148,7 +147,14 @@ export function ContasPagarFeature() {
       onRowSelectionChange={list.setRowSelection}
       selectAllAcrossPages={list.selectAllAcrossPages}
       onSelectAllAcrossPagesChange={list.setSelectAllAcrossPages}
-      onBaixa={(contaId, parcela) => openBaixa(contaId, parcela)}
+      status={status}
+      origem={origem}
+      numeroDocumento={numeroDocumento}
+      onStatusChange={(v) => { setStatus(v); setPage(1); }}
+      onOrigemChange={(v) => { setOrigem(v); setPage(1); }}
+      onDocumentoChange={(v) => { setNumeroDocumento(v); setPage(1); }}
+      onBaixa={(item) => openBaixa(item)}
+      onEstorno={(item) => openBaixa(item, true)}
     />
   );
 }

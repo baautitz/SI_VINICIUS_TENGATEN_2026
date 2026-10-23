@@ -45,31 +45,15 @@ export function BaixaParcelaWindow({
       if (!parcela) return;
       if (tipo === "PAGAR") {
         if (isEstorno) {
-          await contasPagarApi.estornarPagamento(
-            contaId,
-            parcela.numeroParcela,
-            valorBaixa,
-          );
+          await contasPagarApi.estornarPagamento(contaId, valorBaixa);
         } else {
-          await contasPagarApi.registrarPagamento(
-            contaId,
-            parcela.numeroParcela,
-            valorBaixa,
-          );
+          await contasPagarApi.registrarPagamento(contaId, valorBaixa);
         }
       } else {
         if (isEstorno) {
-          await contasReceberApi.estornarRecebimento(
-            contaId,
-            parcela.numeroParcela,
-            valorBaixa,
-          );
+          await contasReceberApi.estornarRecebimento(contaId, valorBaixa);
         } else {
-          await contasReceberApi.registrarRecebimento(
-            contaId,
-            parcela.numeroParcela,
-            valorBaixa,
-          );
+          await contasReceberApi.registrarRecebimento(contaId, valorBaixa);
         }
       }
     },

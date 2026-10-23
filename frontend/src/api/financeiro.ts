@@ -6,44 +6,40 @@ import type { MetodoPagamento, MetodoPagamentoFormValues } from "@/features/fina
 import type { CondicaoPagamento, CondicaoPagamentoFormValues } from "@/features/financeiro/condicoes/types";
 
 export interface ParcelaPagarCommand {
-  numeroParcela: number;
   dataVencimento: string;
-  valorParcela: number;
-  valorPago: number;
-  status: string;
+  valor: number;
 }
 
-export interface ContaPagarFormValues {
+export interface ContaPagarCreateValues {
   descricao: string;
   fornecedorId: number;
+  numeroDocumento?: string | null;
   dataEmissao?: string | null;
-  dataVencimento?: string | null;
-  valorOriginal: number;
   condicaoPagamentoId?: number | null;
   observacao?: string | null;
   parcelas: ParcelaPagarCommand[];
 }
 
-export interface ParcelaReceberCommand {
-  numeroParcela: number;
+export interface ContaPagarUpdateValues {
+  descricao: string;
   dataVencimento: string;
-  valorParcela: number;
-  valorRecebido: number;
-  status: string;
+  valor: number;
+  observacao?: string | null;
 }
 
-export interface ContaReceberFormValues {
+export interface ContaReceberCreateValues {
   descricao: string;
   clienteId: number;
+  numeroDocumento?: string | null;
   dataEmissao?: string | null;
-  dataVencimento?: string | null;
-  valorOriginal: number;
   condicaoPagamentoId?: number | null;
   observacao?: string | null;
-  parcelas: ParcelaReceberCommand[];
+  parcelas: ParcelaPagarCommand[];
 }
 
-export type OrigemTituloFinanceiro = "MANUAL" | "VENDA" | "COMPRA" | "DEVOLUCAO_VENDA";
+export type ContaReceberUpdateValues = ContaPagarUpdateValues;
+
+export type OrigemTituloFinanceiro = "MANUAL" | "VENDA" | "COMPRA" | "FRETE_COMPRA" | "DEVOLUCAO_VENDA";
 
 const queryFiltro = (f: Record<string, string | number | undefined>) =>
   Object.entries(f)
@@ -58,26 +54,22 @@ export const contasPagarApi = {
     http.get<PaginatedResult<ContasPagar>>(`/api/financeiro/contas-pagar?${queryFiltro({ clienteId, pageSize })}`),
   listByOrigem: (origemTipo: OrigemTituloFinanceiro, origemId: number, pageSize = 100) =>
     http.get<PaginatedResult<ContasPagar>>(`/api/financeiro/contas-pagar?${queryFiltro({ origemTipo, origemId, pageSize })}`),
-  list: (search?: string, page = 1, pageSize = 20) =>
+  list: (
+    f: { search?: string; status?: string; origemTipo?: string; numeroDocumento?: string; page?: number; pageSize?: number } = {},
+  ) =>
     http.get<PaginatedResult<ContasPagar>>(
-      `/api/financeiro/contas-pagar?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`
+      `/api/financeiro/contas-pagar?${queryFiltro({ ...f, search: f.search ?? "", page: f.page ?? 1, pageSize: f.pageSize ?? 20 })}`,
     ),
   getById: (id: number) => http.get<ContasPagar>(`/api/financeiro/contas-pagar/${id}`),
-  create: (data: ContaPagarFormValues) =>
-    http.post<Resultado<ContasPagar>>("/api/financeiro/contas-pagar", data),
-  update: (id: number, data: ContaPagarFormValues) =>
+  create: (data: ContaPagarCreateValues) =>
+    http.post<Resultado<ContasPagar[]>>("/api/financeiro/contas-pagar", data),
+  update: (id: number, data: ContaPagarUpdateValues) =>
     http.put<Resultado<ContasPagar>>(`/api/financeiro/contas-pagar/${id}`, data),
   delete: (id: number) => http.delete(`/api/financeiro/contas-pagar/${id}`),
-  registrarPagamento: (id: number, numeroParcela: number, valorPago: number) =>
-    http.post<Resultado<ContasPagar>>(`/api/financeiro/contas-pagar/${id}/parcelas/${numeroParcela}/pagar`, {
-      numeroParcela,
-      valorPago,
-    }),
-  estornarPagamento: (id: number, numeroParcela: number, valorEstorno: number) =>
-    http.post<Resultado<ContasPagar>>(`/api/financeiro/contas-pagar/${id}/parcelas/${numeroParcela}/estornar`, {
-      numeroParcela,
-      valorEstorno,
-    }),
+  registrarPagamento: (id: number, valor: number) =>
+    http.post<Resultado<ContasPagar>>(`/api/financeiro/contas-pagar/${id}/pagar`, { valor }),
+  estornarPagamento: (id: number, valor: number) =>
+    http.post<Resultado<ContasPagar>>(`/api/financeiro/contas-pagar/${id}/estornar`, { valor }),
 };
 
 export const contasReceberApi = {
@@ -85,26 +77,22 @@ export const contasReceberApi = {
     http.get<PaginatedResult<ContasReceber>>(`/api/financeiro/contas-receber?${queryFiltro({ clienteId, pageSize })}`),
   listByOrigem: (origemTipo: OrigemTituloFinanceiro, origemId: number, pageSize = 100) =>
     http.get<PaginatedResult<ContasReceber>>(`/api/financeiro/contas-receber?${queryFiltro({ origemTipo, origemId, pageSize })}`),
-  list: (search?: string, page = 1, pageSize = 20) =>
+  list: (
+    f: { search?: string; status?: string; origemTipo?: string; numeroDocumento?: string; page?: number; pageSize?: number } = {},
+  ) =>
     http.get<PaginatedResult<ContasReceber>>(
-      `/api/financeiro/contas-receber?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`
+      `/api/financeiro/contas-receber?${queryFiltro({ ...f, search: f.search ?? "", page: f.page ?? 1, pageSize: f.pageSize ?? 20 })}`,
     ),
   getById: (id: number) => http.get<ContasReceber>(`/api/financeiro/contas-receber/${id}`),
-  create: (data: ContaReceberFormValues) =>
-    http.post<Resultado<ContasReceber>>("/api/financeiro/contas-receber", data),
-  update: (id: number, data: ContaReceberFormValues) =>
+  create: (data: ContaReceberCreateValues) =>
+    http.post<Resultado<ContasReceber[]>>("/api/financeiro/contas-receber", data),
+  update: (id: number, data: ContaReceberUpdateValues) =>
     http.put<Resultado<ContasReceber>>(`/api/financeiro/contas-receber/${id}`, data),
   delete: (id: number) => http.delete(`/api/financeiro/contas-receber/${id}`),
-  registrarRecebimento: (id: number, numeroParcela: number, valorRecebido: number) =>
-    http.post<Resultado<ContasReceber>>(`/api/financeiro/contas-receber/${id}/parcelas/${numeroParcela}/receber`, {
-      numeroParcela,
-      valorRecebido,
-    }),
-  estornarRecebimento: (id: number, numeroParcela: number, valorEstorno: number) =>
-    http.post<Resultado<ContasReceber>>(`/api/financeiro/contas-receber/${id}/parcelas/${numeroParcela}/estornar`, {
-      numeroParcela,
-      valorEstorno,
-    }),
+  registrarRecebimento: (id: number, valor: number) =>
+    http.post<Resultado<ContasReceber>>(`/api/financeiro/contas-receber/${id}/receber`, { valor }),
+  estornarRecebimento: (id: number, valor: number) =>
+    http.post<Resultado<ContasReceber>>(`/api/financeiro/contas-receber/${id}/estornar`, { valor }),
 };
 
 export const metodosApi = {

@@ -1,9 +1,10 @@
-export type OrigemTitulo = "MANUAL" | "VENDA" | "COMPRA" | "DEVOLUCAO_VENDA";
+export type OrigemTitulo = "MANUAL" | "VENDA" | "COMPRA" | "FRETE_COMPRA" | "DEVOLUCAO_VENDA";
 
 export const origemTituloLabels: Record<OrigemTitulo, string> = {
   MANUAL: "Manual",
   VENDA: "Venda",
   COMPRA: "Compra",
+  FRETE_COMPRA: "Frete da compra",
   DEVOLUCAO_VENDA: "Devolução de venda",
 };
 

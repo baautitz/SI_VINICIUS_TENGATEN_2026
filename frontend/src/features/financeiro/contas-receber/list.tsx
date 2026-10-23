@@ -2,179 +2,153 @@
 
 import { origemTituloLabels } from "../origem";
 import React from "react";
-import { ColumnDef, flexRender } from "@tanstack/react-table";
+import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/ui/primitives";
-import { DataTable } from "@/ui/composites";
-import { FeatureLayout } from "@/ui/composites";
-import { FeatureHeader } from "@/ui/composites";
+import { DataTable, FeatureLayout, FeatureHeader } from "@/ui/composites";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/primitives";
 import { getActionsColumn } from "@/utils/table-columns";
 import { StatusTituloBadge } from "../components/status-titulo-badge";
 import { formatDateToLocal } from "@/utils/date-utils";
-import { Landmark, Check } from "lucide-react";
-import { ContasReceber, ContasReceberParcela } from "./types";
+import { Landmark, Check, RotateCcw, X } from "lucide-react";
+import { ContasReceber } from "./types";
+import { statusTituloLabels } from "../contas-pagar/types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 import { fireAndForget } from "@/lib/utils";
 
+export const TODOS = "TODOS";
+
 interface ContasReceberListProps extends FeatureListProps<ContasReceber> {
-  onBaixa: (contaId: number, parcela: ContasReceberParcela) => void;
+  status: string;
+  origem: string;
+  numeroDocumento: string;
+  onStatusChange: (v: string) => void;
+  onOrigemChange: (v: string) => void;
+  onDocumentoChange: (v: string) => void;
+  onBaixa: (item: ContasReceber) => void;
+  onEstorno: (item: ContasReceber) => void;
 }
 
+const brl = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+
+const Filtro = ({ valor, onChange, rotulo, opcoes }: {
+  valor: string; onChange: (v: string) => void; rotulo: string; opcoes: Record<string, string>;
+}) => (
+  <Select value={valor} onValueChange={onChange}>
+    <SelectTrigger aria-label={rotulo} className="h-8 w-44 rounded-lg">
+      <SelectValue />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value={TODOS}>{rotulo}: todos</SelectItem>
+      {Object.entries(opcoes).map(([k, v]) => (
+        <SelectItem key={k} value={k}>{v}</SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+);
+
 export function ContasReceberList({
-  items: contas,
-  loading,
-  searchTerm,
-  page,
-  totalPages,
-  totalItems,
-  onSearchChange,
-  onAdd,
-  onEdit,
-  onDelete,
-  onView,
-  onPageChange,
-  onBaixa,
+  items: contas, loading, searchTerm, page, totalPages, totalItems,
+  status, origem, numeroDocumento,
+  onSearchChange, onAdd, onEdit, onDelete, onView, onPageChange,
+  onStatusChange, onOrigemChange, onDocumentoChange, onBaixa, onEstorno,
 }: ContasReceberListProps) {
-  const extra = (item: ContasReceber) => {
-    const firstUnpaid = item.contasReceberParcelas
-      ?.filter((p) => p.status === "ABERTO" || p.status === "PARCIAL")
-      ?.sort((a, b) => a.numeroParcela - b.numeroParcela)[0];
-    return (
-      firstUnpaid && (
-        <Button
-          size="icon-sm"
-          variant="ghost"
-          aria-label="Receber parcela"
-          title="Receber parcela"
-          onClick={() => fireAndForget(() => onBaixa(item.id, firstUnpaid))}
-        >
+  const emAberto = (i: ContasReceber) => i.status === "ABERTO" || i.status === "PARCIAL";
+  // Só lançamento manual, em aberto e sem pagamento, pode ser editado/excluído.
+  const editavel = (i: ContasReceber) => i.origemTipo === "MANUAL" && i.status === "ABERTO" && i.valorPago === 0;
+
+  const extra = (item: ContasReceber) => (
+    <>
+      {emAberto(item) && (
+        <Button size="icon-sm" variant="ghost" aria-label="Receber parcela" title="Receber parcela" onClick={() => fireAndForget(() => onBaixa(item))}>
           <Check />
         </Button>
-      )
-    );
-  };
-  const editColumn = getActionsColumn({ onEdit, onDelete, extra });
-  const viewColumn = getActionsColumn({ onView, extra });
+      )}
+      {item.valorPago > 0 && item.status !== "CANCELADO" && (
+        <Button size="icon-sm" variant="ghost" aria-label="Estornar recebimento" title="Estornar recebimento" onClick={() => fireAndForget(() => onEstorno(item))}>
+          <RotateCcw />
+        </Button>
+      )}
+    </>
+  );
+  const acoes = getActionsColumn<ContasReceber>({ onEdit, onDelete, extra });
+  const acoesLeitura = getActionsColumn<ContasReceber>({ onView, extra });
 
   const columns: ColumnDef<ContasReceber>[] = [
     {
-      accessorKey: "id",
-      header: "Código",
-      size: 80,
-      cell: ({ row }) => (
-        <span className="font-semibold text-foreground">{row.getValue("id")}</span>
-      ),
-    },
-    {
-      accessorKey: "descricao",
-      header: "Descrição",
-      cell: ({ row }) => (
-        <span className="font-medium text-foreground truncate max-w-xs block">
-          {row.getValue("descricao")}
-        </span>
-      ),
-    },
-    {
-      id: "cliente",
-      header: "Cliente",
+      id: "documento",
+      header: "Documento",
       cell: ({ row }) => {
-        const cliente = row.original.cliente;
+        const i = row.original;
         return (
-          <span className="text-muted-foreground truncate max-w-xs block">
-            {cliente?.nomeRazaoSocial || "-"}
-          </span>
+          <button
+            type="button"
+            className="text-left hover:underline"
+            title="Filtrar por este documento"
+            onClick={() => onDocumentoChange(i.numeroDocumento)}
+          >
+            <span className="text-muted-foreground">{origemTituloLabels[i.origemTipo] ?? i.origemTipo}</span>{" "}
+            <span className="font-semibold text-foreground">{i.numeroDocumento}</span>
+          </button>
         );
       },
     },
     {
-      id: "origem",
-      header: "Origem",
-      cell: ({ row }) => (
-        <span>
-          {origemTituloLabels[row.original.origemTipo] ?? row.original.origemTipo}
-          {row.original.origemId ? <span className="text-muted-foreground"> #{row.original.origemId}</span> : null}
-        </span>
-      ),
+      id: "parcela",
+      header: "Parcela",
+      size: 80,
+      cell: ({ row }) => <span>{row.original.numeroParcela}/{row.original.totalParcelas}</span>,
     },
     {
-      accessorKey: "dataEmissao",
-      header: "Emissão",
-      cell: ({ row }) => {
-        const val = row.getValue("dataEmissao") as string;
-        return <span>{val ? formatDateToLocal(val) : "-"}</span>;
-      },
+      accessorKey: "descricao",
+      header: "Descrição",
+      cell: ({ row }) => <span className="font-medium text-foreground truncate max-w-xs block">{row.original.descricao}</span>,
+    },
+    {
+      id: "cliente",
+      header: "Cliente",
+      cell: ({ row }) => (
+        <span className="text-muted-foreground truncate max-w-xs block">
+          {row.original.cliente?.nomeRazaoSocial || "-"}
+        </span>
+      ),
     },
     {
       id: "vencimento",
       header: "Vencimento",
       cell: ({ row }) => {
-        const item = row.original;
-        if (item.status === "PAGO") {
-          return <span className="text-muted-foreground text-xs font-semibold">Quitado</span>;
-        }
-        const abertas = item.contasReceberParcelas?.filter(
-          (p) => p.status === "ABERTO" || p.status === "PARCIAL"
-        );
-        if (!abertas || abertas.length === 0) {
-          return <span>-</span>;
-        }
-        const maisProxima = [...abertas].sort(
-          (a, b) => new Date(a.dataVencimento).getTime() - new Date(b.dataVencimento).getTime()
-        )[0];
-
-        const dateStr = formatDateToLocal(maisProxima.dataVencimento);
-        const hoje = new Date();
-        const hojeLocal = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
-        const isAtrasada = String(maisProxima.dataVencimento).slice(0, 10) < hojeLocal;
-
-        return (
-          <span className={isAtrasada ? "text-destructive font-bold" : "text-foreground font-semibold"}>
-            {dateStr}
-          </span>
-        );
+        const i = row.original;
+        const atrasada = emAberto(i) && new Date(i.dataVencimento).getTime() < new Date().setHours(0, 0, 0, 0);
+        return <span className={atrasada ? "text-destructive font-bold" : "text-foreground"}>{formatDateToLocal(i.dataVencimento)}</span>;
       },
     },
     {
-      accessorKey: "valorOriginal",
-      header: () => <div className="text-right font-semibold">Original</div>,
-      cell: ({ row }) => {
-        const valor = Number(row.getValue("valorOriginal") || 0);
-        return (
-          <div className="text-right font-semibold text-foreground">
-            {new Intl.NumberFormat("pt-BR", {
-              style: "currency",
-              currency: "BRL",
-            }).format(valor)}
-          </div>
-        );
-      },
+      accessorKey: "valor",
+      header: () => <div className="text-right font-semibold">Valor</div>,
+      cell: ({ row }) => <div className="text-right font-semibold text-foreground">{brl(Number(row.original.valor))}</div>,
+    },
+    {
+      accessorKey: "valorPago",
+      header: () => <div className="text-right font-semibold">Recebido</div>,
+      cell: ({ row }) => <div className="text-right text-foreground">{brl(Number(row.original.valorPago))}</div>,
     },
     {
       accessorKey: "valorSaldo",
       header: () => <div className="text-right font-semibold">Saldo</div>,
-      cell: ({ row }) => {
-        const valor = Number(row.getValue("valorSaldo") || 0);
-        return (
-          <div className="text-right font-semibold text-foreground">
-            {new Intl.NumberFormat("pt-BR", {
-              style: "currency",
-              currency: "BRL",
-            }).format(valor)}
-          </div>
-        );
-      },
+      cell: ({ row }) => <div className="text-right font-semibold text-foreground">{brl(Number(row.original.valorSaldo))}</div>,
     },
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => <StatusTituloBadge status={row.getValue("status") as string} />,
+      cell: ({ row }) => <StatusTituloBadge status={row.original.status} />,
     },
     {
       id: "actions",
       header: () => <div className="text-right px-4">Ações</div>,
       cell: (ctx) => {
-        const item = ctx.row.original;
-        const canEdit = item.status === "ABERTO" || item.status === "PARCIAL";
-        return flexRender((canEdit ? editColumn : viewColumn).cell, ctx);
+        const i = ctx.row.original;
+        // Editar/excluir só no manual aberto sem pagamento; senão só visualizar.
+        const col = editavel(i) ? acoes : acoesLeitura;
+        return col.cell && typeof col.cell === "function" ? col.cell(ctx) : null;
       },
     },
   ];
@@ -182,12 +156,7 @@ export function ContasReceberList({
   return (
     <div className="flex-1 min-h-0 flex flex-col h-full">
       <FeatureLayout>
-        <FeatureHeader
-          title="Contas a Receber"
-          icon={<Landmark />}
-          onAdd={onAdd}
-          addButtonLabel="Nova Conta"
-        />
+        <FeatureHeader title="Contas a Receber" icon={<Landmark />} onAdd={onAdd} addButtonLabel="Nova Conta" />
 
         <DataTable
           columns={columns}
@@ -199,20 +168,23 @@ export function ContasReceberList({
           totalItems={totalItems}
           globalFilter={searchTerm}
           onGlobalFilterChange={onSearchChange}
-          searchPlaceholder="Pesquisar por descrição ou cliente..."
+          searchPlaceholder="Pesquisar por descrição, cliente ou documento..."
           getRowId={(row) => row.id.toString()}
-          onEditRow={(item) => {
-            if (item.status === "ABERTO" || item.status === "PARCIAL") {
-              onEdit(item);
-            } else {
-              onView(item);
-            }
-          }}
+          onEditRow={(item) => (editavel(item) ? onEdit(item) : onView(item))}
           onDeleteRow={(item) => {
-            if (item.status === "ABERTO" || item.status === "PARCIAL") {
-              onDelete(item);
-            }
+            if (editavel(item)) onDelete(item);
           }}
+          actions={
+            <>
+              <Filtro valor={status} onChange={onStatusChange} rotulo="Status" opcoes={statusTituloLabels} />
+              <Filtro valor={origem} onChange={onOrigemChange} rotulo="Origem" opcoes={origemTituloLabels} />
+              {numeroDocumento && (
+                <Button size="sm" variant="outline" onClick={() => onDocumentoChange("")}>
+                  Documento {numeroDocumento} <X />
+                </Button>
+              )}
+            </>
+          }
         />
       </FeatureLayout>
     </div>
