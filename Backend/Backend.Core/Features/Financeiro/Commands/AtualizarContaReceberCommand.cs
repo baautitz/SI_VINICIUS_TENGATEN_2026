@@ -1,23 +1,9 @@
-using System;
-using System.Collections.Generic;
-using Backend.Core.Features.Financeiro.Entities.Enums;
-
 namespace Backend.Core.Features.Financeiro.Commands;
 
-public record AtualizarParcelaReceberCommand(
-    int NumeroParcela,
-    DateTime DataVencimento,
-    decimal ValorParcela,
-    decimal ValorRecebido,
-    StatusTituloFinanceiro Status
-);
-
+// Edita UMA parcela (linha) manual.
 public record AtualizarContaReceberCommand(
     string Descricao,
-    int ClienteId,
-    DateTime? DataEmissao,
-    decimal ValorOriginal,
-    int? CondicaoPagamentoId,
-    string? Observacao,
-    IEnumerable<AtualizarParcelaReceberCommand> Parcelas
+    DateTime DataVencimento,
+    decimal Valor,
+    string? Observacao
 );

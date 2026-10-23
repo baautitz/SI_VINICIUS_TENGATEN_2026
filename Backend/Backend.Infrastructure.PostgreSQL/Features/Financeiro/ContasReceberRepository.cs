@@ -1,11 +1,8 @@
 using System.Linq;
 using Backend.Core.Common.Results;
-using Backend.Core.Features.Parceiros.Enums;
-using Backend.Core.Common.ValueObjects;
 using Backend.Core.Features.Localizacao.Entities;
 using Backend.Core.Features.Financeiro.DTOs;
 using Backend.Core.Features.Financeiro.Entities;
-using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.Financeiro.Repositories;
 using Backend.Core.Features.Parceiros.Entities;
 using Backend.Infrastructure.PostgreSQL.Common;
@@ -22,318 +19,87 @@ public class ContasReceberRepository : IContasReceberRepository
         _session = session;
     }
 
-    public async Task<ResultadoPaginado<ContasReceber>> ObterContasReceber(int pagina = 1, int tamanhoDaPagina = 20)
-    {
-        var offset = (pagina - 1) * tamanhoDaPagina;
+    private const string SelectSql = @"
+        SELECT cr.id AS Id, cr.descricao AS Descricao, cr.data_emissao AS DataEmissao, cr.data_vencimento AS DataVencimento,
+               cr.valor AS Valor, cr.valor_pago AS ValorPago, cr.status AS Status, cr.observacao AS Observacao, cr.criado_em AS CriadoEm,
+               cr.origem_tipo::text AS OrigemTipo, cr.origem_id AS OrigemId, cr.numero_documento AS NumeroDocumento,
+               cr.numero_parcela AS NumeroParcela, cr.total_parcelas AS TotalParcelas,
+               c.id AS Id, c.tipo_pessoa AS TipoPessoa, c.nome_razaosocial AS NomeRazaoSocial, c.cpf_cnpj AS CpfCnpj,
+               c.rg_ie AS RgIe, c.apelido_nomefantasia AS ApelidoNomeFantasia, c.logradouro AS Logradouro, c.numero AS Numero,
+               c.telefone AS Telefone, c.email AS Email, c.limite_credito AS LimiteCredito,
+               c.ativo AS Ativo, c.criado_em AS CriadoEm, c.observacao AS Observacao,
+               p.id AS Id, p.ddi AS Ddi, p.codigo_iso_pais AS CodigoIsoPais, p.codigo_iso_moeda AS CodigoIsoMoeda, p.simbolo_moeda AS SimboloMoeda, p.pais AS Pais,
+               con.id AS Id, con.descricao AS Descricao, con.entrada_minima_percentual AS EntradaMinimaPercentual,
+               con.desconto_percentual AS DescontoPercentual, con.acrescimo_percentual AS AcrescimoPercentual,
+               con.multa_percentual AS MultaPercentual, con.taxa_juros_percentual AS TaxaJurosPercentual, con.ativo AS Ativo,
+               mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo
+        FROM contas_receber cr
+        JOIN clientes c ON c.id = cr.cliente_id
+        JOIN paises p ON p.id = c.nacionalidade_id
+        LEFT JOIN condicoes_pagamentos con ON con.id = cr.condicao_pagamento_id
+        LEFT JOIN metodos_pagamento mp ON mp.codigo = con.metodo_pagamento_codigo";
 
-        const string countSql = "SELECT COUNT(*) FROM contas_receber;";
-
-        const string querySql = @"
-            SELECT cr.id AS Id, cr.descricao AS Descricao, cr.data_emissao AS DataEmissao, cr.data_vencimento AS DataVencimento, cr.valor_original AS ValorOriginal,
-                   cr.valor_saldo AS ValorSaldo, cr.status AS Status, cr.observacao AS Observacao, cr.criado_em AS CriadoEm,
-                   cr.origem_tipo::text AS OrigemTipo, cr.origem_id AS OrigemId,
-                   c.id AS Id, c.tipo_pessoa AS TipoPessoa, c.nome_razaosocial AS NomeRazaoSocial, c.cpf_cnpj AS CpfCnpj,
-                   c.rg_ie AS RgIe, c.apelido_nomefantasia AS ApelidoNomeFantasia, c.logradouro AS Logradouro, c.numero AS Numero,
-                   c.telefone AS Telefone, c.email AS Email, c.limite_credito AS LimiteCredito,
-                   c.ativo AS Ativo, c.criado_em AS CriadoEm, c.observacao AS Observacao,
-                   p.id AS Id, p.ddi AS Ddi, p.codigo_iso_pais AS CodigoIsoPais, p.codigo_iso_moeda AS CodigoIsoMoeda, p.simbolo_moeda AS SimboloMoeda, p.pais AS Pais,
-                   con.id AS Id, con.descricao AS Descricao, con.entrada_minima_percentual AS EntradaMinimaPercentual,
-                   con.desconto_percentual AS DescontoPercentual, con.acrescimo_percentual AS AcrescimoPercentual,
-                   con.multa_percentual AS MultaPercentual, con.taxa_juros_percentual AS TaxaJurosPercentual, con.ativo AS Ativo,
-                   mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo
-            FROM contas_receber cr
-            JOIN clientes c ON c.id = cr.cliente_id
-            JOIN paises p ON p.id = c.nacionalidade_id
-            LEFT JOIN condicoes_pagamentos con ON con.id = cr.condicao_pagamento_id
-            LEFT JOIN metodos_pagamento mp ON mp.codigo = con.metodo_pagamento_codigo
-            ORDER BY cr.criado_em DESC, cr.id DESC
-            LIMIT @TamanhoDaPagina OFFSET @Offset;";
-
-        var total = await _session.Connection.ExecuteScalarAsync<int>(
-            countSql, transaction: _session.Transaction);
-
-        var types = new[] { typeof(ContasReceber), typeof(Clientes), typeof(Paises), typeof(CondicoesPagamentos), typeof(MetodosPagamentos) };
-
-        var rawContas = await _session.Connection.QueryAsync(
-            querySql,
-            types,
-            obj =>
+    private Task<IEnumerable<ContasReceber>> Consultar(string sqlComWhereEOrder, object param)
+        => _session.Connection.QueryAsync<ContasReceber, Clientes, Paises, CondicoesPagamentos, MetodosPagamentos, ContasReceber>(
+            SelectSql + sqlComWhereEOrder,
+            (conta, cliente, pais, condicao, metodo) =>
             {
-                var conta = (ContasReceber)obj[0];
-                var cliente = (Clientes)obj[1];
-                var pais = (Paises)obj[2];
-                var condicao = (CondicoesPagamentos)obj[3];
-                var metodo = (MetodosPagamentos)obj[4];
-
                 var cl = new Clientes(
-                    cliente.Id,
-                    cliente.TipoPessoa,
-                    cliente.NomeRazaoSocial,
-                    cliente.CpfCnpj,
-                    pais,
-                    cliente.RgIe,
-                    cliente.ApelidoNomeFantasia,
-                    cliente.Logradouro,
-                    cliente.Numero,
-                    null,
-                    cliente.Telefone,
-                    cliente.Email,
-                    cliente.LimiteCredito,
-                    cliente.Observacao,
-                    cliente.Ativo,
-                    cliente.Sexo,
-                    cliente.DataNascimento,
-                    cliente.CriadoEm
-                );
+                    cliente.Id, cliente.TipoPessoa, cliente.NomeRazaoSocial, cliente.CpfCnpj, pais,
+                    cliente.RgIe, cliente.ApelidoNomeFantasia, cliente.Logradouro, cliente.Numero, null,
+                    cliente.Telefone, cliente.Email, cliente.LimiteCredito, cliente.Observacao, cliente.Ativo,
+                    cliente.Sexo, cliente.DataNascimento, cliente.CriadoEm);
 
                 if (condicao != null && metodo != null)
-                {
                     condicao.AtualizarMetodoPagamento(metodo);
-                }
 
                 return new ContasReceber(
-                    conta.Id,
-                    conta.Descricao,
-                    conta.ValorOriginal,
-                    cl,
-                    conta.DataEmissao,
-                    conta.DataVencimento,
-                    condicao,
-                    conta.OrigemTipo,
-                    conta.OrigemId,
-                    conta.Observacao,
-                    conta.CriadoEm,
-                    conta.Status
-                );
+                    conta.Id, conta.Descricao, conta.Valor, cl, conta.DataVencimento, conta.NumeroDocumento,
+                    conta.NumeroParcela, conta.TotalParcelas, conta.DataEmissao, condicao, conta.OrigemTipo, conta.OrigemId,
+                    conta.Observacao, conta.CriadoEm, conta.ValorPago, conta.Status);
             },
-            new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
+            param,
             transaction: _session.Transaction,
-            splitOn: "Id,Id,Id,Codigo"
-        );
-
-        var contas = rawContas.ToList();
-
-        if (contas.Count > 0)
-        {
-            var ids = contas.Select(c => c.Id).ToArray();
-
-            const string parcelasSql = @"
-                SELECT id, conta_receber_id AS ContaReceberId, numero_parcela AS NumeroParcela, data_vencimento AS DataVencimento,
-                       valor_parcela AS ValorParcela, valor_recebido AS ValorRecebido, status AS Status
-                FROM contas_receber_parcelas
-                WHERE conta_receber_id = ANY(@Ids)
-                ORDER BY conta_receber_id, numero_parcela;";
-
-            var parcelas = (await _session.Connection.QueryAsync<ParcelaReceberDto>(
-                parcelasSql, new { Ids = ids }, transaction: _session.Transaction)).ToList();
-
-            var parcelasPorConta = parcelas
-                .GroupBy(p => p.ContaReceberId)
-                .ToDictionary(g => g.Key, g => g.AsEnumerable());
-
-            foreach (var conta in contas)
-            {
-                if (parcelasPorConta.TryGetValue(conta.Id, out var sub))
-                {
-                    foreach (var parcelaDto in sub)
-                    {
-                        conta.AdicionarParcelaExistente(BuildParcelaReceber(parcelaDto));
-                    }
-                }
-            }
-        }
-
-        return new ResultadoPaginado<ContasReceber>(contas, total, pagina, tamanhoDaPagina);
-    }
+            splitOn: "Id,Id,Id,Codigo");
 
     public async Task<ContasReceber?> ObterContaReceberPorId(int id)
-    {
-        const string contaSql = @"
-            SELECT cr.id AS Id, cr.descricao AS Descricao, cr.data_emissao AS DataEmissao, cr.data_vencimento AS DataVencimento, cr.valor_original AS ValorOriginal,
-                   cr.valor_saldo AS ValorSaldo, cr.status AS Status, cr.observacao AS Observacao, cr.criado_em AS CriadoEm,
-                   cr.origem_tipo::text AS OrigemTipo, cr.origem_id AS OrigemId,
-                   c.id AS Id, c.tipo_pessoa AS TipoPessoa, c.nome_razaosocial AS NomeRazaoSocial, c.cpf_cnpj AS CpfCnpj,
-                   c.rg_ie AS RgIe, c.apelido_nomefantasia AS ApelidoNomeFantasia, c.logradouro AS Logradouro, c.numero AS Numero,
-                   c.telefone AS Telefone, c.email AS Email, c.limite_credito AS LimiteCredito,
-                   c.ativo AS Ativo, c.criado_em AS CriadoEm, c.observacao AS Observacao,
-                   p.id AS Id, p.ddi AS Ddi, p.codigo_iso_pais AS CodigoIsoPais, p.codigo_iso_moeda AS CodigoIsoMoeda, p.simbolo_moeda AS SimboloMoeda, p.pais AS Pais,
-                   con.id AS Id, con.descricao AS Descricao, con.entrada_minima_percentual AS EntradaMinimaPercentual,
-                   con.desconto_percentual AS DescontoPercentual, con.acrescimo_percentual AS AcrescimoPercentual,
-                   con.multa_percentual AS MultaPercentual, con.taxa_juros_percentual AS TaxaJurosPercentual, con.ativo AS Ativo,
-                   mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo
-            FROM contas_receber cr
-            JOIN clientes c ON c.id = cr.cliente_id
-            JOIN paises p ON p.id = c.nacionalidade_id
-            LEFT JOIN condicoes_pagamentos con ON con.id = cr.condicao_pagamento_id
-            LEFT JOIN metodos_pagamento mp ON mp.codigo = con.metodo_pagamento_codigo
-            WHERE cr.id = @Id;";
+        => (await Consultar(" WHERE cr.id = @Id;", new { Id = id })).SingleOrDefault();
 
-        const string parcelasSql = @"
-            SELECT id, conta_receber_id AS ContaReceberId, numero_parcela AS NumeroParcela, data_vencimento AS DataVencimento,
-                   valor_parcela AS ValorParcela, valor_recebido AS ValorRecebido, status AS Status
-            FROM contas_receber_parcelas
-            WHERE conta_receber_id = @Id
-            ORDER BY numero_parcela;";
-
-        var types = new[] { typeof(ContasReceber), typeof(Clientes), typeof(Paises), typeof(CondicoesPagamentos), typeof(MetodosPagamentos) };
-
-        var rawConta = await _session.Connection.QueryAsync(
-            contaSql,
-            types,
-            obj =>
-            {
-                var conta = (ContasReceber)obj[0];
-                var cliente = (Clientes)obj[1];
-                var pais = (Paises)obj[2];
-                var condicao = (CondicoesPagamentos)obj[3];
-                var metodo = (MetodosPagamentos)obj[4];
-
-                var cl = new Clientes(
-                    cliente.Id,
-                    cliente.TipoPessoa,
-                    cliente.NomeRazaoSocial,
-                    cliente.CpfCnpj,
-                    pais,
-                    cliente.RgIe,
-                    cliente.ApelidoNomeFantasia,
-                    cliente.Logradouro,
-                    cliente.Numero,
-                    null,
-                    cliente.Telefone,
-                    cliente.Email,
-                    cliente.LimiteCredito,
-                    cliente.Observacao,
-                    cliente.Ativo,
-                    cliente.Sexo,
-                    cliente.DataNascimento,
-                    cliente.CriadoEm
-                );
-
-                if (condicao != null && metodo != null)
-                {
-                    condicao.AtualizarMetodoPagamento(metodo);
-                }
-
-                return new ContasReceber(
-                    conta.Id,
-                    conta.Descricao,
-                    conta.ValorOriginal,
-                    cl,
-                    conta.DataEmissao,
-                    conta.DataVencimento,
-                    condicao,
-                    conta.OrigemTipo,
-                    conta.OrigemId,
-                    conta.Observacao,
-                    conta.CriadoEm,
-                    conta.Status
-                );
-            },
-            new { Id = id },
-            transaction: _session.Transaction,
-            splitOn: "Id,Id,Id,Codigo"
-        );
-
-        var conta = rawConta.SingleOrDefault();
-
-        if (conta is null) return null;
-
-        var parcelas = await _session.Connection.QueryAsync<ParcelaReceberDto>(
-            parcelasSql, new { Id = id }, transaction: _session.Transaction);
-
-        foreach (var parcelaDto in parcelas)
-        {
-            conta.AdicionarParcelaExistente(BuildParcelaReceber(parcelaDto));
-        }
-
-        return conta;
-    }
+    public async Task<ContasReceber?> ObterContaReceberPorIdParaAtualizar(int id)
+        => (await Consultar(" WHERE cr.id = @Id FOR UPDATE OF cr;", new { Id = id })).SingleOrDefault();
 
     public async Task<ContasReceber> CriarContaReceber(ContasReceber conta)
     {
         const string sql = @"
-            INSERT INTO contas_receber (descricao, data_emissao, data_vencimento, valor_original, valor_saldo,
-                                       status, observacao, criado_em, cliente_id, origem_tipo, condicao_pagamento_id, origem_id)
-            VALUES (@Descricao, @DataEmissao, @DataVencimento, @ValorOriginal, @ValorSaldo,
-                    @Status::status_titulo_financeiro_enum, @Observacao, @CriadoEm, @ClienteId, @OrigemTipo::origem_titulo_financeiro_enum, @CondicaoPagamentoId, @OrigemId)
+            INSERT INTO contas_receber (origem_tipo, origem_id, numero_documento, numero_parcela, total_parcelas,
+                                        cliente_id, descricao, data_emissao, data_vencimento,
+                                        valor, valor_pago, status, condicao_pagamento_id, observacao, criado_em, atualizado_em)
+            VALUES (@OrigemTipo::origem_titulo_financeiro_enum, @OrigemId, @NumeroDocumento, @NumeroParcela, @TotalParcelas,
+                    @ClienteId, @Descricao, @DataEmissao, @DataVencimento,
+                    @Valor, @ValorPago, @Status::status_titulo_financeiro_enum, @CondicaoPagamentoId, @Observacao, @CriadoEm, @CriadoEm)
             RETURNING id;";
 
-        var idGerado = await _session.Connection.ExecuteScalarAsync<int>(
-            sql,
-            new ContaReceberDbRow(
-                0,
-                conta.Descricao,
-                conta.DataEmissao,
-                conta.DataVencimento,
-                conta.ValorOriginal,
-                conta.ValorSaldo,
-                conta.Status.ToString(),
-                conta.Observacao,
-                DateTime.UtcNow,
-                conta.Cliente.Id,
-                conta.OrigemTipo.ToString(),
-                conta.CondicaoPagamento?.Id,
-                conta.OrigemId
-            ),
-            transaction: _session.Transaction);
+        var id = await _session.Connection.ExecuteScalarAsync<int>(sql, Parametros(0, conta), transaction: _session.Transaction);
 
-        await InserirParcelas(idGerado, conta.ContasReceberParcelas);
-
-        var created = new ContasReceber(idGerado, conta.Descricao, conta.ValorOriginal, conta.Cliente, conta.DataEmissao, conta.DataVencimento, conta.CondicaoPagamento, conta.OrigemTipo, conta.OrigemId, conta.Observacao, conta.CriadoEm, conta.Status);
-        foreach (var parcela in conta.ContasReceberParcelas)
-        {
-            created.AdicionarParcelaExistente(new ContasReceberParcelas(parcela.Id, idGerado, parcela.NumeroParcela, parcela.DataVencimento, parcela.ValorParcela, parcela.ValorRecebido, parcela.Status));
-        }
-
-        return created;
+        return new ContasReceber(id, conta.Descricao, conta.Valor, conta.Cliente, conta.DataVencimento, conta.NumeroDocumento,
+            conta.NumeroParcela, conta.TotalParcelas, conta.DataEmissao, conta.CondicaoPagamento, conta.OrigemTipo, conta.OrigemId,
+            conta.Observacao, conta.CriadoEm, conta.ValorPago, conta.Status);
     }
 
     public async Task<ContasReceber> AtualizarContaReceber(int id, ContasReceber conta)
     {
         const string sql = @"
             UPDATE contas_receber
-            SET descricao = @Descricao, data_emissao = @DataEmissao, data_vencimento = @DataVencimento,
-                valor_original = @ValorOriginal, valor_saldo = @ValorSaldo, status = @Status::status_titulo_financeiro_enum,
-                observacao = @Observacao,
-                cliente_id = @ClienteId, condicao_pagamento_id = @CondicaoPagamentoId
+            SET descricao = @Descricao, data_vencimento = @DataVencimento, valor = @Valor, valor_pago = @ValorPago,
+                status = @Status::status_titulo_financeiro_enum, observacao = @Observacao, atualizado_em = NOW()
             WHERE id = @Id;";
 
-        await _session.Connection.ExecuteAsync(
-            sql,
-            new ContaReceberDbRow(
-                id,
-                conta.Descricao,
-                conta.DataEmissao,
-                conta.DataVencimento,
-                conta.ValorOriginal,
-                conta.ValorSaldo,
-                conta.Status.ToString(),
-                conta.Observacao,
-                conta.CriadoEm,
-                conta.Cliente.Id,
-                conta.OrigemTipo.ToString(),
-                conta.CondicaoPagamento?.Id,
-                conta.OrigemId
-            ),
-            transaction: _session.Transaction);
-
-        await ReplacerParcelas(id, conta.ContasReceberParcelas);
-
-        var updated = new ContasReceber(id, conta.Descricao, conta.ValorOriginal, conta.Cliente, conta.DataEmissao, conta.DataVencimento, conta.CondicaoPagamento, conta.OrigemTipo, conta.OrigemId, conta.Observacao, conta.CriadoEm, conta.Status);
-        foreach (var parcela in conta.ContasReceberParcelas)
-        {
-            updated.AdicionarParcelaExistente(new ContasReceberParcelas(parcela.Id, id, parcela.NumeroParcela, parcela.DataVencimento, parcela.ValorParcela, parcela.ValorRecebido, parcela.Status));
-        }
-
-        return updated;
+        await _session.Connection.ExecuteAsync(sql, Parametros(id, conta), transaction: _session.Transaction);
+        return conta;
     }
 
     public async Task<bool> DeletarContaReceber(int id)
     {
-        await _session.Connection.ExecuteAsync(
-            "DELETE FROM contas_receber_parcelas WHERE conta_receber_id = @Id;",
-            new { Id = id }, transaction: _session.Transaction);
-
         var linhasAfetadas = await _session.Connection.ExecuteAsync(
             "DELETE FROM contas_receber WHERE id = @Id;",
             new { Id = id }, transaction: _session.Transaction);
@@ -343,206 +109,57 @@ public class ContasReceberRepository : IContasReceberRepository
 
     public async Task<ResultadoPaginado<ContasReceber>> PesquisarContasReceber(string termo, int pagina = 1, int tamanhoDaPagina = 20, FiltroContasReceber? filtro = null)
     {
-        var offset = (pagina - 1) * tamanhoDaPagina;
-        var f0 = new { Termo = $"%{termo}%", filtro?.ClienteId, OrigemTipo = filtro?.OrigemTipo?.ToString(), filtro?.OrigemId };
+        var param = new
+        {
+            Termo = $"%{termo}%",
+            filtro?.ClienteId,
+            OrigemTipo = filtro?.OrigemTipo?.ToString(),
+            filtro?.OrigemId,
+            filtro?.NumeroDocumento,
+            Status = filtro?.Status?.ToString(),
+            TamanhoDaPagina = tamanhoDaPagina,
+            Offset = (pagina - 1) * tamanhoDaPagina
+        };
 
-        const string countSql = @"
-            SELECT COUNT(*)
-            FROM contas_receber cr
-            JOIN clientes c ON c.id = cr.cliente_id
-            WHERE (unaccent(cr.id::text) ILIKE unaccent(@Termo::text) OR unaccent(cr.descricao::text) ILIKE unaccent(@Termo::text) OR unaccent(c.nome_razaosocial::text) ILIKE unaccent(@Termo::text))
-              AND (@ClienteId::int IS NULL OR cr.cliente_id = @ClienteId)
-              AND (@OrigemTipo::text IS NULL OR cr.origem_tipo::text = @OrigemTipo)
-              AND (@OrigemId::int IS NULL OR cr.origem_id = @OrigemId);";
-
-        const string querySql = @"
-            SELECT cr.id AS Id, cr.descricao AS Descricao, cr.data_emissao AS DataEmissao, cr.data_vencimento AS DataVencimento, cr.valor_original AS ValorOriginal,
-                   cr.valor_saldo AS ValorSaldo, cr.status AS Status, cr.observacao AS Observacao, cr.criado_em AS CriadoEm,
-                   cr.origem_tipo::text AS OrigemTipo, cr.origem_id AS OrigemId,
-                   c.id AS Id, c.tipo_pessoa AS TipoPessoa, c.nome_razaosocial AS NomeRazaoSocial, c.cpf_cnpj AS CpfCnpj,
-                   c.rg_ie AS RgIe, c.apelido_nomefantasia AS ApelidoNomeFantasia, c.logradouro AS Logradouro, c.numero AS Numero,
-                   c.telefone AS Telefone, c.email AS Email, c.limite_credito AS LimiteCredito,
-                   c.ativo AS Ativo, c.criado_em AS CriadoEm, c.observacao AS Observacao,
-                   p.id AS Id, p.ddi AS Ddi, p.codigo_iso_pais AS CodigoIsoPais, p.codigo_iso_moeda AS CodigoIsoMoeda, p.simbolo_moeda AS SimboloMoeda, p.pais AS Pais,
-                   con.id AS Id, con.descricao AS Descricao, con.entrada_minima_percentual AS EntradaMinimaPercentual,
-                   con.desconto_percentual AS DescontoPercentual, con.acrescimo_percentual AS AcrescimoPercentual,
-                   con.multa_percentual AS MultaPercentual, con.taxa_juros_percentual AS TaxaJurosPercentual, con.ativo AS Ativo,
-                   mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo
-            FROM contas_receber cr
-            JOIN clientes c ON c.id = cr.cliente_id
-            JOIN paises p ON p.id = c.nacionalidade_id
-            LEFT JOIN condicoes_pagamentos con ON con.id = cr.condicao_pagamento_id
-            LEFT JOIN metodos_pagamento mp ON mp.codigo = con.metodo_pagamento_codigo
-            WHERE (unaccent(cr.id::text) ILIKE unaccent(@Termo::text) OR unaccent(cr.descricao::text) ILIKE unaccent(@Termo::text) OR unaccent(c.nome_razaosocial::text) ILIKE unaccent(@Termo::text))
+        const string where = @"
+            WHERE (unaccent(cr.descricao::text) ILIKE unaccent(@Termo::text) OR unaccent(cr.numero_documento::text) ILIKE unaccent(@Termo::text)
+                   OR unaccent(c.nome_razaosocial::text) ILIKE unaccent(@Termo::text))
               AND (@ClienteId::int IS NULL OR cr.cliente_id = @ClienteId)
               AND (@OrigemTipo::text IS NULL OR cr.origem_tipo::text = @OrigemTipo)
               AND (@OrigemId::int IS NULL OR cr.origem_id = @OrigemId)
-            ORDER BY cr.criado_em DESC, cr.id DESC
-            LIMIT @TamanhoDaPagina OFFSET @Offset;";
+              AND (@NumeroDocumento::text IS NULL OR cr.numero_documento = @NumeroDocumento)
+              AND (@Status::text IS NULL OR cr.status::text = @Status)";
 
-        var total = await _session.Connection.ExecuteScalarAsync<int>(
-            countSql,
-            f0,
-            transaction: _session.Transaction);
+        var total = await _session.Connection.ExecuteScalarAsync<int>(@"
+            SELECT COUNT(*)
+            FROM contas_receber cr
+            JOIN clientes c ON c.id = cr.cliente_id" + where + ";",
+            param, transaction: _session.Transaction);
 
-        var types = new[] { typeof(ContasReceber), typeof(Clientes), typeof(Paises), typeof(CondicoesPagamentos), typeof(MetodosPagamentos) };
-
-        var rawContas = await _session.Connection.QueryAsync(
-            querySql,
-            types,
-            obj =>
-            {
-                var conta = (ContasReceber)obj[0];
-                var cliente = (Clientes)obj[1];
-                var pais = (Paises)obj[2];
-                var condicao = (CondicoesPagamentos)obj[3];
-                var metodo = (MetodosPagamentos)obj[4];
-
-                var cl = new Clientes(
-                    cliente.Id,
-                    cliente.TipoPessoa,
-                    cliente.NomeRazaoSocial,
-                    cliente.CpfCnpj,
-                    pais,
-                    cliente.RgIe,
-                    cliente.ApelidoNomeFantasia,
-                    cliente.Logradouro,
-                    cliente.Numero,
-                    null,
-                    cliente.Telefone,
-                    cliente.Email,
-                    cliente.LimiteCredito,
-                    cliente.Observacao,
-                    cliente.Ativo,
-                    cliente.Sexo,
-                    cliente.DataNascimento,
-                    cliente.CriadoEm
-                );
-
-                if (condicao != null && metodo != null)
-                {
-                    condicao.AtualizarMetodoPagamento(metodo);
-                }
-
-                return new ContasReceber(
-                    conta.Id,
-                    conta.Descricao,
-                    conta.ValorOriginal,
-                    cl,
-                    conta.DataEmissao,
-                    conta.DataVencimento,
-                    condicao,
-                    conta.OrigemTipo,
-                    conta.OrigemId,
-                    conta.Observacao,
-                    conta.CriadoEm,
-                    conta.Status
-                );
-            },
-            new { f0.Termo, f0.ClienteId, f0.OrigemTipo, f0.OrigemId, TamanhoDaPagina = tamanhoDaPagina, Offset = offset },
-            transaction: _session.Transaction,
-            splitOn: "Id,Id,Id,Codigo"
-        );
-
-        var contas = rawContas.ToList();
-
-        if (contas.Count > 0)
-        {
-            var ids = contas.Select(c => c.Id).ToArray();
-
-            const string parcelasSql = @"
-                SELECT id, conta_receber_id AS ContaReceberId, numero_parcela AS NumeroParcela, data_vencimento AS DataVencimento,
-                       valor_parcela AS ValorParcela, valor_recebido AS ValorRecebido, status AS Status
-                FROM contas_receber_parcelas
-                WHERE conta_receber_id = ANY(@Ids)
-                ORDER BY conta_receber_id, numero_parcela;";
-
-            var parcelas = (await _session.Connection.QueryAsync<ParcelaReceberDto>(
-                parcelasSql, new { Ids = ids }, transaction: _session.Transaction)).ToList();
-
-            var parcelasPorConta = parcelas
-                .GroupBy(p => p.ContaReceberId)
-                .ToDictionary(g => g.Key, g => g.AsEnumerable());
-
-            foreach (var conta in contas)
-            {
-                if (parcelasPorConta.TryGetValue(conta.Id, out var sub))
-                {
-                    foreach (var parcelaDto in sub)
-                    {
-                        conta.AdicionarParcelaExistente(BuildParcelaReceber(parcelaDto));
-                    }
-                }
-            }
-        }
+        var contas = (await Consultar(where + @"
+            ORDER BY cr.data_vencimento, cr.numero_documento, cr.numero_parcela, cr.id
+            LIMIT @TamanhoDaPagina OFFSET @Offset;", param)).ToList();
 
         return new ResultadoPaginado<ContasReceber>(contas, total, pagina, tamanhoDaPagina);
     }
 
-    private async Task InserirParcelas(int contaId, IEnumerable<ContasReceberParcelas> parcelas)
+    private static object Parametros(int id, ContasReceber c) => new
     {
-        const string sql = @"
-            INSERT INTO contas_receber_parcelas (numero_parcela, data_vencimento, valor_parcela, valor_recebido, status, conta_receber_id)
-            VALUES (@NumeroParcela, @DataVencimento, @ValorParcela, @ValorRecebido, @Status::status_titulo_financeiro_enum, @ContaId);";
-
-        await _session.Connection.ExecuteAsync(
-            sql,
-            parcelas.Select(p => new ParcelaReceberDbRow(
-                p.NumeroParcela,
-                p.DataVencimento,
-                p.ValorParcela,
-                p.ValorRecebido,
-                p.Status.ToString(),
-                contaId
-            )).ToList(),
-            transaction: _session.Transaction);
-    }
-
-    private async Task ReplacerParcelas(int contaId, IEnumerable<ContasReceberParcelas> parcelas)
-    {
-        await _session.Connection.ExecuteAsync(
-            "DELETE FROM contas_receber_parcelas WHERE conta_receber_id = @ContaId;",
-            new { ContaId = contaId }, transaction: _session.Transaction);
-
-        await InserirParcelas(contaId, parcelas);
-    }
-
-    private static ContasReceberParcelas BuildParcelaReceber(ParcelaReceberDto dto)
-    {
-        return new ContasReceberParcelas(dto.Id, dto.ContaReceberId, dto.NumeroParcela, dto.DataVencimento, dto.ValorParcela, dto.ValorRecebido, dto.Status);
-    }
-
-    private sealed record ParcelaReceberDto(
-        int Id,
-        int ContaReceberId,
-        int NumeroParcela,
-        DateTime DataVencimento,
-        decimal ValorParcela,
-        decimal ValorRecebido,
-        StatusTituloFinanceiro Status);
-
-    private sealed record ContaReceberDbRow(
-        int Id,
-        string Descricao,
-        DateTime? DataEmissao,
-        DateTime? DataVencimento,
-        decimal ValorOriginal,
-        decimal ValorSaldo,
-        string Status,
-        string? Observacao,
-        DateTime CriadoEm,
-        int ClienteId,
-        string OrigemTipo,
-        int? CondicaoPagamentoId,
-        int? OrigemId);
-
-    private sealed record ParcelaReceberDbRow(
-        int NumeroParcela,
-        DateTime DataVencimento,
-        decimal ValorParcela,
-        decimal ValorRecebido,
-        string Status,
-        int ContaId);
+        Id = id,
+        OrigemTipo = c.OrigemTipo.ToString(),
+        c.OrigemId,
+        c.NumeroDocumento,
+        c.NumeroParcela,
+        c.TotalParcelas,
+        ClienteId = c.Cliente.Id,
+        c.Descricao,
+        c.DataEmissao,
+        c.DataVencimento,
+        c.Valor,
+        c.ValorPago,
+        Status = c.Status.ToString(),
+        CondicaoPagamentoId = c.CondicaoPagamento?.Id,
+        c.Observacao,
+        c.CriadoEm
+    };
 }
-
-

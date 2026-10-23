@@ -1,61 +1,72 @@
 using Backend.Core.Common.Exceptions;
 using Backend.Core.Common.Helpers;
 using Backend.Core.Features.Financeiro.Entities.Enums;
-using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Parceiros.Entities;
 
 namespace Backend.Core.Features.Financeiro.Entities;
 
+// Uma linha = uma parcela; o documento de origem (origem_tipo + origem_id / numero_documento) agrupa as parcelas.
 public class ContasReceber
 {
-    private readonly List<ContasReceberParcelas> _parcelas = new();
-
     public int Id { get; private set; }
+    public OrigemTituloFinanceiro OrigemTipo { get; private set; }
+    public int? OrigemId { get; private set; }
+    public string NumeroDocumento { get; private set; }
+    public int NumeroParcela { get; private set; }
+    public int TotalParcelas { get; private set; }
     public string Descricao { get; private set; }
+    public Clientes Cliente { get; private set; }
+    public DateTime? DataEmissao { get; private set; }
+    public DateTime DataVencimento { get; private set; }
+    public decimal Valor { get; private set; }
+    public decimal ValorPago { get; private set; }
+    public decimal ValorSaldo => Valor - ValorPago;
+    public StatusTituloFinanceiro Status { get; private set; }
+    public CondicoesPagamentos? CondicaoPagamento { get; private set; }
+    public string? Observacao { get; private set; }
+    public DateTime CriadoEm { get; private set; }
 
     protected ContasReceber()
     {
         Descricao = string.Empty;
+        NumeroDocumento = string.Empty;
         Cliente = null!;
     }
-    public DateTime? DataEmissao { get; private set; }
-    public DateTime? DataVencimento { get; private set; }
-    public decimal ValorOriginal { get; private set; }
-    public decimal ValorSaldo { get; private set; }
-    public StatusTituloFinanceiro Status { get; private set; }
-    public string? Observacao { get; private set; }
-    public DateTime CriadoEm { get; private set; }
 
-    public Clientes Cliente { get; private set; }
-    public OrigemTituloFinanceiro OrigemTipo { get; private set; }
-    public int? OrigemId { get; private set; }
-    public CondicoesPagamentos? CondicaoPagamento { get; private set; }
-
-    public IReadOnlyCollection<ContasReceberParcelas> ContasReceberParcelas => _parcelas.AsReadOnly();
-
-    public ContasReceber(string descricao, decimal valorOriginal, Clientes cliente, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, OrigemTituloFinanceiro origemTipo = OrigemTituloFinanceiro.MANUAL, int? origemId = null, string? observacao = null)
+    public ContasReceber(string descricao, decimal valor, Clientes cliente, DateTime dataVencimento, string numeroDocumento, int numeroParcela = 1, int totalParcelas = 1, DateTime? dataEmissao = null, CondicoesPagamentos? condicaoPagamento = null, OrigemTituloFinanceiro origemTipo = OrigemTituloFinanceiro.MANUAL, int? origemId = null, string? observacao = null)
     {
         descricao = TextNormalization.Normalize(descricao);
         observacao = TextNormalization.NormalizeOrNull(observacao);
+        numeroDocumento = TextNormalization.Normalize(numeroDocumento);
 
         if (string.IsNullOrWhiteSpace(descricao))
             throw new DomainException("Descrição da conta a receber é obrigatória.");
 
-        if (valorOriginal <= 0)
-            throw new DomainException("Valor original deve ser maior que zero.");
+        if (string.IsNullOrWhiteSpace(numeroDocumento) || numeroDocumento.Length > 30)
+            throw new DomainException("Número do documento é obrigatório e deve ter no máximo 30 caracteres.");
 
-        if (origemTipo is OrigemTituloFinanceiro.COMPRA or OrigemTituloFinanceiro.DEVOLUCAO_VENDA)
+        if (valor <= 0)
+            throw new DomainException("Valor deve ser maior que zero.");
+
+        if (dataVencimento == default)
+            throw new DomainException("Data de vencimento é obrigatória.");
+
+        if (numeroParcela <= 0 || totalParcelas < numeroParcela)
+            throw new DomainException("Número da parcela inválido.");
+
+        if (origemTipo is OrigemTituloFinanceiro.COMPRA or OrigemTituloFinanceiro.DEVOLUCAO_VENDA or OrigemTituloFinanceiro.FRETE_COMPRA)
             throw new DomainException("Conta a receber não pode ter origem em compra ou devolução.");
 
         if (origemTipo != OrigemTituloFinanceiro.MANUAL && origemId is null)
             throw new DomainException("O documento de origem é obrigatório.");
 
         Cliente = cliente ?? throw new DomainException("Cliente é obrigatório para contas a receber.");
-
         Descricao = descricao;
-        ValorOriginal = valorOriginal;
-        ValorSaldo = valorOriginal;
-        Cliente = cliente;
+        NumeroDocumento = numeroDocumento;
+        NumeroParcela = numeroParcela;
+        TotalParcelas = totalParcelas;
+        Valor = Math.Round(valor, 2, MidpointRounding.AwayFromZero);
+        ValorPago = 0;
         DataEmissao = dataEmissao;
         DataVencimento = dataVencimento;
         CondicaoPagamento = condicaoPagamento;
@@ -66,166 +77,105 @@ public class ContasReceber
         Status = StatusTituloFinanceiro.ABERTO;
     }
 
-    public ContasReceber(int id, string descricao, decimal valorOriginal, Clientes cliente, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, OrigemTituloFinanceiro origemTipo = OrigemTituloFinanceiro.MANUAL, int? origemId = null, string? observacao = null, DateTime? criadoEm = null, StatusTituloFinanceiro status = StatusTituloFinanceiro.ABERTO)
-        : this(descricao, valorOriginal, cliente, dataEmissao, dataVencimento, condicaoPagamento, origemTipo, origemId, observacao)
+    // Reidratação a partir do banco.
+    public ContasReceber(int id, string descricao, decimal valor, Clientes cliente, DateTime dataVencimento, string numeroDocumento, int numeroParcela, int totalParcelas, DateTime? dataEmissao, CondicoesPagamentos? condicaoPagamento, OrigemTituloFinanceiro origemTipo, int? origemId, string? observacao, DateTime criadoEm, decimal valorPago, StatusTituloFinanceiro status)
+        : this(descricao, valor, cliente, dataVencimento, numeroDocumento, numeroParcela, totalParcelas, dataEmissao, condicaoPagamento, origemTipo, origemId, observacao)
     {
         Id = id;
-        CriadoEm = criadoEm ?? DateTime.UtcNow;
+        CriadoEm = criadoEm;
+        ValorPago = valorPago;
         Status = status;
     }
 
-    public void AdicionarParcelaExistente(ContasReceberParcelas parcela)
+    public void RegistrarRecebimento(decimal valor)
     {
-        if (parcela == null)
-            throw new DomainException("Parcela é obrigatória.");
+        valor = Math.Round(valor, 2, MidpointRounding.AwayFromZero);
 
-        _parcelas.Add(parcela);
-        AtualizarSaldo();
+        if (valor <= 0)
+            throw new DomainException("Valor de recebimento deve ser maior que zero.");
+
+        if (Status == StatusTituloFinanceiro.PAGO)
+            throw new DomainException("Não é possível receber uma parcela que já está quitada.");
+
+        if (Status == StatusTituloFinanceiro.CANCELADO)
+            throw new DomainException("Não é possível receber uma parcela cancelada.");
+
+        if (valor > ValorSaldo)
+            throw new DomainException($"O valor informado (R$ {valor:F2}) excede o saldo restante da parcela (R$ {ValorSaldo:F2}).");
+
+        ValorPago += valor;
+        Status = ValorPago >= Valor ? StatusTituloFinanceiro.PAGO : StatusTituloFinanceiro.PARCIAL;
     }
 
-    public void AdicionarParcela(int numeroParcela, DateTime dataVencimento, decimal valorParcela)
+    public void EstornarRecebimento(decimal valor)
     {
-        if (_parcelas.Any(p => p.NumeroParcela == numeroParcela))
-            throw new DomainException("Já existe parcela com esse número.");
+        valor = Math.Round(valor, 2, MidpointRounding.AwayFromZero);
 
-        var parcela = new ContasReceberParcelas(numeroParcela, dataVencimento, valorParcela);
-        _parcelas.Add(parcela);
-        AtualizarSaldo();
+        if (valor <= 0)
+            throw new DomainException("Valor de estorno deve ser maior que zero.");
+
+        if (Status == StatusTituloFinanceiro.CANCELADO)
+            throw new DomainException("Não é possível estornar uma parcela cancelada.");
+
+        if (valor > ValorPago)
+            throw new DomainException($"O valor do estorno (R$ {valor:F2}) não pode ser maior do que o valor já recebido (R$ {ValorPago:F2}).");
+
+        ValorPago -= valor;
+        Status = ValorPago == 0 ? StatusTituloFinanceiro.ABERTO : StatusTituloFinanceiro.PARCIAL;
     }
 
-    public void RegistrarRecebimento(int numeroParcela, decimal valorRecebido)
+    // Reduz o que ainda está em aberto (devolução) até o valor informado e devolve quanto foi abatido.
+    // Sem nada recebido a parcela zerada é cancelada, mantendo o valor original.
+    public decimal Abater(decimal valor)
     {
-        var parcela = _parcelas.SingleOrDefault(p => p.NumeroParcela == numeroParcela)
-            ?? throw new DomainException("Parcela não encontrada.");
+        if (Status == StatusTituloFinanceiro.CANCELADO) return 0;
 
-        parcela.RegistrarRecebimento(valorRecebido);
-        AtualizarSaldo();
+        var abatido = Math.Min(valor, ValorSaldo);
+        if (abatido <= 0) return 0;
+
+        if (abatido == Valor)
+        {
+            Status = StatusTituloFinanceiro.CANCELADO;
+            return abatido;
+        }
+
+        Valor -= abatido;
+        if (Valor == ValorPago)
+            Status = StatusTituloFinanceiro.PAGO;
+        return abatido;
     }
 
-    public void EstornarRecebimento(int numeroParcela, decimal valorEstornado)
+    // Cancela a parcela; exige que nada tenha sido recebido.
+    public void Cancelar()
     {
-        var parcela = _parcelas.SingleOrDefault(p => p.NumeroParcela == numeroParcela)
-            ?? throw new DomainException("Parcela não encontrada.");
+        if (ValorPago > 0)
+            throw new DomainException("Não é possível cancelar uma conta a receber com parcelas baixadas.");
 
-        parcela.EstornarRecebimento(valorEstornado);
-        AtualizarSaldo();
+        Status = StatusTituloFinanceiro.CANCELADO;
     }
 
-    public void Atualizar(string descricao, decimal valorOriginal, Clientes cliente, IEnumerable<ContasReceberParcelas> parcelas, DateTime? dataEmissao = null, DateTime? dataVencimento = null, CondicoesPagamentos? condicaoPagamento = null, string? observacao = null)
+    public void Atualizar(string descricao, DateTime dataVencimento, decimal valor, string? observacao)
     {
         descricao = TextNormalization.Normalize(descricao);
-        observacao = TextNormalization.NormalizeOrNull(observacao);
+
+        if (OrigemTipo != OrigemTituloFinanceiro.MANUAL)
+            throw new DomainException("Conta gerada por outro documento não pode ser editada manualmente.");
+
+        if (Status != StatusTituloFinanceiro.ABERTO || ValorPago > 0)
+            throw new DomainException("Só é possível alterar uma parcela aberta e sem recebimentos.");
 
         if (string.IsNullOrWhiteSpace(descricao))
             throw new DomainException("Descrição da conta a receber é obrigatória.");
 
-        if (valorOriginal <= 0)
-            throw new DomainException("Valor original deve ser maior que zero.");
+        if (valor <= 0)
+            throw new DomainException("Valor deve ser maior que zero.");
 
-        Cliente = cliente ?? throw new DomainException("Cliente é obrigatório para contas a receber.");
-
-        if (Status == StatusTituloFinanceiro.PAGO || Status == StatusTituloFinanceiro.CANCELADO)
-            throw new DomainException("Não é possível alterar uma conta a receber que já está paga ou cancelada.");
-
-        var temParcelaBaixada = _parcelas.Any(p => p.Status == StatusTituloFinanceiro.PAGO || p.Status == StatusTituloFinanceiro.PARCIAL || p.ValorRecebido > 0);
-        if (temParcelaBaixada)
-        {
-            if (valorOriginal != ValorOriginal)
-                throw new DomainException("Não é possível alterar o valor original de uma conta com parcelas baixadas.");
-            if (condicaoPagamento?.Id != CondicaoPagamento?.Id)
-                throw new DomainException("Não é possível alterar a condição de pagamento de uma conta com parcelas baixadas.");
-            if (dataEmissao?.Date != DataEmissao?.Date)
-                throw new DomainException("Não é possível alterar a data de emissão de uma conta com parcelas baixadas.");
-            
-            var novasParcelas = parcelas.ToList();
-            if (novasParcelas.Count != _parcelas.Count)
-                throw new DomainException("Não é possível alterar a quantidade de parcelas de uma conta com baixas realizadas.");
-
-            foreach (var nova in novasParcelas)
-            {
-                var existente = _parcelas.SingleOrDefault(p => p.NumeroParcela == nova.NumeroParcela)
-                    ?? throw new DomainException($"Parcela número {nova.NumeroParcela} não encontrada na conta original.");
-                
-                if (nova.ValorParcela != existente.ValorParcela)
-                    throw new DomainException($"Não é possível alterar o valor da parcela {nova.NumeroParcela} pois o título possui baixas.");
-                if (nova.DataVencimento.Date != existente.DataVencimento.Date)
-                    throw new DomainException($"Não é possível alterar o vencimento da parcela {nova.NumeroParcela} pois o título possui baixas.");
-                if (nova.ValorRecebido != existente.ValorRecebido)
-                    throw new DomainException($"Não é possível alterar o valor recebido da parcela {nova.NumeroParcela} diretamente.");
-                if (nova.Status != existente.Status)
-                    throw new DomainException($"Não é possível alterar o status da parcela {nova.NumeroParcela} diretamente.");
-            }
-        }
-
-        if (parcelas == null || !parcelas.Any())
-            throw new DomainException("A conta a receber deve conter ao menos uma parcela.");
-
-        var totalParcelas = parcelas.Sum(p => p.ValorParcela);
-        if (totalParcelas != valorOriginal)
-            throw new DomainException("A soma das parcelas deve ser exatamente igual ao valor original da conta.");
+        if (dataVencimento == default)
+            throw new DomainException("Data de vencimento é obrigatória.");
 
         Descricao = descricao;
-        ValorOriginal = valorOriginal;
-        DataEmissao = dataEmissao;
         DataVencimento = dataVencimento;
-        CondicaoPagamento = condicaoPagamento;
-        Observacao = observacao;
-
-        _parcelas.Clear();
-        foreach (var p in parcelas)
-        {
-            _parcelas.Add(p);
-        }
-
-        AtualizarSaldo();
-    }
-
-    // Abate o valor do saldo em aberto, da última parcela para a primeira (preserva os vencimentos mais próximos).
-    // Devolve o que excedeu o saldo aberto, isto é, o que já foi recebido.
-    public decimal AbaterSaldoAberto(decimal valor)
-    {
-        var restante = valor;
-        foreach (var p in _parcelas.Where(p => p.Status != StatusTituloFinanceiro.CANCELADO).OrderByDescending(p => p.NumeroParcela))
-        {
-            var abatido = Math.Min(restante, p.ValorParcela - p.ValorRecebido);
-            if (abatido <= 0) continue;
-            p.Abater(abatido);
-            restante -= abatido;
-        }
-
-        AtualizarSaldo();
-        return restante;
-    }
-
-    public void Cancelar()
-    {
-        foreach (var parcela in _parcelas)
-            parcela.Cancelar();
-        AtualizarSaldo();
-    }
-
-    private void AtualizarSaldo()
-    {
-        var recebido = _parcelas.Sum(p => p.ValorRecebido);
-        // Saldo = o que falta nas parcelas não canceladas (ValorOriginal é histórico e não muda com devoluções).
-        ValorSaldo = _parcelas.Where(p => p.Status != StatusTituloFinanceiro.CANCELADO).Sum(p => p.ValorParcela - p.ValorRecebido);
-
-        if (ValorSaldo == 0)
-            Status = StatusTituloFinanceiro.PAGO;
-        else if (recebido > 0)
-            Status = StatusTituloFinanceiro.PARCIAL;
-        else
-            Status = StatusTituloFinanceiro.ABERTO;
-
-        if (_parcelas.All(p => p.Status == StatusTituloFinanceiro.CANCELADO))
-        {
-            Status = StatusTituloFinanceiro.CANCELADO;
-        }
-
-        DataVencimento = _parcelas
-            .Where(p => p.Status == StatusTituloFinanceiro.ABERTO || p.Status == StatusTituloFinanceiro.PARCIAL)
-            .OrderBy(p => p.DataVencimento)
-            .FirstOrDefault()?.DataVencimento;
+        Valor = Math.Round(valor, 2, MidpointRounding.AwayFromZero);
+        Observacao = TextNormalization.NormalizeOrNull(observacao);
     }
 }
-

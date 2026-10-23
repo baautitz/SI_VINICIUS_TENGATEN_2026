@@ -35,59 +35,53 @@ public sealed class ContasPagarService : BaseService
         _unitOfWork = unitOfWork;
     }
 
-    public Task<ResultadoPaginado<ContasPagar>> ObterContasPagar(int pagina = 1, int tamanhoDaPagina = 20)
-        => _contasRepository.ObterContasPagar(pagina, tamanhoDaPagina);
-
     public Task<ContasPagar?> ObterContaPagarPorId(int id)
         => _contasRepository.ObterContaPagarPorId(id);
 
     public Task<ResultadoPaginado<ContasPagar>> PesquisarContasPagar(string termo, int pagina = 1, int tamanhoDaPagina = 20, FiltroContasPagar? filtro = null)
         => _contasRepository.PesquisarContasPagar(termo, pagina, tamanhoDaPagina, filtro);
 
-    public async Task<Resultado<ContasPagar>> CriarContaPagar(CriarContaPagarCommand command)
+    public async Task<Resultado<IReadOnlyList<ContasPagar>>> CriarContaPagar(CriarContaPagarCommand command)
     {
         var validator = new CriarContaPagarCommandValidator();
         var validation = await validator.ValidateAsync(command);
         if (!validation.IsValid)
-            return Resultado<ContasPagar>.Falha(validation.ToResultadoErros());
+            return Resultado<IReadOnlyList<ContasPagar>>.Falha(validation.ToResultadoErros());
 
         var fornecedor = await _fornecedoresRepository.ObterFornecedorPorId(command.FornecedorId);
         if (fornecedor is null)
-            return Resultado<ContasPagar>.Falha(new ResultadoErro("FORNECEDOR_INEXISTENTE", "O fornecedor informado não existe.", "FornecedorId"));
+            return Resultado<IReadOnlyList<ContasPagar>>.Falha(new ResultadoErro("FORNECEDOR_INEXISTENTE", "O fornecedor informado não existe.", "FornecedorId"));
 
         CondicoesPagamentos? condicao = null;
         if (command.CondicaoPagamentoId.HasValue)
         {
             condicao = await _condicoesRepository.ObterCondicaoPagamentoPorId(command.CondicaoPagamentoId.Value);
             if (condicao is null)
-                return Resultado<ContasPagar>.Falha(new ResultadoErro("CONDICAO_PAGAMENTO_INEXISTENTE", "A condição de pagamento informada não existe.", "CondicaoPagamentoId"));
+                return Resultado<IReadOnlyList<ContasPagar>>.Falha(new ResultadoErro("CONDICAO_PAGAMENTO_INEXISTENTE", "A condição de pagamento informada não existe.", "CondicaoPagamentoId"));
         }
 
-        return await ExecuteResultAsync(async () =>
+        // ponytail: número manual por timestamp (ms); colisão só com dois lançamentos no mesmo milissegundo.
+        var documento = string.IsNullOrWhiteSpace(command.NumeroDocumento)
+            ? $"MAN-{DateTime.UtcNow:yyyyMMddHHmmssfff}"
+            : command.NumeroDocumento.Trim();
+        var parcelas = command.Parcelas.ToList();
+
+        return await ExecuteResultAsync<IReadOnlyList<ContasPagar>>(async () =>
         {
             try
             {
                 _unitOfWork.BeginTransaction();
 
-                var conta = new ContasPagar(
-                    command.Descricao,
-                    command.ValorOriginal,
-                    fornecedor,
-                    command.DataEmissao,
-                    null,
-                    condicao,
-                    observacao: command.Observacao
-                );
-
-                foreach (var p in command.Parcelas)
+                var criadas = new List<ContasPagar>();
+                for (var i = 0; i < parcelas.Count; i++)
                 {
-                    conta.AdicionarParcela(p.NumeroParcela, p.DataVencimento, p.ValorParcela);
+                    var conta = new ContasPagar(command.Descricao, parcelas[i].Valor, fornecedor, parcelas[i].DataVencimento, documento,
+                        i + 1, parcelas.Count, command.DataEmissao, condicao, observacao: command.Observacao);
+                    criadas.Add(await _contasRepository.CriarContaPagar(conta));
                 }
 
-                var criada = await _contasRepository.CriarContaPagar(conta);
                 _unitOfWork.Commit();
-
-                return Resultado<ContasPagar>.Sucesso(criada);
+                return Resultado<IReadOnlyList<ContasPagar>>.Sucesso(criadas);
             }
             catch
             {
@@ -104,130 +98,91 @@ public sealed class ContasPagarService : BaseService
         if (!validation.IsValid)
             return Resultado<ContasPagar>.Falha(validation.ToResultadoErros());
 
-        var existente = await _contasRepository.ObterContaPagarPorId(id);
-        if (existente is null)
-            return Resultado<ContasPagar>.Falha(new ResultadoErro("CONTA_PAGAR_NAO_ENCONTRADA", "Conta a pagar não encontrada."));
-
-        if (existente.OrigemTipo != OrigemTituloFinanceiro.MANUAL)
-            return Resultado<ContasPagar>.Falha(new ResultadoErro("CONTA_PAGAR_EXTERNA", $"Conta gerada por {existente.OrigemTipo.Nome()} #{existente.OrigemId} não pode ser editada manualmente."));
-
-        var fornecedor = await _fornecedoresRepository.ObterFornecedorPorId(command.FornecedorId);
-        if (fornecedor is null)
-            return Resultado<ContasPagar>.Falha(new ResultadoErro("FORNECEDOR_INEXISTENTE", "O fornecedor informado não existe.", "FornecedorId"));
-
-        CondicoesPagamentos? condicao = null;
-        if (command.CondicaoPagamentoId.HasValue)
-        {
-            condicao = await _condicoesRepository.ObterCondicaoPagamentoPorId(command.CondicaoPagamentoId.Value);
-            if (condicao is null)
-                return Resultado<ContasPagar>.Falha(new ResultadoErro("CONDICAO_PAGAMENTO_INEXISTENTE", "A condição de pagamento informada não existe.", "CondicaoPagamentoId"));
-        }
-
-        return await ExecuteResultAsync(async () =>
-        {
-            try
-            {
-                _unitOfWork.BeginTransaction();
-
-                var parcelas = command.Parcelas.Select(p =>
-                    new ContasPagarParcelas(0, id, p.NumeroParcela, p.DataVencimento, p.ValorParcela, p.ValorPago, p.Status));
-
-                existente.Atualizar(
-                    command.Descricao,
-                    command.ValorOriginal,
-                    fornecedor,
-                    parcelas,
-                    command.DataEmissao,
-                    null,
-                    condicao,
-                    command.Observacao
-                );
-
-                var atualizada = await _contasRepository.AtualizarContaPagar(id, existente);
-                _unitOfWork.Commit();
-
-                return Resultado<ContasPagar>.Sucesso(atualizada);
-            }
-            catch
-            {
-                _unitOfWork.Rollback();
-                throw;
-            }
-        });
+        return await Persistir(id, c => c.Atualizar(command.Descricao, command.DataVencimento, command.Valor, command.Observacao),
+            existente => existente.OrigemTipo != OrigemTituloFinanceiro.MANUAL
+                ? new ResultadoErro("CONTA_PAGAR_EXTERNA", $"Conta gerada por {existente.OrigemTipo.Nome()} #{existente.OrigemId} não pode ser editada manualmente.")
+                : null);
     }
 
-    public async Task<Resultado<ContasPagar>> RegistrarPagamento(int id, RegistrarPagamentoParcelaCommand command)
+    public async Task<Resultado<ContasPagar>> RegistrarPagamento(int id, PagarContaPagarCommand command)
     {
-        if (command.ValorPago <= 0)
-            return Resultado<ContasPagar>.Falha(new ResultadoErro("VALOR_INVALIDO", "O valor de pagamento deve ser maior que zero.", "ValorPago"));
+        if (command.Valor <= 0)
+            return Resultado<ContasPagar>.Falha(new ResultadoErro("VALOR_INVALIDO", "O valor de pagamento deve ser maior que zero.", "Valor"));
 
-        var existente = await _contasRepository.ObterContaPagarPorId(id);
-        if (existente is null)
-            return Resultado<ContasPagar>.Falha(new ResultadoErro("CONTA_PAGAR_NAO_ENCONTRADA", "Conta a pagar não encontrada."));
-
-        return await ExecuteResultAsync(async () =>
-        {
-            try
-            {
-                _unitOfWork.BeginTransaction();
-
-                existente.RegistrarPagamento(command.NumeroParcela, command.ValorPago);
-
-                var atualizada = await _contasRepository.AtualizarContaPagar(id, existente);
-                _unitOfWork.Commit();
-
-                return Resultado<ContasPagar>.Sucesso(atualizada);
-            }
-            catch
-            {
-                _unitOfWork.Rollback();
-                throw;
-            }
-        });
+        return await Persistir(id, c => c.RegistrarPagamento(command.Valor));
     }
 
-    public async Task<Resultado<ContasPagar>> EstornarPagamento(int id, EstornarPagamentoParcelaCommand command)
+    public async Task<Resultado<ContasPagar>> EstornarPagamento(int id, EstornarContaPagarCommand command)
     {
-        if (command.ValorEstorno <= 0)
-            return Resultado<ContasPagar>.Falha(new ResultadoErro("VALOR_INVALIDO", "O valor de estorno deve ser maior que zero.", "ValorEstorno"));
+        if (command.Valor <= 0)
+            return Resultado<ContasPagar>.Falha(new ResultadoErro("VALOR_INVALIDO", "O valor de estorno deve ser maior que zero.", "Valor"));
 
-        var existente = await _contasRepository.ObterContaPagarPorId(id);
-        if (existente is null)
-            return Resultado<ContasPagar>.Falha(new ResultadoErro("CONTA_PAGAR_NAO_ENCONTRADA", "Conta a pagar não encontrada."));
-
-        return await ExecuteResultAsync(async () =>
-        {
-            try
-            {
-                _unitOfWork.BeginTransaction();
-
-                existente.EstornarPagamento(command.NumeroParcela, command.ValorEstorno);
-
-                var atualizada = await _contasRepository.AtualizarContaPagar(id, existente);
-                _unitOfWork.Commit();
-
-                return Resultado<ContasPagar>.Sucesso(atualizada);
-            }
-            catch
-            {
-                _unitOfWork.Rollback();
-                throw;
-            }
-        });
+        return await Persistir(id, c => c.EstornarPagamento(command.Valor));
     }
 
+    // Lê com FOR UPDATE e deleta na mesma transação, como Persistir.
     public async Task<bool> DeletarContaPagar(int id)
     {
-        var existente = await _contasRepository.ObterContaPagarPorId(id);
-        if (existente is null) return false;
+        try
+        {
+            _unitOfWork.BeginTransaction();
 
-        if (existente.OrigemTipo != OrigemTituloFinanceiro.MANUAL)
-            throw new Common.Exceptions.DomainException($"Conta gerada por {existente.OrigemTipo.Nome()} #{existente.OrigemId}. Para cancelá-la, cancele o documento de origem.");
+            var existente = await _contasRepository.ObterContaPagarPorIdParaAtualizar(id);
+            if (existente is null)
+            {
+                _unitOfWork.Rollback();
+                return false;
+            }
 
-        if (existente.ValorSaldo < existente.ValorOriginal || existente.ContasPagarParcelas.Any(p => p.Status != StatusTituloFinanceiro.ABERTO))
-            throw new Common.Exceptions.DomainException("Não é possível excluir uma conta a pagar que já possui parcelas pagas ou alteradas.");
+            if (existente.OrigemTipo != OrigemTituloFinanceiro.MANUAL)
+                throw new Common.Exceptions.DomainException($"Conta gerada por {existente.OrigemTipo.Nome()} #{existente.OrigemId}. Para cancelá-la, cancele o documento de origem.");
 
-        return await _contasRepository.DeletarContaPagar(id);
+            if (existente.ValorPago > 0 || existente.Status != StatusTituloFinanceiro.ABERTO)
+                throw new Common.Exceptions.DomainException("Não é possível excluir uma conta a pagar que já possui pagamento ou não está aberta.");
+
+            var deletada = await _contasRepository.DeletarContaPagar(id);
+            _unitOfWork.Commit();
+            return deletada;
+        }
+        catch
+        {
+            _unitOfWork.Rollback();
+            throw;
+        }
     }
-}
 
+    // Lê com FOR UPDATE dentro da transação: pagamentos concorrentes da mesma conta se enfileiram e cada um parte do valor_pago já gravado.
+    private Task<Resultado<ContasPagar>> Persistir(int id, Action<ContasPagar> alterar, Func<ContasPagar, ResultadoErro?>? validar = null)
+        => ExecuteResultAsync(async () =>
+        {
+            try
+            {
+                _unitOfWork.BeginTransaction();
+
+                var conta = await _contasRepository.ObterContaPagarPorIdParaAtualizar(id);
+                if (conta is null)
+                {
+                    _unitOfWork.Rollback();
+                    return Resultado<ContasPagar>.Falha(new ResultadoErro("CONTA_PAGAR_NAO_ENCONTRADA", "Conta a pagar não encontrada."));
+                }
+
+                var erro = validar?.Invoke(conta);
+                if (erro is not null)
+                {
+                    _unitOfWork.Rollback();
+                    return Resultado<ContasPagar>.Falha(erro);
+                }
+
+                alterar(conta);
+                var atualizada = await _contasRepository.AtualizarContaPagar(id, conta);
+                _unitOfWork.Commit();
+
+                return Resultado<ContasPagar>.Sucesso(atualizada);
+            }
+            catch
+            {
+                _unitOfWork.Rollback();
+                throw;
+            }
+        });
+}

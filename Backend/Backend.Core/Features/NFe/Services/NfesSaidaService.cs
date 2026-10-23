@@ -54,15 +54,16 @@ public sealed class NfesSaidaService : BaseService
         if (emitente is null || string.IsNullOrWhiteSpace(uf))
             return Falha("EMITENTE_SEM_UF", "O emitente precisa de bairro/cidade/estado cadastrados para emitir NF-e.", "EmitenteId");
 
-        var conta = await _vendasService.ObterContaDaVenda(vendaId);
-        if (conta is null || conta.CondicaoPagamento is null || !conta.ContasReceberParcelas.Any())
+        var contas = await _vendasService.ObterContasDaVenda(vendaId);
+        var condicaoPagamento = contas.FirstOrDefault()?.CondicaoPagamento;
+        if (condicaoPagamento is null)
             return Falha("VENDA_SEM_PAGAMENTO", "A venda não tem condição de pagamento/parcelas para compor os pagamentos da NF-e.", "VendaId");
-        var aVista = conta.CondicaoPagamento.EntradaMinimaPercentual >= 100;
+        var aVista = condicaoPagamento.EntradaMinimaPercentual >= 100;
         var indicador = aVista ? IndicadorPagamento.A_VISTA : IndicadorPagamento.A_PRAZO;
-        var metodo = conta.CondicaoPagamento.MetodoPagamento;
+        var metodo = condicaoPagamento.MetodoPagamento;
         // Parcelas abatidas por devolução deixam de somar o total da venda: nesse caso um único pagamento do total.
-        var pagamentos = conta.ContasReceberParcelas.Sum(p => p.ValorParcela) == venda.ValorTotal
-            ? conta.ContasReceberParcelas.Select(p => new NfesPagamentos(indicador, p.ValorParcela, metodo)).ToList()
+        var pagamentos = contas.Sum(p => p.Valor) == venda.ValorTotal
+            ? contas.Select(p => new NfesPagamentos(indicador, p.Valor, metodo)).ToList()
             : new List<NfesPagamentos> { new(indicador, venda.ValorTotal, metodo) };
 
         var itens = venda.Itens.Select((i, n) => new NfesItens(

@@ -18,6 +18,7 @@ BEGIN
     'MANUAL',
     'VENDA',
     'COMPRA',
+    'FRETE_COMPRA',
     'DEVOLUCAO_VENDA'
   );
 EXCEPTION

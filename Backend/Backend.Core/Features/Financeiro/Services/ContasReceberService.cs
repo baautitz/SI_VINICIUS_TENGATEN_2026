@@ -9,10 +9,6 @@ using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.Financeiro.Repositories;
 using Backend.Core.Features.Financeiro.Validators.Commands;
 using Backend.Core.Features.Parceiros.Repositories;
-using Backend.Core.Features.NFe.Repositories;
-using Backend.Core.Features.NFe.Entities;
-using Backend.Core.Features.Vendas.Repositories;
-using Backend.Core.Features.Vendas.Entities;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -37,59 +33,53 @@ public sealed class ContasReceberService : BaseService
         _unitOfWork = unitOfWork;
     }
 
-    public Task<ResultadoPaginado<ContasReceber>> ObterContasReceber(int pagina = 1, int tamanhoDaPagina = 20)
-        => _contasRepository.ObterContasReceber(pagina, tamanhoDaPagina);
-
     public Task<ContasReceber?> ObterContaReceberPorId(int id)
         => _contasRepository.ObterContaReceberPorId(id);
 
     public Task<ResultadoPaginado<ContasReceber>> PesquisarContasReceber(string termo, int pagina = 1, int tamanhoDaPagina = 20, FiltroContasReceber? filtro = null)
         => _contasRepository.PesquisarContasReceber(termo, pagina, tamanhoDaPagina, filtro);
 
-    public async Task<Resultado<ContasReceber>> CriarContaReceber(CriarContaReceberCommand command)
+    public async Task<Resultado<IReadOnlyList<ContasReceber>>> CriarContaReceber(CriarContaReceberCommand command)
     {
         var validator = new CriarContaReceberCommandValidator();
         var validation = await validator.ValidateAsync(command);
         if (!validation.IsValid)
-            return Resultado<ContasReceber>.Falha(validation.ToResultadoErros());
+            return Resultado<IReadOnlyList<ContasReceber>>.Falha(validation.ToResultadoErros());
 
         var cliente = await _clientesRepository.ObterClientePorId(command.ClienteId);
         if (cliente is null)
-            return Resultado<ContasReceber>.Falha(new ResultadoErro("CLIENTE_INEXISTENTE", "O cliente informado não existe.", "ClienteId"));
+            return Resultado<IReadOnlyList<ContasReceber>>.Falha(new ResultadoErro("CLIENTE_INEXISTENTE", "O cliente informado não existe.", "ClienteId"));
 
         CondicoesPagamentos? condicao = null;
         if (command.CondicaoPagamentoId.HasValue)
         {
             condicao = await _condicoesRepository.ObterCondicaoPagamentoPorId(command.CondicaoPagamentoId.Value);
             if (condicao is null)
-                return Resultado<ContasReceber>.Falha(new ResultadoErro("CONDICAO_PAGAMENTO_INEXISTENTE", "A condição de pagamento informada não existe.", "CondicaoPagamentoId"));
+                return Resultado<IReadOnlyList<ContasReceber>>.Falha(new ResultadoErro("CONDICAO_PAGAMENTO_INEXISTENTE", "A condição de pagamento informada não existe.", "CondicaoPagamentoId"));
         }
 
-        return await ExecuteResultAsync(async () =>
+        // ponytail: número manual por timestamp (ms); colisão só com dois lançamentos no mesmo milissegundo.
+        var documento = string.IsNullOrWhiteSpace(command.NumeroDocumento)
+            ? $"MAN-{DateTime.UtcNow:yyyyMMddHHmmssfff}"
+            : command.NumeroDocumento.Trim();
+        var parcelas = command.Parcelas.ToList();
+
+        return await ExecuteResultAsync<IReadOnlyList<ContasReceber>>(async () =>
         {
             try
             {
                 _unitOfWork.BeginTransaction();
 
-                var conta = new ContasReceber(
-                    command.Descricao,
-                    command.ValorOriginal,
-                    cliente,
-                    command.DataEmissao,
-                    null,
-                    condicao,
-                    observacao: command.Observacao
-                );
-
-                foreach (var p in command.Parcelas)
+                var criadas = new List<ContasReceber>();
+                for (var i = 0; i < parcelas.Count; i++)
                 {
-                    conta.AdicionarParcela(p.NumeroParcela, p.DataVencimento, p.ValorParcela);
+                    var conta = new ContasReceber(command.Descricao, parcelas[i].Valor, cliente, parcelas[i].DataVencimento, documento,
+                        i + 1, parcelas.Count, command.DataEmissao, condicao, observacao: command.Observacao);
+                    criadas.Add(await _contasRepository.CriarContaReceber(conta));
                 }
 
-                var criada = await _contasRepository.CriarContaReceber(conta);
                 _unitOfWork.Commit();
-
-                return Resultado<ContasReceber>.Sucesso(criada);
+                return Resultado<IReadOnlyList<ContasReceber>>.Sucesso(criadas);
             }
             catch
             {
@@ -106,127 +96,91 @@ public sealed class ContasReceberService : BaseService
         if (!validation.IsValid)
             return Resultado<ContasReceber>.Falha(validation.ToResultadoErros());
 
-        var existente = await _contasRepository.ObterContaReceberPorId(id);
-        if (existente is null)
-            return Resultado<ContasReceber>.Falha(new ResultadoErro("CONTA_RECEBER_NAO_ENCONTRADA", "Conta a receber não encontrada."));
-
-        var cliente = await _clientesRepository.ObterClientePorId(command.ClienteId);
-        if (cliente is null)
-            return Resultado<ContasReceber>.Falha(new ResultadoErro("CLIENTE_INEXISTENTE", "O cliente informado não existe.", "ClienteId"));
-
-        CondicoesPagamentos? condicao = null;
-        if (command.CondicaoPagamentoId.HasValue)
-        {
-            condicao = await _condicoesRepository.ObterCondicaoPagamentoPorId(command.CondicaoPagamentoId.Value);
-            if (condicao is null)
-                return Resultado<ContasReceber>.Falha(new ResultadoErro("CONDICAO_PAGAMENTO_INEXISTENTE", "A condição de pagamento informada não existe.", "CondicaoPagamentoId"));
-        }
-
-        return await ExecuteResultAsync(async () =>
-        {
-            try
-            {
-                _unitOfWork.BeginTransaction();
-
-                var parcelas = command.Parcelas.Select(p =>
-                    new ContasReceberParcelas(0, id, p.NumeroParcela, p.DataVencimento, p.ValorParcela, p.ValorRecebido, p.Status));
-
-                existente.Atualizar(
-                    command.Descricao,
-                    command.ValorOriginal,
-                    cliente,
-                    parcelas,
-                    command.DataEmissao,
-                    null,
-                    condicao,
-                    command.Observacao
-                );
-
-                var atualizada = await _contasRepository.AtualizarContaReceber(id, existente);
-                _unitOfWork.Commit();
-
-                return Resultado<ContasReceber>.Sucesso(atualizada);
-            }
-            catch
-            {
-                _unitOfWork.Rollback();
-                throw;
-            }
-        });
+        return await Persistir(id, c => c.Atualizar(command.Descricao, command.DataVencimento, command.Valor, command.Observacao),
+            existente => existente.OrigemTipo != OrigemTituloFinanceiro.MANUAL
+                ? new ResultadoErro("CONTA_RECEBER_EXTERNA", $"Conta gerada por {existente.OrigemTipo.Nome()} #{existente.OrigemId} não pode ser editada manualmente.")
+                : null);
     }
 
-    public async Task<Resultado<ContasReceber>> RegistrarRecebimento(int id, RegistrarRecebimentoParcelaCommand command)
+    public async Task<Resultado<ContasReceber>> RegistrarRecebimento(int id, ReceberContaReceberCommand command)
     {
-        if (command.ValorRecebido <= 0)
-            return Resultado<ContasReceber>.Falha(new ResultadoErro("VALOR_INVALIDO", "O valor de recebimento deve ser maior que zero.", "ValorRecebido"));
+        if (command.Valor <= 0)
+            return Resultado<ContasReceber>.Falha(new ResultadoErro("VALOR_INVALIDO", "O valor de recebimento deve ser maior que zero.", "Valor"));
 
-        var existente = await _contasRepository.ObterContaReceberPorId(id);
-        if (existente is null)
-            return Resultado<ContasReceber>.Falha(new ResultadoErro("CONTA_RECEBER_NAO_ENCONTRADA", "Conta a receber não encontrada."));
-
-        return await ExecuteResultAsync(async () =>
-        {
-            try
-            {
-                _unitOfWork.BeginTransaction();
-
-                existente.RegistrarRecebimento(command.NumeroParcela, command.ValorRecebido);
-
-                var atualizada = await _contasRepository.AtualizarContaReceber(id, existente);
-                _unitOfWork.Commit();
-
-                return Resultado<ContasReceber>.Sucesso(atualizada);
-            }
-            catch
-            {
-                _unitOfWork.Rollback();
-                throw;
-            }
-        });
+        return await Persistir(id, c => c.RegistrarRecebimento(command.Valor));
     }
 
-    public async Task<Resultado<ContasReceber>> EstornarRecebimento(int id, EstornarRecebimentoParcelaCommand command)
+    public async Task<Resultado<ContasReceber>> EstornarRecebimento(int id, EstornarContaReceberCommand command)
     {
-        if (command.ValorEstorno <= 0)
-            return Resultado<ContasReceber>.Falha(new ResultadoErro("VALOR_INVALIDO", "O valor de estorno deve ser maior que zero.", "ValorEstorno"));
+        if (command.Valor <= 0)
+            return Resultado<ContasReceber>.Falha(new ResultadoErro("VALOR_INVALIDO", "O valor de estorno deve ser maior que zero.", "Valor"));
 
-        var existente = await _contasRepository.ObterContaReceberPorId(id);
-        if (existente is null)
-            return Resultado<ContasReceber>.Falha(new ResultadoErro("CONTA_RECEBER_NAO_ENCONTRADA", "Conta a receber não encontrada."));
-
-        return await ExecuteResultAsync(async () =>
-        {
-            try
-            {
-                _unitOfWork.BeginTransaction();
-
-                existente.EstornarRecebimento(command.NumeroParcela, command.ValorEstorno);
-
-                var atualizada = await _contasRepository.AtualizarContaReceber(id, existente);
-                _unitOfWork.Commit();
-
-                return Resultado<ContasReceber>.Sucesso(atualizada);
-            }
-            catch
-            {
-                _unitOfWork.Rollback();
-                throw;
-            }
-        });
+        return await Persistir(id, c => c.EstornarRecebimento(command.Valor));
     }
 
+    // Lê com FOR UPDATE e deleta na mesma transação, como Persistir.
     public async Task<bool> DeletarContaReceber(int id)
     {
-        var existente = await _contasRepository.ObterContaReceberPorId(id);
-        if (existente is null) return false;
+        try
+        {
+            _unitOfWork.BeginTransaction();
 
-        if (existente.OrigemTipo != OrigemTituloFinanceiro.MANUAL)
-            throw new Common.Exceptions.DomainException($"Conta gerada por {existente.OrigemTipo.Nome()} #{existente.OrigemId}. Para cancelá-la, cancele o documento de origem.");
+            var existente = await _contasRepository.ObterContaReceberPorIdParaAtualizar(id);
+            if (existente is null)
+            {
+                _unitOfWork.Rollback();
+                return false;
+            }
 
-        if (existente.ValorSaldo < existente.ValorOriginal || existente.ContasReceberParcelas.Any(p => p.Status != StatusTituloFinanceiro.ABERTO))
-            throw new Common.Exceptions.DomainException("Não é possível excluir uma conta a receber que já possui parcelas baixadas ou alteradas.");
+            if (existente.OrigemTipo != OrigemTituloFinanceiro.MANUAL)
+                throw new Common.Exceptions.DomainException($"Conta gerada por {existente.OrigemTipo.Nome()} #{existente.OrigemId}. Para cancelá-la, cancele o documento de origem.");
 
-        return await _contasRepository.DeletarContaReceber(id);
+            if (existente.ValorPago > 0 || existente.Status != StatusTituloFinanceiro.ABERTO)
+                throw new Common.Exceptions.DomainException("Não é possível excluir uma conta a receber que já possui recebimento ou não está aberta.");
+
+            var deletada = await _contasRepository.DeletarContaReceber(id);
+            _unitOfWork.Commit();
+            return deletada;
+        }
+        catch
+        {
+            _unitOfWork.Rollback();
+            throw;
+        }
     }
-}
 
+    // Lê com FOR UPDATE dentro da transação: recebimentos concorrentes da mesma conta se enfileiram e cada um parte do valor_pago já gravado.
+    private Task<Resultado<ContasReceber>> Persistir(int id, Action<ContasReceber> alterar, Func<ContasReceber, ResultadoErro?>? validar = null)
+        => ExecuteResultAsync(async () =>
+        {
+            try
+            {
+                _unitOfWork.BeginTransaction();
+
+                var conta = await _contasRepository.ObterContaReceberPorIdParaAtualizar(id);
+                if (conta is null)
+                {
+                    _unitOfWork.Rollback();
+                    return Resultado<ContasReceber>.Falha(new ResultadoErro("CONTA_RECEBER_NAO_ENCONTRADA", "Conta a receber não encontrada."));
+                }
+
+                var erro = validar?.Invoke(conta);
+                if (erro is not null)
+                {
+                    _unitOfWork.Rollback();
+                    return Resultado<ContasReceber>.Falha(erro);
+                }
+
+                alterar(conta);
+                var atualizada = await _contasRepository.AtualizarContaReceber(id, conta);
+                _unitOfWork.Commit();
+
+                return Resultado<ContasReceber>.Sucesso(atualizada);
+            }
+            catch
+            {
+                _unitOfWork.Rollback();
+                throw;
+            }
+        });
+}

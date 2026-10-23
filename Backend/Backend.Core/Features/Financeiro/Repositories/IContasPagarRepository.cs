@@ -6,8 +6,9 @@ namespace Backend.Core.Features.Financeiro.Repositories;
 
 public interface IContasPagarRepository
 {
-    public Task<ResultadoPaginado<ContasPagar>> ObterContasPagar(int pagina = 1, int tamanhoDaPagina = 20);
     public Task<ContasPagar?> ObterContaPagarPorId(int id);
+    // SELECT ... FOR UPDATE: exige transação aberta; serializa pagamentos/estornos concorrentes da mesma conta.
+    public Task<ContasPagar?> ObterContaPagarPorIdParaAtualizar(int id);
     public Task<ContasPagar> CriarContaPagar(ContasPagar conta);
     public Task<ContasPagar> AtualizarContaPagar(int id, ContasPagar conta);
     public Task<bool> DeletarContaPagar(int id);

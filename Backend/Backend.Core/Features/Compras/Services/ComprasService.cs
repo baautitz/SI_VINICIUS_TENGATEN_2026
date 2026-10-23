@@ -164,15 +164,22 @@ public sealed class ComprasService : BaseService
         // Trava os SKUs antes de checar bloqueios: venda/movimentação concorrente espera o estorno terminar.
         await _skusRepository.TravarSkus(compra.Itens.Select(i => i.Sku.Sku));
 
-        var contas = (await _contasPagarRepository.PesquisarContasPagar("", 1, 100,
-            new Financeiro.DTOs.FiltroContasPagar(OrigemTipo: OrigemTituloFinanceiro.COMPRA, OrigemId: compra.Id))).Itens
-            .Where(c => c.Status != StatusTituloFinanceiro.CANCELADO).ToList();
+        // Pagina até o fim: compra com muitas parcelas não pode deixar títulos sem cancelar.
+        var todas = new List<ContasPagar>();
+        for (var pagina = 1; ; pagina++)
+        {
+            var r = await _contasPagarRepository.PesquisarContasPagar("", pagina, 100, new Financeiro.DTOs.FiltroContasPagar(OrigemId: compra.Id));
+            var antes = todas.Count;
+            todas.AddRange(r.Itens);
+            if (todas.Count == antes || todas.Count >= r.TotalDeItens) break;
+        }
+        var contas = todas
+            .Where(c => c.OrigemTipo is OrigemTituloFinanceiro.COMPRA or OrigemTituloFinanceiro.FRETE_COMPRA && c.Status != StatusTituloFinanceiro.CANCELADO).ToList();
 
         var erros = new List<ResultadoErro>();
-        foreach (var conta in contas)
-            foreach (var p in conta.ContasPagarParcelas.Where(p => p.ValorPago > 0))
-                erros.Add(new ResultadoErro("ESTORNO_PARCELA_PAGA",
-                    $"A parcela {p.NumeroParcela} da conta '{conta.Descricao}' já tem R$ {p.ValorPago:0.00} pago. Estorne o pagamento primeiro.", "ContasPagar"));
+        foreach (var conta in contas.Where(c => c.ValorPago > 0))
+            erros.Add(new ResultadoErro("ESTORNO_PARCELA_PAGA",
+                $"A parcela {conta.NumeroParcela} da conta '{conta.Descricao}' já tem R$ {conta.ValorPago:0.00} pago. Estorne o pagamento primeiro.", "ContasPagar"));
         erros.AddRange(await _estoqueService.ObterBloqueiosDeEstornoDeEntrada(OrigemMovimentacaoEstoque.COMPRA, compra.Id));
         if (erros.Count > 0)
             return Resultado<Compra>.Falha(erros);
@@ -272,27 +279,28 @@ public sealed class ComprasService : BaseService
 
         // Só a compra manual à vista (entrada mínima 100%) baixa a conta do fornecedor; o frete de terceiro nunca é baixado sozinho.
         var aVista = emissaoNfe is null && condicao?.EntradaMinimaPercentual >= 100;
-        var conta = new ContasPagar(
-            descricao: $"Compra nº {criada.Id}", valorOriginal: criada.ValorNota, fornecedor: fornecedor,
-            dataEmissao: emissaoNfe ?? criada.DataCompra, condicaoPagamento: condicao,
-            origemTipo: OrigemTituloFinanceiro.COMPRA, origemId: criada.Id, observacao: criada.Observacao);
-
-        foreach (var p in command.Parcelas!)
+        var parcelas = command.Parcelas!.ToList();
+        foreach (var p in parcelas)
         {
-            conta.AdicionarParcela(p.NumeroParcela, p.DataVencimento, p.ValorParcela);
+            var conta = new ContasPagar(
+                descricao: $"Compra nº {criada.Id}", valor: p.ValorParcela, fornecedor: fornecedor,
+                dataVencimento: p.DataVencimento, numeroDocumento: $"COMPRA-{criada.Id}",
+                numeroParcela: p.NumeroParcela, totalParcelas: parcelas.Count,
+                dataEmissao: emissaoNfe ?? criada.DataCompra, condicaoPagamento: condicao,
+                origemTipo: OrigemTituloFinanceiro.COMPRA, origemId: criada.Id, observacao: criada.Observacao);
             if (aVista)
-                conta.RegistrarPagamento(p.NumeroParcela, p.ValorParcela);
+                conta.RegistrarPagamento(p.ValorParcela);
+            await _contasPagarRepository.CriarContaPagar(conta);
         }
-        await _contasPagarRepository.CriarContaPagar(conta);
 
         // Frete de terceiro (FOB/CT-e): conta separada à transportadora, parcela única.
         if (criada.ValorFreteTerceiro > 0)
         {
             var frete = new ContasPagar(
-                descricao: $"Frete da compra nº {criada.Id}", valorOriginal: criada.ValorFreteTerceiro, fornecedor: null,
-                dataEmissao: criada.DataCompra, origemTipo: OrigemTituloFinanceiro.COMPRA, origemId: criada.Id,
+                descricao: $"Frete da compra nº {criada.Id}", valor: criada.ValorFreteTerceiro, fornecedor: null,
+                dataVencimento: command.VencimentoFreteTerceiro!.Value, numeroDocumento: $"FRETE-{criada.Id}",
+                dataEmissao: criada.DataCompra, origemTipo: OrigemTituloFinanceiro.FRETE_COMPRA, origemId: criada.Id,
                 transportadoraId: transportadora!.Id);
-            frete.AdicionarParcela(1, command.VencimentoFreteTerceiro!.Value, criada.ValorFreteTerceiro);
             await _contasPagarRepository.CriarContaPagar(frete);
         }
 

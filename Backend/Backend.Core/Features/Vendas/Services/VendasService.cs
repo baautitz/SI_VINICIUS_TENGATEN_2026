@@ -162,27 +162,28 @@ public sealed class VendasService : BaseService
                 // Create Accounts Receivable (ContasReceber)
                 if (condicao != null && command.Parcelas != null && command.Parcelas.Any())
                 {
-                    var conta = new ContasReceber(
-                        descricao: $"Venda nº {criada.Id}",
-                        valorOriginal: criada.ValorTotal,
-                        cliente: cliente,
-                        dataEmissao: command.DataVenda,
-                        dataVencimento: null,
-                        condicaoPagamento: condicao,
-                        origemTipo: OrigemTituloFinanceiro.VENDA,
-                        origemId: criada.Id,
-                        observacao: command.Observacao
-                    );
-
-                    foreach (var p in command.Parcelas)
+                    var parcelas = command.Parcelas.ToList();
+                    foreach (var p in parcelas)
                     {
-                        conta.AdicionarParcela(p.NumeroParcela, p.DataVencimento, p.ValorParcela);
+                        var conta = new ContasReceber(
+                            descricao: $"Venda nº {criada.Id}",
+                            valor: p.ValorParcela,
+                            cliente: cliente,
+                            dataVencimento: p.DataVencimento,
+                            numeroDocumento: $"VENDA-{criada.Id}",
+                            numeroParcela: p.NumeroParcela,
+                            totalParcelas: parcelas.Count,
+                            dataEmissao: command.DataVenda,
+                            condicaoPagamento: condicao,
+                            origemTipo: OrigemTituloFinanceiro.VENDA,
+                            origemId: criada.Id,
+                            observacao: command.Observacao
+                        );
                         // Condição à vista (entrada mínima de 100%): a parcela nasce recebida.
                         if (EhAVista(condicao))
-                            conta.RegistrarRecebimento(p.NumeroParcela, p.ValorParcela);
+                            conta.RegistrarRecebimento(p.ValorParcela);
+                        await _contasRepository.CriarContaReceber(conta);
                     }
-
-                    await _contasRepository.CriarContaReceber(conta);
                 }
 
                 _unitOfWork.Commit();
@@ -198,11 +199,19 @@ public sealed class VendasService : BaseService
 
     private static bool EhAVista(CondicoesPagamentos? condicao) => condicao?.EntradaMinimaPercentual >= 100;
 
-    public async Task<ContasReceber?> ObterContaDaVenda(int vendaId)
+    // Todas as parcelas (linhas) da venda, por parcela; pagina até o fim, sem teto fixo.
+    public async Task<IReadOnlyList<ContasReceber>> ObterContasDaVenda(int vendaId)
     {
-        var contas = await _contasRepository.PesquisarContasReceber("", 1, 1, new FiltroContasReceber(OrigemTipo: OrigemTituloFinanceiro.VENDA, OrigemId: vendaId));
-        var primeira = contas.Itens.FirstOrDefault();
-        return primeira is null ? null : await _contasRepository.ObterContaReceberPorId(primeira.Id);
+        var todas = new List<ContasReceber>();
+        for (var pagina = 1; ; pagina++)
+        {
+            var r = await _contasRepository.PesquisarContasReceber("", pagina, 100, new FiltroContasReceber(OrigemTipo: OrigemTituloFinanceiro.VENDA, OrigemId: vendaId));
+            var antes = todas.Count;
+            todas.AddRange(r.Itens);
+            if (todas.Count == antes || todas.Count >= r.TotalDeItens) break;
+        }
+
+        return todas.OrderBy(c => c.NumeroParcela).ToList();
     }
 
     public Task<Devolucao?> ObterDevolucaoPorId(int id)
@@ -261,15 +270,19 @@ public sealed class VendasService : BaseService
                     throw new DomainException(resultadoEstoque.Errors!.First().Message);
 
                 // Sem conta a receber (venda sem condição de pagamento) não há valor financeiro a reverter.
-                var conta = await ObterContaDaVenda(vendaId);
-                if (conta != null)
+                // Abate da última parcela para a primeira (preserva os vencimentos mais próximos).
+                var restante = criada.ValorTotal;
+                var contas = await ObterContasDaVenda(vendaId);
+                foreach (var conta in contas.OrderByDescending(c => c.NumeroParcela))
                 {
-                    var excedente = conta.AbaterSaldoAberto(criada.ValorTotal);
+                    var abatido = conta.Abater(restante);
+                    if (abatido <= 0) continue;
                     await _contasRepository.AtualizarContaReceber(conta.Id, conta);
-
-                    if (excedente > 0)
-                        await CriarReembolso(venda, criada, excedente);
+                    restante -= abatido;
                 }
+
+                if (restante > 0 && contas.Count > 0)
+                    await CriarReembolso(venda, criada, restante);
 
                 _unitOfWork.Commit();
                 // Só avisa: o cancelamento da NF-e é decisão fiscal separada.
@@ -292,15 +305,15 @@ public sealed class VendasService : BaseService
         var hoje = DateTime.Today;
         var conta = new ContasPagar(
             descricao: $"Reembolso da devolução nº {devolucao.Id} (venda nº {venda.Id})",
-            valorOriginal: valor,
+            valor: valor,
             fornecedor: null,
+            dataVencimento: hoje,
+            numeroDocumento: $"DEV-{devolucao.Id}",
             clienteId: cliente.Id,
             clienteNome: cliente.NomeRazaoSocial,
             dataEmissao: hoje,
             origemTipo: OrigemTituloFinanceiro.DEVOLUCAO_VENDA,
             origemId: devolucao.Id);
-        conta.AdicionarParcela(1, hoje, valor);
-
         await _contasPagarRepository.CriarContaPagar(conta);
     }
 }

@@ -8,7 +8,8 @@ public enum OrigemTituloFinanceiro
     MANUAL,
     VENDA,
     COMPRA,
-    DEVOLUCAO_VENDA
+    DEVOLUCAO_VENDA,
+    FRETE_COMPRA
 }
 
 public static class OrigemTituloFinanceiroExtensions
@@ -18,6 +19,7 @@ public static class OrigemTituloFinanceiroExtensions
         OrigemTituloFinanceiro.VENDA => "Venda",
         OrigemTituloFinanceiro.COMPRA => "Compra",
         OrigemTituloFinanceiro.DEVOLUCAO_VENDA => "Devolução de venda",
+        OrigemTituloFinanceiro.FRETE_COMPRA => "Frete da compra",
         _ => "Manual"
     };
 }
