@@ -10,6 +10,7 @@ import {
   BaixaParcelaWindow,
   type BaixaParcelaWindowProps,
 } from "../components/baixa-parcela-dialog";
+import { FILTROS_AVANCADOS_VAZIOS, filtrosAvancadosParaApi, type FiltrosAvancados } from "../components/filtros-avancados";
 import { useFeatureList } from "@/hooks/use-feature-list";
 import { contasReceberApi } from "@/api/financeiro";
 import { useUi } from "@/ui/imperative";
@@ -23,15 +24,17 @@ export function ContasReceberFeature() {
   const [status, setStatus] = React.useState(TODOS);
   const [origem, setOrigem] = React.useState(TODOS);
   const [numeroDocumento, setNumeroDocumento] = React.useState("");
+  const [avancados, setAvancados] = React.useState<FiltrosAvancados>(FILTROS_AVANCADOS_VAZIOS);
   const { setPage } = list;
   const { data, isLoading } = useQuery({
-    queryKey: ["contas-receber", list.deferredSearch, status, origem, numeroDocumento, list.page],
+    queryKey: ["contas-receber", list.deferredSearch, status, origem, numeroDocumento, avancados, list.page],
     queryFn: async () => {
       const res = await contasReceberApi.list({
         search: list.deferredSearch.trim() || undefined,
         status: status === TODOS ? undefined : status,
         origemTipo: origem === TODOS ? undefined : origem,
         numeroDocumento: numeroDocumento || undefined,
+        ...filtrosAvancadosParaApi(avancados),
         page: list.page,
         pageSize: 50,
       });
@@ -150,6 +153,8 @@ export function ContasReceberFeature() {
       status={status}
       origem={origem}
       numeroDocumento={numeroDocumento}
+      avancados={avancados}
+      onAvancadosChange={(v) => { setAvancados(v); setPage(1); }}
       onStatusChange={(v) => { setStatus(v); setPage(1); }}
       onOrigemChange={(v) => { setOrigem(v); setPage(1); }}
       onDocumentoChange={(v) => { setNumeroDocumento(v); setPage(1); }}

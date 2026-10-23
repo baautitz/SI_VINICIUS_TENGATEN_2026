@@ -24,9 +24,8 @@ public class ContasReceberController : ControllerBase
     }
 
     [HttpGet]
-    public Task<ResultadoPaginado<ContasReceber>> GetContas([FromQuery] string? search, [FromQuery] int? clienteId, [FromQuery] OrigemTituloFinanceiro? origemTipo, [FromQuery] int? origemId, [FromQuery] string? numeroDocumento, [FromQuery] StatusTituloFinanceiro? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-        => _service.PesquisarContasReceber(search ?? "", page, pageSize,
-            new FiltroContasReceber(clienteId, origemTipo, origemId, numeroDocumento, status));
+    public Task<ResultadoPaginado<ContasReceber>> GetContas([FromQuery] string? search, [FromQuery] FiltroContasReceber filtro, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        => _service.PesquisarContasReceber(search ?? "", page, pageSize, filtro);
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<ContasReceber>> GetConta(int id)

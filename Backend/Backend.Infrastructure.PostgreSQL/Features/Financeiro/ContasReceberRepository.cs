@@ -109,26 +109,42 @@ public class ContasReceberRepository : IContasReceberRepository
 
     public async Task<ResultadoPaginado<ContasReceber>> PesquisarContasReceber(string termo, int pagina = 1, int tamanhoDaPagina = 20, FiltroContasReceber? filtro = null)
     {
+        var pesquisa = PesquisaTitulos.Analisar(termo);
         var param = new
         {
-            Termo = $"%{termo}%",
+            pesquisa.Palavras,
+            pesquisa.Alternativas,
             filtro?.ClienteId,
             OrigemTipo = filtro?.OrigemTipo?.ToString(),
             filtro?.OrigemId,
             filtro?.NumeroDocumento,
             Status = filtro?.Status?.ToString(),
+            CpfCnpj = PesquisaTitulos.SomenteDigitos(filtro?.CpfCnpj),
+            filtro?.VencimentoDe,
+            filtro?.VencimentoAte,
+            filtro?.EmissaoDe,
+            filtro?.EmissaoAte,
+            filtro?.ValorMinimo,
+            filtro?.ValorMaximo,
             TamanhoDaPagina = tamanhoDaPagina,
             Offset = (pagina - 1) * tamanhoDaPagina
         };
 
-        const string where = @"
-            WHERE (unaccent(cr.descricao::text) ILIKE unaccent(@Termo::text) OR unaccent(cr.numero_documento::text) ILIKE unaccent(@Termo::text)
-                   OR unaccent(c.nome_razaosocial::text) ILIKE unaccent(@Termo::text))
+        const string haystack = @"concat_ws(' ', cr.descricao, cr.numero_documento, cr.observacao, c.nome_razaosocial, c.apelido_nomefantasia, c.cpf_cnpj,
+                cr.valor::text, to_char(cr.data_vencimento, 'DD/MM/YYYY'), to_char(cr.data_emissao, 'DD/MM/YYYY'), cr.status::text, cr.origem_tipo::text)";
+        var where = PesquisaTitulos.Where(haystack) + @"
               AND (@ClienteId::int IS NULL OR cr.cliente_id = @ClienteId)
               AND (@OrigemTipo::text IS NULL OR cr.origem_tipo::text = @OrigemTipo)
               AND (@OrigemId::int IS NULL OR cr.origem_id = @OrigemId)
               AND (@NumeroDocumento::text IS NULL OR cr.numero_documento = @NumeroDocumento)
-              AND (@Status::text IS NULL OR cr.status::text = @Status)";
+              AND (@Status::text IS NULL OR cr.status::text = @Status)
+              AND (@VencimentoDe::date IS NULL OR cr.data_vencimento >= @VencimentoDe)
+              AND (@VencimentoAte::date IS NULL OR cr.data_vencimento <= @VencimentoAte)
+              AND (@EmissaoDe::date IS NULL OR cr.data_emissao >= @EmissaoDe)
+              AND (@EmissaoAte::date IS NULL OR cr.data_emissao <= @EmissaoAte)
+              AND (@ValorMinimo::numeric IS NULL OR cr.valor >= @ValorMinimo)
+              AND (@ValorMaximo::numeric IS NULL OR cr.valor <= @ValorMaximo)
+              AND (@CpfCnpj::text IS NULL OR regexp_replace(c.cpf_cnpj, '\D', '', 'g') = @CpfCnpj)";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(@"
             SELECT COUNT(*)
@@ -137,7 +153,8 @@ public class ContasReceberRepository : IContasReceberRepository
             param, transaction: _session.Transaction);
 
         var contas = (await Consultar(where + @"
-            ORDER BY cr.data_vencimento, cr.numero_documento, cr.numero_parcela, cr.id
+            ORDER BY " + PesquisaTitulos.Relevancia("cr.numero_documento", "cr.descricao") + @",
+                     cr.data_vencimento, cr.numero_documento, cr.numero_parcela, cr.id
             LIMIT @TamanhoDaPagina OFFSET @Offset;", param)).ToList();
 
         return new ResultadoPaginado<ContasReceber>(contas, total, pagina, tamanhoDaPagina);
