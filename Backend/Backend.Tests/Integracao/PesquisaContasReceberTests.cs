@@ -76,4 +76,19 @@ public class PesquisaContasReceberTests
         Assert.Equal(["F-2"], Docs(await repo.PesquisarContasReceber("", filtro: new FiltroContasReceber(CpfCnpj: "390.533.447-05", ValorMinimo: 100m, ValorMaximo: 200m))));
         Assert.Empty(Docs(await repo.PesquisarContasReceber("", filtro: new FiltroContasReceber(CpfCnpj: "111.444.777-35"))));
     }
+
+    [Fact]
+    public async Task Parcelas_do_mesmo_documento_sao_listadas_separadas_e_sem_misturar_com_outra_origem()
+    {
+        var c = await Cliente("Cliente Parcelas", "39053344705");
+        await _db.Executar(@"INSERT INTO contas_receber (origem_tipo, origem_id, numero_documento, numero_parcela, total_parcelas, cliente_id, descricao, data_vencimento, valor) VALUES
+            ('VENDA', 7, '100', 1, 2, @c, 'Venda', '2026-01-10', 50), ('VENDA', 7, '100', 2, 2, @c, 'Venda', '2026-02-10', 50),
+            ('MANUAL', NULL, '100', 1, 1, @c, 'Lançamento manual', '2026-01-15', 30);", new { c });
+
+        using var s = _db.NovaSessao();
+        var r = await new ContasReceberRepository(s).PesquisarContasReceber("", filtro: new FiltroContasReceber(OrigemTipo: Backend.Core.Features.Financeiro.Entities.Enums.OrigemTituloFinanceiro.VENDA, OrigemId: 7, NumeroDocumento: "100"));
+
+        Assert.Equal([1, 2], r.Itens.Select(x => x.NumeroParcela));
+        Assert.All(r.Itens, x => Assert.Equal(2, x.TotalParcelas));
+    }
 }

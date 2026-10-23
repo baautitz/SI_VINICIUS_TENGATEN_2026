@@ -11,6 +11,7 @@ import {
   type BaixaParcelaWindowProps,
 } from "../components/baixa-parcela-dialog";
 import { FILTROS_AVANCADOS_VAZIOS, filtrosAvancadosParaApi, type FiltrosAvancados } from "../components/filtros-avancados";
+import type { DocumentoFiltro } from "../components/documento-filtro";
 import { useFeatureList } from "@/hooks/use-feature-list";
 import { contasPagarApi } from "@/api/financeiro";
 import { useUi } from "@/ui/imperative";
@@ -23,17 +24,18 @@ export function ContasPagarFeature() {
   const list = useFeatureList<ContasPagar>();
   const [status, setStatus] = React.useState(TODOS);
   const [origem, setOrigem] = React.useState(TODOS);
-  const [numeroDocumento, setNumeroDocumento] = React.useState("");
+  const [documento, setDocumento] = React.useState<DocumentoFiltro | null>(null);
   const [avancados, setAvancados] = React.useState<FiltrosAvancados>(FILTROS_AVANCADOS_VAZIOS);
   const { setPage } = list;
   const { data, isLoading } = useQuery({
-    queryKey: ["contas-pagar", list.deferredSearch, status, origem, numeroDocumento, avancados, list.page],
+    queryKey: ["contas-pagar", list.deferredSearch, status, origem, documento, avancados, list.page],
     queryFn: async () => {
       const res = await contasPagarApi.list({
         search: list.deferredSearch.trim() || undefined,
         status: status === TODOS ? undefined : status,
-        origemTipo: origem === TODOS ? undefined : origem,
-        numeroDocumento: numeroDocumento || undefined,
+        origemTipo: documento?.origemTipo ?? (origem === TODOS ? undefined : origem),
+        origemId: documento?.origemId ?? undefined,
+        numeroDocumento: documento?.numeroDocumento,
         ...filtrosAvancadosParaApi(avancados),
         page: list.page,
         pageSize: 50,
@@ -152,12 +154,12 @@ export function ContasPagarFeature() {
       onSelectAllAcrossPagesChange={list.setSelectAllAcrossPages}
       status={status}
       origem={origem}
-      numeroDocumento={numeroDocumento}
+      documento={documento}
       avancados={avancados}
       onAvancadosChange={(v) => { setAvancados(v); setPage(1); }}
       onStatusChange={(v) => { setStatus(v); setPage(1); }}
       onOrigemChange={(v) => { setOrigem(v); setPage(1); }}
-      onDocumentoChange={(v) => { setNumeroDocumento(v); setPage(1); }}
+      onDocumentoChange={(v) => { setDocumento(v); setPage(1); }}
       onBaixa={(item) => openBaixa(item)}
       onEstorno={(item) => openBaixa(item, true)}
     />
