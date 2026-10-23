@@ -1,0 +1,73 @@
+using System;
+using System.Linq;
+using Backend.Core.Common.Exceptions;
+using Backend.Core.Features.Financeiro.Entities;
+using Backend.Core.Features.Financeiro.Entities.Enums;
+using Backend.Core.Features.Parceiros.Entities;
+using Xunit;
+
+namespace Backend.Tests;
+
+public class ContasReceberTests
+{
+    private static readonly Clientes Cliente = (Clientes)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(Clientes));
+
+    [Fact]
+    public void Parcelas_do_documento_recebem_parcial_e_cancelam_por_documento()
+    {
+        var parcelas = Enumerable.Range(1, 3)
+            .Select(i => new ContasReceber("Venda", 100m, Cliente, DateTime.Today.AddDays(30 * i), "VENDA-1", i, 3))
+            .ToList();
+
+        parcelas[0].RegistrarRecebimento(40m);
+        Assert.Equal(StatusTituloFinanceiro.PARCIAL, parcelas[0].Status);
+        Assert.Equal(60m, parcelas[0].ValorSaldo);
+        parcelas[0].RegistrarRecebimento(60m);
+        Assert.Equal(StatusTituloFinanceiro.PAGO, parcelas[0].Status);
+
+        Assert.Throws<DomainException>(() => parcelas[0].Cancelar());
+        foreach (var p in parcelas.Skip(1)) p.Cancelar();
+        Assert.All(parcelas.Skip(1), p => Assert.Equal(StatusTituloFinanceiro.CANCELADO, p.Status));
+    }
+
+    [Fact]
+    public void Abater_reduz_o_aberto_cancela_se_zerar_e_devolve_o_abatido()
+    {
+        var parcial = new ContasReceber("Venda", 100m, Cliente, DateTime.Today, "VENDA-1");
+        parcial.RegistrarRecebimento(30m);
+
+        Assert.Equal(70m, parcial.Abater(500m));
+        Assert.Equal(30m, parcial.Valor);
+        Assert.Equal(StatusTituloFinanceiro.PAGO, parcial.Status);
+
+        var aberta = new ContasReceber("Venda", 100m, Cliente, DateTime.Today, "VENDA-1");
+        Assert.Equal(100m, aberta.Abater(100m));
+        Assert.Equal(StatusTituloFinanceiro.CANCELADO, aberta.Status);
+        Assert.Equal(100m, aberta.Valor);
+        Assert.Equal(0m, aberta.Abater(10m));
+    }
+
+    [Fact]
+    public void Estorno_nao_excede_o_recebido_e_edicao_exige_manual_aberta_sem_recebimento()
+    {
+        var manual = new ContasReceber("Aluguel", 100m, Cliente, DateTime.Today, "MAN-1");
+        manual.RegistrarRecebimento(10m);
+        Assert.Throws<DomainException>(() => manual.EstornarRecebimento(20m));
+        Assert.Throws<DomainException>(() => manual.Atualizar("X", DateTime.Today, 50m, null));
+        manual.EstornarRecebimento(10m);
+        manual.Atualizar("X", DateTime.Today, 50m, null);
+        Assert.Equal(50m, manual.Valor);
+
+        var venda = new ContasReceber("Venda", 100m, Cliente, DateTime.Today, "VENDA-1", origemTipo: OrigemTituloFinanceiro.VENDA, origemId: 1);
+        Assert.Throws<DomainException>(() => venda.Atualizar("X", DateTime.Today, 50m, null));
+    }
+
+    [Fact]
+    public void Valor_e_arredondado_em_duas_casas_como_o_banco()
+    {
+        var c = new ContasReceber("Venda", 10.005m, Cliente, DateTime.Today, "VENDA-2");
+        Assert.Equal(10.01m, c.Valor);
+        c.Atualizar("Venda", DateTime.Today, 20.005m, null);
+        Assert.Equal(20.01m, c.Valor);
+    }
+}

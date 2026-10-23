@@ -50,9 +50,8 @@ public class ComprasEstornoTests
             Compra = new Compra(DateTime.UtcNow, Instancia<Emitentes>(), Instancia<Fornecedores>(),
                 new[] { new CompraItens(2, 5m, 0, Sku) }, 0, 0, 0, 0, 0, null, null) { Id = 7 };
 
-            Conta = new ContasPagar("Compra nº 7", 10m, Instancia<Fornecedores>(), origemTipo: OrigemTituloFinanceiro.COMPRA, origemId: 7);
-            Conta.AdicionarParcela(1, DateTime.UtcNow.AddDays(30), 10m);
-            if (paga) Conta.RegistrarPagamento(1, 4m);
+            Conta = new ContasPagar("Compra nº 7", 10m, Instancia<Fornecedores>(), DateTime.UtcNow.AddDays(30), "COMPRA-7", origemTipo: OrigemTituloFinanceiro.COMPRA, origemId: 7);
+            if (paga) Conta.RegistrarPagamento(4m);
 
             Nfe = Instancia<Nfes>();
             typeof(Nfes).GetProperty(nameof(Nfes.TipoOperacao))!.SetValue(Nfe, TipoOperacao.ENTRADA);
@@ -111,7 +110,7 @@ public class ComprasEstornoTests
         Assert.Equal(OrigemMovimentacaoEstoque.ESTORNO, estorno.OrigemTipo);
         Assert.Equal(3, estorno.OrigemId);
         Assert.Equal(StatusTituloFinanceiro.CANCELADO, Assert.Single(c.ContasAtualizadas).Status);
-        Assert.All(c.Conta.ContasPagarParcelas, p => Assert.Equal(StatusTituloFinanceiro.CANCELADO, p.Status));
+        Assert.Equal(StatusTituloFinanceiro.CANCELADO, c.Conta.Status);
         Assert.Equal(StatusNfe.CANCELADA, c.Nfe.StatusNfe);
         Assert.Equal("Compra lançada errada", c.Nfe.JustificativaCancelamento);
         Assert.True(c.Compra.Estornada);
