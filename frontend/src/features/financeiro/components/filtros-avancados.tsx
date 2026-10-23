@@ -35,14 +35,32 @@ export const filtrosAvancadosParaApi = (f: FiltrosAvancados) => ({
   valorMaximo: f.valorMaximo || undefined,
 });
 
-const campos: { chave: keyof FiltrosAvancados; rotulo: string; type: string }[] = [
-  { chave: "cpfCnpj", rotulo: "CPF/CNPJ", type: "text" },
-  { chave: "vencimentoDe", rotulo: "Vencimento de", type: "date" },
-  { chave: "vencimentoAte", rotulo: "Vencimento até", type: "date" },
-  { chave: "emissaoDe", rotulo: "Emissão de", type: "date" },
-  { chave: "emissaoAte", rotulo: "Emissão até", type: "date" },
-  { chave: "valorMinimo", rotulo: "Valor mínimo", type: "number" },
-  { chave: "valorMaximo", rotulo: "Valor máximo", type: "number" },
+type Campo = { chave: keyof FiltrosAvancados; rotulo: string; type: "text" | "date" | "number" };
+
+// Cada grupo vira uma linha; o par De/Até fica lado a lado.
+const grupos: { titulo: string; campos: Campo[] }[] = [
+  { titulo: "Contraparte", campos: [{ chave: "cpfCnpj", rotulo: "CPF/CNPJ", type: "text" }] },
+  {
+    titulo: "Vencimento",
+    campos: [
+      { chave: "vencimentoDe", rotulo: "De", type: "date" },
+      { chave: "vencimentoAte", rotulo: "Até", type: "date" },
+    ],
+  },
+  {
+    titulo: "Emissão",
+    campos: [
+      { chave: "emissaoDe", rotulo: "De", type: "date" },
+      { chave: "emissaoAte", rotulo: "Até", type: "date" },
+    ],
+  },
+  {
+    titulo: "Valor (R$)",
+    campos: [
+      { chave: "valorMinimo", rotulo: "Mínimo", type: "number" },
+      { chave: "valorMaximo", rotulo: "Máximo", type: "number" },
+    ],
+  },
 ];
 
 export function FiltrosAvancadosPopover({ valor, onChange }: {
@@ -57,18 +75,26 @@ export function FiltrosAvancadosPopover({ valor, onChange }: {
           <SlidersHorizontal /> Filtros{ativos ? ` (${ativos})` : ""}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-72 space-y-3">
-        {campos.map((c) => (
-          <label key={c.chave} className="block space-y-1 text-xs font-medium text-muted-foreground">
-            {c.rotulo}
-            <Input
-              type={c.type}
-              step={c.type === "number" ? "0.01" : undefined}
-              min={c.type === "number" ? "0" : undefined}
-              value={valor[c.chave]}
-              onChange={(e) => onChange({ ...valor, [c.chave]: e.target.value })}
-            />
-          </label>
+      <PopoverContent align="end" className="w-[26rem] space-y-4">
+        {grupos.map((g) => (
+          <fieldset key={g.titulo} className="space-y-1.5">
+            <legend className="text-xs font-semibold text-foreground">{g.titulo}</legend>
+            <div className={g.campos.length > 1 ? "grid grid-cols-2 gap-2" : "grid grid-cols-1"}>
+              {g.campos.map((c) => (
+                <Input
+                  key={c.chave}
+                  type={c.type}
+                  aria-label={`${g.titulo} ${c.rotulo}`}
+                  placeholder={c.type === "date" ? undefined : c.rotulo}
+                  step={c.type === "number" ? "0.01" : undefined}
+                  min={c.type === "number" ? "0" : undefined}
+                  className="h-8"
+                  value={valor[c.chave]}
+                  onChange={(e) => onChange({ ...valor, [c.chave]: e.target.value })}
+                />
+              ))}
+            </div>
+          </fieldset>
         ))}
         {ativos > 0 && (
           <Button size="sm" variant="ghost" className="w-full" onClick={() => onChange(FILTROS_AVANCADOS_VAZIOS)}>
