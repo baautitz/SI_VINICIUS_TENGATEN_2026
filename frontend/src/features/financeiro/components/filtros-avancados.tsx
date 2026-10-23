@@ -71,14 +71,22 @@ export function FiltrosAvancadosPopover({ valor, onChange }: {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button size="sm" variant={ativos ? "default" : "outline"} aria-label="Filtros avançados">
+        <Button variant={ativos ? "default" : "outline"} aria-label="Filtros avançados">
           <SlidersHorizontal /> Filtros{ativos ? ` (${ativos})` : ""}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[26rem] space-y-4">
+      <PopoverContent align="end" className="w-[24rem] gap-4 p-4">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-semibold text-foreground">Filtros avançados</span>
+          {ativos > 0 && (
+            <Button size="xs" variant="ghost" onClick={() => onChange(FILTROS_AVANCADOS_VAZIOS)}>
+              Limpar
+            </Button>
+          )}
+        </div>
         {grupos.map((g) => (
-          <fieldset key={g.titulo} className="space-y-1.5">
-            <legend className="text-xs font-semibold text-foreground">{g.titulo}</legend>
+          <fieldset key={g.titulo} className="flex flex-col gap-1.5">
+            <legend className="mb-1.5 text-xs font-medium text-muted-foreground">{g.titulo}</legend>
             <div className={g.campos.length > 1 ? "grid grid-cols-2 gap-2" : "grid grid-cols-1"}>
               {g.campos.map((c) => (
                 <Input
@@ -96,11 +104,6 @@ export function FiltrosAvancadosPopover({ valor, onChange }: {
             </div>
           </fieldset>
         ))}
-        {ativos > 0 && (
-          <Button size="sm" variant="ghost" className="w-full" onClick={() => onChange(FILTROS_AVANCADOS_VAZIOS)}>
-            Limpar filtros
-          </Button>
-        )}
       </PopoverContent>
     </Popover>
   );

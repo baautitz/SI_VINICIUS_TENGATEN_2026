@@ -184,7 +184,7 @@ export function ContasReceberList({
               <Filtro valor={origem} onChange={onOrigemChange} rotulo="Origem" opcoes={origemTituloLabels} />
               <FiltrosAvancadosPopover valor={avancados} onChange={onAvancadosChange} />
               {documento && (
-                <Button size="sm" variant="outline" onClick={() => onDocumentoChange(null)}>
+                <Button variant="outline" onClick={() => onDocumentoChange(null)}>
                   Parcelas do documento {documento.numeroDocumento} <X />
                 </Button>
               )}
