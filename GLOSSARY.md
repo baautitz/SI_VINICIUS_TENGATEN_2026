@@ -5,5 +5,5 @@ Sistema de gestão (compras, vendas, estoque, financeiro e NF-e) com backend .NE
 ## Língua
 
 **Toast**:
-Notificação transitória de feedback exibida sobre a tela, em um único estilo para sucesso, erro, aviso e informação.
+Notificação transitória de feedback exibida sobre a tela, pelo mesmo sistema de feedback para sucesso, erro, aviso e informação, diferenciados por severidade.
 _Avoid_: Alerta, snackbar, notificação (ambíguo)
