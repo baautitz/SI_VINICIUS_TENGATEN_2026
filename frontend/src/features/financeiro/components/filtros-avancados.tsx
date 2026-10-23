@@ -63,11 +63,27 @@ const grupos: { titulo: string; campos: Campo[] }[] = [
   },
 ];
 
+const ATRASO_MS = 400;
+
+// Os campos mudam na hora (rascunho); o filtro só vai para a consulta depois que a digitação para.
 export function FiltrosAvancadosPopover({ valor, onChange }: {
   valor: FiltrosAvancados;
   onChange: (v: FiltrosAvancados) => void;
 }) {
+  const [rascunho, setRascunho] = React.useState(valor);
+  const timer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const ativos = Object.values(valor).filter(Boolean).length;
+
+  const alterar = (novo: FiltrosAvancados) => {
+    setRascunho(novo);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => onChange(novo), ATRASO_MS);
+  };
+  const limpar = () => {
+    clearTimeout(timer.current);
+    setRascunho(FILTROS_AVANCADOS_VAZIOS);
+    onChange(FILTROS_AVANCADOS_VAZIOS);
+  };
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -79,7 +95,7 @@ export function FiltrosAvancadosPopover({ valor, onChange }: {
         <div className="flex items-center justify-between">
           <span className="text-sm font-semibold text-foreground">Filtros avançados</span>
           {ativos > 0 && (
-            <Button size="xs" variant="ghost" onClick={() => onChange(FILTROS_AVANCADOS_VAZIOS)}>
+            <Button size="xs" variant="ghost" onClick={limpar}>
               Limpar
             </Button>
           )}
@@ -97,8 +113,8 @@ export function FiltrosAvancadosPopover({ valor, onChange }: {
                   step={c.type === "number" ? "0.01" : undefined}
                   min={c.type === "number" ? "0" : undefined}
                   className="h-8"
-                  value={valor[c.chave]}
-                  onChange={(e) => onChange({ ...valor, [c.chave]: e.target.value })}
+                  value={rascunho[c.chave]}
+                  onChange={(e) => alterar({ ...rascunho, [c.chave]: e.target.value })}
                 />
               ))}
             </div>
