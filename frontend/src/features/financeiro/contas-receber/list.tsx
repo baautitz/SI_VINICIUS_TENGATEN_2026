@@ -7,6 +7,8 @@ import { Button } from "@/ui/primitives";
 import { DataTable, FeatureLayout, FeatureHeader } from "@/ui/composites";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/primitives";
 import { getActionsColumn } from "@/utils/table-columns";
+import { FiltrosAvancadosPopover, type FiltrosAvancados } from "../components/filtros-avancados";
+import type { DocumentoFiltro } from "../components/documento-filtro";
 import { StatusTituloBadge } from "../components/status-titulo-badge";
 import { formatDateToLocal } from "@/utils/date-utils";
 import { Landmark, Check, RotateCcw, X } from "lucide-react";
@@ -20,10 +22,12 @@ export const TODOS = "TODOS";
 interface ContasReceberListProps extends FeatureListProps<ContasReceber> {
   status: string;
   origem: string;
-  numeroDocumento: string;
+  documento: DocumentoFiltro | null;
+  avancados: FiltrosAvancados;
+  onAvancadosChange: (v: FiltrosAvancados) => void;
   onStatusChange: (v: string) => void;
   onOrigemChange: (v: string) => void;
-  onDocumentoChange: (v: string) => void;
+  onDocumentoChange: (v: DocumentoFiltro | null) => void;
   onBaixa: (item: ContasReceber) => void;
   onEstorno: (item: ContasReceber) => void;
 }
@@ -48,7 +52,7 @@ const Filtro = ({ valor, onChange, rotulo, opcoes }: {
 
 export function ContasReceberList({
   items: contas, loading, searchTerm, page, totalPages, totalItems,
-  status, origem, numeroDocumento,
+  status, origem, documento, avancados, onAvancadosChange,
   onSearchChange, onAdd, onEdit, onDelete, onView, onPageChange,
   onStatusChange, onOrigemChange, onDocumentoChange, onBaixa, onEstorno,
 }: ContasReceberListProps) {
@@ -83,8 +87,8 @@ export function ContasReceberList({
           <button
             type="button"
             className="text-left hover:underline"
-            title="Filtrar por este documento"
-            onClick={() => onDocumentoChange(i.numeroDocumento)}
+            title="Ver todas as parcelas deste documento"
+            onClick={() => onDocumentoChange({ numeroDocumento: i.numeroDocumento, origemTipo: i.origemTipo, origemId: i.origemId ?? null })}
           >
             <span className="text-muted-foreground">{origemTituloLabels[i.origemTipo] ?? i.origemTipo}</span>{" "}
             <span className="font-semibold text-foreground">{i.numeroDocumento}</span>
@@ -168,7 +172,7 @@ export function ContasReceberList({
           totalItems={totalItems}
           globalFilter={searchTerm}
           onGlobalFilterChange={onSearchChange}
-          searchPlaceholder="Pesquisar por descrição, cliente ou documento..."
+          searchPlaceholder="Pesquisar por descrição, documento, nome, CPF/CNPJ, valor ou data..."
           getRowId={(row) => row.id.toString()}
           onEditRow={(item) => (editavel(item) ? onEdit(item) : onView(item))}
           onDeleteRow={(item) => {
@@ -178,9 +182,10 @@ export function ContasReceberList({
             <>
               <Filtro valor={status} onChange={onStatusChange} rotulo="Status" opcoes={statusTituloLabels} />
               <Filtro valor={origem} onChange={onOrigemChange} rotulo="Origem" opcoes={origemTituloLabels} />
-              {numeroDocumento && (
-                <Button size="sm" variant="outline" onClick={() => onDocumentoChange("")}>
-                  Documento {numeroDocumento} <X />
+              <FiltrosAvancadosPopover valor={avancados} onChange={onAvancadosChange} />
+              {documento && (
+                <Button variant="outline" onClick={() => onDocumentoChange(null)}>
+                  Parcelas do documento {documento.numeroDocumento} <X />
                 </Button>
               )}
             </>
