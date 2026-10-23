@@ -1150,7 +1150,7 @@ function CompraForm({
                     <TableRow>
                       <TableHead className="w-10">#</TableHead>
                       <TableHead className="w-48">
-                        SKU {!readOnly && <Kbd>Enter</Kbd>}
+                        SKU
                       </TableHead>
                       <TableHead>Produto</TableHead>
                       <TableHead className="w-28 text-right">
@@ -1234,11 +1234,9 @@ function CompraForm({
                             {item.numeroItem ?? idx + 1}
                           </TableCell>
                           <TableCell>
-                            {readOnly && item.sku ? (
+                            {item.sku ? (
                               <SkuViewInput name={`compra-sku-${idx}`} sku={item.sku} />
-                            ) : (
-                              <span className="font-mono text-xs">{item.sku}</span>
-                            )}
+                            ) : null}
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-col gap-1">
