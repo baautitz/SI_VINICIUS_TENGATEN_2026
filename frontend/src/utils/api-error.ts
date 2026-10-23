@@ -218,3 +218,16 @@ export function getApiErrorMessage(
   const parsed = extractApiErrors(error);
   return parsed.globalError ?? parsed.errors[0]?.message ?? fallback;
 }
+
+/**
+ * Texto seguro para o usuário: só erros de negócio (4xx) mostram a mensagem do servidor;
+ * exceções, 5xx e demais falhas inesperadas usam o fallback, nunca o texto técnico.
+ */
+export function getOperationalErrorMessage(error: unknown, fallback: string): string {
+  if (!(error instanceof ApiRequestError)) return fallback;
+  if (error.status === 0) return error.message;
+  if (error.status >= 400 && error.status < 500 && error.errors.length > 0) {
+    return getApiErrorMessage(error, fallback);
+  }
+  return fallback;
+}

@@ -54,7 +54,5 @@ export interface WindowManager extends Ui {
     options?: WindowOptions,
   ): Promise<WindowResult<TResult>>
   confirm(options: ConfirmOptions): Promise<WindowResult<true>>
-  notify(options: NotificationOptions): void
-  notifyError(error: unknown, options?: FeedbackErrorOptions): void
   navigate(href: string, options?: NavigationOptions): void
 }

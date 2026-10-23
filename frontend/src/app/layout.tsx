@@ -48,7 +48,7 @@ export default function RootLayout({
                   </NavigationScope>
                 </SidebarProvider>
               </TooltipProvider>
-              <Toaster position="top-right" />
+              <Toaster position="bottom-right" />
               <WindowManagerHost />
             </WindowManagerProvider>
           </KeyboardNavigationProvider>

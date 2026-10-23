@@ -4,6 +4,7 @@ import {
   createApiRequestError,
   extractApiErrors,
   getApiErrorMessage,
+  getOperationalErrorMessage,
 } from "../src/utils/api-error.ts";
 
 const skuPayload = {
@@ -68,5 +69,28 @@ assert.match(empty400.message, /Não foi possível concluir/);
 const rawObject = { status: 400, response: JSON.stringify(skuPayload) };
 assert.equal(extractApiErrors(rawObject).globalError, skuPayload.errors[0].message);
 assert.notEqual(getApiErrorMessage(rawObject), "[object Object]");
+
+const FALLBACK = "Não foi possível gerar a NF-e.";
+assert.equal(
+  getOperationalErrorMessage(createApiRequestError(409, skuPayload), FALLBACK),
+  skuPayload.errors[0].message,
+  "business error (4xx) shows the server message",
+);
+assert.equal(
+  getOperationalErrorMessage(createApiRequestError(0, new Error("x")), FALLBACK),
+  network.message,
+  "network failure keeps its friendly message",
+);
+assert.equal(
+  getOperationalErrorMessage(createApiRequestError(500, "System.NullReferenceException: x"), FALLBACK),
+  FALLBACK,
+  "5xx never leaks technical text",
+);
+assert.equal(
+  getOperationalErrorMessage(new TypeError("Cannot read properties of undefined"), FALLBACK),
+  FALLBACK,
+  "unexpected exception never leaks technical text",
+);
+assert.equal(getOperationalErrorMessage("texto qualquer", FALLBACK), FALLBACK);
 
 console.log("API error contracts verified.");
