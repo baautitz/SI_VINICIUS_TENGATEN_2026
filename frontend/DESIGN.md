@@ -164,7 +164,7 @@ Os componentes são compactos, uniformes e desenhados para responder de forma im
 - **Operational failure:** Falhas de API, domínio, rede e mutação são transientes e aparecem uma única vez em toast. Não usar `Alert` dentro de um dialog para repetir a mesma mensagem; o dialog permanece aberto.
 - **Persistent state:** `Alert` é reservado a informação que continua válida enquanto a pessoa observa a tela, como uma venda já cancelada ou uma restrição contextual. Não é um canal para resposta de uma operação recém-executada.
 - **Loading:** Preservar o contexto da superfície. Em tabela, usar o estado de carregamento da tabela; em formulário ou ação local, desabilitar apenas a ação afetada e usar o indicador compacto correspondente. Não trocar toda a tela por um spinner para uma mutação local.
-- **Toast:** Sucesso, informação, warning e erro usam o mesmo sistema de feedback. Um único resultado de operação gera no máximo um toast.
+- **Toast:** Sucesso, informação, warning e erro usam o mesmo sistema de feedback. Um único resultado de operação gera no máximo um toast. Posição `bottom-right`; duração 4s (sucesso/info), 6s (warning) e 8s (erro). Erros de negócio (4xx) mostram a mensagem do servidor (título até ~200 caracteres, o restante em descrição); exceções, 5xx e falhas inesperadas mostram só a mensagem amigável. O toast continua interativo com janela aberta e clicar nele não fecha a janela.
 - **Confirmation:** Ações destrutivas, irreversíveis ou de descarte usam confirmação antes da mutação, nunca uma mensagem de erro posterior como substituto de confirmação.
 
 ### Navigation

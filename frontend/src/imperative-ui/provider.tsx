@@ -212,8 +212,6 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
       // Compatibilidade temporária, removida quando todos os consumidores usarem ui.windows.
       open,
       confirm: confirmLegacy,
-      notify: notifyWithSonner,
-      notifyError: notifyErrorWithSonner,
       navigate,
     }),
     [confirm, confirmLegacy, navigate, open],

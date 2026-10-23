@@ -34,6 +34,11 @@ import {
   useNavigationScope,
 } from "@/ui/keyboard-navigation";
 
+/** Clicar num toast não é "clicar fora": a janela não deve ser fechada. */
+function isToastInteraction(event: { target: EventTarget | null }): boolean {
+  return event.target instanceof Element && event.target.closest("[data-sonner-toast]") !== null;
+}
+
 const sizeClasses = {
   small: "max-w-md",
   medium: "max-w-2xl",
@@ -280,6 +285,10 @@ function ManagedWindow({
             requestClose("escape");
           }}
           onInteractOutside={(event) => {
+            if (isToastInteraction(event)) {
+              event.preventDefault();
+              return;
+            }
             if (record.options.closeOnOutside === false) {
               event.preventDefault();
               return;
@@ -329,6 +338,10 @@ function ManagedWindow({
           requestClose("escape");
         }}
         onInteractOutside={(event) => {
+          if (isToastInteraction(event)) {
+            event.preventDefault();
+            return;
+          }
           if (record.options.closeOnOutside === false) {
             event.preventDefault();
             return;

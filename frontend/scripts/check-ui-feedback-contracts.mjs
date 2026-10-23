@@ -40,4 +40,8 @@ assert.match(feedback, /WeakSet<object>/, "feedback adapter must deduplicate err
 assert.match(upsertMutation, /safeMutateAsync/, "upsert mutations must consume rejected promises");
 assert.match(commands, /fireAndForget/, "hotkey commands must consume rejected promises");
 
+const legacyFeedback = sourceFiles.filter((file) => /\bui\.(notify|notifyError)\s*\(/.test(read(file)));
+assert.deepEqual(legacyFeedback, [], `legacy ui.notify/ui.notifyError used: ${legacyFeedback.map(relative).join(", ")}`);
+assert.equal(/^\s+notify(Error)?: notify/m.test(read(path.join(root, "imperative-ui/provider.tsx")).replace(/feedback: \{[\s\S]*?\},/, "")), false, "legacy notify aliases remain in the window manager");
+
 console.log("UI feedback contracts verified.");

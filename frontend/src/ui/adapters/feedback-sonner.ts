@@ -5,7 +5,9 @@ import { toast } from "sonner"
 import {
   extractApiErrors,
   getApiErrorMessage,
+  getOperationalErrorMessage,
 } from "@/utils/api-error"
+import { splitLongMessage, toastDuration } from "@/ui/adapters/feedback-format"
 import type {
   FeedbackErrorOptions,
   NotificationOptions,
@@ -28,7 +30,7 @@ export function notifyWithSonner(options: NotificationOptions): void {
     description: options.description
       ? safeContent(options.description, "")
       : undefined,
-    duration: options.duration,
+    duration: toastDuration(method, options.duration),
     id: options.id,
   })
 }
@@ -54,18 +56,15 @@ export function notifyErrorWithSonner(
     return
   }
 
+  const fallback = options.fallbackTitle ?? "Ocorreu um erro inesperado."
   const parsed = extractApiErrors(error)
   const fieldOnly = !parsed.globalError && Object.keys(parsed.fieldErrors).length > 0
-  const title = parsed.globalError ??
-    (fieldOnly
-      ? "Verifique os campos destacados."
-      : getApiErrorMessage(error, options.fallbackTitle ?? "Ocorreu um erro inesperado."))
+  const message = fieldOnly
+    ? "Verifique os campos destacados."
+    : getOperationalErrorMessage(error, fallback)
+  const { title, description } = splitLongMessage(message)
 
-  notifyWithSonner({
-    type: "error",
-    title: safeContent(title, options.fallbackTitle ?? "Ocorreu um erro inesperado."),
-    id: options.id,
-  })
+  notifyWithSonner({ type: "error", title, description, id: options.id })
 
   if (typeof error === "object" && error !== null) notifiedErrors.add(error)
 }
