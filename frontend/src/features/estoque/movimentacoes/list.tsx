@@ -3,9 +3,8 @@
 import * as React from "react";
 
 import { FeatureHeader } from "@/ui/composites";
-import { ClipboardList, Undo2 } from "lucide-react";
+import { ClipboardList } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Button } from "@/ui/primitives";
 import { DataTable } from "@/ui/composites";
 import { FeatureLayout } from "@/ui/composites";
 import { Badge } from "@/ui/primitives";
@@ -17,8 +16,7 @@ import {
 } from "./types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 import { formatToLocal } from "@/utils/date-utils";
-import { fireAndForget } from "@/lib/utils";
-import { getActionsColumn } from "@/utils/table-columns";
+import { getActionsColumn, RowAction } from "@/utils/table-columns";
 
 interface MovimentacoesListProps extends Omit<FeatureListProps<MovimentacaoEstoque>, "onEdit" | "onDelete"> {
   onEstornar: (item: MovimentacaoEstoque) => void;
@@ -117,14 +115,7 @@ export function MovimentacoesList({
       onView,
       extra: (item) =>
         podeEstornar(item) && (
-          <Button
-            size="icon-sm"
-            variant="outline"
-            aria-label="Estornar"
-            onClick={() => fireAndForget(() => onEstornar(item))}
-          >
-            <Undo2 className="size-4" />
-          </Button>
+          <RowAction kind="estornar" label="Estornar" onClick={() => onEstornar(item)} />
         ),
     }),
   ];

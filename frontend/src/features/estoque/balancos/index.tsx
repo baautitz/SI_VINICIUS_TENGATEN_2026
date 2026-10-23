@@ -3,15 +3,15 @@
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
-import { Ban, ListChecks } from "lucide-react";
+import { ListChecks } from "lucide-react";
 import { balancosApi } from "@/api/estoque";
 import { useFeatureList } from "@/hooks/use-feature-list";
 import { useUi } from "@/ui/imperative";
-import { Badge, Button } from "@/ui/primitives";
+import { Badge } from "@/ui/primitives";
 import { DataTable, FeatureHeader, FeatureLayout } from "@/ui/composites";
 import { formatToLocal } from "@/utils/date-utils";
 import { fireAndForget } from "@/lib/utils";
-import { getActionsColumn } from "@/utils/table-columns";
+import { getActionsColumn, RowAction } from "@/utils/table-columns";
 import { Balanco, statusBalancoLabels } from "./types";
 import { EstornoWindow, type EstornoWindowProps } from "@/features/estoque/movimentacoes";
 import { BalancoWindow, type BalancoWindowProps } from "./window";
@@ -121,9 +121,7 @@ export function BalancosFeature() {
       onView: abrir,
       extra: (item) =>
         item.status !== "CANCELADO" && (
-          <Button size="icon-sm" variant="destructive" aria-label="Cancelar balanço" onClick={() => fireAndForget(() => cancelar(item))}>
-            <Ban className="size-4" />
-          </Button>
+          <RowAction kind="cancelar" label="Cancelar balanço" onClick={() => cancelar(item)} />
         ),
     }),
   ];

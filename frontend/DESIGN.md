@@ -208,6 +208,8 @@ Regras para que a mesma ação tenha sempre o mesmo rótulo, ícone, variant e a
 | Saída da janela | sem ícone | outline | default | Esc | Cancelar/Fechar |
 | Navegação textual | sem ícone | link | default | | |
 
+Botões de ação de negócio na linha da listagem (baixar, estornar, cancelar) usam `RowAction` de `@/utils/table-columns`, que fixa ícone e variant por tipo; nunca montar `Button` manual para essas ações. Ordem na linha: ação de negócio, Visualizar/Editar, Excluir.
+
 Regras: ícone-only sempre com `aria-label`; Kbd só em Cancelar/Fechar (Esc), primário (Alt+Enter) e ações principais da janela, nunca em botão de linha; sem `h-/w-` manual nem cores cruas (`text-red-*`, `bg-emerald-*`).
 
 #### 3. Badges (não existe Chip; Badge cobre)

@@ -2,14 +2,12 @@
 
 import * as React from "react";
 import { FeatureHeader } from "@/ui/composites";
-import { ShoppingBag, Undo2 } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Button } from "@/ui/primitives";
 import { DataTable } from "@/ui/composites";
 import { FeatureLayout } from "@/ui/composites";
 import { Badge } from "@/ui/primitives";
-import { fireAndForget } from "@/lib/utils";
-import { getActionsColumn } from "@/utils/table-columns";
+import { getActionsColumn, RowAction } from "@/utils/table-columns";
 import type { Venda } from "./types";
 import type { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 import { formatToLocal } from "@/utils/date-utils";
@@ -111,14 +109,7 @@ export function VendasList({
       onView,
       extra: (item) =>
         item.statusDevolucao !== "TOTAL" && (
-          <Button
-            size="icon-sm"
-            variant="outline"
-            aria-label="Devolver itens"
-            onClick={() => fireAndForget(() => onDelete(item))}
-          >
-            <Undo2 className="size-4" />
-          </Button>
+          <RowAction kind="estornar" label="Devolver itens" onClick={() => onDelete(item)} />
         ),
     }),
   ];
