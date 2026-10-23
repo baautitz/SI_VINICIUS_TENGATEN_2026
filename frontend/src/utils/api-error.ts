@@ -39,6 +39,8 @@ export class ApiRequestError extends Error {
       status === 0
         ? fallback
         : errors.find((error) => !error.field)?.message ??
+          // "The command field is required" é só o eco do ASP.NET; o campo real vem no erro seguinte.
+          errors.find((error) => error.field !== "command")?.message ??
           errors[0]?.message ??
           fallback;
 
