@@ -66,6 +66,9 @@ interface DataTableProps<TData, TValue> {
   /** Ação de baixar da linha focada; só vale onde `podeBaixarRow` permitir. */
   onBaixarRow?: (row: TData) => void;
   podeBaixarRow?: (row: TData) => boolean;
+  /** Estorno da baixa da linha focada; só vale onde `podeEstornarRow` permitir. */
+  onEstornarRow?: (row: TData) => void;
+  podeEstornarRow?: (row: TData) => boolean;
 
   searchInputRef?: React.RefObject<HTMLInputElement | null>;
   hideSearchKbd?: boolean;
@@ -93,6 +96,8 @@ export function DataTable<TData, TValue>({
   onDeleteRow,
   onBaixarRow,
   podeBaixarRow,
+  onEstornarRow,
+  podeEstornarRow,
   searchInputRef,
   hideSearchKbd,
 }: DataTableProps<TData, TValue>) {
@@ -200,6 +205,19 @@ export function DataTable<TData, TValue>({
           fireAndForget(() => onBaixarRow(rowData));
         },
       },
+      {
+        id: "table.estornar-row",
+        hotkey: combinacaoDe("estornar"),
+        label: "Estornar linha",
+        enabled: focusedRowIndex !== null && rows.length > 0 && !!onEstornarRow,
+        run: (event: KeyboardEvent) => {
+          if (focusedRowIndex === null || !rows[focusedRowIndex] || !onEstornarRow) return;
+          const rowData = rows[focusedRowIndex].original;
+          event.preventDefault();
+          if (podeEstornarRow && !podeEstornarRow(rowData)) return;
+          fireAndForget(() => onEstornarRow(rowData));
+        },
+      },
       ...(["excluirLinha", "excluirLinhaBackspace"] as const).map((atalho) => ({
         id: `table.delete-row.${atalho === "excluirLinha" ? "delete" : "backspace"}`,
         hotkey: combinacaoDe(atalho),
@@ -221,7 +239,7 @@ export function DataTable<TData, TValue>({
         },
       })),
     ],
-    [activeSearchInputRef, focusedRowIndex, onBaixarRow, onDeleteRow, onEditRow, onRowSelect, podeBaixarRow, rows],
+    [activeSearchInputRef, focusedRowIndex, onBaixarRow, onDeleteRow, onEditRow, onEstornarRow, onRowSelect, podeBaixarRow, podeEstornarRow, rows],
   );
 
   useWindowCommands(commands);
@@ -283,6 +301,11 @@ export function DataTable<TData, TValue>({
               {onBaixarRow && (podeBaixarRow?.(rows[focusedRowIndex].original) ?? true) && (
                 <span className="flex items-center gap-1">
                   <HotkeyKbd hotkey={combinacaoDe("baixarLinha")} /> Baixar
+                </span>
+              )}
+              {onEstornarRow && (podeEstornarRow?.(rows[focusedRowIndex].original) ?? true) && (
+                <span className="flex items-center gap-1">
+                  <HotkeyKbd hotkey={combinacaoDe("estornar")} /> Estornar
                 </span>
               )}
               {onDeleteRow && (

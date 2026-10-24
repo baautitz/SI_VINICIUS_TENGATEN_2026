@@ -59,13 +59,15 @@ export function ContasPagarList({
   // Só lançamento manual, em aberto e sem pagamento, pode ser editado/excluído.
   const editavel = (i: ContasPagar) => i.origemTipo === "MANUAL" && i.status === "ABERTO" && i.valorPago === 0;
 
+  const estornavel = (i: ContasPagar) => i.valorPago > 0 && i.status !== "CANCELADO";
+
   const extra = (item: ContasPagar) => (
     <>
       {emAberto(item) && (
         <RowAction kind="baixar" label="Baixar parcela" onClick={() => onBaixa(item)} />
       )}
-      {item.valorPago > 0 && item.status !== "CANCELADO" && (
-        <RowAction kind="estornar" label="Estornar pagamento" onClick={() => onEstorno(item)} />
+      {estornavel(item) && (
+        <RowAction kind="estornar" label="Estornar baixa" onClick={() => onEstorno(item)} />
       )}
     </>
   );
@@ -172,6 +174,8 @@ export function ContasPagarList({
           onEditRow={(item) => (editavel(item) ? onEdit(item) : onView(item))}
           onBaixarRow={onBaixa}
           podeBaixarRow={emAberto}
+          onEstornarRow={onEstorno}
+          podeEstornarRow={estornavel}
           onDeleteRow={(item) => {
             if (editavel(item)) onDelete(item);
           }}
