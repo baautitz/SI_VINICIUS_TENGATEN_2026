@@ -21,6 +21,7 @@ public class ContasPagar
     public int? ClienteId { get; private set; }
     public string? ClienteNome { get; private set; }
     public int? TransportadoraId { get; private set; }
+    public string? TransportadoraNome { get; private set; }
 
     public DateTime? DataEmissao { get; private set; }
     public DateTime DataVencimento { get; private set; }
@@ -38,7 +39,7 @@ public class ContasPagar
         NumeroDocumento = string.Empty;
     }
 
-    public ContasPagar(string descricao, decimal valor, Fornecedores? fornecedor, DateTime dataVencimento, string numeroDocumento, int numeroParcela = 1, int totalParcelas = 1, DateTime? dataEmissao = null, CondicoesPagamentos? condicaoPagamento = null, OrigemTituloFinanceiro origemTipo = OrigemTituloFinanceiro.MANUAL, int? origemId = null, string? observacao = null, int? clienteId = null, string? clienteNome = null, int? transportadoraId = null)
+    public ContasPagar(string descricao, decimal valor, Fornecedores? fornecedor, DateTime dataVencimento, string numeroDocumento, int numeroParcela = 1, int totalParcelas = 1, DateTime? dataEmissao = null, CondicoesPagamentos? condicaoPagamento = null, OrigemTituloFinanceiro origemTipo = OrigemTituloFinanceiro.MANUAL, int? origemId = null, string? observacao = null, int? clienteId = null, string? clienteNome = null, int? transportadoraId = null, string? transportadoraNome = null)
     {
         descricao = TextNormalization.Normalize(descricao);
         observacao = TextNormalization.NormalizeOrNull(observacao);
@@ -81,6 +82,7 @@ public class ContasPagar
         ClienteId = clienteId;
         ClienteNome = clienteNome;
         TransportadoraId = transportadoraId;
+        TransportadoraNome = transportadoraNome;
         Descricao = descricao;
         NumeroDocumento = numeroDocumento;
         NumeroParcela = numeroParcela;
@@ -97,13 +99,28 @@ public class ContasPagar
         Status = StatusTituloFinanceiro.ABERTO;
     }
 
-    // Reidratação a partir do banco.
-    public ContasPagar(int id, string descricao, decimal valor, Fornecedores? fornecedor, DateTime dataVencimento, string numeroDocumento, int numeroParcela, int totalParcelas, DateTime? dataEmissao, CondicoesPagamentos? condicaoPagamento, OrigemTituloFinanceiro origemTipo, int? origemId, string? observacao, DateTime criadoEm, decimal valorPago, StatusTituloFinanceiro status, int? clienteId, string? clienteNome, int? transportadoraId)
-        : this(descricao, valor, fornecedor, dataVencimento, numeroDocumento, numeroParcela, totalParcelas, dataEmissao, condicaoPagamento, origemTipo, origemId, observacao, clienteId, clienteNome, transportadoraId)
+    // Reidratação a partir do banco: confia nas regras do schema (uma contraparte entre fornecedor, cliente e transportadora).
+    public ContasPagar(int id, string descricao, decimal valor, Fornecedores? fornecedor, DateTime dataVencimento, string numeroDocumento, int numeroParcela, int totalParcelas, DateTime? dataEmissao, CondicoesPagamentos? condicaoPagamento, OrigemTituloFinanceiro origemTipo, int? origemId, string? observacao, DateTime criadoEm, decimal valorPago, StatusTituloFinanceiro status, int? clienteId, string? clienteNome, int? transportadoraId, string? transportadoraNome = null)
     {
         Id = id;
-        CriadoEm = criadoEm;
+        Fornecedor = fornecedor;
+        ClienteId = clienteId;
+        ClienteNome = clienteNome;
+        TransportadoraId = transportadoraId;
+        TransportadoraNome = transportadoraNome;
+        Descricao = descricao;
+        NumeroDocumento = numeroDocumento;
+        NumeroParcela = numeroParcela;
+        TotalParcelas = totalParcelas;
+        Valor = valor;
         ValorPago = valorPago;
+        DataEmissao = dataEmissao;
+        DataVencimento = dataVencimento;
+        CondicaoPagamento = condicaoPagamento;
+        OrigemTipo = origemTipo;
+        OrigemId = origemId;
+        Observacao = observacao;
+        CriadoEm = criadoEm;
         Status = status;
     }
 

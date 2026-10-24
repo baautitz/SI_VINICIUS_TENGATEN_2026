@@ -24,6 +24,7 @@ export interface ContasPagar {
   clienteId?: number | null;
   clienteNome?: string | null;
   transportadoraId?: number | null;
+  transportadoraNome?: string | null;
   dataEmissao?: string | null;
   dataVencimento: string;
   valor: number;

@@ -27,6 +27,73 @@ public class PesquisaContasPagarTests
         _db.Executar("INSERT INTO contas_pagar (numero_documento, numero_parcela, total_parcelas, fornecedor_id, descricao, data_vencimento, valor) VALUES (@documento, 1, 1, @fornecedorId, @descricao, CURRENT_DATE, 100);",
             new { documento, fornecedorId, descricao });
 
+    private async Task<int> Cliente(string nome)
+    {
+        using var s = _db.NovaSessao();
+        return await s.Connection.ExecuteScalarAsync<int>(
+            "INSERT INTO clientes (tipo_pessoa, nome_razaosocial, cpf_cnpj, nacionalidade_id) VALUES ('FISICA', @nome, '52998224725', (SELECT id FROM paises LIMIT 1)) RETURNING id;",
+            new { nome });
+    }
+
+    private async Task<int> Transportadora(string nome)
+    {
+        using var s = _db.NovaSessao();
+        return await s.Connection.ExecuteScalarAsync<int>(
+            "INSERT INTO transportadoras (tipo_pessoa, nome_razaosocial, cpf_cnpj, nacionalidade_id) VALUES ('JURIDICA', @nome, '45723174000110', (SELECT id FROM paises LIMIT 1)) RETURNING id;",
+            new { nome });
+    }
+
+    [Theory]
+    [InlineData("MANUAL")]
+    [InlineData("DEVOLUCAO_VENDA")]
+    public async Task Titulo_so_com_cliente_e_lido_e_listado_com_o_nome_do_cliente(string origem)
+    {
+        var cliente = await Cliente("Maria Cliente");
+        await _db.Executar("INSERT INTO contas_pagar (origem_tipo, origem_id, numero_documento, numero_parcela, total_parcelas, cliente_id, descricao, data_vencimento, valor) VALUES (@origem::origem_titulo_financeiro_enum, CASE WHEN @origem = 'MANUAL' THEN NULL ELSE 1 END, 'CLI-001', 1, 1, @cliente, 'Reembolso', CURRENT_DATE, 100);",
+            new { origem, cliente });
+
+        using var s = _db.NovaSessao();
+        var r = await new ContasPagarRepository(s).PesquisarContasPagar("");
+
+        var titulo = Assert.Single(r.Itens);
+        Assert.Equal("Maria Cliente", titulo.ClienteNome);
+        Assert.Null(titulo.Fornecedor);
+    }
+
+    [Theory]
+    [InlineData("MANUAL")]
+    [InlineData("FRETE_COMPRA")]
+    public async Task Titulo_so_com_transportadora_e_lido_e_listado_com_o_nome_da_transportadora(string origem)
+    {
+        var transportadora = await Transportadora("Rapido Transportes");
+        await _db.Executar("INSERT INTO contas_pagar (origem_tipo, origem_id, numero_documento, numero_parcela, total_parcelas, transportadora_id, descricao, data_vencimento, valor) VALUES (@origem::origem_titulo_financeiro_enum, CASE WHEN @origem = 'MANUAL' THEN NULL ELSE 1 END, 'FRT-001', 1, 1, @transportadora, 'Frete', CURRENT_DATE, 100);",
+            new { origem, transportadora });
+
+        using var s = _db.NovaSessao();
+        var r = await new ContasPagarRepository(s).PesquisarContasPagar("");
+
+        var titulo = Assert.Single(r.Itens);
+        Assert.Equal(transportadora, titulo.TransportadoraId);
+        Assert.Equal("Rapido Transportes", titulo.TransportadoraNome);
+        Assert.Null(titulo.Fornecedor);
+    }
+
+    [Fact]
+    public async Task Listagem_mistura_os_tres_tipos_de_contraparte_sem_erro()
+    {
+        var f = await Fornecedor("Distribuidora Aurora", "11222333000181");
+        var c = await Cliente("Maria Cliente");
+        var t = await Transportadora("Rapido Transportes");
+        await Titulo(f, "Compra", "MIX-001");
+        await _db.Executar("INSERT INTO contas_pagar (numero_documento, numero_parcela, total_parcelas, cliente_id, descricao, data_vencimento, valor) VALUES ('MIX-002', 1, 1, @c, 'Reembolso', CURRENT_DATE, 100);", new { c });
+        await _db.Executar("INSERT INTO contas_pagar (numero_documento, numero_parcela, total_parcelas, transportadora_id, descricao, data_vencimento, valor) VALUES ('MIX-003', 1, 1, @t, 'Frete', CURRENT_DATE, 100);", new { t });
+
+        using var s = _db.NovaSessao();
+        var r = await new ContasPagarRepository(s).PesquisarContasPagar("");
+
+        Assert.Equal(3, r.Itens.Count());
+    }
+
     [Fact]
     public async Task Termo_com_erro_de_digitacao_encontra_o_titulo()
     {

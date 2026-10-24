@@ -103,10 +103,10 @@ export function ContasPagarList({
     },
     {
       id: "fornecedor",
-      header: "Fornecedor / Cliente",
+      header: "Fornecedor / Cliente / Transportadora",
       cell: ({ row }) => (
         <span className="text-muted-foreground truncate max-w-xs block">
-          {row.original.fornecedor?.nomeRazaosocial || row.original.clienteNome || "-"}
+          {row.original.fornecedor?.nomeRazaosocial || row.original.clienteNome || row.original.transportadoraNome || "-"}
         </span>
       ),
     },
