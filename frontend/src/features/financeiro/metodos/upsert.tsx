@@ -121,7 +121,7 @@ function MetodosUpsertForm({
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col">
       <WindowActions>
         <WindowCancelButton readOnly={readOnly} />
         {!readOnly && (
@@ -149,10 +149,10 @@ function MetodosUpsertForm({
       <form
         id="upsert-metodos"
         ref={registerDirty}
-        className="flex flex-col gap-4"
+        className="flex flex-col"
         onSubmit={submitFormEvent}
       >
-        <FieldGroup className="gap-4">
+        <FieldGroup className="gap-3">
           <form.Field
             name="codigo"
             validators={{ onChange: metodoPagamentoSchema.shape.codigo }}
