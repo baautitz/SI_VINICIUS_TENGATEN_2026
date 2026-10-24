@@ -18,7 +18,12 @@ import { useUi } from "@/ui/imperative";
 
 export * from "./types";
 
-export function ContasPagarFeature() {
+export interface ContasPagarFeatureProps {
+  // Trava a listagem nas parcelas de uma Compra (mercadoria e frete).
+  compraId?: number;
+}
+
+export function ContasPagarFeature({ compraId }: ContasPagarFeatureProps = {}) {
   const ui = useUi();
   const queryClient = useQueryClient();
   const list = useFeatureList<ContasPagar>();
@@ -28,13 +33,14 @@ export function ContasPagarFeature() {
   const [avancados, setAvancados] = React.useState<FiltrosAvancados>(FILTROS_AVANCADOS_VAZIOS);
   const { setPage } = list;
   const { data, isLoading } = useQuery({
-    queryKey: ["contas-pagar", list.deferredSearch, status, origem, documento, avancados, list.page],
+    queryKey: ["contas-pagar", list.deferredSearch, status, origem, documento, avancados, compraId, list.page],
     queryFn: async () => {
       const res = await contasPagarApi.list({
         search: list.deferredSearch.trim() || undefined,
         status: status === TODOS ? undefined : status,
         origemTipo: documento?.origemTipo ?? (origem === TODOS ? undefined : origem),
         origemId: documento?.origemId ?? undefined,
+        compraId,
         numeroDocumento: documento?.numeroDocumento,
         ...filtrosAvancadosParaApi(avancados),
         page: list.page,
@@ -155,6 +161,7 @@ export function ContasPagarFeature() {
       status={status}
       origem={origem}
       documento={documento}
+      compraTravada={compraId !== undefined}
       avancados={avancados}
       onAvancadosChange={(v) => { setAvancados(v); setPage(1); }}
       onStatusChange={(v) => { setStatus(v); setPage(1); }}

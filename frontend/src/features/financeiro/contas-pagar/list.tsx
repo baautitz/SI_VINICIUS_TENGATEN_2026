@@ -21,6 +21,7 @@ interface ContasPagarListProps extends FeatureListProps<ContasPagar> {
   status: string;
   origem: string;
   documento: DocumentoFiltro | null;
+  compraTravada?: boolean;
   avancados: FiltrosAvancados;
   onAvancadosChange: (v: FiltrosAvancados) => void;
   onStatusChange: (v: string) => void;
@@ -32,10 +33,10 @@ interface ContasPagarListProps extends FeatureListProps<ContasPagar> {
 
 const brl = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
-const Filtro = ({ valor, onChange, rotulo, opcoes }: {
-  valor: string; onChange: (v: string) => void; rotulo: string; opcoes: Record<string, string>;
+const Filtro = ({ valor, onChange, rotulo, opcoes, disabled }: {
+  valor: string; onChange: (v: string) => void; rotulo: string; opcoes: Record<string, string>; disabled?: boolean;
 }) => (
-  <Select value={valor} onValueChange={onChange}>
+  <Select value={valor} onValueChange={onChange} disabled={disabled}>
     <SelectTrigger aria-label={rotulo} className="h-8 w-44 rounded-lg">
       <SelectValue />
     </SelectTrigger>
@@ -50,7 +51,7 @@ const Filtro = ({ valor, onChange, rotulo, opcoes }: {
 
 export function ContasPagarList({
   items: contas, loading, searchTerm, page, totalPages, totalItems,
-  status, origem, documento, avancados, onAvancadosChange,
+  status, origem, documento, compraTravada, avancados, onAvancadosChange,
   onSearchChange, onAdd, onEdit, onDelete, onView, onPageChange,
   onStatusChange, onOrigemChange, onDocumentoChange, onBaixa, onEstorno,
 }: ContasPagarListProps) {
@@ -175,8 +176,11 @@ export function ContasPagarList({
           actions={
             <>
               <Filtro valor={status} onChange={onStatusChange} rotulo="Status" opcoes={statusTituloLabels} />
-              <Filtro valor={origem} onChange={onOrigemChange} rotulo="Origem" opcoes={origemTituloLabels} />
+              <Filtro valor={origem} onChange={onOrigemChange} rotulo="Origem" opcoes={origemTituloLabels} disabled={compraTravada} />
               <FiltrosAvancadosPopover valor={avancados} onChange={onAvancadosChange} />
+              {compraTravada && (
+                <Button variant="outline" disabled>Parcelas da compra</Button>
+              )}
               {documento && (
                 <Button variant="outline" onClick={() => onDocumentoChange(null)}>
                   Parcelas do documento {documento.numeroDocumento} <X />
