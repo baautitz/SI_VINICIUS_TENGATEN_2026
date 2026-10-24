@@ -48,6 +48,7 @@ export function MetodosFeature({
       component: MetodosUpsert,
       props: { editingItem: null },
       title: "Novo Método de Pagamento",
+      size: "small",
     });
     if (result.status === "confirmed") {
       await invalidate();
@@ -60,6 +61,7 @@ export function MetodosFeature({
       component: MetodosUpsert,
       props: { editingItem: item },
       title: "Editar Método de Pagamento",
+      size: "small",
     });
     if (result.status === "confirmed") {
       await invalidate();
@@ -72,6 +74,7 @@ export function MetodosFeature({
       component: MetodosUpsert,
       props: { editingItem: item, readOnly: true },
       title: "Visualizar Método de Pagamento",
+      size: "small",
     });
   };
 

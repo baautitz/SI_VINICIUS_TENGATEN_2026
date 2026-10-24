@@ -37,7 +37,7 @@ export function MetodoPagamentoInput({
       onSelectItem={onSelectItem}
       disabled={disabled}
       onView={(item, readOnly) =>
-        ui.windows.open({ component: MetodosUpsert, props: { editingItem: item, readOnly }, title: readOnly ? "Visualizar Método de Pagamento" : "Editar Método de Pagamento", size: "full" })}
+        ui.windows.open({ component: MetodosUpsert, props: { editingItem: item, readOnly }, title: readOnly ? "Visualizar Método de Pagamento" : "Editar Método de Pagamento", size: "small" })}
       modalTitle="Selecionar Método de Pagamento"
       getDisplayLabel={(item) => item?.descricao ?? ""}
       getSearchTerm={(item) => item.descricao}
