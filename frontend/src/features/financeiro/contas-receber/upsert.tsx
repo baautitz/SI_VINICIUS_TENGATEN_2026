@@ -211,6 +211,7 @@ export function ContasReceberUpsertForm({ editingItem, readOnly = false }: Conta
               ["Cliente", editingItem.cliente?.nomeRazaoSocial || "-"],
               ["Status", statusTituloLabels[editingItem.status] ?? editingItem.status],
               ["Recebido", brl(editingItem.valorPago)],
+              ["Abatido", brl(editingItem.valorAbatido ?? 0)],
               ["Saldo", brl(editingItem.valorSaldo)],
             ].map(([r, v]) => (
               <div key={r} className="flex flex-col gap-1">
