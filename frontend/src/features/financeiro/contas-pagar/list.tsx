@@ -3,7 +3,7 @@
 import { origemTituloLabels } from "../origem";
 import React from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Button } from "@/ui/primitives";
+import { Badge, Button } from "@/ui/primitives";
 import { DataTable, FeatureLayout, FeatureHeader } from "@/ui/composites";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/primitives";
 import { getActionsColumn, RowAction } from "@/utils/table-columns";
@@ -21,6 +21,7 @@ interface ContasPagarListProps extends FeatureListProps<ContasPagar> {
   status: string;
   origem: string;
   documento: DocumentoFiltro | null;
+  compraId?: number;
   avancados: FiltrosAvancados;
   onAvancadosChange: (v: FiltrosAvancados) => void;
   onStatusChange: (v: string) => void;
@@ -32,10 +33,10 @@ interface ContasPagarListProps extends FeatureListProps<ContasPagar> {
 
 const brl = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
-const Filtro = ({ valor, onChange, rotulo, opcoes }: {
-  valor: string; onChange: (v: string) => void; rotulo: string; opcoes: Record<string, string>;
+const Filtro = ({ valor, onChange, rotulo, opcoes, disabled }: {
+  valor: string; onChange: (v: string) => void; rotulo: string; opcoes: Record<string, string>; disabled?: boolean;
 }) => (
-  <Select value={valor} onValueChange={onChange}>
+  <Select value={valor} onValueChange={onChange} disabled={disabled}>
     <SelectTrigger aria-label={rotulo} className="h-8 w-44 rounded-lg">
       <SelectValue />
     </SelectTrigger>
@@ -50,7 +51,7 @@ const Filtro = ({ valor, onChange, rotulo, opcoes }: {
 
 export function ContasPagarList({
   items: contas, loading, searchTerm, page, totalPages, totalItems,
-  status, origem, documento, avancados, onAvancadosChange,
+  status, origem, documento, compraId, avancados, onAvancadosChange,
   onSearchChange, onAdd, onEdit, onDelete, onView, onPageChange,
   onStatusChange, onOrigemChange, onDocumentoChange, onBaixa, onEstorno,
 }: ContasPagarListProps) {
@@ -58,13 +59,15 @@ export function ContasPagarList({
   // Só lançamento manual, em aberto e sem pagamento, pode ser editado/excluído.
   const editavel = (i: ContasPagar) => i.origemTipo === "MANUAL" && i.status === "ABERTO" && i.valorPago === 0;
 
+  const estornavel = (i: ContasPagar) => i.valorPago > 0 && i.status !== "CANCELADO";
+
   const extra = (item: ContasPagar) => (
     <>
       {emAberto(item) && (
-        <RowAction kind="baixar" label="Pagar parcela" onClick={() => onBaixa(item)} />
+        <RowAction kind="baixar" label="Baixar parcela" onClick={() => onBaixa(item)} />
       )}
-      {item.valorPago > 0 && item.status !== "CANCELADO" && (
-        <RowAction kind="estornar" label="Estornar pagamento" onClick={() => onEstorno(item)} />
+      {estornavel(item) && (
+        <RowAction kind="estornar" label="Estornar baixa" onClick={() => onEstorno(item)} />
       )}
     </>
   );
@@ -80,12 +83,12 @@ export function ContasPagarList({
         return (
           <button
             type="button"
-            className="text-left hover:underline"
+            className="flex items-center gap-2 text-left"
             title="Ver todas as parcelas deste documento"
             onClick={() => onDocumentoChange({ numeroDocumento: i.numeroDocumento, origemTipo: i.origemTipo, origemId: i.origemId ?? null })}
           >
-            <span className="text-muted-foreground">{origemTituloLabels[i.origemTipo] ?? i.origemTipo}</span>{" "}
-            <span className="font-semibold text-foreground">{i.numeroDocumento}</span>
+            <Badge variant="outline">{origemTituloLabels[i.origemTipo] ?? i.origemTipo}</Badge>
+            <span className="font-medium text-foreground hover:underline">{i.numeroDocumento}</span>
           </button>
         );
       },
@@ -169,14 +172,21 @@ export function ContasPagarList({
           searchPlaceholder="Pesquisar por descrição, documento, nome, CPF/CNPJ, valor ou data..."
           getRowId={(row) => row.id.toString()}
           onEditRow={(item) => (editavel(item) ? onEdit(item) : onView(item))}
+          onBaixarRow={onBaixa}
+          podeBaixarRow={emAberto}
+          onEstornarRow={onEstorno}
+          podeEstornarRow={estornavel}
           onDeleteRow={(item) => {
             if (editavel(item)) onDelete(item);
           }}
           actions={
             <>
               <Filtro valor={status} onChange={onStatusChange} rotulo="Status" opcoes={statusTituloLabels} />
-              <Filtro valor={origem} onChange={onOrigemChange} rotulo="Origem" opcoes={origemTituloLabels} />
+              <Filtro valor={origem} onChange={onOrigemChange} rotulo="Origem" opcoes={origemTituloLabels} disabled={compraId !== undefined} />
               <FiltrosAvancadosPopover valor={avancados} onChange={onAvancadosChange} />
+              {compraId !== undefined && (
+                <Button variant="outline" disabled>Compra: #{compraId}</Button>
+              )}
               {documento && (
                 <Button variant="outline" onClick={() => onDocumentoChange(null)}>
                   Parcelas do documento {documento.numeroDocumento} <X />

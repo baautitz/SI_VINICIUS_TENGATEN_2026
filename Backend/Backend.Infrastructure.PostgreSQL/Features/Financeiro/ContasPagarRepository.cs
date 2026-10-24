@@ -122,6 +122,7 @@ public class ContasPagarRepository : IContasPagarRepository
             filtro?.ClienteId,
             OrigemTipo = filtro?.OrigemTipo?.ToString(),
             filtro?.OrigemId,
+            filtro?.CompraId,
             filtro?.NumeroDocumento,
             Status = filtro?.Status?.ToString(),
             CpfCnpj = PesquisaTitulos.SomenteDigitos(filtro?.CpfCnpj),
@@ -143,6 +144,7 @@ public class ContasPagarRepository : IContasPagarRepository
               AND (@ClienteId::int IS NULL OR cp.cliente_id = @ClienteId)
               AND (@OrigemTipo::text IS NULL OR cp.origem_tipo::text = @OrigemTipo)
               AND (@OrigemId::int IS NULL OR cp.origem_id = @OrigemId)
+              AND (@CompraId::int IS NULL OR (cp.origem_id = @CompraId AND cp.origem_tipo::text IN ('COMPRA', 'FRETE_COMPRA')))
               AND (@NumeroDocumento::text IS NULL OR cp.numero_documento = @NumeroDocumento)
               AND (@Status::text IS NULL OR cp.status::text = @Status)
               AND (@VencimentoDe::date IS NULL OR cp.data_vencimento >= @VencimentoDe)

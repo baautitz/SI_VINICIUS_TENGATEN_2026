@@ -38,6 +38,7 @@ export const ATALHOS = {
   verProdutos: atalho("Alt+Shift+P", "Ver produtos"),
   confirmar: atalho("Alt+Enter", "Confirmar"),
   editarLinha: atalho("Alt+E", "Editar linha"),
+  baixarLinha: atalho("Alt+A", "Baixar linha"),
   abrirLinha: atalho("Enter", "Abrir linha"),
   excluirLinha: atalho("Delete", "Excluir linha"),
   excluirLinhaBackspace: atalho("Backspace", "Excluir linha (Backspace)"),

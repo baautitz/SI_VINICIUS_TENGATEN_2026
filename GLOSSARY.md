@@ -47,3 +47,11 @@ _Avoid_: Campo de SKU (ambíguo com o Campo de adição de SKU)
 **Campo de adição de SKU**:
 Campo que busca um SKU e o adiciona como novo Item.
 _Avoid_: Campo de SKU, pesquisa de produto
+
+**Compra**:
+Operação em que o Emitente recebe mercadoria de um fornecedor, com seus Itens, e que gera Parcelas da compra. Pode ter uma Nota Fiscal recebida.
+_Avoid_: Pedido, entrada
+
+**Parcelas da compra**:
+Contas a pagar geradas por uma Compra, tanto da mercadoria quanto do frete.
+_Avoid_: Contas vinculadas, títulos

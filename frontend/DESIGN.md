@@ -204,7 +204,7 @@ Regras para que a mesma ação tenha sempre o mesmo rótulo, ícone, variant e a
 | Estornar / Devolver | Undo2 | outline (abre janela) / destructive (confirma) | icon-sm | Alt+Z na janela; Delete na listagem | Delete na listagem = ação destrutiva da linha (excluir ou estornar), sempre com janela/confirmação (decidido) |
 | Cancelar documento | Ban | destructive | default/icon-sm | sem tecla única | com motivo |
 | Reabrir baixa de parcela | RotateCcw | outline | icon-sm | | |
-| Baixar/Pagar título | Check | outline | icon-sm | | sem verde cru |
+| Baixar título | Check | success | icon-sm | Alt+A (linha focada) | verde só pelo token `success` |
 | Buscar | Search | outline | default | Alt+Q | |
 | Saída da janela | sem ícone | outline | default | Esc | Cancelar/Fechar |
 | Navegação textual | sem ícone | link | default | | |

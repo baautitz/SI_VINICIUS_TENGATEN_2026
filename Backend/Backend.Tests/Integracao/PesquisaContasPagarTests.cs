@@ -171,6 +171,18 @@ public class PesquisaContasPagarTests
     }
 
     [Fact]
+    public async Task Filtro_de_compra_traz_parcelas_de_compra_e_frete_so_daquela_compra()
+    {
+        var f = await Fornecedor("Fornecedor A", "11222333000181");
+        await _db.Executar("INSERT INTO contas_pagar (origem_tipo, origem_id, numero_documento, numero_parcela, total_parcelas, fornecedor_id, descricao, data_vencimento, data_emissao, valor) VALUES ('COMPRA',7,'C-7',1,1,@f,'Titulo','2026-01-10','2026-01-01',50), ('FRETE_COMPRA',7,'F-7',1,1,@f,'Titulo','2026-01-10','2026-01-01',50), ('COMPRA',8,'C-8',1,1,@f,'Titulo','2026-01-10','2026-01-01',50), ('DEVOLUCAO_VENDA',7,'D-7',1,1,@f,'Titulo','2026-01-10','2026-01-01',50);", new { f });
+
+        using var s = _db.NovaSessao();
+        var r = await new ContasPagarRepository(s).PesquisarContasPagar("", filtro: new FiltroContasPagar(CompraId: 7));
+
+        Assert.Equal(["C-7", "F-7"], r.Itens.Select(c => c.NumeroDocumento).Order());
+    }
+
+    [Fact]
     public async Task Valor_decimal_com_ponto_nao_vira_so_digitos()
     {
         var f = await Fornecedor("Fornecedor Decimal", "11222333000181");
