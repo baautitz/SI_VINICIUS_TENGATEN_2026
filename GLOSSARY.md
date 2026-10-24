@@ -31,3 +31,19 @@ _Avoid_: Empresa, remetente
 **Emitente padrão**:
 O único Emitente marcado como "Padrão", pré-selecionado ao criar um registro que pede um Emitente. Pode não existir, e nunca é um Emitente inativo.
 _Avoid_: Favorito, principal
+
+**Nota Fiscal**:
+Documento fiscal (NF-e) emitido por uma Venda ou recebido numa Compra. Distinta da Compra e da Venda, que são as operações do sistema.
+_Avoid_: Nota (ambíguo)
+
+**Item**:
+Linha de uma Compra, Venda, Movimentação ou Balanço, que refere um SKU e uma quantidade.
+_Avoid_: Linha, produto da nota
+
+**SKU do item**:
+Código do SKU de um Item já adicionado, mostrado em Visualização.
+_Avoid_: Campo de SKU (ambíguo com o Campo de adição de SKU)
+
+**Campo de adição de SKU**:
+Campo que busca um SKU e o adiciona como novo Item.
+_Avoid_: Campo de SKU, pesquisa de produto
