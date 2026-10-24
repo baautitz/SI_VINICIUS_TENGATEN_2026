@@ -31,7 +31,7 @@ public sealed class PostgresFixture : IAsyncLifetime
 
     public DbSession NovaSessao() => new(ConnectionString);
 
-    public Task Limpar() => Executar("TRUNCATE contas_pagar, contas_receber, fornecedores, clientes RESTART IDENTITY CASCADE;");
+    public Task Limpar() => Executar("TRUNCATE contas_pagar, contas_receber, fornecedores, clientes, transportadoras RESTART IDENTITY CASCADE;");
 
     public async Task Executar(string sql, object? param = null)
     {

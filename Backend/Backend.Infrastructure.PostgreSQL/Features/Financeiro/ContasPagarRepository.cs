@@ -27,7 +27,7 @@ public class ContasPagarRepository : IContasPagarRepository
                cp.valor AS Valor, cp.valor_pago AS ValorPago, cp.status AS Status, cp.observacao AS Observacao, cp.criado_em AS CriadoEm,
                cp.origem_tipo::text AS OrigemTipo, cp.origem_id AS OrigemId, cp.numero_documento AS NumeroDocumento,
                cp.numero_parcela AS NumeroParcela, cp.total_parcelas AS TotalParcelas,
-               cp.cliente_id AS ClienteId, cp.transportadora_id AS TransportadoraId, cli.nome_razaosocial AS ClienteNome,
+               cp.cliente_id AS ClienteId, cp.transportadora_id AS TransportadoraId, cli.nome_razaosocial AS ClienteNome, tr.nome_razaosocial AS TransportadoraNome,
                f.id AS Id, f.tipo_pessoa AS TipoPessoa, f.nome_razaosocial AS NomeRazaosocial, f.cpf_cnpj AS CpfCnpj,
                f.rg_ie AS RgIe, f.apelido_nomefantasia AS ApelidoNomefantasia, f.logradouro AS Logradouro, f.numero AS Numero,
                f.telefone AS Telefone, f.email AS Email, f.ativo AS Ativo, f.criado_em AS CriadoEm, f.observacao AS Observacao,
@@ -40,6 +40,7 @@ public class ContasPagarRepository : IContasPagarRepository
         LEFT JOIN fornecedores f ON f.id = cp.fornecedor_id
         LEFT JOIN paises p ON p.id = f.nacionalidade_id
         LEFT JOIN clientes cli ON cli.id = cp.cliente_id
+        LEFT JOIN transportadoras tr ON tr.id = cp.transportadora_id
         LEFT JOIN condicoes_pagamentos con ON con.id = cp.condicao_pagamento_id
         LEFT JOIN metodos_pagamento mp ON mp.codigo = con.metodo_pagamento_codigo";
 
@@ -59,7 +60,7 @@ public class ContasPagarRepository : IContasPagarRepository
                 return new ContasPagar(
                     conta.Id, conta.Descricao, conta.Valor, f, conta.DataVencimento, conta.NumeroDocumento,
                     conta.NumeroParcela, conta.TotalParcelas, conta.DataEmissao, condicao, conta.OrigemTipo, conta.OrigemId,
-                    conta.Observacao, conta.CriadoEm, conta.ValorPago, conta.Status, conta.ClienteId, conta.ClienteNome, conta.TransportadoraId);
+                    conta.Observacao, conta.CriadoEm, conta.ValorPago, conta.Status, conta.ClienteId, conta.ClienteNome, conta.TransportadoraId, conta.TransportadoraNome);
             },
             param,
             transaction: _session.Transaction,
@@ -86,7 +87,7 @@ public class ContasPagarRepository : IContasPagarRepository
 
         return new ContasPagar(id, conta.Descricao, conta.Valor, conta.Fornecedor, conta.DataVencimento, conta.NumeroDocumento,
             conta.NumeroParcela, conta.TotalParcelas, conta.DataEmissao, conta.CondicaoPagamento, conta.OrigemTipo, conta.OrigemId,
-            conta.Observacao, conta.CriadoEm, conta.ValorPago, conta.Status, conta.ClienteId, conta.ClienteNome, conta.TransportadoraId);
+            conta.Observacao, conta.CriadoEm, conta.ValorPago, conta.Status, conta.ClienteId, conta.ClienteNome, conta.TransportadoraId, conta.TransportadoraNome);
     }
 
     public async Task<ContasPagar> AtualizarContaPagar(int id, ContasPagar conta)
@@ -135,7 +136,7 @@ public class ContasPagarRepository : IContasPagarRepository
         };
 
         const string haystack = @"concat_ws(' ', cp.descricao, cp.numero_documento, cp.observacao, f.nome_razaosocial, f.apelido_nomefantasia, f.cpf_cnpj,
-                cli.nome_razaosocial, cli.cpf_cnpj, cp.valor::text, to_char(cp.data_vencimento, 'DD/MM/YYYY'), to_char(cp.data_emissao, 'DD/MM/YYYY'),
+                cli.nome_razaosocial, cli.cpf_cnpj, tr.nome_razaosocial, cp.valor::text, to_char(cp.data_vencimento, 'DD/MM/YYYY'), to_char(cp.data_emissao, 'DD/MM/YYYY'),
                 cp.status::text, cp.origem_tipo::text)";
         var where = PesquisaTitulos.Where(haystack) + @"
               AND (@FornecedorId::int IS NULL OR cp.fornecedor_id = @FornecedorId)
@@ -156,7 +157,8 @@ public class ContasPagarRepository : IContasPagarRepository
             SELECT COUNT(*)
             FROM contas_pagar cp
             LEFT JOIN fornecedores f ON f.id = cp.fornecedor_id
-            LEFT JOIN clientes cli ON cli.id = cp.cliente_id" + where + ";",
+            LEFT JOIN clientes cli ON cli.id = cp.cliente_id
+            LEFT JOIN transportadoras tr ON tr.id = cp.transportadora_id" + where + ";",
             param, transaction: _session.Transaction);
 
         var contas = (await Consultar(where + @"
