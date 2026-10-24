@@ -62,6 +62,15 @@ export interface Devolucao {
   }>;
 }
 
+export interface DevolucaoResumo {
+  id: number;
+  vendaId: number;
+  clienteNome: string;
+  dataDevolucao: string;
+  valorTotal: number;
+  motivo: string;
+}
+
 export interface CriarDevolucaoValues {
   motivo: string;
   itens: Array<{ vendaItemId: number; quantidade: number }>;
