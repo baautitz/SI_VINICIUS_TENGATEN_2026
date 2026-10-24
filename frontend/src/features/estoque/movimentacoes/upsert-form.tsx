@@ -8,7 +8,7 @@ import {
 import { ClipboardList, Undo2 } from "lucide-react";
 import { formatToLocal } from "@/utils/date-utils";
 
-import { HotkeyKbd, Kbd, KbdGroup } from "@/ui/primitives";
+import { HotkeyKbd } from "@/ui/primitives";
 import { WindowActions } from "@/ui/imperative";
 import React, { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -453,10 +453,7 @@ export function MovimentacoesUpsertForm({
                 ) : (
                   <span className="flex items-center gap-2">
                     Lançar{" "}
-                    <KbdGroup>
-                      <Kbd>Alt</Kbd>
-                      <Kbd>Enter</Kbd>
-                    </KbdGroup>
+                    <HotkeyKbd hotkey="Alt+Enter" />
                   </span>
                 )}
               </Button>
