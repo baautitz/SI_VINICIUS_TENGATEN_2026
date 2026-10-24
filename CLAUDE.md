@@ -19,7 +19,7 @@ Todo commit é atômico: uma mudança lógica por commit, que compila e passa no
 Formato da mensagem: `tipo(escopo): descrição` (Conventional Commits).
 
 - **tipo**: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `build`, `ci`.
-- **escopo** (opcional): área afetada, como `frontend` ou `backend`. Omitir quando a mudança é transversal ao repositório (ex.: `docs: ...` para o GLOSSARY.md).
+- **escopo** (opcional): módulo ou área funcional afetada, como `financeiro`, `compras`, `catalogo`, `ui` ou `api-error`; `frontend`/`backend` quando a mudança não pertence a um módulo. Omitir quando transversal ao repositório (ex.: `docs: ...` para o GLOSSARY.md).
 - **descrição**: português, sem acentos, no imperativo ou infinitivo, minúscula, sem ponto final, até ~72 caracteres. Descreve o que muda, não como.
 - Sem linha de co-autoria ou atribuição (`Co-Authored-By`) em commits e PRs.
 - Corpo só quando o porquê não é óbvio pelo título.
