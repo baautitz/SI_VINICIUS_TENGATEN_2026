@@ -56,7 +56,7 @@ export function CondicaoPagamentoInput({
           component: CondicoesUpsert,
           props: { editingItem: item, readOnly },
           title: readOnly ? "Visualizar Condição de Pagamento" : "Editar Condição de Pagamento",
-          size: "full",
+          size: "medium",
         })
       }
       fetchById={async (id) => {
