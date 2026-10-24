@@ -887,7 +887,7 @@ function ProdutosUpsertForm({
                         <div className="flex shrink-0 justify-end">
                           <Button
                             type="button"
-                            variant="ghost"
+                            variant="outline"
                             size="icon-sm"
                             aria-label="Remover"
                             onClick={() => removeOption(optIdx)}

@@ -1299,7 +1299,7 @@ function CompraForm({
                               <Button
                                 type="button"
                                 size="icon-sm"
- variant="ghost"
+ variant="outline"
  title="Remover item"
  aria-label="Remover"
                                 onClick={() => void removerItem(item.key)}
@@ -1446,7 +1446,7 @@ function CompraForm({
                                 <Button
                                   type="button"
                                   size="icon-sm"
- variant="ghost"
+ variant="outline"
  title="Remover parcela"
  aria-label="Remover"
                                   {...navigationCell({ grid: "compra-parcelas", row: i, column: 2 })}

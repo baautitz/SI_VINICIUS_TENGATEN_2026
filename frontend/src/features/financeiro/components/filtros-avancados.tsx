@@ -109,7 +109,7 @@ export function FiltrosAvancadosPopover({ valor, onChange }: {
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-foreground">Filtros avançados</span>
             {ativos > 0 && (
-              <Button size="xs" variant="ghost" onClick={limpar}>
+              <Button size="xs" variant="outline" onClick={limpar}>
                 Limpar
               </Button>
             )}

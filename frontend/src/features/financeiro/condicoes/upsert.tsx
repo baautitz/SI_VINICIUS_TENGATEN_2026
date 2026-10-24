@@ -762,7 +762,7 @@ function CondicoesUpsertForm({
                                           })}
                                           type="button"
                                           size="icon-sm"
- variant="ghost"
+ variant="outline"
  aria-label="Remover"
                                           onClick={() =>
                                             handleRemoveParcela(index)

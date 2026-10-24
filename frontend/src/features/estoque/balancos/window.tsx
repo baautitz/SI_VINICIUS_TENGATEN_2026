@@ -457,7 +457,7 @@ function BalancoForm({
                                 column: 3,
                               })}
                               type="button"
-                              variant="ghost"
+                              variant="outline"
                               size="icon-sm"
                               aria-label="Remover Item"
                               onClick={() => void removerItem(index)}
