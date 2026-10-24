@@ -121,7 +121,7 @@ function MetodosUpsertForm({
   };
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col pb-2">
       <WindowActions>
         <WindowCancelButton readOnly={readOnly} />
         {!readOnly && (
