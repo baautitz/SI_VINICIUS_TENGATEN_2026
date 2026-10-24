@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Button, Kbd } from "@/ui/primitives";
+import { Button, HotkeyKbd } from "@/ui/primitives";
 import { useWindowCommands } from "@/ui/imperative";
 
 export interface RelatedAction {
@@ -30,7 +30,7 @@ export function RelatedActions({ actions }: { actions: RelatedAction[] }) {
     <div className="mr-auto flex gap-2">
       {actions.map((a) => (
         <Button key={a.id} type="button" variant="outline" onClick={() => void a.run()}>
-          {a.icon} {a.label} <Kbd>{a.hotkey}</Kbd>
+          {a.icon} {a.label} <HotkeyKbd hotkey={a.hotkey} />
         </Button>
       ))}
     </div>

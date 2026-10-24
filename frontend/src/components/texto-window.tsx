@@ -2,7 +2,7 @@
 
 import React from "react";
 import { WindowActions } from "@/ui/imperative";
-import { Button, Kbd, Field, FieldLabel, Textarea } from "@/ui/primitives";
+import { Button, Kbd, HotkeyKbd, Field, FieldLabel, Textarea } from "@/ui/primitives";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
 
 export interface TextoWindowProps {
@@ -58,7 +58,7 @@ export function TextoWindow({ label, value, readOnly = true }: TextoWindowProps)
         </Button>
         {!readOnly && (
           <Button type="button" onClick={confirm}>
-            Confirmar <Kbd>Alt+Enter</Kbd>
+            Confirmar <HotkeyKbd hotkey="Alt+Enter" />
           </Button>
         )}
       </WindowActions>
