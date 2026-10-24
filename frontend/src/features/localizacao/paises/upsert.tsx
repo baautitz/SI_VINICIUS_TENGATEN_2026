@@ -1,11 +1,12 @@
 "use client";
+import { combinacaoDe } from "@/lib/atalhos";
 import { EstadosUpsert } from "@/features/localizacao/estados/upsert";
 import { estadosApi } from "@/api/localizacao";
 import { useRelated, mapItens } from "@/hooks/use-related";
 import { RelatedActions } from "@/components/related-actions";
 import { MapPin } from "lucide-react";
 
-import { Kbd, KbdGroup } from "@/ui/primitives";
+import { HotkeyKbd } from "@/ui/primitives";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import React from "react";
 import { Button } from "@/ui/primitives";
@@ -99,7 +100,7 @@ function PaisesUpsertForm({
   useWindowCommands([
     {
       id: "paises.save",
-      hotkey: "Alt+Enter" as const,
+      hotkey: combinacaoDe("confirmar"),
       label: "Salvar",
       enabled: !readOnly && !mutation.isPending,
       run: async (event) => {
@@ -113,7 +114,7 @@ function PaisesUpsertForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        {readOnly && editingItem && <RelatedActions actions={[{ id: "pais.estados", hotkey: "Alt+L", label: "Estados", icon: <MapPin className="size-4" />, run: () => related.openList(() => estadosApi.listByPais(editingItem.id).then(mapItens((x) => ({ id: x.id, descricao: x.estado, detalhe: x.uf }))), estadosApi.getById, EstadosUpsert, "Estados", "Nenhum estado neste país.", false) }]} />}
+        {readOnly && editingItem && <RelatedActions actions={[{ id: "pais.estados", hotkey: combinacaoDe("verLocalidades"), label: "Estados", icon: <MapPin className="size-4" />, run: () => related.openList(() => estadosApi.listByPais(editingItem.id).then(mapItens((x) => ({ id: x.id, descricao: x.estado, detalhe: x.uf }))), estadosApi.getById, EstadosUpsert, "Estados", "Nenhum estado neste país.", false) }]} />}
         <WindowCancelButton readOnly={readOnly} />
           {!readOnly && (<form.Subscribe
             selector={(state) => [state.canSubmit, state.isSubmitting]}
@@ -129,10 +130,7 @@ function PaisesUpsertForm({
                 ) : (
                   <span className="flex items-center gap-2">
                     Salvar{" "}
-                    <KbdGroup>
-                      <Kbd>Alt</Kbd>
-                      <Kbd>Enter</Kbd>
-                    </KbdGroup>
+                    <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
                   </span>
                 )}
               </Button>

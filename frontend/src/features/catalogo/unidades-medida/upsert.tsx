@@ -1,4 +1,5 @@
 "use client";
+import { combinacaoDe } from "@/lib/atalhos";
 import { ProdutosUpsert } from "@/features/catalogo/produtos/upsert";
 import { produtosApi } from "@/api/catalogo";
 import { useRelated, mapItens } from "@/hooks/use-related";
@@ -7,7 +8,7 @@ import { Package } from "lucide-react";
 
 import React from "react";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
-import { Kbd, KbdGroup } from "@/ui/primitives";
+import { HotkeyKbd } from "@/ui/primitives";
 import { Button } from "@/ui/primitives";
 import { FieldLabel } from "@/ui/primitives";
 import { Input } from "@/ui/primitives";
@@ -107,7 +108,7 @@ function UnidadesMedidaUpsertForm({
     () => [
       {
         id: "unidades-medida.save",
-        hotkey: "Alt+Enter" as const,
+        hotkey: combinacaoDe("confirmar"),
         label: "Salvar",
         enabled: !readOnly && !mutation.isPending,
         run: async (event: KeyboardEvent) => {
@@ -125,7 +126,7 @@ function UnidadesMedidaUpsertForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        {readOnly && editingItem && <RelatedActions actions={[{ id: "unidade.produtos", hotkey: "Alt+R", label: "Produtos", icon: <Package className="size-4" />, run: () => related.openList(() => produtosApi.listByFiltro({ unidadeMedidaId: editingItem.id }).then(mapItens((x) => ({ id: x.id, descricao: x.produto }))), produtosApi.getById, ProdutosUpsert, "Produtos (unidade)", "Nenhum produto nesta unidade.", false) }]} />}
+        {readOnly && editingItem && <RelatedActions actions={[{ id: "unidade.produtos", hotkey: combinacaoDe("verProdutos"), label: "Produtos", icon: <Package className="size-4" />, run: () => related.openList(() => produtosApi.listByFiltro({ unidadeMedidaId: editingItem.id }).then(mapItens((x) => ({ id: x.id, descricao: x.produto }))), produtosApi.getById, ProdutosUpsert, "Produtos (unidade)", "Nenhum produto nesta unidade.", false) }]} />}
         <WindowCancelButton readOnly={readOnly} />
         {!readOnly && (<form.Subscribe
           selector={(state) => [state.canSubmit, state.isSubmitting]}
@@ -141,10 +142,7 @@ function UnidadesMedidaUpsertForm({
               ) : (
                 <span className="flex items-center gap-2">
                   Salvar{" "}
-                  <KbdGroup>
-                    <Kbd>Alt</Kbd>
-                    <Kbd>Enter</Kbd>
-                  </KbdGroup>
+                  <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
                 </span>
               )}
             </Button>

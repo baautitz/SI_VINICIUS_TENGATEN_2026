@@ -65,11 +65,11 @@ assert.match(primitives, /ui\/adapters\/shadcn/);
 assert.match(provider, /\{cancelLabel\} <Kbd>Esc<\/Kbd>/);
 assert.match(
   provider,
-  /<KbdGroup className="ml-2">[\s\S]*<Kbd>Alt<\/Kbd>[\s\S]*<Kbd>Enter<\/Kbd>/,
+  /<HotkeyKbd className="ml-2" hotkey=\{combinacaoDe\("confirmar"\)\} \/>/,
 );
 assert.match(provider, /data-default-confirmation="true"/);
 assert.match(provider, /useWindowCommands\(commands\)/);
-assert.match(provider, /hotkey: "Alt\+Enter"/);
+assert.match(provider, /hotkey: combinacaoDe\("confirmar"\)/);
 assert.doesNotMatch(provider, /onKeyDown/);
 assert.match(commands, /conflictBehavior: "allow" as const/);
 assert.match(commands, /conflictBehavior: "allow",/);

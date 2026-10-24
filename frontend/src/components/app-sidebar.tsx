@@ -28,10 +28,11 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/ui/primitives";
-import { Kbd, KbdGroup } from "@/ui/primitives";
+import { HotkeyKbd } from "@/ui/primitives";
 import { InputGroup, InputGroupInput, InputGroupAddon } from "@/ui/primitives";
 import { navigationConfig as groups, homeItem } from "@/config/navigation";
 import { useWindowCommands, useUi } from "@/ui/imperative";
+import { combinacaoDe } from "@/lib/atalhos";
 
 class LocalStorageStore {
   private subscribers = new Set<() => void>();
@@ -195,7 +196,7 @@ export function AppSidebar() {
     () => [
       {
         id: "sidebar.search",
-        hotkey: "Alt+S" as const,
+        hotkey: combinacaoDe("sidebarBuscar"),
         label: "Buscar no menu",
         run: (event: KeyboardEvent) => {
           event.preventDefault();
@@ -209,7 +210,7 @@ export function AppSidebar() {
       {
         // Só vale sem janela aberta: o escopo raiz dos atalhos fica inativo com um modal no topo.
         id: "sidebar.toggle",
-        hotkey: "Alt+B" as const,
+        hotkey: combinacaoDe("sidebarRecolher"),
         label: "Recolher ou expandir o menu",
         run: (event: KeyboardEvent) => {
           event.preventDefault();
@@ -218,7 +219,7 @@ export function AppSidebar() {
       },
       {
         id: "sidebar.home",
-        hotkey: "Alt+H" as const,
+        hotkey: combinacaoDe("sidebarInicio"),
         label: "Ir para início",
         run: (event: KeyboardEvent) => {
           event.preventDefault();
@@ -304,10 +305,7 @@ export function AppSidebar() {
                 >
                   <homeItem.icon />
                   <span>{homeItem.title}</span>
-                  <KbdGroup className="ml-auto group-data-[collapsible=icon]:hidden">
-                    <Kbd>Alt</Kbd>
-                    <Kbd>H</Kbd>
-                  </KbdGroup>
+                  <HotkeyKbd className="ml-auto group-data-[collapsible=icon]:hidden" hotkey={combinacaoDe("sidebarInicio")} />
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -327,8 +325,7 @@ export function AppSidebar() {
                 </InputGroupAddon>
 
                 <InputGroupAddon align="inline-end">
-                  <Kbd>Alt</Kbd>
-                  <Kbd>S</Kbd>
+                  <HotkeyKbd hotkey={combinacaoDe("sidebarBuscar")} />
                 </InputGroupAddon>
               </InputGroup>
             </SidebarMenuItem>
@@ -386,11 +383,8 @@ export function AppSidebar() {
         </SidebarContent>
         <SidebarFooter>
           <div className="flex items-center justify-end gap-2">
-            <KbdGroup className="group-data-[collapsible=icon]:hidden">
-              <Kbd>Alt</Kbd>
-              <Kbd>B</Kbd>
-            </KbdGroup>
-            <SidebarTrigger title="Recolher ou expandir o menu (Alt+B)" />
+            <HotkeyKbd className="group-data-[collapsible=icon]:hidden" hotkey={combinacaoDe("sidebarRecolher")} />
+            <SidebarTrigger title={`Recolher ou expandir o menu (${combinacaoDe("sidebarRecolher")})`} />
           </div>
         </SidebarFooter>
         <SidebarRail />

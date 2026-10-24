@@ -27,12 +27,13 @@ import {
 } from "@/ui/primitives";
 import { Button } from "@/ui/primitives";
 import { Spinner } from "@/ui/primitives";
-import { Kbd, KbdGroup } from "@/ui/primitives";
+import { HotkeyKbd } from "@/ui/primitives";
 import { useWindowCommands } from "@/ui/imperative";
 import { useOptionalActiveWindow } from "@/ui/imperative";
 import { useNavigationScope } from "@/ui/keyboard-navigation";
 import { InputGroup, InputGroupInput, InputGroupAddon } from "./input-group";
 import { fireAndForget } from "@/lib/utils";
+import { combinacaoDe } from "@/lib/atalhos";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -142,7 +143,7 @@ export function DataTable<TData, TValue>({
     () => [
       {
         id: "table.search",
-        hotkey: "Alt+Q" as const,
+        hotkey: combinacaoDe("busca"),
         label: "Focar busca",
         run: (event: KeyboardEvent) => {
           event.preventDefault();
@@ -152,7 +153,7 @@ export function DataTable<TData, TValue>({
       },
       {
         id: "table.confirm-row",
-        hotkey: "Enter" as const,
+        hotkey: combinacaoDe("abrirLinha"),
         label: "Selecionar ou editar linha",
         enabled: focusedRowIndex !== null && rows.length > 0,
         // Só consome Enter quando uma linha está focada. Se o foco estiver em
@@ -172,7 +173,7 @@ export function DataTable<TData, TValue>({
       },
       {
         id: "table.edit-row",
-        hotkey: "Alt+E" as const,
+        hotkey: combinacaoDe("editarLinha"),
         label: "Editar linha",
         enabled: focusedRowIndex !== null && rows.length > 0 && !!onEditRow,
         run: (event: KeyboardEvent) => {
@@ -181,9 +182,9 @@ export function DataTable<TData, TValue>({
           fireAndForget(() => onEditRow(rows[focusedRowIndex].original));
         },
       },
-      ...(["Delete", "Backspace"] as const).map((hotkey) => ({
-        id: `table.delete-row.${hotkey.toLowerCase()}`,
-        hotkey,
+      ...(["excluirLinha", "excluirLinhaBackspace"] as const).map((atalho) => ({
+        id: `table.delete-row.${atalho === "excluirLinha" ? "delete" : "backspace"}`,
+        hotkey: combinacaoDe(atalho),
         label: "Excluir linha",
         enabled: focusedRowIndex !== null && rows.length > 0 && !!onDeleteRow,
         // O atalho também fica registrado enquanto o filtro está focado. A
@@ -239,13 +240,33 @@ export function DataTable<TData, TValue>({
 
                 {!hideSearchKbd && (
                   <InputGroupAddon align="inline-end">
-                    <KbdGroup>
-                      <Kbd>Alt</Kbd>
-                      <Kbd>Q</Kbd>
-                    </KbdGroup>
+                    <HotkeyKbd hotkey={combinacaoDe("busca")} />
                   </InputGroupAddon>
                 )}
               </InputGroup>
+            </div>
+          )}
+          {focusedRowIndex !== null && rows.length > 0 && (
+            <div
+              data-testid="data-table-shortcuts"
+              className="text-muted-foreground flex shrink-0 items-center gap-3 text-xs"
+            >
+              {(onRowSelect || onEditRow) && (
+                <span className="flex items-center gap-1">
+                  <HotkeyKbd hotkey={combinacaoDe("abrirLinha")} />
+                  {onRowSelect ? "Selecionar" : "Editar"}
+                </span>
+              )}
+              {onEditRow && (
+                <span className="flex items-center gap-1">
+                  <HotkeyKbd hotkey={combinacaoDe("editarLinha")} /> Editar
+                </span>
+              )}
+              {onDeleteRow && (
+                <span className="flex items-center gap-1">
+                  <HotkeyKbd hotkey={combinacaoDe("excluirLinha")} /> Excluir
+                </span>
+              )}
             </div>
           )}
           {actions}
@@ -402,15 +423,6 @@ export function DataTable<TData, TValue>({
 
       <div className="mt-auto flex items-center justify-between">
         <div className="flex flex-1 flex-col gap-0.5">
-          {isSelectionMode ? (
-            <span className="text-muted-foreground text-xs font-medium">
-              ↑↓ para navegar · Enter para selecionar{onEditRow && " · Alt+E para editar"}
-            </span>
-          ) : (
-            <span className="text-muted-foreground text-xs font-medium">
-              ↑↓ para navegar · Alt+E para editar
-            </span>
-          )}
           {!isSelectionMode && Object.keys(rowSelection).length > 0 && (
             <span className="text-primary text-xs font-semibold">
               {selectAllAcrossPages

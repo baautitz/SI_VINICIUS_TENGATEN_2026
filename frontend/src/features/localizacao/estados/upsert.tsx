@@ -1,4 +1,5 @@
 "use client";
+import { combinacaoDe } from "@/lib/atalhos";
 import { CidadesUpsert } from "@/features/localizacao/cidades/upsert";
 import { cidadesApi } from "@/api/localizacao";
 import { useRelated, mapItens } from "@/hooks/use-related";
@@ -7,7 +8,7 @@ import { MapPin } from "lucide-react";
 
 import React from "react";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
-import { Kbd, KbdGroup } from "@/ui/primitives";
+import { HotkeyKbd } from "@/ui/primitives";
 import { Button } from "@/ui/primitives";
 import { FieldGroup, FieldLabel } from "@/ui/primitives";
 import { Input } from "@/ui/primitives";
@@ -96,7 +97,7 @@ function EstadosUpsertForm({
   useWindowCommands([
     {
       id: "estados.save",
-      hotkey: "Alt+Enter" as const,
+      hotkey: combinacaoDe("confirmar"),
       label: "Salvar",
       enabled: !readOnly && !mutation.isPending,
       run: async (event) => {
@@ -110,7 +111,7 @@ function EstadosUpsertForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        {readOnly && editingItem && <RelatedActions actions={[{ id: "estado.cidades", hotkey: "Alt+L", label: "Cidades", icon: <MapPin className="size-4" />, run: () => related.openList(() => cidadesApi.listByEstado(editingItem.id).then(mapItens((x) => ({ id: x.id, descricao: x.cidade, detalhe: x.ddd }))), cidadesApi.getById, CidadesUpsert, "Cidades", "Nenhuma cidade neste estado.", false) }]} />}
+        {readOnly && editingItem && <RelatedActions actions={[{ id: "estado.cidades", hotkey: combinacaoDe("verLocalidades"), label: "Cidades", icon: <MapPin className="size-4" />, run: () => related.openList(() => cidadesApi.listByEstado(editingItem.id).then(mapItens((x) => ({ id: x.id, descricao: x.cidade, detalhe: x.ddd }))), cidadesApi.getById, CidadesUpsert, "Cidades", "Nenhuma cidade neste estado.", false) }]} />}
         <WindowCancelButton readOnly={readOnly} />
           {!readOnly && (<form.Subscribe
             selector={(state) => [state.canSubmit, state.isSubmitting]}
@@ -126,10 +127,7 @@ function EstadosUpsertForm({
                 ) : (
                   <span className="flex items-center gap-2">
                     Salvar{" "}
-                    <KbdGroup>
-                      <Kbd>Alt</Kbd>
-                      <Kbd>Enter</Kbd>
-                    </KbdGroup>
+                    <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
                   </span>
                 )}
               </Button>

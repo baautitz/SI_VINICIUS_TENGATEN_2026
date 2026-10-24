@@ -1,6 +1,6 @@
 "use client";
 
-import { Kbd, KbdGroup } from "@/ui/primitives";
+import { HotkeyKbd } from "@/ui/primitives";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import React from "react";
 import { Button } from "@/ui/primitives";
@@ -16,6 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { veiculosApi } from "@/api/parceiros";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
 import { Spinner } from "@/ui/primitives";
+import { combinacaoDe } from "@/lib/atalhos";
 
 export interface VeiculosUpsertProps {
   editingItem: Veiculo | null;
@@ -104,7 +105,7 @@ function VeiculosUpsertForm({
     () => [
       {
         id: "veiculos.save",
-        hotkey: "Alt+Enter" as const,
+        hotkey: combinacaoDe("confirmar"),
         label: "Salvar",
         enabled: !readOnly && !mutation.isPending,
         run: async (event: KeyboardEvent) => {
@@ -136,7 +137,7 @@ function VeiculosUpsertForm({
                 "Salvando..."
               ) : (
                 <span className="flex items-center gap-2">
-                  Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup>
+                  Salvar <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
                 </span>
               )}
             </Button>

@@ -1,3 +1,5 @@
+import { ArrowLeft, ArrowRight } from "lucide-react"
+
 import { cn } from "@/lib/utils"
 
 function Kbd({ className, ...props }: React.ComponentProps<"kbd">) {
@@ -23,4 +25,20 @@ function KbdGroup({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-export { Kbd, KbdGroup }
+const KEY_ICONS: Record<string, React.ReactNode> = {
+  ArrowLeft: <ArrowLeft className="size-3" />,
+  ArrowRight: <ArrowRight className="size-3" />,
+}
+
+/** Exibe um atalho ("Alt+Enter") como um Kbd por tecla. */
+function HotkeyKbd({ hotkey, className }: { hotkey: string; className?: string }) {
+  return (
+    <KbdGroup className={className}>
+      {hotkey.split("+").map((key) => (
+        <Kbd key={key}>{KEY_ICONS[key] ?? key}</Kbd>
+      ))}
+    </KbdGroup>
+  )
+}
+
+export { Kbd, KbdGroup, HotkeyKbd }

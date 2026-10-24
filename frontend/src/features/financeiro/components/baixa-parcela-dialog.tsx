@@ -4,11 +4,12 @@ import React, { useState } from "react";
 import { WindowActions } from "@/ui/imperative";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/ui/primitives";
-import { Kbd, KbdGroup } from "@/ui/primitives";
+import { Kbd, HotkeyKbd } from "@/ui/primitives";
 import { Field, FieldLabel, FieldError } from "@/ui/primitives";
 import { NumberInput } from "@/ui/composites";
 import { contasPagarApi, contasReceberApi } from "@/api/financeiro";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
+import { combinacaoDe } from "@/lib/atalhos";
 
 export interface BaixaParcelaWindowProps {
   contaId: number;
@@ -97,7 +98,7 @@ export function BaixaParcelaWindow({
     () => [
       {
         id: "financeiro.baixa-parcela.confirm",
-        hotkey: "Alt+Enter" as const,
+        hotkey: combinacaoDe("confirmar"),
         label: "Baixar parcela",
         enabled: !mutation.isPending,
         run: async (event: KeyboardEvent) => {
@@ -191,10 +192,7 @@ export function BaixaParcelaWindow({
           ) : (
             <span className="flex items-center gap-2">
               Baixar parcela
-              <KbdGroup>
-                <Kbd>Alt</Kbd>
-                <Kbd>Enter</Kbd>
-              </KbdGroup>
+              <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
             </span>
           )}
         </Button>

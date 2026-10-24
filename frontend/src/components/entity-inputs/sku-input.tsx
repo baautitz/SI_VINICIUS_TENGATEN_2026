@@ -9,8 +9,9 @@ import { skusApi } from "@/api/catalogo";
 import { SkusFeature } from "@/features/catalogo/skus";
 import { Sku } from "@/features/catalogo/skus/types";
 import { NumberInput } from "@/ui/composites";
-import { Kbd, KbdGroup } from "@/ui/primitives";
+import { Kbd, HotkeyKbd } from "@/ui/primitives";
 import { useWindow, useWindowCommands, useUi, WindowActions } from "@/ui/imperative";
+import { combinacaoDe } from "@/lib/atalhos";
 
 interface SkuInputProps {
   name: string;
@@ -123,7 +124,7 @@ function QuantityWindow({ sku, initialQuantity }: QuantityWindowProps) {
   useWindowCommands([
     {
       id: "sku.quantity.confirm",
-      hotkey: "Alt+Enter",
+      hotkey: combinacaoDe("confirmar"),
       label: "Confirmar quantidade",
       run: confirm,
     },
@@ -160,10 +161,7 @@ function QuantityWindow({ sku, initialQuantity }: QuantityWindowProps) {
         </Button>
         <Button type="button" onClick={confirm}>
           Confirmar
-          <KbdGroup className="ml-2">
-            <Kbd>Alt</Kbd>
-            <Kbd>Enter</Kbd>
-          </KbdGroup>
+          <HotkeyKbd className="ml-2" hotkey={combinacaoDe("confirmar")} />
         </Button>
       </WindowActions>
     </div>
@@ -459,7 +457,7 @@ export const SkuInput = ({
     [
       {
         id: `sku-input.${name}.open-selector`,
-        hotkey: "Alt+K",
+        hotkey: combinacaoDe("adicionarSku"),
         label: "Abrir seleção de SKU",
         enabled: !disabled,
         run: handleSearchHotkey,
@@ -477,10 +475,7 @@ export const SkuInput = ({
         <FieldLabel htmlFor={name}>
           <div className="flex items-center gap-2">
             {label}
-            <KbdGroup>
-              <Kbd>Alt</Kbd>
-              <Kbd>K</Kbd>
-            </KbdGroup>
+            <HotkeyKbd hotkey={combinacaoDe("adicionarSku")} />
           </div>
         </FieldLabel>
       )}

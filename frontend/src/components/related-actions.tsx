@@ -1,12 +1,13 @@
 "use client";
 
 import React from "react";
-import { Button, Kbd } from "@/ui/primitives";
+import { Button, HotkeyKbd } from "@/ui/primitives";
 import { useWindowCommands } from "@/ui/imperative";
+import type { Combinacao } from "@/lib/atalhos";
 
 export interface RelatedAction {
   id: string;
-  hotkey: "Alt+V" | "Alt+R" | "Alt+T" | "Alt+L" | "Alt+B" | "Alt+M" | "Alt+O" | "Alt+S";
+  hotkey: Combinacao;
   label: string;
   icon: React.ReactNode;
   run: () => unknown;
@@ -30,7 +31,7 @@ export function RelatedActions({ actions }: { actions: RelatedAction[] }) {
     <div className="mr-auto flex gap-2">
       {actions.map((a) => (
         <Button key={a.id} type="button" variant="outline" onClick={() => void a.run()}>
-          {a.icon} {a.label} <Kbd>{a.hotkey}</Kbd>
+          {a.icon} {a.label} <HotkeyKbd hotkey={a.hotkey} />
         </Button>
       ))}
     </div>

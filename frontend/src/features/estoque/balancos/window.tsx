@@ -9,15 +9,7 @@ import { SkuInput } from "@/components/entity-inputs/sku-input";
 import { SkuViewInput } from "@/components/entity-inputs/sku-view-input";
 import { Sku, getFullSkuName } from "@/features/catalogo/skus/types";
 import { useWindow, useWindowCommands, useUi, WindowCancelButton } from "@/ui/imperative";
-import {
-  Button,
-  Field,
-  FieldLabel,
-  Input,
-  Kbd,
-  KbdGroup,
-  Spinner,
-} from "@/ui/primitives";
+import { Button, Field, FieldLabel, Input, Spinner, HotkeyKbd } from "@/ui/primitives";
 import {
   Table,
   TableBody,
@@ -28,6 +20,7 @@ import {
 } from "@/ui/primitives";
 import { NumberInput } from "@/ui/composites";
 import { navigationCell } from "@/ui/keyboard-navigation";
+import { combinacaoDe } from "@/lib/atalhos";
 import { cn } from "@/lib/utils";
 import { statusBalancoLabels } from "./types";
 
@@ -252,7 +245,7 @@ function BalancoForm({
       () => [
         {
           id: "balancos.focus-sku",
-          hotkey: "Alt+K" as const,
+          hotkey: combinacaoDe("adicionarSku"),
           label: "Buscar SKU",
           enabled: !readOnly,
           run: (event: KeyboardEvent) => {
@@ -262,7 +255,7 @@ function BalancoForm({
         },
         {
           id: "balancos.save-draft",
-          hotkey: "Alt+R" as const,
+          hotkey: combinacaoDe("salvarRascunho"),
           label: "Salvar rascunho",
           enabled: !readOnly && !busy,
           run: async (event: KeyboardEvent) => {
@@ -272,7 +265,7 @@ function BalancoForm({
         },
         {
           id: "balancos.close",
-          hotkey: "Alt+Enter" as const,
+          hotkey: combinacaoDe("confirmar"),
           label: "Finalizar balanço",
           enabled: !readOnly && !busy,
           run: async (event: KeyboardEvent) => {
@@ -299,17 +292,11 @@ function BalancoForm({
               onClick={salvarRascunho}
             >
               Salvar Rascunho{" "}
-              <KbdGroup>
-                <Kbd>Alt</Kbd>
-                <Kbd>R</Kbd>
-              </KbdGroup>
+              <HotkeyKbd hotkey={combinacaoDe("salvarRascunho")} />
             </Button>
             <Button type="button" disabled={busy} onClick={fecharBalanco}>
               Finalizar balanço{" "}
-              <KbdGroup>
-                <Kbd>Alt</Kbd>
-                <Kbd>Enter</Kbd>
-              </KbdGroup>
+              <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
             </Button>
           </>
         )}

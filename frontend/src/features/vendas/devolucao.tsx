@@ -5,27 +5,13 @@ import React from "react";
 import { WindowActions } from "@/ui/imperative";
 import { useQuery } from "@tanstack/react-query";
 import { NumberInput } from "@/ui/composites";
-import {
-  Button,
-  Field,
-  FieldError,
-  FieldLabel,
-  Kbd,
-  KbdGroup,
-  Spinner,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  Textarea,
-} from "@/ui/primitives";
+import { Button, Field, FieldError, FieldLabel, Spinner, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Textarea, HotkeyKbd } from "@/ui/primitives";
 import { useWindow, useWindowCommands, WindowCancelButton } from "@/ui/imperative";
 import { vendasApi } from "@/api/vendas";
 import { getFullSkuName } from "@/features/catalogo/skus/types";
 import { formatToLocal } from "@/utils/date-utils";
 import type { CriarDevolucaoValues, Venda } from "./types";
+import { combinacaoDe } from "@/lib/atalhos";
 
 const brl = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -111,7 +97,7 @@ export function DevolucaoWindow({ venda, total: devolucaoTotal }: DevolucaoWindo
       () => [
         {
           id: "vendas.devolucao.confirm",
-          hotkey: "Alt+Enter" as const,
+          hotkey: combinacaoDe("confirmar"),
           label: "Confirmar devolução",
           run: (event: KeyboardEvent) => {
             event.preventDefault();
@@ -211,10 +197,7 @@ export function DevolucaoWindow({ venda, total: devolucaoTotal }: DevolucaoWindo
         <WindowCancelButton />
         <Button type="button" onClick={confirm}>
           Confirmar Devolução
-          <KbdGroup className="ml-2">
-            <Kbd>Alt</Kbd>
-            <Kbd>Enter</Kbd>
-          </KbdGroup>
+          <HotkeyKbd className="ml-2" hotkey={combinacaoDe("confirmar")} />
         </Button>
       </WindowActions>
     </div>

@@ -2,9 +2,10 @@
 
 import React from "react";
 import { WindowActions } from "@/ui/imperative";
-import { Button, Field, FieldDescription, FieldLabel, Kbd, KbdGroup, Textarea } from "@/ui/primitives";
+import { Button, Field, FieldDescription, FieldLabel, Textarea, HotkeyKbd } from "@/ui/primitives";
 import { useWindow, useWindowCommands, WindowCancelButton } from "@/ui/imperative";
 import { MIN_JUSTIFICATIVA } from "./types";
+import { combinacaoDe } from "@/lib/atalhos";
 
 /** Pede a justificativa (>= 15 caracteres) e resolve com o texto; quem chama faz o POST. */
 export function CancelarNfeWindow({ numero }: { numero: number }) {
@@ -17,7 +18,7 @@ export function CancelarNfeWindow({ numero }: { numero: number }) {
   useWindowCommands([
     {
       id: "nfe.cancelar.confirmar",
-      hotkey: "Alt+Enter",
+      hotkey: combinacaoDe("confirmar"),
       label: "Confirmar cancelamento",
       run: (e) => {
         e.preventDefault();
@@ -49,10 +50,7 @@ export function CancelarNfeWindow({ numero }: { numero: number }) {
         <WindowCancelButton />
         <Button type="button" variant="destructive" disabled={!valido} onClick={confirmar}>
           Cancelar NF-e
-          <KbdGroup>
-            <Kbd>Alt</Kbd>
-            <Kbd>Enter</Kbd>
-          </KbdGroup>
+          <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
         </Button>
       </WindowActions>
     </div>

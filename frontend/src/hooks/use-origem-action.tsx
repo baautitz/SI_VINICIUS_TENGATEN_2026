@@ -3,6 +3,7 @@
 import React from "react";
 import { ListChecks, ShoppingBag, ShoppingCart, Undo2 } from "lucide-react";
 import { useUi } from "@/ui/imperative";
+import { combinacaoDe } from "@/lib/atalhos";
 import { useRelated } from "@/hooks/use-related";
 import type { RelatedAction } from "@/components/related-actions";
 import { vendasApi } from "@/api/vendas";
@@ -21,7 +22,7 @@ const rotulos: Record<OrigemDocumento, string> = {
 };
 
 /**
- * Ação (botão dinâmico, Alt+O) que abre em leitura o documento que gerou o registro: o rótulo e o destino
+ * Ação (botão dinâmico, atalho `origem` do registro) que abre em leitura o documento que gerou o registro: o rótulo e o destino
  * seguem o tipo de origem. Lista vazia para origem manual, desconhecida ou sem id.
  */
 export function useOrigemAction(origemTipo: string | null | undefined, origemId: number | null | undefined): RelatedAction[] {
@@ -69,7 +70,7 @@ export function useOrigemAction(origemTipo: string | null | undefined, origemId:
   return [
     {
       id: `origem.${tipo.toLowerCase()}`,
-      hotkey: "Alt+O",
+      hotkey: combinacaoDe("origem"),
       label: `${rotulos[tipo]} #${origemId}`,
       icon: icone[tipo],
       run: abrir,

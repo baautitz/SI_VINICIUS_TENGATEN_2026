@@ -1,8 +1,9 @@
 "use client";
 
+import { combinacaoDe } from "@/lib/atalhos";
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, CornerDownLeft, Plus, RefreshCw, Trash2, TriangleAlert, Undo2 } from "lucide-react";
+import { Plus, RefreshCw, Trash2, TriangleAlert, Undo2 } from "lucide-react";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import { fornecedoresApi, transportadorasApi } from "@/api/parceiros";
 import { FornecedoresUpsert } from "@/features/parceiros/fornecedores/upsert";
@@ -31,20 +32,7 @@ import {
 import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
 import { formatToLocal } from "@/utils/date-utils";
 import { EstornarCompraWindow, type EstornarCompraWindowProps } from "./estornar";
-import {
-  Alert,
-  AlertDescription,
-  Badge,
-  Button,
-  Field,
-  FieldError,
-  FieldLabel,
-  Input,
-  Kbd,
-  KbdGroup,
-  Spinner,
-  Textarea,
-} from "@/ui/primitives";
+import { Alert, AlertDescription, Badge, Button, Field, FieldError, FieldLabel, Input, HotkeyKbd, Spinner, Textarea } from "@/ui/primitives";
 import {
   Table,
   TableBody,
@@ -478,7 +466,7 @@ function CompraForm({
   };
 
   // Igual às parcelas de contas a pagar/receber: lança quantas precisar (o saldo restante, ou zero);
-  // a divergência com a nota aparece nos próprios lançamentos e em "Redistribuir" (Alt+C).
+  // a divergência com a nota aparece nos próprios lançamentos e em "Redistribuir" (atalho `distribuir`).
   const adicionarParcela = () => {
     const base = new Date(dataCompra + "T12:00:00");
     base.setDate(base.getDate() + (parcelas.length + 1) * 30);
@@ -693,7 +681,7 @@ function CompraForm({
   useWindowCommands([
     {
       id: "compras.estornar",
-      hotkey: "Alt+Z" as const,
+      hotkey: combinacaoDe("estornar"),
       label: "Estornar compra",
       enabled: podeEstornar,
       run: (e: KeyboardEvent) => {
@@ -703,7 +691,7 @@ function CompraForm({
     },
     {
       id: "compras.focus-sku",
-      hotkey: "Alt+K" as const,
+      hotkey: combinacaoDe("adicionarSku"),
       label: "Adicionar SKU",
       enabled: !readOnly && !modoXml && etapa === 2,
       run: (e: KeyboardEvent) => {
@@ -713,7 +701,7 @@ function CompraForm({
     },
     {
       id: "compras.back",
-      hotkey: "Alt+ArrowLeft" as const,
+      hotkey: combinacaoDe("etapaAnterior"),
       label: "Voltar etapa",
       enabled: etapa > 0 && !mutation.isPending,
       run: (e: KeyboardEvent) => {
@@ -723,7 +711,7 @@ function CompraForm({
     },
     {
       id: "compras.next",
-      hotkey: "Alt+ArrowRight" as const,
+      hotkey: combinacaoDe("etapaSeguinte"),
       label: "Avançar etapa",
       enabled: etapa < 3 && !mutation.isPending,
       run: (e: KeyboardEvent) => {
@@ -733,7 +721,7 @@ function CompraForm({
     },
     {
       id: "compras.confirmar",
-      hotkey: "Alt+Enter" as const,
+      hotkey: combinacaoDe("confirmar"),
       label: "Confirmar",
       enabled: etapa === 3 && !mutation.isPending,
       run: (e: KeyboardEvent) => {
@@ -743,7 +731,7 @@ function CompraForm({
     },
     {
       id: "compras.redistribuir-parcelas",
-      hotkey: "Alt+C" as const,
+      hotkey: combinacaoDe("distribuir"),
       label: "Redistribuir parcelas",
       enabled: !readOnly && etapa === 3,
       run: (e: KeyboardEvent) => {
@@ -753,7 +741,7 @@ function CompraForm({
     },
     {
       id: "compras.add-parcela",
-      hotkey: "Alt+A" as const,
+      hotkey: combinacaoDe("adicionarParcela"),
       label: "Adicionar parcela",
       enabled: !readOnly && etapa === 3,
       run: (e: KeyboardEvent) => {
@@ -763,7 +751,7 @@ function CompraForm({
     },
     {
       id: "compras.recalcular-parcelas",
-      hotkey: "Alt+G" as const,
+      hotkey: combinacaoDe("gerar"),
       label: "Gerar parcelas",
       enabled: !readOnly && etapa === 3,
       run: (e: KeyboardEvent) => {
@@ -836,7 +824,7 @@ function CompraForm({
             className="mr-auto"
             onClick={() => void estornar()}
           >
-            <Undo2 /> Estornar compra <Kbd>Alt+Z</Kbd>
+            <Undo2 /> Estornar compra <HotkeyKbd hotkey={combinacaoDe("estornar")} />
           </Button>
         )}
         <WindowCancelButton readOnly={readOnly} />
@@ -847,19 +835,13 @@ function CompraForm({
             onClick={() => setEtapa(etapa - 1)}
           >
             Voltar{" "}
-            <KbdGroup>
-              <Kbd>Alt</Kbd>
-              <Kbd><ArrowLeft className="size-3" /></Kbd>
-            </KbdGroup>
+            <HotkeyKbd hotkey={combinacaoDe("etapaAnterior")} />
           </Button>
         )}
         {etapa < 3 ? (
           <Button type="button" onClick={avancar}>
             Avançar{" "}
-            <KbdGroup>
-              <Kbd>Alt</Kbd>
-              <Kbd><ArrowRight className="size-3" /></Kbd>
-            </KbdGroup>
+            <HotkeyKbd hotkey={combinacaoDe("etapaSeguinte")} />
           </Button>
         ) : (
           !readOnly && (
@@ -873,10 +855,7 @@ function CompraForm({
                 : modoXml
                   ? "Confirmar importação"
                   : "Fechar compra"}
-              <KbdGroup>
-                <Kbd>Alt</Kbd>
-                <Kbd><CornerDownLeft className="size-3" /></Kbd>
-              </KbdGroup>
+              <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
             </Button>
           )
         )}
@@ -1363,7 +1342,7 @@ function CompraForm({
                         title="Refaz as parcelas a partir da condição e do valor da nota, descartando as atuais"
                         onClick={recalcularParcelas}
                       >
-                        <RefreshCw /> Gerar parcelas <Kbd>Alt+G</Kbd>
+                        <RefreshCw /> Gerar parcelas <HotkeyKbd hotkey={combinacaoDe("gerar")} />
                       </Button>
                     </div>
                     <p className="text-muted-foreground text-xs">
@@ -1427,7 +1406,7 @@ function CompraForm({
                                       !(p.valorParcela > 0)
                                         ? "O valor da parcela deve ser maior que zero."
                                         : parcelasDivergem
-                                          ? "A soma das parcelas diverge do valor da nota. Ajuste ou use Redistribuir (Alt+C)."
+                                          ? `A soma das parcelas diverge do valor da nota. Ajuste ou use Redistribuir (${combinacaoDe("distribuir")}).`
                                           : undefined
                                     }
                                     onNumberChange={(n) =>
@@ -1473,7 +1452,7 @@ function CompraForm({
                           size="sm"
                           onClick={adicionarParcela}
                         >
-                          <Plus /> Parcela <Kbd>Alt+A</Kbd>
+                          <Plus /> Parcela <HotkeyKbd hotkey={combinacaoDe("adicionarParcela")} />
                         </Button>
                         <Button
                           type="button"
@@ -1481,7 +1460,7 @@ function CompraForm({
                           size="sm"
                           onClick={() => void redistribuirParcelas()}
                         >
-                          Redistribuir <Kbd>Alt+C</Kbd>
+                          Redistribuir <HotkeyKbd hotkey={combinacaoDe("distribuir")} />
                         </Button>
                         </div>
                         <span

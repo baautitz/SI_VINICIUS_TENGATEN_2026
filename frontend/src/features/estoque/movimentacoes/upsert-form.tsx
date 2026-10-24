@@ -8,9 +8,10 @@ import {
 import { ClipboardList, Undo2 } from "lucide-react";
 import { formatToLocal } from "@/utils/date-utils";
 
-import { Kbd, KbdGroup } from "@/ui/primitives";
+import { HotkeyKbd } from "@/ui/primitives";
 import { WindowActions } from "@/ui/imperative";
 import React, { useCallback, useRef, useState } from "react";
+import { combinacaoDe } from "@/lib/atalhos";
 import { cn } from "@/lib/utils";
 import { Button } from "@/ui/primitives";
 import { Field, FieldGroup, FieldLabel } from "@/ui/primitives";
@@ -221,7 +222,7 @@ export function MovimentacoesUpsertForm({
       () => [
         {
           id: "movimentacoes.estornar",
-          hotkey: "Alt+Z" as const,
+          hotkey: combinacaoDe("estornar"),
           label: "Estornar movimentação",
           enabled: !!estornarAqui,
           run: (event: KeyboardEvent) => {
@@ -231,7 +232,7 @@ export function MovimentacoesUpsertForm({
         },
         {
           id: "movimentacoes.focus-sku",
-          hotkey: "Alt+K" as const,
+          hotkey: combinacaoDe("adicionarSku"),
           label: "Buscar SKU",
           enabled: !readOnly,
           run: (event: KeyboardEvent) => {
@@ -241,7 +242,7 @@ export function MovimentacoesUpsertForm({
         },
         {
           id: "movimentacoes.submit",
-          hotkey: "Alt+Enter" as const,
+          hotkey: combinacaoDe("confirmar"),
           label: "Lançar movimentação",
           enabled: !readOnly && !mutation.isPending,
           run: async (event: KeyboardEvent) => {
@@ -387,7 +388,7 @@ export function MovimentacoesUpsertForm({
       ? [
           {
             id: "mov.original",
-            hotkey: "Alt+M",
+            hotkey: combinacaoDe("movimentacaoOriginal"),
             label: "Movimentação original",
             icon: <ClipboardList className="size-4" />,
             run: () =>
@@ -405,7 +406,7 @@ export function MovimentacoesUpsertForm({
       ? [
           {
             id: "mov.estorno",
-            hotkey: "Alt+V",
+            hotkey: combinacaoDe("verEstorno"),
             label: "Ver estorno",
             icon: <Undo2 className="size-4" />,
             run: () =>
@@ -433,7 +434,7 @@ export function MovimentacoesUpsertForm({
             className="mr-auto"
             onClick={() => void estornarAqui()}
           >
-            <Undo2 /> Estornar movimentação <Kbd>Alt+Z</Kbd>
+            <Undo2 /> Estornar movimentação <HotkeyKbd hotkey={combinacaoDe("estornar")} />
           </Button>
         )}
         {readOnly && <RelatedActions actions={acoesRelacionadas} />}
@@ -453,10 +454,7 @@ export function MovimentacoesUpsertForm({
                 ) : (
                   <span className="flex items-center gap-2">
                     Lançar{" "}
-                    <KbdGroup>
-                      <Kbd>Alt</Kbd>
-                      <Kbd>Enter</Kbd>
-                    </KbdGroup>
+                    <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
                   </span>
                 )}
               </Button>

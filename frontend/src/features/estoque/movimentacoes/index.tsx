@@ -6,10 +6,11 @@ import { estoqueApi } from "@/api/estoque";
 import { useFeatureList } from "@/hooks/use-feature-list";
 import { WindowActions } from "@/ui/imperative";
 import { useWindow, useWindowCommands, useUi, WindowCancelButton } from "@/ui/imperative";
-import { Button, Field, FieldError, FieldLabel, Kbd, KbdGroup, Textarea } from "@/ui/primitives";
+import { Button, Field, FieldError, FieldLabel, Textarea, HotkeyKbd } from "@/ui/primitives";
 import { MovimentacoesList } from "./list";
 import { MovimentacoesUpsert } from "./upsert";
 import { MovimentacaoEstoque, avisoNaoEstornavel, podeEstornar } from "./types";
+import { combinacaoDe } from "@/lib/atalhos";
 
 export * from "./types";
 
@@ -162,7 +163,7 @@ export function EstornoWindow({ pergunta, aviso }: EstornoWindowProps) {
       () => [
         {
           id: "movimentacoes.estorno.confirm",
-          hotkey: "Alt+Enter" as const,
+          hotkey: combinacaoDe("confirmar"),
           label: "Estornar",
           run: (event: KeyboardEvent) => {
             event.preventDefault();
@@ -196,10 +197,7 @@ export function EstornoWindow({ pergunta, aviso }: EstornoWindowProps) {
         <WindowCancelButton />
         <Button type="button" variant="destructive" onClick={confirm}>
           Estornar
-          <KbdGroup className="ml-2">
-            <Kbd>Alt</Kbd>
-            <Kbd>Enter</Kbd>
-          </KbdGroup>
+          <HotkeyKbd className="ml-2" hotkey={combinacaoDe("confirmar")} />
         </Button>
       </WindowActions>
     </div>

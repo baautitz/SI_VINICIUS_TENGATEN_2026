@@ -1,6 +1,6 @@
 "use client";
 
-import { Kbd, KbdGroup } from "@/ui/primitives";
+import { HotkeyKbd } from "@/ui/primitives";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import React, { useState } from "react";
 import { Button } from "@/ui/primitives";
@@ -22,6 +22,7 @@ import { TipoPessoa } from "@/api/types";
 import { Pais } from "@/features/localizacao/paises";
 import { Spinner } from "@/ui/primitives";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
+import { combinacaoDe } from "@/lib/atalhos";
 
 export interface EmitentesUpsertProps {
   editingItem: Emitente | null;
@@ -140,7 +141,7 @@ function EmitentesUpsertForm({
     () => [
       {
         id: "emitentes.save",
-        hotkey: "Alt+Enter" as const,
+        hotkey: combinacaoDe("confirmar"),
         label: "Salvar",
         enabled: !readOnly && !mutation.isPending,
         run: async (event: KeyboardEvent) => {
@@ -170,7 +171,7 @@ function EmitentesUpsertForm({
               form="upsert-emitentes"
               disabled={readOnly || !canSubmit || isSubmitting}
             >
-              {isSubmitting ? "Salvando..." : <span className="flex items-center gap-2">Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup></span>}
+              {isSubmitting ? "Salvando..." : <span className="flex items-center gap-2">Salvar <HotkeyKbd hotkey={combinacaoDe("confirmar")} /></span>}
             </Button>
           )}
         </form.Subscribe>

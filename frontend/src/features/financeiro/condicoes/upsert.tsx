@@ -1,6 +1,7 @@
 "use client";
 
-import { Kbd, KbdGroup } from "@/ui/primitives";
+import { combinacaoDe } from "@/lib/atalhos";
+import { HotkeyKbd } from "@/ui/primitives";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import React, { useCallback, useState } from "react";
 import { Button } from "@/ui/primitives";
@@ -216,7 +217,7 @@ function CondicoesUpsertForm({
     () => [
       {
         id: "condicoesPagamento.addInstallment",
-        hotkey: "Alt+P" as const,
+        hotkey: combinacaoDe("adicionarParcela"),
         label: "Adicionar parcela",
         enabled: !readOnly && entradaMinimaPercentual !== 100,
         run: async (event: KeyboardEvent) => {
@@ -226,7 +227,7 @@ function CondicoesUpsertForm({
       },
       {
         id: "condicoesPagamento.distributeInstallments",
-        hotkey: "Alt+C" as const,
+        hotkey: combinacaoDe("distribuir"),
         label: "Distribuir porcentagens",
         enabled:
           !readOnly && parcelas.length > 0 && entradaMinimaPercentual !== 100,
@@ -237,7 +238,7 @@ function CondicoesUpsertForm({
       },
       {
         id: "condicoesPagamento.save",
-        hotkey: "Alt+Enter" as const,
+        hotkey: combinacaoDe("confirmar"),
         label: "Salvar",
         enabled: !readOnly && !mutation.isPending,
         run: async (event: KeyboardEvent) => {
@@ -303,10 +304,7 @@ function CondicoesUpsertForm({
                 ) : (
                   <span className="flex items-center gap-2">
                     Salvar{" "}
-                    <KbdGroup>
-                      <Kbd>Alt</Kbd>
-                      <Kbd>Enter</Kbd>
-                    </KbdGroup>
+                    <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
                   </span>
                 )}
               </Button>
@@ -585,10 +583,7 @@ function CondicoesUpsertForm({
                         disabled={parcelas.length === 0}
                       >
                         Distribuir Porcentagens{" "}
-                        <KbdGroup className="ml-1">
-                          <Kbd>Alt</Kbd>
-                          <Kbd>C</Kbd>
-                        </KbdGroup>
+                        <HotkeyKbd className="ml-1" hotkey={combinacaoDe("distribuir")} />
                       </Button>
                       <Button
                         type="button"
@@ -596,10 +591,7 @@ function CondicoesUpsertForm({
                         onClick={handleAddParcela}
                       >
                         <Plus /> Adicionar Parcela{" "}
-                        <KbdGroup>
-                          <Kbd>Alt</Kbd>
-                          <Kbd>P</Kbd>
-                        </KbdGroup>
+                        <HotkeyKbd hotkey={combinacaoDe("adicionarParcela")} />
                       </Button>
                     </div>
                   )}

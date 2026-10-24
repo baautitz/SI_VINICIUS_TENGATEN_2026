@@ -7,16 +7,9 @@ import { comprasApi } from "@/api/compras";
 import { EmitenteInput } from "@/components/entity-inputs/emitente-input";
 import type { Emitente } from "@/features/parceiros/emitentes/types";
 import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
-import {
-  Button,
-  Field,
-  FieldDescription,
-  FieldLabel,
-  Input,
-  Kbd,
-  KbdGroup,
-} from "@/ui/primitives";
+import { Button, Field, FieldDescription, FieldLabel, Input, HotkeyKbd } from "@/ui/primitives";
 import type { ImportacaoXml } from "./upsert";
+import { combinacaoDe } from "@/lib/atalhos";
 
 const MAX_BYTES = 2 * 1024 * 1024;
 
@@ -65,7 +58,7 @@ export function ImportarXmlWindow() {
   useWindowCommands([
     {
       id: "compras.xml.ler",
-      hotkey: "Alt+Enter",
+      hotkey: combinacaoDe("confirmar"),
       label: "Ler XML",
       run: (e) => {
         e.preventDefault();
@@ -143,10 +136,7 @@ export function ImportarXmlWindow() {
         <WindowCancelButton />
         <Button type="button" disabled={busy} onClick={() => void ler()}>
           <FileUp /> {busy ? "Lendo..." : "Ler XML"}
-          <KbdGroup>
-            <Kbd>Alt</Kbd>
-            <Kbd>Enter</Kbd>
-          </KbdGroup>
+          <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
         </Button>
       </WindowActions>
     </div>

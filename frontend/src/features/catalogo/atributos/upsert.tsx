@@ -1,6 +1,6 @@
 "use client";
 
-import { Kbd, KbdGroup } from "@/ui/primitives";
+import { HotkeyKbd } from "@/ui/primitives";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import React from "react";
 import { Button } from "@/ui/primitives";
@@ -26,6 +26,7 @@ import { Badge } from "@/ui/primitives";
 import { Card, CardContent } from "@/ui/primitives";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
 import { Spinner } from "@/ui/primitives";
+import { combinacaoDe } from "@/lib/atalhos";
 
 export interface AtributosUpsertProps {
   editingItem: SkuAtributoChave | null;
@@ -106,7 +107,7 @@ function AtributosUpsertForm({
     () => [
       {
         id: "atributos.save",
-        hotkey: "Alt+Enter" as const,
+        hotkey: combinacaoDe("confirmar"),
         label: "Salvar",
         enabled: !readOnly && !mutation.isPending,
         run: async (event: KeyboardEvent) => {
@@ -138,10 +139,7 @@ function AtributosUpsertForm({
               ) : (
                 <span className="flex items-center gap-2">
                   Salvar{" "}
-                  <KbdGroup>
-                    <Kbd>Alt</Kbd>
-                    <Kbd>Enter</Kbd>
-                  </KbdGroup>
+                  <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
                 </span>
               )}
             </Button>

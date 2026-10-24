@@ -16,7 +16,7 @@ import {
   AlertDialogFooter,
   Button,
   Kbd,
-  KbdGroup,
+  HotkeyKbd,
 } from "@/ui/primitives"
 import { WindowController } from "@/ui/imperative/controller"
 import {
@@ -38,6 +38,7 @@ import type {
 import type { WindowOptions } from "@/ui/imperative/contracts"
 import { useWindow } from "./active-context"
 import { useWindowCommands } from "./commands"
+import { combinacaoDe } from "@/lib/atalhos";
 
 export type WindowRecord = WindowSnapshotEntry
 
@@ -246,7 +247,7 @@ function ConfirmWindow({
       {
         id: "confirm",
         label: "Confirmar",
-        hotkey: "Alt+Enter" as const,
+        hotkey: combinacaoDe("confirmar"),
         run: () => window.resolve(true),
       },
     ],
@@ -264,10 +265,7 @@ function ConfirmWindow({
       <AlertDialogAction asChild>
         <Button type="button" variant={confirmVariant} onClick={() => window.resolve(true)}>
           {confirmLabel}
-          <KbdGroup className="ml-2">
-            <Kbd>Alt</Kbd>
-            <Kbd>Enter</Kbd>
-          </KbdGroup>
+          <HotkeyKbd className="ml-2" hotkey={combinacaoDe("confirmar")} />
         </Button>
       </AlertDialogAction>
     </AlertDialogFooter>

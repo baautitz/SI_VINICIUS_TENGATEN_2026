@@ -1,5 +1,6 @@
 "use client";
 
+import { combinacaoDe } from "@/lib/atalhos";
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ban, Copy, Download, ExternalLink, FileCode, Printer } from "lucide-react";
@@ -9,9 +10,7 @@ import { contasPagarApi } from "@/api/financeiro";
 import { comprasApi } from "@/api/compras";
 import { CompraInput } from "@/components/entity-inputs/compra-input";
 import { TextoWindow, type TextoWindowProps } from "@/components/texto-window";
-import {
-  Button, Field, FieldLabel, Input, Kbd, Spinner, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Textarea,
-} from "@/ui/primitives";
+import { Button, Field, FieldLabel, HotkeyKbd, Input, Kbd, Spinner, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Textarea } from "@/ui/primitives";
 import { navigationCell } from "@/ui/keyboard-navigation";
 import { useWindow, useWindowCommands, useUi, WindowCancelButton } from "@/ui/imperative";
 import { formatDateToLocal, formatToLocal } from "@/utils/date-utils";
@@ -247,18 +246,18 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
   };
 
   useWindowCommands([
-    { id: "nfe.xml", hotkey: "Alt+X", label: "Ver XML", run: (e) => { e.preventDefault(); void acoes.verXml(); } },
-    { id: "nfe.baixar", hotkey: "Alt+D", label: "Baixar XML", run: (e) => { e.preventDefault(); void acoes.baixar(); } },
-    { id: "nfe.imprimir", hotkey: "Alt+I", label: "Imprimir DANFE", run: (e) => { e.preventDefault(); void imprimir(); } },
+    { id: "nfe.xml", hotkey: combinacaoDe("verXml"), label: "Ver XML", run: (e) => { e.preventDefault(); void acoes.verXml(); } },
+    { id: "nfe.baixar", hotkey: combinacaoDe("baixarXml"), label: "Baixar XML", run: (e) => { e.preventDefault(); void acoes.baixar(); } },
+    { id: "nfe.imprimir", hotkey: combinacaoDe("imprimir"), label: "Imprimir DANFE", run: (e) => { e.preventDefault(); void imprimir(); } },
   ]);
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
       <WindowActions>
         <div className="mr-auto flex gap-2">
-          <Button type="button" variant="outline" onClick={() => void acoes.verXml()}><FileCode /> Ver XML <Kbd>Alt+X</Kbd></Button>
-          <Button type="button" variant="outline" onClick={() => void acoes.baixar()}><Download /> Baixar XML <Kbd>Alt+D</Kbd></Button>
-          <Button type="button" variant="outline" onClick={() => void imprimir()}><Printer /> Imprimir DANFE <Kbd>Alt+I</Kbd></Button>
+          <Button type="button" variant="outline" onClick={() => void acoes.verXml()}><FileCode /> Ver XML <HotkeyKbd hotkey={combinacaoDe("verXml")} /></Button>
+          <Button type="button" variant="outline" onClick={() => void acoes.baixar()}><Download /> Baixar XML <HotkeyKbd hotkey={combinacaoDe("baixarXml")} /></Button>
+          <Button type="button" variant="outline" onClick={() => void imprimir()}><Printer /> Imprimir DANFE <HotkeyKbd hotkey={combinacaoDe("imprimir")} /></Button>
           {!podeCancelar && <span role="status" className="text-muted-foreground self-center text-xs">{motivo}</span>}
           {!podeCancelar && entrada && nfe.compraId && (
             <Button type="button" variant="link" className="self-center px-0 text-xs" onClick={() => void abrirCompra()}>
