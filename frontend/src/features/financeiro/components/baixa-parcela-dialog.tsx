@@ -99,7 +99,7 @@ export function BaixaParcelaWindow({
       {
         id: "financeiro.baixa-parcela.confirm",
         hotkey: combinacaoDe("confirmar"),
-        label: "Baixar parcela",
+        label: isEstorno ? "Estornar baixa" : "Baixar parcela",
         enabled: !mutation.isPending,
         run: async (event: KeyboardEvent) => {
           event.preventDefault();
@@ -107,7 +107,7 @@ export function BaixaParcelaWindow({
         },
       },
     ],
-    [handleConfirm, mutation.isPending],
+    [handleConfirm, isEstorno, mutation.isPending],
   );
 
   useWindowCommands(commands);
@@ -130,7 +130,7 @@ export function BaixaParcelaWindow({
         </div>
 
         <div className="text-muted-foreground flex items-center justify-between border-b pb-2 text-sm">
-          <span>Valor Já Quitado:</span>
+          <span>Valor Já Baixado:</span>
           <span className="text-foreground font-semibold">
             {new Intl.NumberFormat("pt-BR", {
               style: "currency",
@@ -191,7 +191,7 @@ export function BaixaParcelaWindow({
             "Processando..."
           ) : (
             <span className="flex items-center gap-2">
-              Baixar parcela
+              {isEstorno ? "Estornar baixa" : "Baixar parcela"}
               <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
             </span>
           )}
