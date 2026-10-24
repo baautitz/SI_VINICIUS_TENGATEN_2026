@@ -351,7 +351,7 @@ export function ContasPagarUpsertForm({ editingItem, readOnly = false }: ContasP
                         />
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button type="button" size="icon-sm" variant="ghost" aria-label="Remover" onClick={() => setParcelas(parcelas.filter((_, x) => x !== i))}>
+                        <Button type="button" size="icon-sm" variant="outline" aria-label="Remover" onClick={() => setParcelas(parcelas.filter((_, x) => x !== i))}>
                           <Trash2 />
                         </Button>
                       </TableCell>
