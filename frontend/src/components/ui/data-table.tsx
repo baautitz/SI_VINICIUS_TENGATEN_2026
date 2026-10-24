@@ -27,7 +27,7 @@ import {
 } from "@/ui/primitives";
 import { Button } from "@/ui/primitives";
 import { Spinner } from "@/ui/primitives";
-import { Kbd, KbdGroup } from "@/ui/primitives";
+import { HotkeyKbd, Kbd, KbdGroup } from "@/ui/primitives";
 import { useWindowCommands } from "@/ui/imperative";
 import { useOptionalActiveWindow } from "@/ui/imperative";
 import { useNavigationScope } from "@/ui/keyboard-navigation";
@@ -246,6 +246,29 @@ export function DataTable<TData, TValue>({
                   </InputGroupAddon>
                 )}
               </InputGroup>
+            </div>
+          )}
+          {focusedRowIndex !== null && rows.length > 0 && (
+            <div
+              data-testid="data-table-shortcuts"
+              className="text-muted-foreground flex shrink-0 items-center gap-3 text-xs"
+            >
+              {(onRowSelect || onEditRow) && (
+                <span className="flex items-center gap-1">
+                  <HotkeyKbd hotkey="Enter" />
+                  {onRowSelect ? "Selecionar" : "Editar"}
+                </span>
+              )}
+              {onEditRow && (
+                <span className="flex items-center gap-1">
+                  <HotkeyKbd hotkey="Alt+E" /> Editar
+                </span>
+              )}
+              {onDeleteRow && (
+                <span className="flex items-center gap-1">
+                  <HotkeyKbd hotkey="Delete" /> Excluir
+                </span>
+              )}
             </div>
           )}
           {actions}
