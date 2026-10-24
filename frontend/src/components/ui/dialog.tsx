@@ -99,7 +99,7 @@ function DialogBody({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="dialog-body"
       className={cn(
-        "[&_[data-window-actions]]:bg-popover min-h-0 flex-1 overflow-y-auto overscroll-contain p-1 [&_[data-window-actions]]:sticky [&_[data-window-actions]]:bottom-0 [&_[data-window-actions]]:z-10 [&_[data-window-actions]]:order-last [&_[data-window-actions]]:mt-auto [&_[data-window-actions]]:border-t [&_[data-window-actions]]:border-b-0 [&_[data-window-actions]]:pt-4 [&_[data-window-actions]]:pb-0",
+        "[&_[data-window-actions]]:bg-popover min-h-0 flex-1 overflow-y-auto overscroll-contain p-1 pb-3 [&_[data-window-actions]]:sticky [&_[data-window-actions]]:bottom-0 [&_[data-window-actions]]:z-10 [&_[data-window-actions]]:order-last [&_[data-window-actions]]:mt-auto [&_[data-window-actions]]:border-t [&_[data-window-actions]]:border-b-0 [&_[data-window-actions]]:pt-4 [&_[data-window-actions]]:pb-0",
         className,
       )}
       {...props}
