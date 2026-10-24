@@ -188,12 +188,24 @@ function chooseVertical(
 
   if (!directional.length) return null
 
-  const nearestGap = Math.min(...directional.map(({ gap }) => Math.max(0, gap)))
+  // Vertical arrows follow the current column: with side-by-side columns,
+  // a control in the neighbouring column is not the "row above/below" as long
+  // as the column itself has a control within about one and a half row heights
+  // of the closest candidate.
+  const closestGap = Math.min(...directional.map(({ gap }) => Math.max(0, gap)))
+  const sameColumn = directional.filter(
+    ({ candidate, gap }) =>
+      overlapsX(source.rect, candidate.rect) &&
+      Math.max(0, gap) <= closestGap + Math.min(source.rect.height, 40) * 1.5,
+  )
+  const pool = sameColumn.length ? sameColumn : directional
+
+  const nearestGap = Math.min(...pool.map(({ gap }) => Math.max(0, gap)))
   // Controls in one visual row can differ by a few pixels because of labels,
   // borders or mixed control heights. Keep that small band together, then use
   // perpendicular overlap and horizontal distance inside the chosen row.
   const rowTolerance = Math.max(8, Math.min(source.rect.height, 40) * 0.25)
-  const nextRow = directional
+  const nextRow = pool
     .filter(({ gap }) => Math.max(0, gap) <= nearestGap + rowTolerance)
     .map(({ candidate, gap }) => ({ candidate, gap }))
 

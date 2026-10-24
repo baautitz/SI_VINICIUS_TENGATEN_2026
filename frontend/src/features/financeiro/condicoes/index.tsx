@@ -51,7 +51,7 @@ export function CondicoesFeature({
       component: CondicoesUpsert,
       props: { editingItem: null },
       title: "Nova Condição de Pagamento",
-      size: "medium",
+      size: "large",
     });
     if (result.status === "confirmed") {
       await invalidate();
@@ -64,7 +64,7 @@ export function CondicoesFeature({
       component: CondicoesUpsert,
       props: { editingItem: item },
       title: "Editar Condição de Pagamento",
-      size: "medium",
+      size: "large",
     });
     if (result.status === "confirmed") {
       await invalidate();
@@ -77,7 +77,7 @@ export function CondicoesFeature({
       component: CondicoesUpsert,
       props: { editingItem: item, readOnly: true },
       title: "Visualizar Condição de Pagamento",
-      size: "medium",
+      size: "large",
     });
   };
 
