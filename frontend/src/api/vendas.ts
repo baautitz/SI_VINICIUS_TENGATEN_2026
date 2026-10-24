@@ -28,6 +28,8 @@ export const vendasApi = {
     ),
   listDevolucoes: (vendaId: number) =>
     http.get<Devolucao[]>(`/api/vendas/${vendaId}/devolucoes`),
+  estornarDevolucao: (id: number, motivo: string) =>
+    http.post<Resultado<Devolucao>>(`/api/devolucoes/${id}/estornar`, { motivo }),
   createDevolucao: (vendaId: number, data: CriarDevolucaoValues) =>
     http.post<Resultado<Devolucao>>(`/api/vendas/${vendaId}/devolucoes`, data),
 };

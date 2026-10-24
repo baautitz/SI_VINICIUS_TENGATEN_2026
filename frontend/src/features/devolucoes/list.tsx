@@ -3,14 +3,16 @@
 import * as React from "react";
 import { Undo2 } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
+import { Badge } from "@/ui/primitives";
 import { DataTable, FeatureLayout, FeatureHeader } from "@/ui/composites";
-import { getActionsColumn } from "@/utils/table-columns";
+import { getActionsColumn, RowAction } from "@/utils/table-columns";
 import type { DevolucaoResumo } from "@/features/vendas/types";
 import type { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 import { formatToLocal } from "@/utils/date-utils";
 
 interface DevolucoesListProps extends FeatureListProps<DevolucaoResumo> {
   onView: (item: DevolucaoResumo) => void;
+  onEstornar: (item: DevolucaoResumo) => void | Promise<void>;
 }
 
 const brl = (v: number) =>
@@ -26,6 +28,7 @@ export function DevolucoesList({
   onSearchChange,
   onAdd,
   onView,
+  onEstornar,
   onPageChange,
   icon,
 }: DevolucoesListProps) {
@@ -35,6 +38,17 @@ export function DevolucoesList({
       header: "Número",
       size: 80,
       cell: ({ row }) => <span className="font-semibold">#{row.original.id}</span>,
+    },
+    {
+      id: "status",
+      header: "Status",
+      size: 110,
+      cell: ({ row }) =>
+        row.original.status === "ESTORNADA" ? (
+          <Badge variant="destructive">Estornada</Badge>
+        ) : (
+          <Badge variant="secondary">Ativa</Badge>
+        ),
     },
     {
       accessorKey: "dataDevolucao",
@@ -65,7 +79,13 @@ export function DevolucoesList({
         <span className="text-muted-foreground">{row.original.motivo}</span>
       ),
     },
-    getActionsColumn<DevolucaoResumo>({ onView }),
+    getActionsColumn<DevolucaoResumo>({
+      onView,
+      extra: (item) =>
+        item.status !== "ESTORNADA" && (
+          <RowAction kind="estornar" label="Estornar devolução" onClick={() => onEstornar(item)} />
+        ),
+    }),
   ];
 
   return (
@@ -90,6 +110,8 @@ export function DevolucoesList({
           searchPlaceholder="Pesquisar devoluções por cliente ou motivo..."
           getRowId={(row) => row.id.toString()}
           onEditRow={onView}
+          onEstornarRow={onEstornar}
+          podeEstornarRow={(item) => item.status !== "ESTORNADA"}
         />
       </FeatureLayout>
     </div>

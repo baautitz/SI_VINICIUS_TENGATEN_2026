@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Undo2 } from "lucide-react";
 import { DevolucoesList } from "./list";
 import { DevolucaoDetalheWindow, type DevolucaoDetalheWindowProps } from "./detalhe";
+import { useEstornarDevolucao } from "./estornar";
 import { NovaDevolucaoWindow } from "./nova";
 import { useFeatureList } from "@/hooks/use-feature-list";
 import { useDevolucaoFlow } from "@/features/vendas/devolucao-flow";
@@ -18,6 +19,7 @@ export interface DevolucoesFeatureProps {
 export function DevolucoesFeature({ vendaId }: DevolucoesFeatureProps = {}) {
   const ui = useUi();
   const { realizarDevolucao } = useDevolucaoFlow();
+  const estornarDevolucao = useEstornarDevolucao();
   const list = useFeatureList<DevolucaoResumo>();
   const { data, isLoading } = useQuery({
     queryKey: ["devolucoes", list.deferredSearch, vendaId, list.page],
@@ -73,6 +75,7 @@ export function DevolucoesFeature({ vendaId }: DevolucoesFeatureProps = {}) {
       onAdd={add}
       onEdit={view}
       onView={view}
+      onEstornar={(item) => void estornarDevolucao(item.id)}
       onDelete={() => {}}
       onPageChange={list.setPage}
       rowSelection={list.rowSelection}
