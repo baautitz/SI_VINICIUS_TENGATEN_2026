@@ -1,3 +1,5 @@
+using Backend.Core.Common.Results;
+using Backend.Core.Features.Vendas.DTOs;
 using Backend.Core.Features.Vendas.Entities;
 using Backend.Core.Features.Vendas.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;
@@ -21,6 +23,31 @@ public class DevolucoesRepository : IDevolucoesRepository
 
     public async Task<IReadOnlyList<Devolucao>> ObterDevolucoesPorVenda(int vendaId)
         => await Montar(await Consultar("WHERE venda_id = @VendaId ORDER BY id DESC", new { VendaId = vendaId }));
+
+    public async Task<ResultadoPaginado<DevolucaoResumo>> PesquisarDevolucoes(string termo, int pagina = 1, int tamanhoDaPagina = 20, int? vendaId = null)
+    {
+        const string from = @"
+            FROM devolucoes d
+            JOIN vendas v ON v.id = d.venda_id
+            JOIN clientes c ON c.id = v.cliente_id
+            WHERE (unaccent(d.id::text) ILIKE unaccent(@Termo::text) OR unaccent(d.venda_id::text) ILIKE unaccent(@Termo::text)
+                   OR unaccent(c.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(d.motivo::text) ILIKE unaccent(@Termo::text))
+              AND (@VendaId::int IS NULL OR d.venda_id = @VendaId::int)";
+
+        var param = new { Termo = $"%{termo}%", VendaId = vendaId, TamanhoDaPagina = tamanhoDaPagina, Offset = (pagina - 1) * tamanhoDaPagina };
+
+        var total = await _session.Connection.ExecuteScalarAsync<int>($"SELECT COUNT(*) {from};", param, transaction: _session.Transaction);
+
+        var itens = (await _session.Connection.QueryAsync<DevolucaoResumo>(
+            $@"SELECT d.id AS Id, d.venda_id AS VendaId, c.nome_razaosocial AS ClienteNome, d.data_devolucao AS DataDevolucao,
+                      d.valor_total AS ValorTotal, d.motivo AS Motivo
+               {from}
+               ORDER BY d.data_devolucao DESC, d.id DESC
+               LIMIT @TamanhoDaPagina OFFSET @Offset;",
+            param, transaction: _session.Transaction)).ToList();
+
+        return new ResultadoPaginado<DevolucaoResumo>(itens, total, pagina, tamanhoDaPagina);
+    }
 
     public async Task<Devolucao> CriarDevolucao(Devolucao devolucao)
     {

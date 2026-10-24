@@ -7,6 +7,7 @@ using Backend.Core.Common.Extensions;
 using Backend.Core.Common.Results;
 using Backend.Core.Common.Interfaces;
 using Backend.Core.Common.Exceptions;
+using Backend.Core.Features.Vendas.DTOs;
 using Backend.Core.Features.Parceiros.Repositories;
 using Backend.Core.Features.Catalogo.Repositories;
 using Backend.Core.Features.Estoque.Services;
@@ -216,6 +217,9 @@ public sealed class VendasService : BaseService
 
     public Task<Devolucao?> ObterDevolucaoPorId(int id)
         => _devolucoesRepository.ObterDevolucaoPorId(id);
+
+    public Task<ResultadoPaginado<DevolucaoResumo>> PesquisarDevolucoes(string termo, int pagina = 1, int tamanhoDaPagina = 20, int? vendaId = null)
+        => _devolucoesRepository.PesquisarDevolucoes(termo, pagina, tamanhoDaPagina, vendaId);
 
     public Task<IReadOnlyList<Devolucao>> ObterDevolucoesPorVenda(int vendaId)
         => _devolucoesRepository.ObterDevolucoesPorVenda(vendaId);
