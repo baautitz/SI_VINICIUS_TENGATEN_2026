@@ -273,7 +273,7 @@ function BalancoForm({
         },
         {
           id: "balancos.close",
-          hotkey: "Alt+Enter" as const,
+          hotkey: combinacaoDe("confirmar"),
           label: "Finalizar balanço",
           enabled: !readOnly && !busy,
           run: async (event: KeyboardEvent) => {

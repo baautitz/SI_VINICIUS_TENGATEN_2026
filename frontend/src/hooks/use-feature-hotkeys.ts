@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useWindowCommands } from "@/ui/imperative";
+import { combinacaoDe } from "@/lib/atalhos";
 
 interface UseFeatureHotkeysOptions {
   onAdd?: () => void;
@@ -16,7 +17,7 @@ export function useFeatureHotkeys({
   useWindowCommands([
     {
       id: "feature.list.create",
-      hotkey: "Alt+N",
+      hotkey: combinacaoDe("novo"),
       label: "Novo registro",
       run: (event) => {
         event.preventDefault();

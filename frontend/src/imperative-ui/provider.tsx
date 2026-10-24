@@ -38,6 +38,7 @@ import type {
 import type { WindowOptions } from "@/ui/imperative/contracts"
 import { useWindow } from "./active-context"
 import { useWindowCommands } from "./commands"
+import { combinacaoDe } from "@/lib/atalhos";
 
 export type WindowRecord = WindowSnapshotEntry
 
@@ -246,7 +247,7 @@ function ConfirmWindow({
       {
         id: "confirm",
         label: "Confirmar",
-        hotkey: "Alt+Enter" as const,
+        hotkey: combinacaoDe("confirmar"),
         run: () => window.resolve(true),
       },
     ],

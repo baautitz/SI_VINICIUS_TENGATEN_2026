@@ -144,7 +144,7 @@ function VendasCheckout({
       () => [
         {
           id: "vendas.checkout.confirm",
-          hotkey: "Alt+Enter" as const,
+          hotkey: combinacaoDe("confirmar"),
           label: "Finalizar venda",
           enabled: canFinish,
           run: (event: KeyboardEvent) => {
@@ -260,7 +260,7 @@ function VendasCheckout({
         <WindowCancelButton />
         <Button type="button" onClick={finish} disabled={!canFinish}>
           Concluir{" "}
-          <HotkeyKbd hotkey="Alt+Enter" />
+          <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
         </Button>
       </WindowActions>
     </div>
@@ -628,7 +628,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     },
     {
       id: "vendas.submit",
-      hotkey: "Alt+Enter" as const,
+      hotkey: combinacaoDe("confirmar"),
       label: "Avançar para finalização",
       enabled: !readOnly && !mutation.isPending,
       run: async (event: KeyboardEvent) => {
@@ -879,7 +879,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
             ) : (
               <span className="flex items-center gap-2">
                 Ir para Finalização
-                <HotkeyKbd hotkey="Alt+Enter" />
+                <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
               </span>
             )}
           </Button>

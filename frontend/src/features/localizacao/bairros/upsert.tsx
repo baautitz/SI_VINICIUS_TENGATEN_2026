@@ -15,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { bairrosApi } from "@/api/localizacao";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
 import { Spinner } from "@/ui/primitives";
+import { combinacaoDe } from "@/lib/atalhos";
 
 export interface BairrosUpsertProps {
   editingItem: Bairro | null;
@@ -90,7 +91,7 @@ function BairrosUpsertForm({
   useWindowCommands([
     {
       id: "bairros.save",
-      hotkey: "Alt+Enter" as const,
+      hotkey: combinacaoDe("confirmar"),
       label: "Salvar",
       enabled: !readOnly && !mutation.isPending,
       run: async (event) => {

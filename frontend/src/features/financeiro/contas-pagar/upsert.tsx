@@ -140,7 +140,7 @@ export function ContasPagarUpsertForm({ editingItem, readOnly = false }: ContasP
     () => [
       {
         id: "contas-pagar.save",
-        hotkey: "Alt+Enter" as const,
+        hotkey: combinacaoDe("confirmar"),
         label: "Salvar",
         enabled: !somenteLeitura && !mutation.isPending,
         run: async (event: KeyboardEvent) => {

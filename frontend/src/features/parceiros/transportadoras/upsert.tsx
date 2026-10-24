@@ -27,6 +27,7 @@ import { TipoPessoa } from "@/api/types";
 import { Pais } from "@/features/localizacao/paises";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
 import { Spinner } from "@/ui/primitives";
+import { combinacaoDe } from "@/lib/atalhos";
 
 export interface TransportadorasUpsertProps {
   editingItem: Transportadora | null;
@@ -171,7 +172,7 @@ function TransportadorasUpsertForm({
     () => [
       {
         id: "transportadoras.save",
-        hotkey: "Alt+Enter" as const,
+        hotkey: combinacaoDe("confirmar"),
         label: "Salvar",
         enabled: !readOnly && !mutation.isPending,
         run: async (event: KeyboardEvent) => {

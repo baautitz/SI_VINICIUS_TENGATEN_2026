@@ -238,7 +238,7 @@ function CondicoesUpsertForm({
       },
       {
         id: "condicoesPagamento.save",
-        hotkey: "Alt+Enter" as const,
+        hotkey: combinacaoDe("confirmar"),
         label: "Salvar",
         enabled: !readOnly && !mutation.isPending,
         run: async (event: KeyboardEvent) => {

@@ -98,7 +98,7 @@ function CidadesUpsertForm({
   useWindowCommands([
     {
       id: "cidades.save",
-      hotkey: "Alt+Enter" as const,
+      hotkey: combinacaoDe("confirmar"),
       label: "Salvar",
       enabled: !readOnly && !mutation.isPending,
       run: async (event) => {

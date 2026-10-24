@@ -10,6 +10,7 @@ import { Button, Field, FieldError, FieldLabel, Kbd, KbdGroup, Textarea } from "
 import { MovimentacoesList } from "./list";
 import { MovimentacoesUpsert } from "./upsert";
 import { MovimentacaoEstoque, avisoNaoEstornavel, podeEstornar } from "./types";
+import { combinacaoDe } from "@/lib/atalhos";
 
 export * from "./types";
 
@@ -162,7 +163,7 @@ export function EstornoWindow({ pergunta, aviso }: EstornoWindowProps) {
       () => [
         {
           id: "movimentacoes.estorno.confirm",
-          hotkey: "Alt+Enter" as const,
+          hotkey: combinacaoDe("confirmar"),
           label: "Estornar",
           run: (event: KeyboardEvent) => {
             event.preventDefault();

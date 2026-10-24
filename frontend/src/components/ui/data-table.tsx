@@ -33,6 +33,7 @@ import { useOptionalActiveWindow } from "@/ui/imperative";
 import { useNavigationScope } from "@/ui/keyboard-navigation";
 import { InputGroup, InputGroupInput, InputGroupAddon } from "./input-group";
 import { fireAndForget } from "@/lib/utils";
+import { combinacaoDe } from "@/lib/atalhos";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -142,7 +143,7 @@ export function DataTable<TData, TValue>({
     () => [
       {
         id: "table.search",
-        hotkey: "Alt+Q" as const,
+        hotkey: combinacaoDe("busca"),
         label: "Focar busca",
         run: (event: KeyboardEvent) => {
           event.preventDefault();
@@ -152,7 +153,7 @@ export function DataTable<TData, TValue>({
       },
       {
         id: "table.confirm-row",
-        hotkey: "Enter" as const,
+        hotkey: combinacaoDe("abrirLinha"),
         label: "Selecionar ou editar linha",
         enabled: focusedRowIndex !== null && rows.length > 0,
         // Só consome Enter quando uma linha está focada. Se o foco estiver em
@@ -172,7 +173,7 @@ export function DataTable<TData, TValue>({
       },
       {
         id: "table.edit-row",
-        hotkey: "Alt+E" as const,
+        hotkey: combinacaoDe("editarLinha"),
         label: "Editar linha",
         enabled: focusedRowIndex !== null && rows.length > 0 && !!onEditRow,
         run: (event: KeyboardEvent) => {
@@ -255,18 +256,18 @@ export function DataTable<TData, TValue>({
             >
               {(onRowSelect || onEditRow) && (
                 <span className="flex items-center gap-1">
-                  <HotkeyKbd hotkey="Enter" />
+                  <HotkeyKbd hotkey={combinacaoDe("abrirLinha")} />
                   {onRowSelect ? "Selecionar" : "Editar"}
                 </span>
               )}
               {onEditRow && (
                 <span className="flex items-center gap-1">
-                  <HotkeyKbd hotkey="Alt+E" /> Editar
+                  <HotkeyKbd hotkey={combinacaoDe("editarLinha")} /> Editar
                 </span>
               )}
               {onDeleteRow && (
                 <span className="flex items-center gap-1">
-                  <HotkeyKbd hotkey="Delete" /> Excluir
+                  <HotkeyKbd hotkey={combinacaoDe("excluirLinha")} /> Excluir
                 </span>
               )}
             </div>

@@ -9,6 +9,7 @@ import { Field, FieldLabel, FieldError } from "@/ui/primitives";
 import { NumberInput } from "@/ui/composites";
 import { contasPagarApi, contasReceberApi } from "@/api/financeiro";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
+import { combinacaoDe } from "@/lib/atalhos";
 
 export interface BaixaParcelaWindowProps {
   contaId: number;
@@ -97,7 +98,7 @@ export function BaixaParcelaWindow({
     () => [
       {
         id: "financeiro.baixa-parcela.confirm",
-        hotkey: "Alt+Enter" as const,
+        hotkey: combinacaoDe("confirmar"),
         label: "Baixar parcela",
         enabled: !mutation.isPending,
         run: async (event: KeyboardEvent) => {

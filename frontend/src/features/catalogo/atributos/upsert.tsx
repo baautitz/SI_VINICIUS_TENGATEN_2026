@@ -26,6 +26,7 @@ import { Badge } from "@/ui/primitives";
 import { Card, CardContent } from "@/ui/primitives";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
 import { Spinner } from "@/ui/primitives";
+import { combinacaoDe } from "@/lib/atalhos";
 
 export interface AtributosUpsertProps {
   editingItem: SkuAtributoChave | null;
@@ -106,7 +107,7 @@ function AtributosUpsertForm({
     () => [
       {
         id: "atributos.save",
-        hotkey: "Alt+Enter" as const,
+        hotkey: combinacaoDe("confirmar"),
         label: "Salvar",
         enabled: !readOnly && !mutation.isPending,
         run: async (event: KeyboardEvent) => {

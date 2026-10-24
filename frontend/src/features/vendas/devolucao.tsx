@@ -26,6 +26,7 @@ import { vendasApi } from "@/api/vendas";
 import { getFullSkuName } from "@/features/catalogo/skus/types";
 import { formatToLocal } from "@/utils/date-utils";
 import type { CriarDevolucaoValues, Venda } from "./types";
+import { combinacaoDe } from "@/lib/atalhos";
 
 const brl = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -111,7 +112,7 @@ export function DevolucaoWindow({ venda, total: devolucaoTotal }: DevolucaoWindo
       () => [
         {
           id: "vendas.devolucao.confirm",
-          hotkey: "Alt+Enter" as const,
+          hotkey: combinacaoDe("confirmar"),
           label: "Confirmar devolução",
           run: (event: KeyboardEvent) => {
             event.preventDefault();

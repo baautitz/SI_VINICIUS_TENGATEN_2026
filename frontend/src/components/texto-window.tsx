@@ -4,6 +4,7 @@ import React from "react";
 import { WindowActions } from "@/ui/imperative";
 import { Button, Kbd, HotkeyKbd, Field, FieldLabel, Textarea } from "@/ui/primitives";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
+import { combinacaoDe } from "@/lib/atalhos";
 
 export interface TextoWindowProps {
   label: string;
@@ -27,7 +28,7 @@ export function TextoWindow({ label, value, readOnly = true }: TextoWindowProps)
           : [
               {
                 id: "texto.confirm",
-                hotkey: "Alt+Enter" as const,
+                hotkey: combinacaoDe("confirmar"),
                 label: "Confirmar",
                 run: (event: KeyboardEvent) => {
                   event.preventDefault();
@@ -58,7 +59,7 @@ export function TextoWindow({ label, value, readOnly = true }: TextoWindowProps)
         </Button>
         {!readOnly && (
           <Button type="button" onClick={confirm}>
-            Confirmar <HotkeyKbd hotkey="Alt+Enter" />
+            Confirmar <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
           </Button>
         )}
       </WindowActions>

@@ -22,6 +22,7 @@ import { TipoPessoa } from "@/api/types";
 import { Pais } from "@/features/localizacao/paises";
 import { Spinner } from "@/ui/primitives";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
+import { combinacaoDe } from "@/lib/atalhos";
 
 export interface EmitentesUpsertProps {
   editingItem: Emitente | null;
@@ -140,7 +141,7 @@ function EmitentesUpsertForm({
     () => [
       {
         id: "emitentes.save",
-        hotkey: "Alt+Enter" as const,
+        hotkey: combinacaoDe("confirmar"),
         label: "Salvar",
         enabled: !readOnly && !mutation.isPending,
         run: async (event: KeyboardEvent) => {

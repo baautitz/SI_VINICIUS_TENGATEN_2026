@@ -163,7 +163,7 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
       () => [
         {
           id: "fornecedores.save",
-          hotkey: "Alt+Enter" as const,
+          hotkey: combinacaoDe("confirmar"),
           label: "Salvar",
           enabled: !readOnly && !mutation.isPending,
           run: async (event: KeyboardEvent) => {

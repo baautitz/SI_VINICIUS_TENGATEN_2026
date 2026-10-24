@@ -141,7 +141,7 @@ export function ContasReceberUpsertForm({ editingItem, readOnly = false }: Conta
     () => [
       {
         id: "contas-receber.save",
-        hotkey: "Alt+Enter" as const,
+        hotkey: combinacaoDe("confirmar"),
         label: "Salvar",
         enabled: !somenteLeitura && !mutation.isPending,
         run: async (event: KeyboardEvent) => {

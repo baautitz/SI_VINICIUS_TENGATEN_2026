@@ -713,7 +713,7 @@ function CompraForm({
     },
     {
       id: "compras.back",
-      hotkey: "Alt+ArrowLeft" as const,
+      hotkey: combinacaoDe("etapaAnterior"),
       label: "Voltar etapa",
       enabled: etapa > 0 && !mutation.isPending,
       run: (e: KeyboardEvent) => {
@@ -723,7 +723,7 @@ function CompraForm({
     },
     {
       id: "compras.next",
-      hotkey: "Alt+ArrowRight" as const,
+      hotkey: combinacaoDe("etapaSeguinte"),
       label: "Avançar etapa",
       enabled: etapa < 3 && !mutation.isPending,
       run: (e: KeyboardEvent) => {
@@ -733,7 +733,7 @@ function CompraForm({
     },
     {
       id: "compras.confirmar",
-      hotkey: "Alt+Enter" as const,
+      hotkey: combinacaoDe("confirmar"),
       label: "Confirmar",
       enabled: etapa === 3 && !mutation.isPending,
       run: (e: KeyboardEvent) => {
@@ -847,13 +847,13 @@ function CompraForm({
             onClick={() => setEtapa(etapa - 1)}
           >
             Voltar{" "}
-            <HotkeyKbd hotkey="Alt+ArrowLeft" />
+            <HotkeyKbd hotkey={combinacaoDe("etapaAnterior")} />
           </Button>
         )}
         {etapa < 3 ? (
           <Button type="button" onClick={avancar}>
             Avançar{" "}
-            <HotkeyKbd hotkey="Alt+ArrowRight" />
+            <HotkeyKbd hotkey={combinacaoDe("etapaSeguinte")} />
           </Button>
         ) : (
           !readOnly && (
@@ -867,7 +867,7 @@ function CompraForm({
                 : modoXml
                   ? "Confirmar importação"
                   : "Fechar compra"}
-              <HotkeyKbd hotkey="Alt+Enter" />
+              <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
             </Button>
           )
         )}

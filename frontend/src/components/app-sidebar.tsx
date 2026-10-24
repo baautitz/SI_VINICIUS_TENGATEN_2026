@@ -32,6 +32,7 @@ import { Kbd, KbdGroup } from "@/ui/primitives";
 import { InputGroup, InputGroupInput, InputGroupAddon } from "@/ui/primitives";
 import { navigationConfig as groups, homeItem } from "@/config/navigation";
 import { useWindowCommands, useUi } from "@/ui/imperative";
+import { combinacaoDe } from "@/lib/atalhos";
 
 class LocalStorageStore {
   private subscribers = new Set<() => void>();
@@ -195,7 +196,7 @@ export function AppSidebar() {
     () => [
       {
         id: "sidebar.search",
-        hotkey: "Alt+S" as const,
+        hotkey: combinacaoDe("sidebarBuscar"),
         label: "Buscar no menu",
         run: (event: KeyboardEvent) => {
           event.preventDefault();
@@ -209,7 +210,7 @@ export function AppSidebar() {
       {
         // Só vale sem janela aberta: o escopo raiz dos atalhos fica inativo com um modal no topo.
         id: "sidebar.toggle",
-        hotkey: "Alt+B" as const,
+        hotkey: combinacaoDe("sidebarRecolher"),
         label: "Recolher ou expandir o menu",
         run: (event: KeyboardEvent) => {
           event.preventDefault();
@@ -218,7 +219,7 @@ export function AppSidebar() {
       },
       {
         id: "sidebar.home",
-        hotkey: "Alt+H" as const,
+        hotkey: combinacaoDe("sidebarInicio"),
         label: "Ir para início",
         run: (event: KeyboardEvent) => {
           event.preventDefault();

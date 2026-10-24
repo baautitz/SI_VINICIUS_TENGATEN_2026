@@ -17,6 +17,7 @@ import {
 } from "@/ui/primitives";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
 import { extractApiErrors, getApiErrorMessage, type ApiErrorItem } from "@/utils/api-error";
+import { combinacaoDe } from "@/lib/atalhos";
 
 export const MIN_MOTIVO_ESTORNO = 5;
 export const MAX_MOTIVO_ESTORNO = 255;
@@ -54,7 +55,7 @@ export function EstornarCompraWindow({ compraId, temNfe }: EstornarCompraWindowP
   useWindowCommands([
     {
       id: "compras.estornar.confirmar",
-      hotkey: "Alt+Enter",
+      hotkey: combinacaoDe("confirmar"),
       label: "Estornar compra",
       enabled: pode,
       run: (e) => {

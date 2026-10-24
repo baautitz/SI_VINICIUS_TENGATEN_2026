@@ -18,6 +18,7 @@ import { metodosApi } from "@/api/financeiro";
 import { useQuery } from "@tanstack/react-query";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
 import { Spinner } from "@/ui/primitives";
+import { combinacaoDe } from "@/lib/atalhos";
 
 export interface MetodosUpsertProps {
   editingItem: MetodoPagamento | null;
@@ -99,7 +100,7 @@ function MetodosUpsertForm({
     () => [
       {
         id: "metodosPagamento.save",
-        hotkey: "Alt+Enter" as const,
+        hotkey: combinacaoDe("confirmar"),
         label: "Salvar",
         enabled: !readOnly && !mutation.isPending,
         run: async (event: KeyboardEvent) => {

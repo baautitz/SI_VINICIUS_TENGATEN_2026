@@ -11,6 +11,7 @@ import { Sku } from "@/features/catalogo/skus/types";
 import { NumberInput } from "@/ui/composites";
 import { Kbd, KbdGroup } from "@/ui/primitives";
 import { useWindow, useWindowCommands, useUi, WindowActions } from "@/ui/imperative";
+import { combinacaoDe } from "@/lib/atalhos";
 
 interface SkuInputProps {
   name: string;
@@ -123,7 +124,7 @@ function QuantityWindow({ sku, initialQuantity }: QuantityWindowProps) {
   useWindowCommands([
     {
       id: "sku.quantity.confirm",
-      hotkey: "Alt+Enter",
+      hotkey: combinacaoDe("confirmar"),
       label: "Confirmar quantidade",
       run: confirm,
     },
@@ -459,7 +460,7 @@ export const SkuInput = ({
     [
       {
         id: `sku-input.${name}.open-selector`,
-        hotkey: "Alt+K",
+        hotkey: combinacaoDe("adicionarSku"),
         label: "Abrir seleção de SKU",
         enabled: !disabled,
         run: handleSearchHotkey,

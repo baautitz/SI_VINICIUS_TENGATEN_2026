@@ -4,6 +4,7 @@ import { Button } from "@/ui/primitives";
 import { Kbd, KbdGroup } from "@/ui/primitives";
 import { useWindowCommands } from "@/ui/imperative";
 import { fireAndForget } from "@/lib/utils";
+import { combinacaoDe } from "@/lib/atalhos";
 
 interface FeatureHeaderProps {
   title: string;
@@ -24,7 +25,7 @@ export function FeatureHeader({
   useWindowCommands([
     {
       id: `feature.header.${title}.create`,
-      hotkey: "Alt+N",
+      hotkey: combinacaoDe("novo"),
       label: addButtonLabel,
       run: (event) => {
         event.preventDefault();

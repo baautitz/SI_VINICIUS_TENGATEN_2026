@@ -242,7 +242,7 @@ export function MovimentacoesUpsertForm({
         },
         {
           id: "movimentacoes.submit",
-          hotkey: "Alt+Enter" as const,
+          hotkey: combinacaoDe("confirmar"),
           label: "Lançar movimentação",
           enabled: !readOnly && !mutation.isPending,
           run: async (event: KeyboardEvent) => {
@@ -454,7 +454,7 @@ export function MovimentacoesUpsertForm({
                 ) : (
                   <span className="flex items-center gap-2">
                     Lançar{" "}
-                    <HotkeyKbd hotkey="Alt+Enter" />
+                    <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
                   </span>
                 )}
               </Button>
