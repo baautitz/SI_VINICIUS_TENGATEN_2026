@@ -7,7 +7,13 @@ import { useState, useRef, useMemo, useCallback } from "react";
 import type { FormEvent } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/ui/primitives";
-import { Field, FieldGroup, FieldLabel, FieldError } from "@/ui/primitives";
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+  FieldError,
+  FieldDescription,
+} from "@/ui/primitives";
 import { FormFieldUI } from "@/ui/composites";
 import { Textarea } from "@/ui/primitives";
 import { useForm } from "@tanstack/react-form";
@@ -85,6 +91,7 @@ function ProdutosUpsertForm({
   const activeWindow = useWindow<true>();
   const ui = useUi();
   const isEditMode = !!editingItem;
+  const unidadeBloqueada = !!editingItem?.temMovimentacao;
 
   const getUltimaCompra = (skuCode: string) => {
     const match = editingItem?.skus?.find((s) => s.sku === skuCode);
@@ -585,17 +592,24 @@ function ProdutosUpsertForm({
                 }}
               >
                 {(field) => (
-                  <UnidadeMedidaInput
-                    name={field.name}
-                    label="Unidade de Medida"
-                    error={getFieldError(field.name, field.state.meta.errors)}
-                    initialItem={editingItem?.unidadeMedida}
-                    disabled={readOnly}
-                    onSelectItem={(item) => {
-                      field.handleChange(item?.id as number);
-                    }}
-                    onSelectId={() => {}}
-                  />
+                  <>
+                    <UnidadeMedidaInput
+                      name={field.name}
+                      label="Unidade de Medida"
+                      error={getFieldError(field.name, field.state.meta.errors)}
+                      initialItem={editingItem?.unidadeMedida}
+                      disabled={readOnly || unidadeBloqueada}
+                      onSelectItem={(item) => {
+                        field.handleChange(item?.id as number);
+                      }}
+                      onSelectId={() => {}}
+                    />
+                    {unidadeBloqueada && !readOnly && (
+                      <FieldDescription>
+                        Bloqueada: o produto tem movimentações de estoque.
+                      </FieldDescription>
+                    )}
+                  </>
                 )}
               </form.Field>
             </div>

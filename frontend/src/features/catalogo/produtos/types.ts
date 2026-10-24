@@ -15,6 +15,7 @@ export interface Produto {
   unidadeMedida: UnidadeMedida;
   skus: Sku[];
   estoqueTotal: number;
+  temMovimentacao?: boolean;
 }
 
 export const produtoSchema = z.object({
