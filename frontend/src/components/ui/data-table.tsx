@@ -63,6 +63,9 @@ interface DataTableProps<TData, TValue> {
 
   onEditRow?: (row: TData) => void;
   onDeleteRow?: (row: TData) => void;
+  /** Ação de baixar da linha focada; só vale onde `podeBaixarRow` permitir. */
+  onBaixarRow?: (row: TData) => void;
+  podeBaixarRow?: (row: TData) => boolean;
 
   searchInputRef?: React.RefObject<HTMLInputElement | null>;
   hideSearchKbd?: boolean;
@@ -88,6 +91,8 @@ export function DataTable<TData, TValue>({
   onRowSelect,
   onEditRow,
   onDeleteRow,
+  onBaixarRow,
+  podeBaixarRow,
   searchInputRef,
   hideSearchKbd,
 }: DataTableProps<TData, TValue>) {
@@ -182,6 +187,19 @@ export function DataTable<TData, TValue>({
           fireAndForget(() => onEditRow(rows[focusedRowIndex].original));
         },
       },
+      {
+        id: "table.baixar-row",
+        hotkey: combinacaoDe("baixarLinha"),
+        label: "Baixar linha",
+        enabled: focusedRowIndex !== null && rows.length > 0 && !!onBaixarRow,
+        run: (event: KeyboardEvent) => {
+          if (focusedRowIndex === null || !rows[focusedRowIndex] || !onBaixarRow) return;
+          const rowData = rows[focusedRowIndex].original;
+          event.preventDefault();
+          if (podeBaixarRow && !podeBaixarRow(rowData)) return;
+          fireAndForget(() => onBaixarRow(rowData));
+        },
+      },
       ...(["excluirLinha", "excluirLinhaBackspace"] as const).map((atalho) => ({
         id: `table.delete-row.${atalho === "excluirLinha" ? "delete" : "backspace"}`,
         hotkey: combinacaoDe(atalho),
@@ -203,7 +221,7 @@ export function DataTable<TData, TValue>({
         },
       })),
     ],
-    [activeSearchInputRef, focusedRowIndex, onDeleteRow, onEditRow, onRowSelect, rows],
+    [activeSearchInputRef, focusedRowIndex, onBaixarRow, onDeleteRow, onEditRow, onRowSelect, podeBaixarRow, rows],
   );
 
   useWindowCommands(commands);
@@ -260,6 +278,11 @@ export function DataTable<TData, TValue>({
               {onEditRow && (
                 <span className="flex items-center gap-1">
                   <HotkeyKbd hotkey={combinacaoDe("editarLinha")} /> Editar
+                </span>
+              )}
+              {onBaixarRow && (podeBaixarRow?.(rows[focusedRowIndex].original) ?? true) && (
+                <span className="flex items-center gap-1">
+                  <HotkeyKbd hotkey={combinacaoDe("baixarLinha")} /> Baixar
                 </span>
               )}
               {onDeleteRow && (
