@@ -57,7 +57,7 @@ Contas a pagar geradas por uma Compra, tanto da mercadoria quanto do frete.
 _Avoid_: Contas vinculadas, títulos
 
 **Devolução**:
-Retorno de Itens de uma Venda pelo cliente, com motivo, que devolve os Itens ao estoque e abate o valor devolvido da conta a receber da Venda. Uma Venda pode ter várias Devoluções até esgotar o saldo devolvível dos seus Itens.
+Retorno de Itens de uma Venda pelo cliente, com motivo, que devolve os Itens ao estoque e abate o valor devolvido da conta a receber da Venda, que não pode ter Parcela baixada. Uma Venda pode ter várias Devoluções até esgotar o saldo devolvível dos seus Itens.
 _Avoid_: Estorno (é o desfazer de uma baixa ou compra), cancelamento
 
 **Devolução parcial**:
@@ -69,9 +69,9 @@ Devolução de todo o saldo devolvível de todos os Itens da Venda. Após ela a 
 _Avoid_: Devolução completa
 
 **Parcela baixada**:
-Parcela de conta a pagar com algum valor pago, quitada ou parcial. Nenhum fluxo pode alterá-la, excluí-la ou cancelá-la, nem o documento de origem pode ser estornado, até o pagamento ser estornado.
+Parcela de conta a pagar ou a receber com algum valor pago ou recebido, quitada ou parcial. Nenhum fluxo pode alterá-la, excluí-la ou cancelá-la, nem o documento de origem pode ser estornado nem sofrer Devolução, até o pagamento ou recebimento ser estornado.
 _Avoid_: Parcela paga (deixa de fora a parcial)
 
 **Estorno de devolução**:
-Desfazimento de uma Devolução, com motivo: os Itens saem de novo do estoque, o valor volta à conta a receber da Venda e a conta a pagar ao cliente gerada por ela é cancelada. A Devolução fica registrada como estornada e libera o saldo devolvível dos Itens.
+Desfazimento de uma Devolução, com motivo: os Itens saem de novo do estoque, o valor volta à conta a receber da Venda. A Devolução fica registrada como estornada e libera o saldo devolvível dos Itens.
 _Avoid_: Cancelamento de devolução, exclusão de devolução
