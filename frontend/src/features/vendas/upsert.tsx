@@ -11,7 +11,7 @@ import { abrirNfe } from "@/features/nfes";
 import { ApiRequestError } from "@/utils/api-error";
 import { cn } from "@/lib/utils";
 import { Button } from "@/ui/primitives";
-import { Kbd, KbdGroup } from "@/ui/primitives";
+import { HotkeyKbd, Kbd, KbdGroup } from "@/ui/primitives";
 import { Field, FieldLabel, FieldError } from "@/ui/primitives";
 import { NumberInput } from "@/ui/composites";
 import { DatePicker } from "@/ui/composites";
@@ -853,19 +853,19 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
               variant="outline"
               onClick={openMovimentacao}
             >
-              <Boxes /> Movimentação de Estoque <Kbd>Alt+M</Kbd>
+              <Boxes /> Movimentação de Estoque <HotkeyKbd hotkey="Alt+M" />
             </Button>
             <Button type="button" variant="outline" onClick={openContasReceber}>
-              <Receipt /> Contas a Receber <Kbd>Alt+R</Kbd>
+              <Receipt /> Contas a Receber <HotkeyKbd hotkey="Alt+R" />
             </Button>
             <Button type="button" variant="outline" onClick={openDevolucoes}>
-              <Undo2 /> Devoluções <Kbd>Alt+D</Kbd>
+              <Undo2 /> Devoluções <HotkeyKbd hotkey="Alt+D" />
             </Button>
             <Button type="button" variant="outline" onClick={openObservacao}>
-              <FileText /> Observação <Kbd>Alt+O</Kbd>
+              <FileText /> Observação <HotkeyKbd hotkey="Alt+O" />
             </Button>
             <Button type="button" variant="outline" disabled={gerandoNfe} onClick={gerarNfe}>
-              <FilePlus2 /> {gerandoNfe ? "Gerando..." : "Gerar NF-e"} <Kbd>Alt+G</Kbd>
+              <FilePlus2 /> {gerandoNfe ? "Gerando..." : "Gerar NF-e"} <HotkeyKbd hotkey="Alt+G" />
             </Button>
           </div>
         )}
