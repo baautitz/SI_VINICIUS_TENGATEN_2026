@@ -109,6 +109,15 @@ public class ProdutosRepository : IProdutosRepository
 
         var produto = BuildProdutoFromDbRow(produtoDbRow);
 
+        const string movimentacaoSql = @"
+            SELECT EXISTS (
+                SELECT 1 FROM movimentacoes_estoque_itens mei
+                JOIN skus s ON s.sku = mei.sku
+                WHERE s.produto_id = @Id);";
+
+        produto.DefinirTemMovimentacao(await _session.Connection.ExecuteScalarAsync<bool>(
+            movimentacaoSql, new { Id = id }, transaction: _session.Transaction));
+
         var skus = await _session.Connection.QueryAsync<SkuDbRow>(
             skusSql, new { Id = id }, transaction: _session.Transaction);
 
