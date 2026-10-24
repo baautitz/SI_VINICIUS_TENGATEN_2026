@@ -1,5 +1,6 @@
 "use client";
 
+import { combinacaoDe } from "@/lib/atalhos";
 import { Kbd, KbdGroup } from "@/ui/primitives";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import { useState, useRef, useMemo, useCallback } from "react";
@@ -405,7 +406,7 @@ function ProdutosUpsertForm({
     () => [
       {
         id: "produtos.add-option",
-        hotkey: "Alt+O" as const,
+        hotkey: combinacaoDe("adicionarOpcaoProduto"),
         label: "Adicionar opção de produto",
         enabled: !readOnly,
         run: async (event: KeyboardEvent) => {
@@ -415,7 +416,7 @@ function ProdutosUpsertForm({
       },
       {
         id: "produtos.copy-price",
-        hotkey: "Alt+C" as const,
+        hotkey: combinacaoDe("replicarPreco"),
         label: "Replicar preço entre variações",
         enabled: !readOnly && hasVariants,
         run: async (event: KeyboardEvent) => {

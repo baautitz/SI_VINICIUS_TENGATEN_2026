@@ -1,4 +1,5 @@
 "use client";
+import { combinacaoDe } from "@/lib/atalhos";
 import { ContasPagarUpsertForm } from "@/features/financeiro/contas-pagar/upsert";
 import { ContasReceberUpsertForm } from "@/features/financeiro/contas-receber/upsert";
 import { contasPagarApi, contasReceberApi } from "@/api/financeiro";
@@ -167,7 +168,7 @@ function ClientesUpsertForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        {readOnly && editingItem && <RelatedActions actions={[{ id: "cliente.titulos", hotkey: "Alt+T", label: "Títulos", icon: <Receipt className="size-4" />, run: () => related.openList(() => contasReceberApi.listByCliente(editingItem.id).then(mapItens((x) => ({ id: x.id, descricao: x.descricao, detalhe: x.status }))), contasReceberApi.getById, ContasReceberUpsertForm, "Títulos a receber", "Nenhum título deste cliente.", false) }, { id: "cliente.reembolsos", hotkey: "Alt+B", label: "Reembolsos", icon: <Receipt className="size-4" />, run: () => related.openList(() => contasPagarApi.listByCliente(editingItem.id).then(mapItens((x) => ({ id: x.id, descricao: x.descricao, detalhe: x.status }))), contasPagarApi.getById, ContasPagarUpsertForm, "Reembolsos a pagar", "Nenhum reembolso deste cliente.", false) }, { id: "cliente.vendas", hotkey: "Alt+V", label: "Vendas", icon: <ShoppingCart className="size-4" />, run: () => related.openList(() => vendasApi.listByCliente(editingItem.id).then(mapItens((x) => ({ id: x.id, descricao: `Venda #${x.id}`, detalhe: String(x.valorTotal) }))), vendasApi.getById, VendasUpsertForm, "Vendas", "Nenhuma venda deste cliente.") }]} />}
+        {readOnly && editingItem && <RelatedActions actions={[{ id: "cliente.titulos", hotkey: combinacaoDe("verTitulos"), label: "Títulos", icon: <Receipt className="size-4" />, run: () => related.openList(() => contasReceberApi.listByCliente(editingItem.id).then(mapItens((x) => ({ id: x.id, descricao: x.descricao, detalhe: x.status }))), contasReceberApi.getById, ContasReceberUpsertForm, "Títulos a receber", "Nenhum título deste cliente.", false) }, { id: "cliente.reembolsos", hotkey: combinacaoDe("reembolsos"), label: "Reembolsos", icon: <Receipt className="size-4" />, run: () => related.openList(() => contasPagarApi.listByCliente(editingItem.id).then(mapItens((x) => ({ id: x.id, descricao: x.descricao, detalhe: x.status }))), contasPagarApi.getById, ContasPagarUpsertForm, "Reembolsos a pagar", "Nenhum reembolso deste cliente.", false) }, { id: "cliente.vendas", hotkey: combinacaoDe("verVendas"), label: "Vendas", icon: <ShoppingCart className="size-4" />, run: () => related.openList(() => vendasApi.listByCliente(editingItem.id).then(mapItens((x) => ({ id: x.id, descricao: `Venda #${x.id}`, detalhe: String(x.valorTotal) }))), vendasApi.getById, VendasUpsertForm, "Vendas", "Nenhuma venda deste cliente.") }]} />}
         <WindowCancelButton readOnly={readOnly} />
           {!readOnly && (
 <form.Subscribe

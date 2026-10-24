@@ -1,4 +1,5 @@
 "use client";
+import { combinacaoDe } from "@/lib/atalhos";
 import { CidadesUpsert } from "@/features/localizacao/cidades/upsert";
 import { cidadesApi } from "@/api/localizacao";
 import { useRelated, mapItens } from "@/hooks/use-related";
@@ -110,7 +111,7 @@ function EstadosUpsertForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        {readOnly && editingItem && <RelatedActions actions={[{ id: "estado.cidades", hotkey: "Alt+L", label: "Cidades", icon: <MapPin className="size-4" />, run: () => related.openList(() => cidadesApi.listByEstado(editingItem.id).then(mapItens((x) => ({ id: x.id, descricao: x.cidade, detalhe: x.ddd }))), cidadesApi.getById, CidadesUpsert, "Cidades", "Nenhuma cidade neste estado.", false) }]} />}
+        {readOnly && editingItem && <RelatedActions actions={[{ id: "estado.cidades", hotkey: combinacaoDe("verLocalidades"), label: "Cidades", icon: <MapPin className="size-4" />, run: () => related.openList(() => cidadesApi.listByEstado(editingItem.id).then(mapItens((x) => ({ id: x.id, descricao: x.cidade, detalhe: x.ddd }))), cidadesApi.getById, CidadesUpsert, "Cidades", "Nenhuma cidade neste estado.", false) }]} />}
         <WindowCancelButton readOnly={readOnly} />
           {!readOnly && (<form.Subscribe
             selector={(state) => [state.canSubmit, state.isSubmitting]}

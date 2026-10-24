@@ -1,4 +1,5 @@
 "use client";
+import { combinacaoDe } from "@/lib/atalhos";
 import { BairrosUpsert } from "@/features/localizacao/bairros/upsert";
 import { bairrosApi } from "@/api/localizacao";
 import { useRelated, mapItens } from "@/hooks/use-related";
@@ -111,7 +112,7 @@ function CidadesUpsertForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        {readOnly && editingItem && <RelatedActions actions={[{ id: "cidade.bairros", hotkey: "Alt+L", label: "Bairros", icon: <MapPin className="size-4" />, run: () => related.openList(() => bairrosApi.listByCidade(editingItem.id).then(mapItens((x) => ({ id: x.id, descricao: x.bairro }))), bairrosApi.getById, BairrosUpsert, "Bairros", "Nenhum bairro nesta cidade.", false) }]} />}
+        {readOnly && editingItem && <RelatedActions actions={[{ id: "cidade.bairros", hotkey: combinacaoDe("verLocalidades"), label: "Bairros", icon: <MapPin className="size-4" />, run: () => related.openList(() => bairrosApi.listByCidade(editingItem.id).then(mapItens((x) => ({ id: x.id, descricao: x.bairro }))), bairrosApi.getById, BairrosUpsert, "Bairros", "Nenhum bairro nesta cidade.", false) }]} />}
         <WindowCancelButton readOnly={readOnly} />
           {!readOnly && (<form.Subscribe
             selector={(state) => [state.canSubmit, state.isSubmitting]}

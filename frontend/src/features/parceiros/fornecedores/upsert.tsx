@@ -1,4 +1,5 @@
 "use client";
+import { combinacaoDe } from "@/lib/atalhos";
 import { ContasPagarUpsertForm } from "@/features/financeiro/contas-pagar/upsert";
 import { contasPagarApi } from "@/api/financeiro";
 import { useRelated, mapItens } from "@/hooks/use-related";
@@ -179,7 +180,7 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        {readOnly && editingItem && <RelatedActions actions={[{ id: "fornecedor.titulos", hotkey: "Alt+T", label: "Títulos", icon: <Receipt className="size-4" />, run: () => related.openList(() => contasPagarApi.listByFornecedor(editingItem.id).then(mapItens((x) => ({ id: x.id, descricao: x.descricao, detalhe: x.status }))), contasPagarApi.getById, ContasPagarUpsertForm, "Títulos a pagar", "Nenhum título deste fornecedor.", false) }]} />}
+        {readOnly && editingItem && <RelatedActions actions={[{ id: "fornecedor.titulos", hotkey: combinacaoDe("verTitulos"), label: "Títulos", icon: <Receipt className="size-4" />, run: () => related.openList(() => contasPagarApi.listByFornecedor(editingItem.id).then(mapItens((x) => ({ id: x.id, descricao: x.descricao, detalhe: x.status }))), contasPagarApi.getById, ContasPagarUpsertForm, "Títulos a pagar", "Nenhum título deste fornecedor.", false) }]} />}
         <WindowCancelButton readOnly={readOnly} />
           {!readOnly && (
 <form.Subscribe

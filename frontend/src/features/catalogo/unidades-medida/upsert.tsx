@@ -1,4 +1,5 @@
 "use client";
+import { combinacaoDe } from "@/lib/atalhos";
 import { ProdutosUpsert } from "@/features/catalogo/produtos/upsert";
 import { produtosApi } from "@/api/catalogo";
 import { useRelated, mapItens } from "@/hooks/use-related";
@@ -125,7 +126,7 @@ function UnidadesMedidaUpsertForm({
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
-        {readOnly && editingItem && <RelatedActions actions={[{ id: "unidade.produtos", hotkey: "Alt+R", label: "Produtos", icon: <Package className="size-4" />, run: () => related.openList(() => produtosApi.listByFiltro({ unidadeMedidaId: editingItem.id }).then(mapItens((x) => ({ id: x.id, descricao: x.produto }))), produtosApi.getById, ProdutosUpsert, "Produtos (unidade)", "Nenhum produto nesta unidade.", false) }]} />}
+        {readOnly && editingItem && <RelatedActions actions={[{ id: "unidade.produtos", hotkey: combinacaoDe("verProdutos"), label: "Produtos", icon: <Package className="size-4" />, run: () => related.openList(() => produtosApi.listByFiltro({ unidadeMedidaId: editingItem.id }).then(mapItens((x) => ({ id: x.id, descricao: x.produto }))), produtosApi.getById, ProdutosUpsert, "Produtos (unidade)", "Nenhum produto nesta unidade.", false) }]} />}
         <WindowCancelButton readOnly={readOnly} />
         {!readOnly && (<form.Subscribe
           selector={(state) => [state.canSubmit, state.isSubmitting]}
