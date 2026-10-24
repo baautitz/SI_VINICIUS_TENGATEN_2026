@@ -20,6 +20,7 @@ export interface Emitente {
   regimeTributario?: string
   observacao?: string
   ativo: boolean
+  padrao: boolean
   sexo?: string
   dataNascimento?: string
 }
@@ -42,6 +43,7 @@ export const emitenteSchema = z.object({
   regimeTributario: z.string().optional(),
   observacao: z.string().optional(),
   ativo: z.boolean().default(true),
+  padrao: z.boolean().default(false),
 })
 
 export type EmitenteFormValues = z.infer<typeof emitenteSchema>

@@ -941,6 +941,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                 }}
                 onSelectId={() => {}}
                 disabled={readOnly}
+                usarPadrao={!editingItem}
                 error={localErrors["emitenteId"]}
               />
             </div>

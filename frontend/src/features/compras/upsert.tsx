@@ -1060,6 +1060,7 @@ function CompraForm({
                     onSelectItem={setEmitente}
                     onSelectId={() => {}}
                     disabled={readOnly || modoXml}
+                    usarPadrao={!compra}
                   />
                 </div>
               </div>
