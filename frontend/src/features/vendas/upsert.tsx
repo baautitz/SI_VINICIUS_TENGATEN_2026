@@ -11,7 +11,7 @@ import { abrirNfe } from "@/features/nfes";
 import { ApiRequestError } from "@/utils/api-error";
 import { cn } from "@/lib/utils";
 import { Button } from "@/ui/primitives";
-import { HotkeyKbd, Kbd, KbdGroup } from "@/ui/primitives";
+import { HotkeyKbd } from "@/ui/primitives";
 import { Field, FieldLabel, FieldError } from "@/ui/primitives";
 import { NumberInput } from "@/ui/composites";
 import { DatePicker } from "@/ui/composites";
@@ -259,10 +259,7 @@ function VendasCheckout({
         <WindowCancelButton />
         <Button type="button" onClick={finish} disabled={!canFinish}>
           Concluir{" "}
-          <KbdGroup>
-            <Kbd>Alt</Kbd>
-            <Kbd>Enter</Kbd>
-          </KbdGroup>
+          <HotkeyKbd hotkey="Alt+Enter" />
         </Button>
       </WindowActions>
     </div>
@@ -881,10 +878,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
             ) : (
               <span className="flex items-center gap-2">
                 Ir para Finalização
-                <KbdGroup>
-                  <Kbd>Alt</Kbd>
-                  <Kbd>Enter</Kbd>
-                </KbdGroup>
+                <HotkeyKbd hotkey="Alt+Enter" />
               </span>
             )}
           </Button>
