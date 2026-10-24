@@ -62,7 +62,7 @@ export function ContasPagarList({
   const extra = (item: ContasPagar) => (
     <>
       {emAberto(item) && (
-        <RowAction kind="baixar" label="Pagar parcela" onClick={() => onBaixa(item)} />
+        <RowAction kind="baixar" label="Baixar parcela" onClick={() => onBaixa(item)} />
       )}
       {item.valorPago > 0 && item.status !== "CANCELADO" && (
         <RowAction kind="estornar" label="Estornar pagamento" onClick={() => onEstorno(item)} />
@@ -170,6 +170,8 @@ export function ContasPagarList({
           searchPlaceholder="Pesquisar por descrição, documento, nome, CPF/CNPJ, valor ou data..."
           getRowId={(row) => row.id.toString()}
           onEditRow={(item) => (editavel(item) ? onEdit(item) : onView(item))}
+          onBaixarRow={onBaixa}
+          podeBaixarRow={emAberto}
           onDeleteRow={(item) => {
             if (editavel(item)) onDelete(item);
           }}

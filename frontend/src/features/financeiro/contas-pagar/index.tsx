@@ -133,7 +133,7 @@ export function ContasPagarFeature({ compraId }: ContasPagarFeatureProps = {}) {
         tipo: "PAGAR",
         isEstorno,
       },
-      title: isEstorno ? "Estornar Pagamento" : "Registrar Pagamento",
+      title: isEstorno ? "Estornar Pagamento" : "Baixar Parcela",
       description: `${isEstorno ? "Informe o valor a estornar" : "Informe o valor pago"} da parcela ${item.numeroParcela}/${item.totalParcelas} do documento ${item.numeroDocumento}.`,
       size: "small",
     });
