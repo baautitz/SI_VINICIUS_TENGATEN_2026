@@ -1,5 +1,6 @@
 "use client";
 
+import { combinacaoDe } from "@/lib/atalhos";
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Printer } from "lucide-react";
@@ -41,7 +42,7 @@ function imprimirDanfe() {
 /** DANFE simplificado (sem valor fiscal). Impressão pelo navegador: o CSS @media print em globals.css esconde o resto. */
 export function Danfe({ id }: { id: number }) {
   const { data: nfe, isLoading, error } = useQuery({ queryKey: ["nfes", id], queryFn: () => nfesApi.getById(id) });
-  useWindowCommands([{ id: "danfe.imprimir", hotkey: "Alt+I", label: "Imprimir", run: (e) => { e.preventDefault(); imprimirDanfe(); } }]);
+  useWindowCommands([{ id: "danfe.imprimir", hotkey: combinacaoDe("imprimir"), label: "Imprimir", run: (e) => { e.preventDefault(); imprimirDanfe(); } }]);
 
   if (isLoading) return <div className="flex justify-center py-10"><Spinner /></div>;
   if (error || !nfe) return <p className="p-6 text-destructive">Não foi possível carregar a NF-e para impressão.</p>;
@@ -50,7 +51,7 @@ export function Danfe({ id }: { id: number }) {
   return (
     <div className="p-4">
       <div className="mb-4 flex justify-end print:hidden">
-        <Button onClick={imprimirDanfe}><Printer /> Imprimir <HotkeyKbd hotkey="Alt+I" /></Button>
+        <Button onClick={imprimirDanfe}><Printer /> Imprimir <HotkeyKbd hotkey={combinacaoDe("imprimir")} /></Button>
       </div>
       <div id="danfe" className="mx-auto max-w-[800px] bg-white p-3 text-black">
         <div className="border-2 border-black bg-yellow-200 p-2 text-center text-sm font-bold">

@@ -1,5 +1,6 @@
 "use client";
 
+import { combinacaoDe } from "@/lib/atalhos";
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ban, Copy, Download, ExternalLink, FileCode, Printer } from "lucide-react";
@@ -247,18 +248,18 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
   };
 
   useWindowCommands([
-    { id: "nfe.xml", hotkey: "Alt+X", label: "Ver XML", run: (e) => { e.preventDefault(); void acoes.verXml(); } },
-    { id: "nfe.baixar", hotkey: "Alt+D", label: "Baixar XML", run: (e) => { e.preventDefault(); void acoes.baixar(); } },
-    { id: "nfe.imprimir", hotkey: "Alt+I", label: "Imprimir DANFE", run: (e) => { e.preventDefault(); void imprimir(); } },
+    { id: "nfe.xml", hotkey: combinacaoDe("verXml"), label: "Ver XML", run: (e) => { e.preventDefault(); void acoes.verXml(); } },
+    { id: "nfe.baixar", hotkey: combinacaoDe("baixarXml"), label: "Baixar XML", run: (e) => { e.preventDefault(); void acoes.baixar(); } },
+    { id: "nfe.imprimir", hotkey: combinacaoDe("imprimir"), label: "Imprimir DANFE", run: (e) => { e.preventDefault(); void imprimir(); } },
   ]);
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
       <WindowActions>
         <div className="mr-auto flex gap-2">
-          <Button type="button" variant="outline" onClick={() => void acoes.verXml()}><FileCode /> Ver XML <HotkeyKbd hotkey="Alt+X" /></Button>
-          <Button type="button" variant="outline" onClick={() => void acoes.baixar()}><Download /> Baixar XML <HotkeyKbd hotkey="Alt+D" /></Button>
-          <Button type="button" variant="outline" onClick={() => void imprimir()}><Printer /> Imprimir DANFE <HotkeyKbd hotkey="Alt+I" /></Button>
+          <Button type="button" variant="outline" onClick={() => void acoes.verXml()}><FileCode /> Ver XML <HotkeyKbd hotkey={combinacaoDe("verXml")} /></Button>
+          <Button type="button" variant="outline" onClick={() => void acoes.baixar()}><Download /> Baixar XML <HotkeyKbd hotkey={combinacaoDe("baixarXml")} /></Button>
+          <Button type="button" variant="outline" onClick={() => void imprimir()}><Printer /> Imprimir DANFE <HotkeyKbd hotkey={combinacaoDe("imprimir")} /></Button>
           {!podeCancelar && <span role="status" className="text-muted-foreground self-center text-xs">{motivo}</span>}
           {!podeCancelar && entrada && nfe.compraId && (
             <Button type="button" variant="link" className="self-center px-0 text-xs" onClick={() => void abrirCompra()}>
