@@ -1,5 +1,6 @@
 "use client";
 
+import { combinacaoDe } from "@/lib/atalhos";
 import React, { useState } from "react";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import { Button } from "@/ui/primitives";
@@ -150,7 +151,7 @@ export function ContasReceberUpsertForm({ editingItem, readOnly = false }: Conta
       },
       {
         id: "contas-receber.add-parcela",
-        hotkey: "Alt+P" as const,
+        hotkey: combinacaoDe("adicionarParcela"),
         label: "Adicionar parcela",
         enabled: !somenteLeitura && !isEditMode,
         run: async (event: KeyboardEvent) => {

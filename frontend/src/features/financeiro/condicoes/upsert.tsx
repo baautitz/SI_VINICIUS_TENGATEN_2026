@@ -1,5 +1,6 @@
 "use client";
 
+import { combinacaoDe } from "@/lib/atalhos";
 import { Kbd, KbdGroup } from "@/ui/primitives";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import React, { useCallback, useState } from "react";
@@ -216,7 +217,7 @@ function CondicoesUpsertForm({
     () => [
       {
         id: "condicoesPagamento.addInstallment",
-        hotkey: "Alt+P" as const,
+        hotkey: combinacaoDe("adicionarParcela"),
         label: "Adicionar parcela",
         enabled: !readOnly && entradaMinimaPercentual !== 100,
         run: async (event: KeyboardEvent) => {
@@ -226,7 +227,7 @@ function CondicoesUpsertForm({
       },
       {
         id: "condicoesPagamento.distributeInstallments",
-        hotkey: "Alt+C" as const,
+        hotkey: combinacaoDe("distribuir"),
         label: "Distribuir porcentagens",
         enabled:
           !readOnly && parcelas.length > 0 && entradaMinimaPercentual !== 100,

@@ -1,5 +1,6 @@
 "use client";
 
+import { combinacaoDe } from "@/lib/atalhos";
 import React from "react";
 import { SlidersHorizontal } from "lucide-react";
 import { Button, Input, Kbd, KbdGroup, Popover, PopoverContent, PopoverTrigger } from "@/ui/primitives";
@@ -79,7 +80,7 @@ export function FiltrosAvancadosPopover({ valor, onChange }: {
   const ativos = Object.values(valor).filter(Boolean).length;
 
   useWindowCommands([
-    { id: "filtros-avancados.abrir", hotkey: "Alt+F", label: "Abrir filtros avançados", run: () => setAberto(true) },
+    { id: "filtros-avancados.abrir", hotkey: combinacaoDe("filtros"), label: "Abrir filtros avançados", run: () => setAberto(true) },
   ]);
 
   const alterar = (novo: FiltrosAvancados) => {

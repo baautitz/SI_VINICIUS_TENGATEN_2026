@@ -1,5 +1,6 @@
 "use client";
 
+import { combinacaoDe } from "@/lib/atalhos";
 import React, { useState } from "react";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import { Button } from "@/ui/primitives";
@@ -149,7 +150,7 @@ export function ContasPagarUpsertForm({ editingItem, readOnly = false }: ContasP
       },
       {
         id: "contas-pagar.add-parcela",
-        hotkey: "Alt+P" as const,
+        hotkey: combinacaoDe("adicionarParcela"),
         label: "Adicionar parcela",
         enabled: !somenteLeitura && !isEditMode,
         run: async (event: KeyboardEvent) => {
