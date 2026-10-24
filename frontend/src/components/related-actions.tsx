@@ -3,10 +3,11 @@
 import React from "react";
 import { Button, HotkeyKbd } from "@/ui/primitives";
 import { useWindowCommands } from "@/ui/imperative";
+import type { Combinacao } from "@/lib/atalhos";
 
 export interface RelatedAction {
   id: string;
-  hotkey: "Alt+V" | "Alt+R" | "Alt+T" | "Alt+L" | "Alt+B" | "Alt+M" | "Alt+O" | "Alt+S";
+  hotkey: Combinacao;
   label: string;
   icon: React.ReactNode;
   run: () => unknown;
