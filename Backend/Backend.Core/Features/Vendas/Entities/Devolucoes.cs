@@ -106,3 +106,32 @@ public class DevolucaoItens
         CustoUnitario = custoUnitario;
     }
 }
+
+// Quanto uma devolução abateu de uma parcela a receber; estornado marca o registro sem apagá-lo.
+public class DevolucaoAbatimento
+{
+    public int Id { get; private set; }
+    public int DevolucaoId { get; private set; }
+    public int ContaReceberId { get; private set; }
+    public decimal Valor { get; private set; }
+    public DateTime? EstornadoEm { get; private set; }
+
+    protected DevolucaoAbatimento() { }
+
+    public DevolucaoAbatimento(int devolucaoId, int contaReceberId, decimal valor)
+    {
+        if (valor <= 0)
+            throw new DomainException("Valor do abatimento deve ser maior que zero.");
+
+        DevolucaoId = devolucaoId;
+        ContaReceberId = contaReceberId;
+        Valor = valor;
+    }
+
+    public DevolucaoAbatimento(int id, int devolucaoId, int contaReceberId, decimal valor, DateTime? estornadoEm)
+        : this(devolucaoId, contaReceberId, valor)
+    {
+        Id = id;
+        EstornadoEm = estornadoEm;
+    }
+}

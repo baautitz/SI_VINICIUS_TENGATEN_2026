@@ -73,6 +73,23 @@ public class DevolucoesRepository : IDevolucoesRepository
               WHERE id = @Id AND status = 'ATIVA';",
             new { devolucao.Id, devolucao.EstornadoEm, devolucao.MotivoEstorno }, transaction: _session.Transaction) > 0;
 
+    public async Task CriarAbatimento(DevolucaoAbatimento a)
+        => await _session.Connection.ExecuteAsync(
+            "INSERT INTO devolucao_abatimentos (devolucao_id, conta_receber_id, valor) VALUES (@DevolucaoId, @ContaReceberId, @Valor);",
+            a, transaction: _session.Transaction);
+
+    public async Task<IReadOnlyList<DevolucaoAbatimento>> ObterAbatimentosAtivos(int devolucaoId)
+        => (await _session.Connection.QueryAsync<AbatimentoRow>(
+            @"SELECT id, devolucao_id AS DevolucaoId, conta_receber_id AS ContaReceberId, valor AS Valor, estornado_em AS EstornadoEm
+              FROM devolucao_abatimentos WHERE devolucao_id = @DevolucaoId AND estornado_em IS NULL ORDER BY id;",
+            new { DevolucaoId = devolucaoId }, transaction: _session.Transaction))
+            .Select(r => new DevolucaoAbatimento(r.Id, r.DevolucaoId, r.ContaReceberId, r.Valor, r.EstornadoEm)).ToList();
+
+    public async Task MarcarAbatimentosEstornados(int devolucaoId, DateTime estornadoEm)
+        => await _session.Connection.ExecuteAsync(
+            "UPDATE devolucao_abatimentos SET estornado_em = @EstornadoEm WHERE devolucao_id = @DevolucaoId AND estornado_em IS NULL;",
+            new { DevolucaoId = devolucaoId, EstornadoEm = estornadoEm }, transaction: _session.Transaction);
+
     private async Task<List<DevolucaoRow>> Consultar(string filtro, object param)
         => (await _session.Connection.QueryAsync<DevolucaoRow>($"{SelecaoDevolucao} {filtro};", param, transaction: _session.Transaction)).ToList();
 
@@ -96,6 +113,8 @@ public class DevolucoesRepository : IDevolucoesRepository
     }
 
     private sealed record DevolucaoRow(int Id, int VendaId, DateTime DataDevolucao, string Motivo, decimal ValorTotal, string Status, DateTime? EstornadoEm, string? MotivoEstorno);
+
+    private sealed record AbatimentoRow(int Id, int DevolucaoId, int ContaReceberId, decimal Valor, DateTime? EstornadoEm);
 
     private sealed record ItemRow(int Id, int DevolucaoId, int VendaItemId, string Sku, decimal Quantidade, decimal ValorUnitario, decimal CustoUnitario);
 }

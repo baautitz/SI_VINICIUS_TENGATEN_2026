@@ -13,4 +13,8 @@ public interface IDevolucoesRepository
     public Task<Devolucao> CriarDevolucao(Devolucao devolucao);
     // UPDATE guardado (status ATIVA): false se outro estorno já a marcou.
     public Task<bool> MarcarEstornada(Devolucao devolucao);
+    public Task CriarAbatimento(DevolucaoAbatimento abatimento);
+    // Só os abatimentos ainda não estornados, na ordem em que foram gravados.
+    public Task<IReadOnlyList<DevolucaoAbatimento>> ObterAbatimentosAtivos(int devolucaoId);
+    public Task MarcarAbatimentosEstornados(int devolucaoId, DateTime estornadoEm);
 }
