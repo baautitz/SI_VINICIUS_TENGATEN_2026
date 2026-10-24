@@ -44,3 +44,11 @@ export type Combinacao = Atalho["combinacao"];
 export function combinacaoDe(id: AtalhoId): Combinacao {
   return ATALHOS[id].combinacao;
 }
+
+// Falha a compilacao se duas combinacoes forem iguais.
+type Duplicados = {
+  [K in AtalhoId]: {
+    [J in Exclude<AtalhoId, K>]: (typeof ATALHOS)[K]["combinacao"] extends (typeof ATALHOS)[J]["combinacao"] ? K : never;
+  }[Exclude<AtalhoId, K>];
+}[AtalhoId];
+export const semAtalhosDuplicados: [Duplicados] extends [never] ? true : never = true;
