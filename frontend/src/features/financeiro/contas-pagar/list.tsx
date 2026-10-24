@@ -21,7 +21,7 @@ interface ContasPagarListProps extends FeatureListProps<ContasPagar> {
   status: string;
   origem: string;
   documento: DocumentoFiltro | null;
-  compraTravada?: boolean;
+  compraId?: number;
   avancados: FiltrosAvancados;
   onAvancadosChange: (v: FiltrosAvancados) => void;
   onStatusChange: (v: string) => void;
@@ -51,7 +51,7 @@ const Filtro = ({ valor, onChange, rotulo, opcoes, disabled }: {
 
 export function ContasPagarList({
   items: contas, loading, searchTerm, page, totalPages, totalItems,
-  status, origem, documento, compraTravada, avancados, onAvancadosChange,
+  status, origem, documento, compraId, avancados, onAvancadosChange,
   onSearchChange, onAdd, onEdit, onDelete, onView, onPageChange,
   onStatusChange, onOrigemChange, onDocumentoChange, onBaixa, onEstorno,
 }: ContasPagarListProps) {
@@ -176,10 +176,10 @@ export function ContasPagarList({
           actions={
             <>
               <Filtro valor={status} onChange={onStatusChange} rotulo="Status" opcoes={statusTituloLabels} />
-              <Filtro valor={origem} onChange={onOrigemChange} rotulo="Origem" opcoes={origemTituloLabels} disabled={compraTravada} />
+              <Filtro valor={origem} onChange={onOrigemChange} rotulo="Origem" opcoes={origemTituloLabels} disabled={compraId !== undefined} />
               <FiltrosAvancadosPopover valor={avancados} onChange={onAvancadosChange} />
-              {compraTravada && (
-                <Button variant="outline" disabled>Parcelas da compra</Button>
+              {compraId !== undefined && (
+                <Button variant="outline" disabled>Compra: #{compraId}</Button>
               )}
               {documento && (
                 <Button variant="outline" onClick={() => onDocumentoChange(null)}>

@@ -161,7 +161,7 @@ export function ContasPagarFeature({ compraId }: ContasPagarFeatureProps = {}) {
       status={status}
       origem={origem}
       documento={documento}
-      compraTravada={compraId !== undefined}
+      compraId={compraId}
       avancados={avancados}
       onAvancadosChange={(v) => { setAvancados(v); setPage(1); }}
       onStatusChange={(v) => { setStatus(v); setPage(1); }}
