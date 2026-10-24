@@ -842,7 +842,6 @@ function CompraForm({
           <Button
             type="button"
             variant="destructive"
-            className="mr-auto"
             onClick={() => void estornar()}
           >
             <Undo2 /> Estornar compra <HotkeyKbd hotkey={combinacaoDe("estornar")} />
