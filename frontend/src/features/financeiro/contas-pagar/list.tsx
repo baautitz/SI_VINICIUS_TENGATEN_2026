@@ -81,12 +81,12 @@ export function ContasPagarList({
         return (
           <button
             type="button"
-            className="text-left hover:underline"
+            className="flex flex-col text-left"
             title="Ver todas as parcelas deste documento"
             onClick={() => onDocumentoChange({ numeroDocumento: i.numeroDocumento, origemTipo: i.origemTipo, origemId: i.origemId ?? null })}
           >
-            <span className="text-muted-foreground">{origemTituloLabels[i.origemTipo] ?? i.origemTipo}</span>{" "}
-            <span className="font-semibold text-foreground">{i.numeroDocumento}</span>
+            <span className="font-medium text-foreground hover:underline">{i.numeroDocumento}</span>
+            <span className="text-xs text-muted-foreground">{origemTituloLabels[i.origemTipo] ?? i.origemTipo}</span>
           </button>
         );
       },
