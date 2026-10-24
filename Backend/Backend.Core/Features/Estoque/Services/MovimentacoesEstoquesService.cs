@@ -71,7 +71,7 @@ public sealed class MovimentacoesEstoquesService : BaseService
             if (sku == null)
                 return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("SKU_INEXISTENTE", $"O SKU '{itemCommand.Sku}' não existe.", "Itens"));
 
-            movimentacao.AdicionarItem(sku, itemCommand.Quantidade, itemCommand.CustoUnitario ?? 0);
+            movimentacao.AdicionarItem(sku, itemCommand.Quantidade, itemCommand.CustoUnitario ?? sku.CustoMedio);
         }
 
         return await ExecutarEmTransacao(movimentacao, null);
@@ -175,7 +175,7 @@ public sealed class MovimentacoesEstoquesService : BaseService
 
             if (movimentacao.TipoMovimentacao == TipoMovimentacaoEstoque.ENTRADA)
             {
-                sku.RegistrarEntradaDeEstoque(item.Quantidade, item.CustoUnitario);
+                sku.RegistrarEntradaDeEstoque(item.Quantidade, item.CustoUnitario, movimentacao.OrigemTipo == OrigemMovimentacaoEstoque.COMPRA);
             }
             else
             {
