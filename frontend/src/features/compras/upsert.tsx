@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CornerDownLeft, Plus, RefreshCw, Trash2, TriangleAlert, Undo2 } from "lucide-react";
+import { Plus, RefreshCw, Trash2, TriangleAlert, Undo2 } from "lucide-react";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import { fornecedoresApi, transportadorasApi } from "@/api/parceiros";
 import { FornecedoresUpsert } from "@/features/parceiros/fornecedores/upsert";
@@ -40,9 +40,7 @@ import {
   FieldError,
   FieldLabel,
   Input,
-  Kbd,
   HotkeyKbd,
-  KbdGroup,
   Spinner,
   Textarea,
 } from "@/ui/primitives";
@@ -868,10 +866,7 @@ function CompraForm({
                 : modoXml
                   ? "Confirmar importação"
                   : "Fechar compra"}
-              <KbdGroup>
-                <Kbd>Alt</Kbd>
-                <Kbd><CornerDownLeft className="size-3" /></Kbd>
-              </KbdGroup>
+              <HotkeyKbd hotkey="Alt+Enter" />
             </Button>
           )
         )}
