@@ -8,14 +8,29 @@ import type { Venda } from "./types";
 import { useFeatureList } from "@/hooks/use-feature-list";
 import { vendasApi } from "@/api/vendas";
 import { useUi } from "@/ui/imperative";
+import type { ReactNode } from "react";
+import { ShoppingBag } from "lucide-react";
 
 export * from "./types";
 
-export function VendasFeature() {
+interface VendasFeatureProps {
+  /** O mesmo ícone é usado no cabeçalho da página, seleção modal e titlebar. */
+  icon?: ReactNode;
+  selectionMode?: boolean;
+  onSelect?: (venda: Venda) => void;
+  initialSearchTerm?: string;
+}
+
+export function VendasFeature({
+  icon,
+  selectionMode = false,
+  onSelect,
+  initialSearchTerm = "",
+}: VendasFeatureProps = {}) {
   const ui = useUi();
   const { realizarDevolucao } = useDevolucaoFlow();
   const queryClient = useQueryClient();
-  const list = useFeatureList<Venda>();
+  const list = useFeatureList<Venda>({ initialSearchTerm });
   const { data, isLoading } = useQuery({
     queryKey: ["vendas", list.deferredSearch, list.page],
     queryFn: async () => {
@@ -66,8 +81,17 @@ export function VendasFeature() {
     await realizarDevolucao(item);
   };
 
+  const selectVenda = async (item: Venda) => {
+    if (item.statusDevolucao === "TOTAL") {
+      ui.feedback.notify({ type: "info", title: "Venda totalmente devolvida não pode ser selecionada." });
+      return;
+    }
+    await onSelect?.(item);
+  };
+
   return (
     <VendasList
+      icon={icon ?? <ShoppingBag />}
       items={data?.itens ?? []}
       loading={isLoading}
       searchTerm={list.searchTerm}
@@ -84,6 +108,8 @@ export function VendasFeature() {
       onRowSelectionChange={list.setRowSelection}
       selectAllAcrossPages={list.selectAllAcrossPages}
       onSelectAllAcrossPagesChange={list.setSelectAllAcrossPages}
+      selectionMode={selectionMode}
+      onSelect={selectVenda}
     />
   );
 }
