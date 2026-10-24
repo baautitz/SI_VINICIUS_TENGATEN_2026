@@ -40,6 +40,16 @@ assert.equal(
   "vertical navigation chooses the next visual row before perpendicular overlap",
 )
 
+// Duas colunas lado a lado: a seta segue a coluna da origem.
+const colSource = node("col-source", 0, 200, 200, 32)
+const colAbove = node("col-above", 0, 138, 200, 32)
+const otherColumnCloser = node("other-column-closer", 300, 158, 200, 32)
+assert.equal(
+  chooseSpatialDestination(colSource, [otherColumnCloser, colAbove], "up"),
+  "col-above",
+  "vertical navigation stays in the source column when the neighbour column is only slightly closer",
+)
+
 const left = node("left", 0, 10)
 const right = node("right", 140, 10)
 const below = node("below", 10, 70)
