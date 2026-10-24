@@ -142,6 +142,10 @@ public class Skus
         _atributos.AddRange(atributos);
     }
 
+    // Unidade sem decimais só aceita quantidade inteira.
+    public bool AceitaQuantidade(decimal quantidade)
+        => Produto is null || Produto.UnidadeMedida.PermiteDecimais || quantidade == decimal.Truncate(quantidade);
+
     public void AtualizarProduto(Produtos produto)
     {
         Produto = produto ?? throw new DomainException("Produto é obrigatório.");
