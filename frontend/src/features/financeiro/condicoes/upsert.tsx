@@ -330,75 +330,12 @@ function CondicoesUpsertForm({
         >
           <div className="flex min-w-0 flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <h3 className="text-sm font-semibold tracking-wider">
-                Informações Gerais
-              </h3>
+              <div className="flex h-9 items-center">
+                <h3 className="text-sm font-semibold tracking-wider">
+                  Informações Gerais
+                </h3>
+              </div>
               <Separator />
-            </div>
-
-            <div className="flex w-full flex-wrap items-start gap-4">
-              {editingItem && (
-                <div className="w-20 shrink-0">
-                  <div className="flex flex-col gap-2">
-                    <FieldLabel>ID</FieldLabel>
-                    <Input
-                      value={editingItem.id}
-                      readOnly
-                      aria-label="ID"
-                      className="h-8 text-xs"
-                      inputSize="full"
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="min-w-48 flex-1">
-                <form.Field
-                  name="descricao"
-                  validators={{
-                    onChange: condicaoPagamentoBaseSchema.shape.descricao,
-                  }}
-                >
-                  {(field) => (
-                    <FormFieldUI
-                      field={field}
-                      label="Descrição da Condição"
-                      inputSize="full"
-                      getFieldError={getFieldError}
-                      maxLength={150}
-                      readOnly={readOnly}
-                    />
-                  )}
-                </form.Field>
-              </div>
-
-              <div className="w-72 min-w-48 flex-1 shrink-0 md:flex-initial">
-                <form.Field
-                  name="metodoPagamentoCodigo"
-                  validators={{
-                    onChange:
-                      condicaoPagamentoBaseSchema.shape.metodoPagamentoCodigo,
-                  }}
-                >
-                  {(field) => {
-                    const error = getFieldError(
-                      field.name,
-                      field.state.meta.errors,
-                    );
-                    return (
-                      <MetodoPagamentoInput
-                        name={field.name}
-                        error={error}
-                        initialItem={editingItem?.metodoPagamento ?? null}
-                        onSelectCodigo={(codigo) =>
-                          field.handleChange(codigo ?? "")
-                        }
-                        disabled={readOnly}
-                      />
-                    );
-                  }}
-                </form.Field>
-              </div>
             </div>
 
             <form.Subscribe
@@ -412,169 +349,225 @@ function CondicoesUpsertForm({
                 const hasAcrescimo = (acrescimo ?? 0) > 0;
 
                 return (
-                  <>
-                    <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 items-start gap-x-4 gap-y-4">
+                    {editingItem && (
+                      <div className="col-span-2">
+                        <FieldLabel>ID</FieldLabel>
+                        <Input
+                          value={editingItem.id}
+                          readOnly
+                          aria-label="ID"
+                          className="mt-2 h-8 text-xs"
+                          inputSize="full"
+                        />
+                      </div>
+                    )}
+
+                    <div className="col-span-2">
                       <form.Field
-                        name="entradaMinimaPercentual"
+                        name="descricao"
+                        validators={{
+                          onChange: condicaoPagamentoBaseSchema.shape.descricao,
+                        }}
+                      >
+                        {(field) => (
+                          <FormFieldUI
+                            field={field}
+                            label="Descrição da Condição"
+                            inputSize="full"
+                            getFieldError={getFieldError}
+                            maxLength={150}
+                            readOnly={readOnly}
+                          />
+                        )}
+                      </form.Field>
+                    </div>
+
+                    <div className="col-span-2">
+                      <form.Field
+                        name="metodoPagamentoCodigo"
                         validators={{
                           onChange:
                             condicaoPagamentoBaseSchema.shape
-                              .entradaMinimaPercentual,
+                              .metodoPagamentoCodigo,
                         }}
                       >
                         {(field) => {
-                          const isChecked = field.state.value === 100;
+                          const error = getFieldError(
+                            field.name,
+                            field.state.meta.errors,
+                          );
                           return (
-                            <div className="flex flex-col gap-2">
-                              <FormFieldUI
-                                field={field}
-                                label="Entrada Mínima (%)"
-                                type="number"
-                                inputSize="full"
-                                getFieldError={getFieldError}
-                                readOnly={readOnly || isChecked}
-                                min={0}
-                                max={100}
-                              />
-                              <div className="mt-1 flex items-center gap-2">
-                                <Checkbox
-                                  id="a-vista-checkbox"
-                                  checked={isChecked}
-                                  disabled={readOnly}
-                                  onCheckedChange={(checked) => {
-                                    field.handleChange(checked ? 100 : 0);
-                                  }}
-                                />
-                                <FieldLabel
-                                  htmlFor="a-vista-checkbox"
-                                  className="cursor-pointer text-xs font-semibold select-none"
-                                >
-                                  À Vista
-                                </FieldLabel>
-                              </div>
-                            </div>
+                            <MetodoPagamentoInput
+                              name={field.name}
+                              error={error}
+                              initialItem={editingItem?.metodoPagamento ?? null}
+                              onSelectCodigo={(codigo) =>
+                                field.handleChange(codigo ?? "")
+                              }
+                              disabled={readOnly}
+                            />
                           );
                         }}
                       </form.Field>
-
-                      <form.Field
-                        name="descontoPercentual"
-                        validators={{
-                          onChange:
-                            condicaoPagamentoBaseSchema.shape
-                              .descontoPercentual,
-                        }}
-                      >
-                        {(field) => (
-                          <FormFieldUI
-                            field={field}
-                            label="Desconto (%)"
-                            type="number"
-                            inputSize="full"
-                            getFieldError={getFieldError}
-                            readOnly={readOnly || hasAcrescimo}
-                          />
-                        )}
-                      </form.Field>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <form.Field
-                        name="acrescimoPercentual"
-                        validators={{
-                          onChange:
-                            condicaoPagamentoBaseSchema.shape
-                              .acrescimoPercentual,
-                        }}
-                      >
-                        {(field) => (
-                          <FormFieldUI
-                            field={field}
-                            label="Acréscimo (%)"
-                            type="number"
-                            inputSize="full"
-                            getFieldError={getFieldError}
-                            readOnly={readOnly || hasDesconto}
-                          />
-                        )}
-                      </form.Field>
+                    <form.Field
+                      name="entradaMinimaPercentual"
+                      validators={{
+                        onChange:
+                          condicaoPagamentoBaseSchema.shape
+                            .entradaMinimaPercentual,
+                      }}
+                    >
+                      {(field) => {
+                        const isChecked = field.state.value === 100;
+                        return (
+                          <>
+                            <FormFieldUI
+                              field={field}
+                              label="Entrada Mínima (%)"
+                              type="number"
+                              inputSize="full"
+                              getFieldError={getFieldError}
+                              readOnly={readOnly || isChecked}
+                              min={0}
+                              max={100}
+                            />
+                            <div className="flex h-8 items-center gap-2 self-end">
+                              <Checkbox
+                                id="a-vista-checkbox"
+                                checked={isChecked}
+                                disabled={readOnly}
+                                onCheckedChange={(checked) => {
+                                  field.handleChange(checked ? 100 : 0);
+                                }}
+                              />
+                              <FieldLabel
+                                htmlFor="a-vista-checkbox"
+                                className="cursor-pointer text-xs font-semibold select-none"
+                              >
+                                À Vista
+                              </FieldLabel>
+                            </div>
+                          </>
+                        );
+                      }}
+                    </form.Field>
 
-                      <form.Field
-                        name="multaPercentual"
-                        validators={{
-                          onChange:
-                            condicaoPagamentoBaseSchema.shape.multaPercentual,
-                        }}
-                      >
-                        {(field) => (
-                          <FormFieldUI
-                            field={field}
-                            label="Multa (%)"
-                            type="number"
-                            inputSize="full"
-                            getFieldError={getFieldError}
-                            readOnly={readOnly}
-                          />
-                        )}
-                      </form.Field>
+                    <form.Field
+                      name="descontoPercentual"
+                      validators={{
+                        onChange:
+                          condicaoPagamentoBaseSchema.shape.descontoPercentual,
+                      }}
+                    >
+                      {(field) => (
+                        <FormFieldUI
+                          field={field}
+                          label="Desconto (%)"
+                          type="number"
+                          inputSize="full"
+                          getFieldError={getFieldError}
+                          readOnly={readOnly || hasAcrescimo}
+                        />
+                      )}
+                    </form.Field>
 
-                      <form.Field
-                        name="taxaJurosPercentual"
-                        validators={{
-                          onChange:
-                            condicaoPagamentoBaseSchema.shape
-                              .taxaJurosPercentual,
-                        }}
-                      >
-                        {(field) => (
-                          <FormFieldUI
-                            field={field}
-                            label="Juros (%)"
-                            type="number"
-                            inputSize="full"
-                            getFieldError={getFieldError}
-                            readOnly={readOnly}
-                          />
-                        )}
-                      </form.Field>
-                    </div>
-                  </>
+                    <form.Field
+                      name="acrescimoPercentual"
+                      validators={{
+                        onChange:
+                          condicaoPagamentoBaseSchema.shape
+                            .acrescimoPercentual,
+                      }}
+                    >
+                      {(field) => (
+                        <FormFieldUI
+                          field={field}
+                          label="Acréscimo (%)"
+                          type="number"
+                          inputSize="full"
+                          getFieldError={getFieldError}
+                          readOnly={readOnly || hasDesconto}
+                        />
+                      )}
+                    </form.Field>
+
+                    <form.Field
+                      name="multaPercentual"
+                      validators={{
+                        onChange:
+                          condicaoPagamentoBaseSchema.shape.multaPercentual,
+                      }}
+                    >
+                      {(field) => (
+                        <FormFieldUI
+                          field={field}
+                          label="Multa (%)"
+                          type="number"
+                          inputSize="full"
+                          getFieldError={getFieldError}
+                          readOnly={readOnly}
+                        />
+                      )}
+                    </form.Field>
+
+                    <form.Field
+                      name="taxaJurosPercentual"
+                      validators={{
+                        onChange:
+                          condicaoPagamentoBaseSchema.shape.taxaJurosPercentual,
+                      }}
+                    >
+                      {(field) => (
+                        <FormFieldUI
+                          field={field}
+                          label="Juros (%)"
+                          type="number"
+                          inputSize="full"
+                          getFieldError={getFieldError}
+                          readOnly={readOnly}
+                        />
+                      )}
+                    </form.Field>
+
+                    <form.Field name="ativo">
+                      {(field) => {
+                        const error = getFieldError(
+                          field.name,
+                          field.state.meta.errors,
+                        );
+                        return (
+                          <Field
+                            orientation="horizontal"
+                            data-invalid={!!error}
+                            className="col-span-2"
+                          >
+                            <Checkbox
+                              id={field.name}
+                              name={field.name}
+                              checked={field.state.value}
+                              onCheckedChange={(checked) =>
+                                field.handleChange(!!checked)
+                              }
+                              disabled={readOnly}
+                            />
+                            <FieldLabel htmlFor={field.name}>Ativo</FieldLabel>
+                          </Field>
+                        );
+                      }}
+                    </form.Field>
+                  </div>
                 );
               }}
             </form.Subscribe>
-
-            <form.Field name="ativo">
-              {(field) => {
-                const error = getFieldError(
-                  field.name,
-                  field.state.meta.errors,
-                );
-                return (
-                  <Field
-                    orientation="horizontal"
-                    data-invalid={!!error}
-                    className="mt-2"
-                  >
-                    <Checkbox
-                      id={field.name}
-                      name={field.name}
-                      checked={field.state.value}
-                      onCheckedChange={(checked) =>
-                        field.handleChange(!!checked)
-                      }
-                      disabled={readOnly}
-                    />
-                    <FieldLabel htmlFor={field.name}>Ativo</FieldLabel>
-                  </Field>
-                );
-              }}
-            </form.Field>
           </div>
 
           {entradaMinimaPercentual === 100 ? null : (
             <div className="flex min-w-0 flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex h-9 items-center justify-between gap-2">
                   <h3 className="text-sm font-semibold tracking-wider">
                     Parcelas
                   </h3>
