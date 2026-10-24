@@ -103,6 +103,18 @@ public class UnidadesMedidaRepository : IUnidadesMedidaRepository
         }
     }
 
+    public async Task<bool> UnidadeTemMovimentacao(int id)
+    {
+        const string sql = @"
+            SELECT EXISTS (
+                SELECT 1 FROM movimentacoes_estoque_itens mei
+                JOIN skus s ON s.sku = mei.sku
+                JOIN produtos p ON p.id = s.produto_id
+                WHERE p.unidade_medida_id = @Id);";
+
+        return await _session.Connection.ExecuteScalarAsync<bool>(sql, new { Id = id }, transaction: _session.Transaction);
+    }
+
     public async Task<ResultadoPaginado<UnidadesMedida>> PesquisarUnidadesMedida(string termo, int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
