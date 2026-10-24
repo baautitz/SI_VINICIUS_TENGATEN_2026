@@ -158,6 +158,7 @@ Os componentes são compactos, uniformes e desenhados para responder de forma im
 - **Focus:** Contorno azul com anel suave (`focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50`).
 - **Error:** Borda vermelha (`aria-invalid:border-destructive`) e anel avermelhado (`aria-invalid:ring-destructive/20`).
 
+- **Desabilitado / Visualização:** Fundo `bg-field-disabled` (token único, nunca `opacity-50` no campo todo). O texto permanece legível (`text-foreground`, contraste 4.5:1). Campos em Visualização usam `readOnly` quando o componente permite, para continuar focáveis e copiáveis.
 ### Feedback and transient states
 
 - **Field validation:** Erros de preenchimento pertencem ao campo: usar `aria-invalid`, mensagem inline e foco no primeiro campo inválido quando a ação de envio for bloqueada.

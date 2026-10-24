@@ -22,6 +22,7 @@
     --color-chart-1: var(--chart-1);
     --color-ring: var(--ring);
     --color-input: var(--input);
+    --color-field-disabled: var(--field-disabled);
     --color-border: var(--border);
     --color-destructive: var(--destructive);
     --color-success: var(--success);
@@ -71,6 +72,7 @@
     --info: oklch(0.488 0.243 264.376);
     --border: oklch(0.92 0.004 286.32);
     --input: oklch(0.92 0.004 286.32);
+    --field-disabled: oklch(0.955 0.003 286.32);
     --ring: oklch(0.705 0.015 286.067);
     --chart-1: oklch(0.865 0.127 207.078);
     --chart-2: oklch(0.715 0.143 215.221);
@@ -109,6 +111,7 @@
     --info: oklch(0.707 0.165 254.624);
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
+    --field-disabled: oklch(0.24 0.006 285.885);
     --ring: oklch(0.552 0.016 285.938);
     --chart-1: oklch(0.865 0.127 207.078);
     --chart-2: oklch(0.715 0.143 215.221);
