@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, CornerDownLeft, Plus, RefreshCw, Trash2, TriangleAlert, Undo2 } from "lucide-react";
+import { CornerDownLeft, Plus, RefreshCw, Trash2, TriangleAlert, Undo2 } from "lucide-react";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import { fornecedoresApi, transportadorasApi } from "@/api/parceiros";
 import { FornecedoresUpsert } from "@/features/parceiros/fornecedores/upsert";
@@ -41,6 +41,7 @@ import {
   FieldLabel,
   Input,
   Kbd,
+  HotkeyKbd,
   KbdGroup,
   Spinner,
   Textarea,
@@ -836,7 +837,7 @@ function CompraForm({
             className="mr-auto"
             onClick={() => void estornar()}
           >
-            <Undo2 /> Estornar compra <Kbd>Alt+Z</Kbd>
+            <Undo2 /> Estornar compra <HotkeyKbd hotkey="Alt+Z" />
           </Button>
         )}
         <WindowCancelButton readOnly={readOnly} />
@@ -847,19 +848,13 @@ function CompraForm({
             onClick={() => setEtapa(etapa - 1)}
           >
             Voltar{" "}
-            <KbdGroup>
-              <Kbd>Alt</Kbd>
-              <Kbd><ArrowLeft className="size-3" /></Kbd>
-            </KbdGroup>
+            <HotkeyKbd hotkey="Alt+ArrowLeft" />
           </Button>
         )}
         {etapa < 3 ? (
           <Button type="button" onClick={avancar}>
             Avançar{" "}
-            <KbdGroup>
-              <Kbd>Alt</Kbd>
-              <Kbd><ArrowRight className="size-3" /></Kbd>
-            </KbdGroup>
+            <HotkeyKbd hotkey="Alt+ArrowRight" />
           </Button>
         ) : (
           !readOnly && (
@@ -1363,7 +1358,7 @@ function CompraForm({
                         title="Refaz as parcelas a partir da condição e do valor da nota, descartando as atuais"
                         onClick={recalcularParcelas}
                       >
-                        <RefreshCw /> Gerar parcelas <Kbd>Alt+G</Kbd>
+                        <RefreshCw /> Gerar parcelas <HotkeyKbd hotkey="Alt+G" />
                       </Button>
                     </div>
                     <p className="text-muted-foreground text-xs">
@@ -1473,7 +1468,7 @@ function CompraForm({
                           size="sm"
                           onClick={adicionarParcela}
                         >
-                          <Plus /> Parcela <Kbd>Alt+A</Kbd>
+                          <Plus /> Parcela <HotkeyKbd hotkey="Alt+A" />
                         </Button>
                         <Button
                           type="button"
@@ -1481,7 +1476,7 @@ function CompraForm({
                           size="sm"
                           onClick={() => void redistribuirParcelas()}
                         >
-                          Redistribuir <Kbd>Alt+C</Kbd>
+                          Redistribuir <HotkeyKbd hotkey="Alt+C" />
                         </Button>
                         </div>
                         <span

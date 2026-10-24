@@ -3,7 +3,7 @@
 import React from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { FileUp, PackagePlus } from "lucide-react";
-import { Badge, Button, Kbd } from "@/ui/primitives";
+import { Badge, Button, HotkeyKbd } from "@/ui/primitives";
 import { DataTable, FeatureLayout } from "@/ui/composites";
 import { FeatureHeader } from "@/ui/composites";
 import { useWindowCommands } from "@/ui/imperative";
@@ -124,7 +124,7 @@ export function ComprasList({
               className="rounded-lg"
               onClick={() => fireAndForget(async () => onImport())}
             >
-              <FileUp /> Importar XML <Kbd>Alt+I</Kbd>
+              <FileUp /> Importar XML <HotkeyKbd hotkey="Alt+I" />
             </Button>
           }
         />
