@@ -76,7 +76,7 @@ export function VendasFeature() {
       component: DevolucaoTipoWindow,
       props: {},
       title: `Devolução da Venda #${item.id}`,
-      size: "small",
+      size: "medium",
     });
     if (tipo.status !== "confirmed") return;
 

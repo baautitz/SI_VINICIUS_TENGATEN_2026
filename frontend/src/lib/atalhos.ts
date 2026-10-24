@@ -43,6 +43,8 @@ export const ATALHOS = {
   excluirLinhaBackspace: atalho("Backspace", "Excluir linha (Backspace)"),
   etapaAnterior: atalho("Alt+ArrowLeft", "Etapa anterior"),
   etapaSeguinte: atalho("Alt+ArrowRight", "Etapa seguinte"),
+  devolucaoParcial: atalho("Alt+1", "Devolucao parcial"),
+  devolucaoTotal: atalho("Alt+2", "Devolucao total"),
 } as const;
 
 export type AtalhoId = keyof typeof ATALHOS;

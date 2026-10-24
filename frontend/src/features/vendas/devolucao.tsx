@@ -24,6 +24,31 @@ export type TipoDevolucao = "total" | "parcial";
 
 export function DevolucaoTipoWindow() {
   const activeWindow = useWindow<TipoDevolucao>();
+  useWindowCommands(
+    React.useMemo(
+      () => [
+        {
+          id: "vendas.devolucao.parcial",
+          hotkey: combinacaoDe("devolucaoParcial"),
+          label: "Devolução parcial",
+          run: (event: KeyboardEvent) => {
+            event.preventDefault();
+            activeWindow.resolve("parcial");
+          },
+        },
+        {
+          id: "vendas.devolucao.total",
+          hotkey: combinacaoDe("devolucaoTotal"),
+          label: "Devolução total",
+          run: (event: KeyboardEvent) => {
+            event.preventDefault();
+            activeWindow.resolve("total");
+          },
+        },
+      ],
+      [activeWindow],
+    ),
+  );
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm">Escolha o tipo de devolução.</p>
@@ -31,9 +56,11 @@ export function DevolucaoTipoWindow() {
         <WindowCancelButton />
         <Button type="button" variant="outline" onClick={() => activeWindow.resolve("parcial")}>
           Devolução parcial
+          <HotkeyKbd className="ml-2" hotkey={combinacaoDe("devolucaoParcial")} />
         </Button>
         <Button type="button" autoFocus onClick={() => activeWindow.resolve("total")}>
           Devolução total
+          <HotkeyKbd className="ml-2" hotkey={combinacaoDe("devolucaoTotal")} />
         </Button>
       </WindowActions>
     </div>
