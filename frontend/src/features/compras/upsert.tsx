@@ -1,5 +1,6 @@
 "use client";
 
+import { combinacaoDe } from "@/lib/atalhos";
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, RefreshCw, Trash2, TriangleAlert, Undo2 } from "lucide-react";
@@ -692,7 +693,7 @@ function CompraForm({
   useWindowCommands([
     {
       id: "compras.estornar",
-      hotkey: "Alt+Z" as const,
+      hotkey: combinacaoDe("estornar"),
       label: "Estornar compra",
       enabled: podeEstornar,
       run: (e: KeyboardEvent) => {
@@ -702,7 +703,7 @@ function CompraForm({
     },
     {
       id: "compras.focus-sku",
-      hotkey: "Alt+K" as const,
+      hotkey: combinacaoDe("adicionarSku"),
       label: "Adicionar SKU",
       enabled: !readOnly && !modoXml && etapa === 2,
       run: (e: KeyboardEvent) => {
@@ -742,7 +743,7 @@ function CompraForm({
     },
     {
       id: "compras.redistribuir-parcelas",
-      hotkey: "Alt+C" as const,
+      hotkey: combinacaoDe("distribuir"),
       label: "Redistribuir parcelas",
       enabled: !readOnly && etapa === 3,
       run: (e: KeyboardEvent) => {
@@ -752,7 +753,7 @@ function CompraForm({
     },
     {
       id: "compras.add-parcela",
-      hotkey: "Alt+A" as const,
+      hotkey: combinacaoDe("adicionarParcela"),
       label: "Adicionar parcela",
       enabled: !readOnly && etapa === 3,
       run: (e: KeyboardEvent) => {
@@ -762,7 +763,7 @@ function CompraForm({
     },
     {
       id: "compras.recalcular-parcelas",
-      hotkey: "Alt+G" as const,
+      hotkey: combinacaoDe("gerar"),
       label: "Gerar parcelas",
       enabled: !readOnly && etapa === 3,
       run: (e: KeyboardEvent) => {
@@ -835,7 +836,7 @@ function CompraForm({
             className="mr-auto"
             onClick={() => void estornar()}
           >
-            <Undo2 /> Estornar compra <HotkeyKbd hotkey="Alt+Z" />
+            <Undo2 /> Estornar compra <HotkeyKbd hotkey={combinacaoDe("estornar")} />
           </Button>
         )}
         <WindowCancelButton readOnly={readOnly} />
@@ -1353,7 +1354,7 @@ function CompraForm({
                         title="Refaz as parcelas a partir da condição e do valor da nota, descartando as atuais"
                         onClick={recalcularParcelas}
                       >
-                        <RefreshCw /> Gerar parcelas <HotkeyKbd hotkey="Alt+G" />
+                        <RefreshCw /> Gerar parcelas <HotkeyKbd hotkey={combinacaoDe("gerar")} />
                       </Button>
                     </div>
                     <p className="text-muted-foreground text-xs">
@@ -1463,7 +1464,7 @@ function CompraForm({
                           size="sm"
                           onClick={adicionarParcela}
                         >
-                          <Plus /> Parcela <HotkeyKbd hotkey="Alt+A" />
+                          <Plus /> Parcela <HotkeyKbd hotkey={combinacaoDe("adicionarParcela")} />
                         </Button>
                         <Button
                           type="button"
@@ -1471,7 +1472,7 @@ function CompraForm({
                           size="sm"
                           onClick={() => void redistribuirParcelas()}
                         >
-                          Redistribuir <HotkeyKbd hotkey="Alt+C" />
+                          Redistribuir <HotkeyKbd hotkey={combinacaoDe("distribuir")} />
                         </Button>
                         </div>
                         <span
