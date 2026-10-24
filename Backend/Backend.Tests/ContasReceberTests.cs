@@ -70,4 +70,18 @@ public class ContasReceberTests
         c.Atualizar("Venda", DateTime.Today, 20.005m, null);
         Assert.Equal(20.01m, c.Valor);
     }
+
+    [Fact]
+    public void Baixa_parcial_barra_cancelar_e_atualizar()
+    {
+        var conta = new ContasReceber("Manual", 100m, Cliente, DateTime.Today.AddDays(30), "MAN-1");
+        Assert.False(conta.PossuiBaixa);
+
+        conta.RegistrarRecebimento(10m);
+
+        Assert.True(conta.PossuiBaixa);
+        Assert.Throws<DomainException>(() => conta.Cancelar());
+        Assert.Throws<DomainException>(() => conta.Atualizar("Outra", DateTime.Today.AddDays(40), 120m, null));
+        Assert.Equal(StatusTituloFinanceiro.PARCIAL, conta.Status);
+    }
 }

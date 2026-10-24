@@ -21,6 +21,8 @@ public class ContasReceber
     public decimal Valor { get; private set; }
     public decimal ValorPago { get; private set; }
     public decimal ValorSaldo => Valor - ValorPago;
+    // Baixa = qualquer valor recebido (parcela quitada ou parcial); trava cancelamento, edição, exclusão e devolução.
+    public bool PossuiBaixa => ValorPago > 0;
     public StatusTituloFinanceiro Status { get; private set; }
     public CondicoesPagamentos? CondicaoPagamento { get; private set; }
     public string? Observacao { get; private set; }
@@ -169,7 +171,7 @@ public class ContasReceber
     // Cancela a parcela; exige que nada tenha sido recebido.
     public void Cancelar()
     {
-        if (ValorPago > 0)
+        if (PossuiBaixa)
             throw new DomainException("Não é possível cancelar uma conta a receber com parcelas baixadas.");
 
         Status = StatusTituloFinanceiro.CANCELADO;
@@ -182,7 +184,7 @@ public class ContasReceber
         if (OrigemTipo != OrigemTituloFinanceiro.MANUAL)
             throw new DomainException("Conta gerada por outro documento não pode ser editada manualmente.");
 
-        if (Status != StatusTituloFinanceiro.ABERTO || ValorPago > 0)
+        if (Status != StatusTituloFinanceiro.ABERTO || PossuiBaixa)
             throw new DomainException("Só é possível alterar uma parcela aberta e sem recebimentos.");
 
         if (string.IsNullOrWhiteSpace(descricao))
