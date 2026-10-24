@@ -140,6 +140,9 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
       ui.feedback.notifyError(error, {
         fallbackTitle: `Não foi possível abrir ${modalTitle.toLowerCase()}.`,
       });
+    } finally {
+      // O foco volta ao campo de origem, não a outro campo do formulário.
+      inputRef.current?.focus();
     }
   };
 
