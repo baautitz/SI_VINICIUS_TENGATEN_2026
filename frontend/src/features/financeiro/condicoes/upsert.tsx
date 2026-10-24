@@ -21,7 +21,6 @@ import {
   TableHead,
   TableCell,
 } from "@/ui/primitives";
-import { ScrollArea } from "@/ui/primitives";
 import { Separator } from "@/ui/primitives";
 import {
   Empty,
@@ -607,7 +606,7 @@ function CondicoesUpsertForm({
                   );
                   return (
                     <div className="flex min-h-0 w-full flex-1 flex-col">
-                      <ScrollArea className="max-h-60 flex-1 pr-2">
+                      <div className="max-h-60 min-h-0 flex-1 overflow-y-auto">
                         {parcelas.length === 0 ? (
                           <Empty>
                             <EmptyHeader>
@@ -770,7 +769,7 @@ function CondicoesUpsertForm({
                             </Table>
                           </div>
                         )}
-                      </ScrollArea>
+                      </div>
                       {error && (
                         <FieldError className="mt-2 block">{error}</FieldError>
                       )}
@@ -779,7 +778,7 @@ function CondicoesUpsertForm({
                 }}
               </form.Field>
 
-              <div className="mt-auto grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-4 pt-2">
                 {[
                   ["Entrada Mínima (%)", entradaMinimaPercentual ?? 0],
                   ["Soma das Parcelas (%)", totalParcelasPercent],
@@ -797,6 +796,7 @@ function CondicoesUpsertForm({
                       inputMode="decimal"
                       aria-label={rotulo as string}
                       readOnly
+                      tabIndex={-1}
                       className="h-8 text-right font-semibold"
                       onNumberChange={() => {}}
                     />
