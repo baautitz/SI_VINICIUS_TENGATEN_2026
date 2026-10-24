@@ -182,9 +182,9 @@ export function DataTable<TData, TValue>({
           fireAndForget(() => onEditRow(rows[focusedRowIndex].original));
         },
       },
-      ...(["Delete", "Backspace"] as const).map((hotkey) => ({
-        id: `table.delete-row.${hotkey.toLowerCase()}`,
-        hotkey,
+      ...(["excluirLinha", "excluirLinhaBackspace"] as const).map((atalho) => ({
+        id: `table.delete-row.${atalho === "excluirLinha" ? "delete" : "backspace"}`,
+        hotkey: combinacaoDe(atalho),
         label: "Excluir linha",
         enabled: focusedRowIndex !== null && rows.length > 0 && !!onDeleteRow,
         // O atalho também fica registrado enquanto o filtro está focado. A
