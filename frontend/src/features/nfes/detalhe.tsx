@@ -10,7 +10,7 @@ import { comprasApi } from "@/api/compras";
 import { CompraInput } from "@/components/entity-inputs/compra-input";
 import { TextoWindow, type TextoWindowProps } from "@/components/texto-window";
 import {
-  Button, Field, FieldLabel, Input, Kbd, Spinner, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Textarea,
+  Button, Field, FieldLabel, HotkeyKbd, Input, Kbd, Spinner, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Textarea,
 } from "@/ui/primitives";
 import { navigationCell } from "@/ui/keyboard-navigation";
 import { useWindow, useWindowCommands, useUi, WindowCancelButton } from "@/ui/imperative";
@@ -256,9 +256,9 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
     <div className="flex h-full min-h-0 flex-col gap-4">
       <WindowActions>
         <div className="mr-auto flex gap-2">
-          <Button type="button" variant="outline" onClick={() => void acoes.verXml()}><FileCode /> Ver XML <Kbd>Alt+X</Kbd></Button>
-          <Button type="button" variant="outline" onClick={() => void acoes.baixar()}><Download /> Baixar XML <Kbd>Alt+D</Kbd></Button>
-          <Button type="button" variant="outline" onClick={() => void imprimir()}><Printer /> Imprimir DANFE <Kbd>Alt+I</Kbd></Button>
+          <Button type="button" variant="outline" onClick={() => void acoes.verXml()}><FileCode /> Ver XML <HotkeyKbd hotkey="Alt+X" /></Button>
+          <Button type="button" variant="outline" onClick={() => void acoes.baixar()}><Download /> Baixar XML <HotkeyKbd hotkey="Alt+D" /></Button>
+          <Button type="button" variant="outline" onClick={() => void imprimir()}><Printer /> Imprimir DANFE <HotkeyKbd hotkey="Alt+I" /></Button>
           {!podeCancelar && <span role="status" className="text-muted-foreground self-center text-xs">{motivo}</span>}
           {!podeCancelar && entrada && nfe.compraId && (
             <Button type="button" variant="link" className="self-center px-0 text-xs" onClick={() => void abrirCompra()}>

@@ -4,7 +4,7 @@ import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Printer } from "lucide-react";
 import { nfesApi } from "@/api/nfes";
-import { Button, Kbd, Spinner } from "@/ui/primitives";
+import { Button, HotkeyKbd, Spinner } from "@/ui/primitives";
 import { useWindowCommands } from "@/ui/imperative";
 import { formatToLocal } from "@/utils/date-utils";
 import { brl, chaveFormatada, modalidadeFreteLabels, statusLabels } from "./types";
@@ -50,7 +50,7 @@ export function Danfe({ id }: { id: number }) {
   return (
     <div className="p-4">
       <div className="mb-4 flex justify-end print:hidden">
-        <Button onClick={imprimirDanfe}><Printer /> Imprimir <Kbd>Alt+I</Kbd></Button>
+        <Button onClick={imprimirDanfe}><Printer /> Imprimir <HotkeyKbd hotkey="Alt+I" /></Button>
       </div>
       <div id="danfe" className="mx-auto max-w-[800px] bg-white p-3 text-black">
         <div className="border-2 border-black bg-yellow-200 p-2 text-center text-sm font-bold">
