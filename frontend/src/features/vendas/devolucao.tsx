@@ -146,9 +146,10 @@ export function DevolucaoWindow({ venda, total: devolucaoTotal }: DevolucaoWindo
   return (
     <div className="flex flex-col gap-4">
       <p className="text-muted-foreground text-xs">
-        Os itens voltam ao estoque pelo custo original da venda. O valor abate o
-        saldo em aberto da conta a receber; o que já foi recebido gera uma conta
-        a pagar ao cliente.
+        Os itens voltam ao estoque pelo custo original da venda e o valor abate o
+        saldo em aberto da conta a receber. Se alguma parcela já tiver
+        recebimento (total ou parcial), a devolução é barrada: estorne o
+        recebimento primeiro.
       </p>
       <div className="rounded-lg border bg-card overflow-clip">
       <Table pageScroll>

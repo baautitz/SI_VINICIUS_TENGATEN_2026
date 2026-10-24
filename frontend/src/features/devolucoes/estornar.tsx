@@ -56,9 +56,9 @@ export function EstornarDevolucaoWindow({ devolucaoId }: EstornarDevolucaoWindow
   return (
     <div className="flex flex-col gap-4 py-2">
       <p className="text-sm text-muted-foreground">
-        O estorno faz os itens saírem de novo do estoque, devolve o valor à conta a receber da venda e cancela a
-        conta a pagar ao cliente gerada pela devolução. Se essa conta a pagar já tiver baixa (paga ou parcial), o
-        estorno é barrado. A devolução fica registrada como estornada. Esta ação não pode ser desfeita.
+        O estorno faz os itens saírem de novo do estoque, devolve o valor à conta a receber da venda. Se alguma
+        parcela a receber da venda já tiver recebimento (total ou parcial), o estorno é barrado: estorne o
+        recebimento primeiro. A devolução fica registrada como estornada. Esta ação não pode ser desfeita.
       </p>
       <Field>
         <FieldLabel htmlFor="devolucao-motivo-estorno">Motivo do estorno</FieldLabel>
