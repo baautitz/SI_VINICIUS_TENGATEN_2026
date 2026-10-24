@@ -604,7 +604,12 @@ function CondicoesUpsertForm({
                   );
                   return (
                     <div className="flex min-h-0 w-full flex-1 flex-col">
-                      <div className="max-h-[50vh] min-h-0 flex-1 overflow-y-auto rounded-lg border bg-card">
+                      <div
+                        className={cn(
+                          "max-h-[50vh] min-h-0 overflow-y-auto",
+                          parcelas.length > 0 && "bg-card rounded-lg border",
+                        )}
+                      >
                         {parcelas.length === 0 ? (
                           <Empty>
                             <EmptyHeader>
