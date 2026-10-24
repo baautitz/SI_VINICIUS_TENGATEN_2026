@@ -753,8 +753,8 @@ function CondicoesUpsertForm({
                                           })}
                                           type="button"
                                           size="icon-sm"
- variant="outline"
- aria-label="Remover"
+                                          variant="outline"
+                                          aria-label="Remover"
                                           onClick={() =>
                                             handleRemoveParcela(index)
                                           }
