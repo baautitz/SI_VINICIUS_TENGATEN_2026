@@ -145,6 +145,27 @@ public class ContasReceber
         return abatido;
     }
 
+    // Inverso de Abater (estorno de devolução): devolve o valor à parcela e a reabre se estava cancelada.
+    // Parcela cancelada vale 0, então volta só com o valor devolvido (nunca além do Valor que guardava);
+    // as demais somam ao Valor (quitada vira parcial). Devolve quanto foi restituído.
+    public decimal Restituir(decimal valor)
+    {
+        if (valor <= 0) return 0;
+
+        if (Status == StatusTituloFinanceiro.CANCELADO)
+        {
+            var restituido = Math.Min(valor, Valor);
+            Valor = restituido;
+            Status = ValorPago == 0 ? StatusTituloFinanceiro.ABERTO : StatusTituloFinanceiro.PARCIAL;
+            return restituido;
+        }
+
+        Valor += valor;
+        Status = ValorPago == 0 ? StatusTituloFinanceiro.ABERTO
+            : ValorPago >= Valor ? StatusTituloFinanceiro.PAGO : StatusTituloFinanceiro.PARCIAL;
+        return valor;
+    }
+
     // Cancela a parcela; exige que nada tenha sido recebido.
     public void Cancelar()
     {

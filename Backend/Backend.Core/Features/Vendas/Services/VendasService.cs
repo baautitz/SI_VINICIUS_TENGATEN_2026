@@ -22,6 +22,7 @@ using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.NFe.Repositories;
 using Backend.Core.Features.Vendas.Repositories;
 using Backend.Core.Features.Vendas.Entities;
+using Backend.Core.Features.Vendas.Entities.Enums;
 using Backend.Core.Features.Vendas.Commands;
 using Backend.Core.Features.Vendas.Validators.Commands;
 
@@ -299,6 +300,89 @@ public sealed class VendasService : BaseService
                 throw;
             }
         });
+    }
+
+    public const string DevolucaoInexistente = "DEVOLUCAO_INEXISTENTE";
+    public const string DevolucaoJaEstornada = "DEVOLUCAO_JA_ESTORNADA";
+
+    // Desfaz a devolução na mesma transação: itens saem de novo do estoque, o valor abatido volta à conta a receber
+    // e o reembolso ao cliente (conta a pagar) é cancelado. Não mexe na NF-e: só avisa em NfeAtiva.
+    public async Task<Resultado<Devolucao>> EstornarDevolucao(int id, EstornarDevolucaoCommand command)
+    {
+        var motivo = command?.Motivo?.Trim() ?? "";
+        if (motivo.Length < 5 || motivo.Length > 255)
+            return Resultado<Devolucao>.Falha(new ResultadoErro("MOTIVO_INVALIDO", "O motivo do estorno deve ter entre 5 e 255 caracteres.", "motivo"));
+
+        var devolucao = await _devolucoesRepository.ObterDevolucaoPorId(id);
+        if (devolucao is null)
+            return Resultado<Devolucao>.Falha(new ResultadoErro(DevolucaoInexistente, "Devolução não encontrada."));
+        if (devolucao.Status == StatusDevolucao.ESTORNADA)
+            return Resultado<Devolucao>.Falha(new ResultadoErro(DevolucaoJaEstornada, "Esta devolução já foi estornada.", "Status"));
+
+        return await ExecuteResultAsync(async () =>
+        {
+            try
+            {
+                _unitOfWork.BeginTransaction();
+                var resultado = await EstornarDevolucaoNaTransacao(devolucao, motivo);
+                if (resultado.Success) _unitOfWork.Commit(); else _unitOfWork.Rollback();
+                return resultado;
+            }
+            catch (Exception)
+            {
+                _unitOfWork.Rollback();
+                throw;
+            }
+        });
+    }
+
+    private async Task<Resultado<Devolucao>> EstornarDevolucaoNaTransacao(Devolucao devolucao, string motivo)
+    {
+        // UPDATE guardado primeiro: trava a linha, então um estorno concorrente espera e cai em JA_ESTORNADA.
+        devolucao.Estornar(motivo);
+        if (!await _devolucoesRepository.MarcarEstornada(devolucao))
+            return Resultado<Devolucao>.Falha(new ResultadoErro(DevolucaoJaEstornada, "Esta devolução já foi estornada.", "Status"));
+
+        await _skusRepository.TravarSkus(devolucao.Itens.Select(i => i.Sku));
+
+        var reembolsos = (await _contasPagarRepository.PesquisarContasPagar("", 1, 100,
+                new FiltroContasPagar(OrigemTipo: OrigemTituloFinanceiro.DEVOLUCAO_VENDA, OrigemId: devolucao.Id))).Itens
+            .Where(c => c.OrigemTipo == OrigemTituloFinanceiro.DEVOLUCAO_VENDA && c.OrigemId == devolucao.Id && c.Status != StatusTituloFinanceiro.CANCELADO)
+            .ToList();
+
+        var erros = new List<ResultadoErro>();
+        foreach (var conta in reembolsos.Where(c => c.PossuiBaixa))
+            erros.Add(new ResultadoErro("ESTORNO_PARCELA_BAIXADA",
+                $"O reembolso '{conta.Descricao}' já tem R$ {conta.ValorPago:0.00} pago. Estorne o pagamento primeiro.", "ContasPagar"));
+        erros.AddRange(await _estoqueService.ObterBloqueiosDeEstornoDeEntrada(OrigemMovimentacaoEstoque.DEVOLUCAO_VENDA, devolucao.Id));
+        if (erros.Count > 0)
+            return Resultado<Devolucao>.Falha(erros);
+
+        await _estoqueService.EstornarPorOrigem(OrigemMovimentacaoEstoque.DEVOLUCAO_VENDA, devolucao.Id, $"Estorno da devolução nº {devolucao.Id}: {motivo}");
+
+        // O que a devolução abateu da conta a receber = valor total menos o que virou reembolso.
+        // Regra simples: devolve da última parcela para a primeira, como o abatimento fez. Parcela cancelada é
+        // reaberta só com o valor devolvido; quitada vira parcial. A distribuição entre parcelas pode diferir da original
+        // se estornos forem feitos fora de ordem, mas o total volta inteiro.
+        var restante = devolucao.ValorTotal - reembolsos.Sum(c => c.Valor);
+        foreach (var conta in (await ObterContasDaVenda(devolucao.VendaId)).OrderByDescending(c => c.NumeroParcela))
+        {
+            if (restante <= 0) break;
+            var restituido = conta.Restituir(restante);
+            if (restituido <= 0) continue;
+            await _contasRepository.AtualizarContaReceber(conta.Id, conta);
+            restante -= restituido;
+        }
+
+        foreach (var conta in reembolsos)
+        {
+            conta.Cancelar();
+            await _contasPagarRepository.AtualizarContaPagar(conta.Id, conta);
+        }
+
+        // Só avisa: a NF-e (cancelamento ou nota complementar) é decisão fiscal separada.
+        devolucao.NfeAtiva = await _nfesRepository.ObterNfeEmitidaDaVenda(devolucao.VendaId);
+        return Resultado<Devolucao>.Sucesso(devolucao);
     }
 
     private async Task CriarReembolso(Venda venda, Devolucao devolucao, decimal valor)

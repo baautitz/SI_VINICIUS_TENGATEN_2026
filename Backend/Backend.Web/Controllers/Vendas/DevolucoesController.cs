@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Backend.Core.Common.Results;
 using Backend.Core.Features.Vendas.Commands;
@@ -44,5 +45,16 @@ public class DevolucoesController : ControllerBase
             return BadRequest(result);
 
         return CreatedAtAction(nameof(GetDevolucao), new { id = result.Data!.Id }, result);
+    }
+
+    [HttpPost("api/devolucoes/{id:int}/estornar")]
+    public async Task<ActionResult<Resultado<Devolucao>>> Estornar(int id, [FromBody] EstornarDevolucaoCommand command)
+    {
+        var result = await _vendasService.EstornarDevolucao(id, command);
+        if (result.Success)
+            return Ok(result);
+        if (result.Errors!.Any(e => e.Code == VendasService.DevolucaoInexistente))
+            return NotFound(result);
+        return BadRequest(result);
     }
 }

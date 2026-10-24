@@ -3,6 +3,7 @@ using Backend.Core.Features.Vendas.DTOs;
 using Backend.Core.Features.Vendas.Entities;
 using Backend.Core.Features.Vendas.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;
+using Backend.Core.Features.Vendas.Entities.Enums;
 using Dapper;
 
 namespace Backend.Infrastructure.PostgreSQL.Features.Vendas;
@@ -16,7 +17,7 @@ public class DevolucoesRepository : IDevolucoesRepository
         _session = session;
     }
 
-    private const string SelecaoDevolucao = "SELECT id, venda_id AS VendaId, data_devolucao AS DataDevolucao, motivo AS Motivo, valor_total AS ValorTotal FROM devolucoes";
+    private const string SelecaoDevolucao = "SELECT id, venda_id AS VendaId, data_devolucao AS DataDevolucao, motivo AS Motivo, valor_total AS ValorTotal, status AS Status, estornado_em AS EstornadoEm, motivo_estorno AS MotivoEstorno FROM devolucoes";
 
     public async Task<Devolucao?> ObterDevolucaoPorId(int id)
         => (await Montar(await Consultar("WHERE id = @Id", new { Id = id }))).SingleOrDefault();
@@ -40,7 +41,7 @@ public class DevolucoesRepository : IDevolucoesRepository
 
         var itens = (await _session.Connection.QueryAsync<DevolucaoResumo>(
             $@"SELECT d.id AS Id, d.venda_id AS VendaId, c.nome_razaosocial AS ClienteNome, d.data_devolucao AS DataDevolucao,
-                      d.valor_total AS ValorTotal, d.motivo AS Motivo
+                      d.valor_total AS ValorTotal, d.motivo AS Motivo, d.status AS Status
                {from}
                ORDER BY d.data_devolucao DESC, d.id DESC
                LIMIT @TamanhoDaPagina OFFSET @Offset;",
@@ -66,6 +67,12 @@ public class DevolucoesRepository : IDevolucoesRepository
         return devolucao;
     }
 
+    public async Task<bool> MarcarEstornada(Devolucao devolucao)
+        => await _session.Connection.ExecuteAsync(
+            @"UPDATE devolucoes SET status = 'ESTORNADA', estornado_em = @EstornadoEm, motivo_estorno = @MotivoEstorno
+              WHERE id = @Id AND status = 'ATIVA';",
+            new { devolucao.Id, devolucao.EstornadoEm, devolucao.MotivoEstorno }, transaction: _session.Transaction) > 0;
+
     private async Task<List<DevolucaoRow>> Consultar(string filtro, object param)
         => (await _session.Connection.QueryAsync<DevolucaoRow>($"{SelecaoDevolucao} {filtro};", param, transaction: _session.Transaction)).ToList();
 
@@ -81,14 +88,14 @@ public class DevolucoesRepository : IDevolucoesRepository
 
         return rows.Select(r =>
         {
-            var d = new Devolucao(r.Id, r.VendaId, r.DataDevolucao, r.Motivo, r.ValorTotal);
+            var d = new Devolucao(r.Id, r.VendaId, r.DataDevolucao, r.Motivo, r.ValorTotal, Enum.Parse<StatusDevolucao>(r.Status), r.EstornadoEm, r.MotivoEstorno);
             foreach (var i in itens[r.Id])
                 d.AdicionarItemExistente(new DevolucaoItens(i.Id, i.VendaItemId, i.Sku, i.Quantidade, i.ValorUnitario, i.CustoUnitario));
             return d;
         }).ToList();
     }
 
-    private sealed record DevolucaoRow(int Id, int VendaId, DateTime DataDevolucao, string Motivo, decimal ValorTotal);
+    private sealed record DevolucaoRow(int Id, int VendaId, DateTime DataDevolucao, string Motivo, decimal ValorTotal, string Status, DateTime? EstornadoEm, string? MotivoEstorno);
 
     private sealed record ItemRow(int Id, int DevolucaoId, int VendaItemId, string Sku, decimal Quantidade, decimal ValorUnitario, decimal CustoUnitario);
 }

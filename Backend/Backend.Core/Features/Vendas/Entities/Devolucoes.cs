@@ -1,9 +1,10 @@
 using Backend.Core.Common.Exceptions;
 using Backend.Core.Common.Helpers;
+using Backend.Core.Features.Vendas.Entities.Enums;
 
 namespace Backend.Core.Features.Vendas.Entities;
 
-// Imutável: depois de registrada nunca é alterada nem excluída.
+// Depois de registrada nunca é alterada nem excluída; só pode ser estornada (uma vez).
 public class Devolucao
 {
     private readonly List<DevolucaoItens> _itens = new();
@@ -13,6 +14,9 @@ public class Devolucao
     public DateTime DataDevolucao { get; private set; }
     public string Motivo { get; private set; } = null!;
     public decimal ValorTotal { get; private set; }
+    public StatusDevolucao Status { get; private set; } = StatusDevolucao.ATIVA;
+    public DateTime? EstornadoEm { get; private set; }
+    public string? MotivoEstorno { get; private set; }
     // Aviso na resposta da criação: NF-e de saída ainda ativa da venda (não persistido).
     public Backend.Core.Features.NFe.DTOs.NfeAtiva? NfeAtiva { get; set; }
     public IReadOnlyCollection<DevolucaoItens> Itens => _itens.AsReadOnly();
@@ -35,13 +39,30 @@ public class Devolucao
         ValorTotal = Math.Round(_itens.Sum(i => i.ValorTotal), 2);
     }
 
-    public Devolucao(int id, int vendaId, DateTime dataDevolucao, string motivo, decimal valorTotal)
+    public Devolucao(int id, int vendaId, DateTime dataDevolucao, string motivo, decimal valorTotal, StatusDevolucao status = StatusDevolucao.ATIVA, DateTime? estornadoEm = null, string? motivoEstorno = null)
     {
         Id = id;
         VendaId = vendaId;
         DataDevolucao = dataDevolucao;
         Motivo = motivo;
         ValorTotal = valorTotal;
+        Status = status;
+        EstornadoEm = estornadoEm;
+        MotivoEstorno = motivoEstorno;
+    }
+
+    public void Estornar(string motivo, DateTime? quando = null)
+    {
+        if (Status == StatusDevolucao.ESTORNADA)
+            throw new DomainException("A devolução já foi estornada.");
+
+        motivo = (motivo ?? "").Trim(); // texto livre: preserva caixa e acentos
+        if (motivo.Length < 5 || motivo.Length > 255)
+            throw new DomainException("O motivo do estorno deve ter entre 5 e 255 caracteres.");
+
+        Status = StatusDevolucao.ESTORNADA;
+        MotivoEstorno = motivo;
+        EstornadoEm = quando ?? DateTime.UtcNow;
     }
 
     public void AdicionarItemExistente(DevolucaoItens item) => _itens.Add(item);
