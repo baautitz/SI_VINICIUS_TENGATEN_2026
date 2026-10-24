@@ -7,6 +7,7 @@ using Backend.Core.Common.Extensions;
 using Backend.Core.Common.Results;
 using Backend.Core.Common.Interfaces;
 using Backend.Core.Common.Exceptions;
+using Backend.Core.Features.Vendas.DTOs;
 using Backend.Core.Features.Parceiros.Repositories;
 using Backend.Core.Features.Catalogo.Repositories;
 using Backend.Core.Features.Estoque.Services;
@@ -21,6 +22,7 @@ using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.NFe.Repositories;
 using Backend.Core.Features.Vendas.Repositories;
 using Backend.Core.Features.Vendas.Entities;
+using Backend.Core.Features.Vendas.Entities.Enums;
 using Backend.Core.Features.Vendas.Commands;
 using Backend.Core.Features.Vendas.Validators.Commands;
 
@@ -217,11 +219,14 @@ public sealed class VendasService : BaseService
     public Task<Devolucao?> ObterDevolucaoPorId(int id)
         => _devolucoesRepository.ObterDevolucaoPorId(id);
 
+    public Task<ResultadoPaginado<DevolucaoResumo>> PesquisarDevolucoes(string termo, int pagina = 1, int tamanhoDaPagina = 20, int? vendaId = null)
+        => _devolucoesRepository.PesquisarDevolucoes(termo, pagina, tamanhoDaPagina, vendaId);
+
     public Task<IReadOnlyList<Devolucao>> ObterDevolucoesPorVenda(int vendaId)
         => _devolucoesRepository.ObterDevolucoesPorVenda(vendaId);
 
-    // Devolução por item: estoque volta ao custo original da saída; o valor abate o saldo aberto da conta a receber
-    // e o que excede (já recebido) vira conta a pagar ao cliente. Tudo na mesma transação.
+    // Devolução por item: estoque volta ao custo original da saída; o valor abate o saldo em aberto das parcelas a receber
+    // (registrando quanto saiu de cada uma) e o excedente (já recebido) vira conta a pagar ao cliente. Tudo na mesma transação.
     public async Task<Resultado<Devolucao>> CriarDevolucao(int vendaId, CriarDevolucaoCommand command)
     {
         var validation = await new CriarDevolucaoCommandValidator().ValidateAsync(command);
@@ -269,19 +274,20 @@ public sealed class VendasService : BaseService
                 if (!resultadoEstoque.Success)
                     throw new DomainException(resultadoEstoque.Errors!.First().Message);
 
-                // Sem conta a receber (venda sem condição de pagamento) não há valor financeiro a reverter.
-                // Abate da última parcela para a primeira (preserva os vencimentos mais próximos).
+                // Abate o saldo em aberto da última parcela para a primeira (preserva os vencimentos mais próximos);
+                // o Valor original das parcelas não muda. O que não couber no aberto (já recebido) vira reembolso.
                 var restante = criada.ValorTotal;
-                var contas = await ObterContasDaVenda(vendaId);
-                foreach (var conta in contas.OrderByDescending(c => c.NumeroParcela))
+                foreach (var conta in (await ObterContasDaVenda(vendaId)).OrderByDescending(c => c.NumeroParcela))
                 {
+                    if (restante <= 0) break;
                     var abatido = conta.Abater(restante);
                     if (abatido <= 0) continue;
                     await _contasRepository.AtualizarContaReceber(conta.Id, conta);
+                    await _devolucoesRepository.CriarAbatimento(new DevolucaoAbatimento(criada.Id, conta.Id, abatido));
                     restante -= abatido;
                 }
 
-                if (restante > 0 && contas.Count > 0)
+                if (restante > 0)
                     await CriarReembolso(venda, criada, restante);
 
                 _unitOfWork.Commit();
@@ -297,21 +303,100 @@ public sealed class VendasService : BaseService
         });
     }
 
+    public const string DevolucaoInexistente = "DEVOLUCAO_INEXISTENTE";
+    public const string DevolucaoJaEstornada = "DEVOLUCAO_JA_ESTORNADA";
+
+    // Desfaz a devolução na mesma transação: itens saem de novo do estoque, os abatimentos voltam às parcelas a receber
+    // e o reembolso ao cliente (conta a pagar) é cancelado, barrado se já tiver pagamento. Não mexe na NF-e: só avisa em NfeAtiva.
+    public async Task<Resultado<Devolucao>> EstornarDevolucao(int id, EstornarDevolucaoCommand command)
+    {
+        var motivo = command?.Motivo?.Trim() ?? "";
+        if (motivo.Length < 5 || motivo.Length > 255)
+            return Resultado<Devolucao>.Falha(new ResultadoErro("MOTIVO_INVALIDO", "O motivo do estorno deve ter entre 5 e 255 caracteres.", "motivo"));
+
+        var devolucao = await _devolucoesRepository.ObterDevolucaoPorId(id);
+        if (devolucao is null)
+            return Resultado<Devolucao>.Falha(new ResultadoErro(DevolucaoInexistente, "Devolução não encontrada."));
+        if (devolucao.Status == StatusDevolucao.ESTORNADA)
+            return Resultado<Devolucao>.Falha(new ResultadoErro(DevolucaoJaEstornada, "Esta devolução já foi estornada.", "Status"));
+
+        return await ExecuteResultAsync(async () =>
+        {
+            try
+            {
+                _unitOfWork.BeginTransaction();
+                var resultado = await EstornarDevolucaoNaTransacao(devolucao, motivo);
+                if (resultado.Success) _unitOfWork.Commit(); else _unitOfWork.Rollback();
+                return resultado;
+            }
+            catch (Exception)
+            {
+                _unitOfWork.Rollback();
+                throw;
+            }
+        });
+    }
+
+    private async Task<Resultado<Devolucao>> EstornarDevolucaoNaTransacao(Devolucao devolucao, string motivo)
+    {
+        // UPDATE guardado primeiro: trava a linha, então um estorno concorrente espera e cai em JA_ESTORNADA.
+        devolucao.Estornar(motivo);
+        if (!await _devolucoesRepository.MarcarEstornada(devolucao))
+            return Resultado<Devolucao>.Falha(new ResultadoErro(DevolucaoJaEstornada, "Esta devolução já foi estornada.", "Status"));
+
+        await _skusRepository.TravarSkus(devolucao.Itens.Select(i => i.Sku));
+
+        var reembolsos = (await _contasPagarRepository.PesquisarContasPagar("", 1, 100,
+                new FiltroContasPagar(OrigemTipo: OrigemTituloFinanceiro.DEVOLUCAO_VENDA, OrigemId: devolucao.Id))).Itens
+            .Where(c => c.OrigemTipo == OrigemTituloFinanceiro.DEVOLUCAO_VENDA && c.OrigemId == devolucao.Id && c.Status != StatusTituloFinanceiro.CANCELADO)
+            .ToList();
+
+        var erros = new List<ResultadoErro>();
+        foreach (var conta in reembolsos.Where(c => c.PossuiBaixa))
+            erros.Add(new ResultadoErro("ESTORNO_PARCELA_BAIXADA",
+                $"O reembolso '{conta.Descricao}' já tem R$ {conta.ValorPago:0.00} pago. Estorne o pagamento primeiro.", "ContasPagar"));
+        erros.AddRange(await _estoqueService.ObterBloqueiosDeEstornoDeEntrada(OrigemMovimentacaoEstoque.DEVOLUCAO_VENDA, devolucao.Id));
+        if (erros.Count > 0)
+            return Resultado<Devolucao>.Falha(erros);
+
+        await _estoqueService.EstornarPorOrigem(OrigemMovimentacaoEstoque.DEVOLUCAO_VENDA, devolucao.Id, $"Estorno da devolução nº {devolucao.Id}: {motivo}");
+
+        // Reverte exatamente o que a devolução abateu de cada parcela; os registros são marcados, não apagados.
+        var contasVenda = (await ObterContasDaVenda(devolucao.VendaId)).ToDictionary(c => c.Id);
+        foreach (var abatimento in await _devolucoesRepository.ObterAbatimentosAtivos(devolucao.Id))
+        {
+            if (!contasVenda.TryGetValue(abatimento.ContaReceberId, out var conta)) continue;
+            conta.Restituir(abatimento.Valor);
+            await _contasRepository.AtualizarContaReceber(conta.Id, conta);
+        }
+        await _devolucoesRepository.MarcarAbatimentosEstornados(devolucao.Id, devolucao.EstornadoEm ?? DateTime.UtcNow);
+
+        foreach (var reembolso in reembolsos)
+        {
+            reembolso.Cancelar();
+            await _contasPagarRepository.AtualizarContaPagar(reembolso.Id, reembolso);
+        }
+
+        // Só avisa: a NF-e (cancelamento ou nota complementar) é decisão fiscal separada.
+        devolucao.NfeAtiva = await _nfesRepository.ObterNfeEmitidaDaVenda(devolucao.VendaId);
+        return Resultado<Devolucao>.Sucesso(devolucao);
+    }
+
     private async Task CriarReembolso(Venda venda, Devolucao devolucao, decimal valor)
     {
         var cliente = await _clientesRepository.ObterClientePorId(venda.Cliente.Id)
             ?? throw new DomainException("Cliente da venda não encontrado.");
 
-        var hoje = DateTime.Today;
+        var data = devolucao.DataDevolucao.Date;
         var conta = new ContasPagar(
             descricao: $"Reembolso da devolução nº {devolucao.Id} (venda nº {venda.Id})",
             valor: valor,
             fornecedor: null,
-            dataVencimento: hoje,
+            dataVencimento: data,
             numeroDocumento: $"DEV-{devolucao.Id}",
             clienteId: cliente.Id,
             clienteNome: cliente.NomeRazaoSocial,
-            dataEmissao: hoje,
+            dataEmissao: data,
             origemTipo: OrigemTituloFinanceiro.DEVOLUCAO_VENDA,
             origemId: devolucao.Id);
         await _contasPagarRepository.CriarContaPagar(conta);

@@ -135,7 +135,7 @@ public sealed class ContasReceberService : BaseService
             if (existente.OrigemTipo != OrigemTituloFinanceiro.MANUAL)
                 throw new Common.Exceptions.DomainException($"Conta gerada por {existente.OrigemTipo.Nome()} #{existente.OrigemId}. Para cancelá-la, cancele o documento de origem.");
 
-            if (existente.ValorPago > 0 || existente.Status != StatusTituloFinanceiro.ABERTO)
+            if (existente.PossuiBaixa || existente.Status != StatusTituloFinanceiro.ABERTO)
                 throw new Common.Exceptions.DomainException("Não é possível excluir uma conta a receber que já possui recebimento ou não está aberta.");
 
             var deletada = await _contasRepository.DeletarContaReceber(id);

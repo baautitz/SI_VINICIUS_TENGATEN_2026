@@ -18,7 +18,12 @@ import { useUi } from "@/ui/imperative";
 
 export * from "./types";
 
-export function ContasReceberFeature() {
+export interface ContasReceberFeatureProps {
+  // Trava a listagem nas parcelas geradas por uma Venda.
+  vendaId?: number;
+}
+
+export function ContasReceberFeature({ vendaId }: ContasReceberFeatureProps = {}) {
   const ui = useUi();
   const queryClient = useQueryClient();
   const list = useFeatureList<ContasReceber>();
@@ -28,13 +33,13 @@ export function ContasReceberFeature() {
   const [avancados, setAvancados] = React.useState<FiltrosAvancados>(FILTROS_AVANCADOS_VAZIOS);
   const { setPage } = list;
   const { data, isLoading } = useQuery({
-    queryKey: ["contas-receber", list.deferredSearch, status, origem, documento, avancados, list.page],
+    queryKey: ["contas-receber", list.deferredSearch, status, origem, documento, avancados, vendaId, list.page],
     queryFn: async () => {
       const res = await contasReceberApi.list({
         search: list.deferredSearch.trim() || undefined,
         status: status === TODOS ? undefined : status,
-        origemTipo: documento?.origemTipo ?? (origem === TODOS ? undefined : origem),
-        origemId: documento?.origemId ?? undefined,
+        origemTipo: vendaId !== undefined ? "VENDA" : (documento?.origemTipo ?? (origem === TODOS ? undefined : origem)),
+        origemId: vendaId ?? documento?.origemId ?? undefined,
         numeroDocumento: documento?.numeroDocumento,
         ...filtrosAvancadosParaApi(avancados),
         page: list.page,

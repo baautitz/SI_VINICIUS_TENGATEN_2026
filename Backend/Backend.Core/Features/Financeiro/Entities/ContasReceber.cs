@@ -20,7 +20,11 @@ public class ContasReceber
     public DateTime DataVencimento { get; private set; }
     public decimal Valor { get; private set; }
     public decimal ValorPago { get; private set; }
-    public decimal ValorSaldo => Valor - ValorPago;
+    // Baixa não monetária por devolução: abate o saldo sem alterar o Valor original nem o que foi recebido.
+    public decimal ValorAbatido { get; private set; }
+    public decimal ValorSaldo => Valor - ValorPago - ValorAbatido;
+    // Baixa = liquidação em dinheiro (ValorPago) ou por devolução (ValorAbatido); trava cancelamento, edição e exclusão.
+    public bool PossuiBaixa => ValorPago > 0 || ValorAbatido > 0;
     public StatusTituloFinanceiro Status { get; private set; }
     public CondicoesPagamentos? CondicaoPagamento { get; private set; }
     public string? Observacao { get; private set; }
@@ -78,12 +82,13 @@ public class ContasReceber
     }
 
     // Reidratação a partir do banco.
-    public ContasReceber(int id, string descricao, decimal valor, Clientes cliente, DateTime dataVencimento, string numeroDocumento, int numeroParcela, int totalParcelas, DateTime? dataEmissao, CondicoesPagamentos? condicaoPagamento, OrigemTituloFinanceiro origemTipo, int? origemId, string? observacao, DateTime criadoEm, decimal valorPago, StatusTituloFinanceiro status)
+    public ContasReceber(int id, string descricao, decimal valor, Clientes cliente, DateTime dataVencimento, string numeroDocumento, int numeroParcela, int totalParcelas, DateTime? dataEmissao, CondicoesPagamentos? condicaoPagamento, OrigemTituloFinanceiro origemTipo, int? origemId, string? observacao, DateTime criadoEm, decimal valorPago, StatusTituloFinanceiro status, decimal valorAbatido = 0)
         : this(descricao, valor, cliente, dataVencimento, numeroDocumento, numeroParcela, totalParcelas, dataEmissao, condicaoPagamento, origemTipo, origemId, observacao)
     {
         Id = id;
         CriadoEm = criadoEm;
         ValorPago = valorPago;
+        ValorAbatido = valorAbatido;
         Status = status;
     }
 
@@ -104,7 +109,7 @@ public class ContasReceber
             throw new DomainException($"O valor informado (R$ {valor:F2}) excede o saldo restante da parcela (R$ {ValorSaldo:F2}).");
 
         ValorPago += valor;
-        Status = ValorPago >= Valor ? StatusTituloFinanceiro.PAGO : StatusTituloFinanceiro.PARCIAL;
+        RecalcularStatus();
     }
 
     public void EstornarRecebimento(decimal valor)
@@ -121,34 +126,45 @@ public class ContasReceber
             throw new DomainException($"O valor do estorno (R$ {valor:F2}) não pode ser maior do que o valor já recebido (R$ {ValorPago:F2}).");
 
         ValorPago -= valor;
-        Status = ValorPago == 0 ? StatusTituloFinanceiro.ABERTO : StatusTituloFinanceiro.PARCIAL;
+        RecalcularStatus();
     }
 
-    // Reduz o que ainda está em aberto (devolução) até o valor informado e devolve quanto foi abatido.
-    // Sem nada recebido a parcela zerada é cancelada, mantendo o valor original.
+    // Abate (devolução) até o saldo em aberto e devolve quanto foi abatido. O Valor original nunca muda;
+    // parcela quitada só por abatimento fica PAGO.
     public decimal Abater(decimal valor)
     {
         if (Status == StatusTituloFinanceiro.CANCELADO) return 0;
 
-        var abatido = Math.Min(valor, ValorSaldo);
+        var abatido = Math.Min(Math.Round(valor, 2, MidpointRounding.AwayFromZero), ValorSaldo);
         if (abatido <= 0) return 0;
 
-        if (abatido == Valor)
-        {
-            Status = StatusTituloFinanceiro.CANCELADO;
-            return abatido;
-        }
-
-        Valor -= abatido;
-        if (Valor == ValorPago)
-            Status = StatusTituloFinanceiro.PAGO;
+        ValorAbatido += abatido;
+        RecalcularStatus();
         return abatido;
     }
+
+    // Inverso de Abater (estorno de devolução): devolve até o que foi abatido; não mexe em ValorPago.
+    public decimal Restituir(decimal valor)
+    {
+        if (Status == StatusTituloFinanceiro.CANCELADO) return 0;
+
+        var restituido = Math.Min(Math.Round(valor, 2, MidpointRounding.AwayFromZero), ValorAbatido);
+        if (restituido <= 0) return 0;
+
+        ValorAbatido -= restituido;
+        RecalcularStatus();
+        return restituido;
+    }
+
+    private void RecalcularStatus()
+        => Status = ValorSaldo <= 0 ? StatusTituloFinanceiro.PAGO
+            : ValorPago + ValorAbatido > 0 ? StatusTituloFinanceiro.PARCIAL
+            : StatusTituloFinanceiro.ABERTO;
 
     // Cancela a parcela; exige que nada tenha sido recebido.
     public void Cancelar()
     {
-        if (ValorPago > 0)
+        if (PossuiBaixa)
             throw new DomainException("Não é possível cancelar uma conta a receber com parcelas baixadas.");
 
         Status = StatusTituloFinanceiro.CANCELADO;
@@ -161,7 +177,7 @@ public class ContasReceber
         if (OrigemTipo != OrigemTituloFinanceiro.MANUAL)
             throw new DomainException("Conta gerada por outro documento não pode ser editada manualmente.");
 
-        if (Status != StatusTituloFinanceiro.ABERTO || ValorPago > 0)
+        if (Status != StatusTituloFinanceiro.ABERTO || PossuiBaixa)
             throw new DomainException("Só é possível alterar uma parcela aberta e sem recebimentos.");
 
         if (string.IsNullOrWhiteSpace(descricao))

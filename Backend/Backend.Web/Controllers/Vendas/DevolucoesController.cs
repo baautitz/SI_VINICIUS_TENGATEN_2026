@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Backend.Core.Common.Results;
 using Backend.Core.Features.Vendas.Commands;
+using Backend.Core.Features.Vendas.DTOs;
 using Backend.Core.Features.Vendas.Entities;
 using Backend.Core.Features.Vendas.Services;
 using Microsoft.AspNetCore.Http;
@@ -18,6 +20,10 @@ public class DevolucoesController : ControllerBase
     {
         _vendasService = vendasService;
     }
+
+    [HttpGet("api/devolucoes")]
+    public Task<ResultadoPaginado<DevolucaoResumo>> GetDevolucoes([FromQuery] string? search, [FromQuery] int? vendaId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        => _vendasService.PesquisarDevolucoes(search ?? "", page, pageSize, vendaId);
 
     [HttpGet("api/vendas/{vendaId:int}/devolucoes")]
     public Task<IReadOnlyList<Devolucao>> GetDevolucoesDaVenda(int vendaId)
@@ -39,5 +45,16 @@ public class DevolucoesController : ControllerBase
             return BadRequest(result);
 
         return CreatedAtAction(nameof(GetDevolucao), new { id = result.Data!.Id }, result);
+    }
+
+    [HttpPost("api/devolucoes/{id:int}/estornar")]
+    public async Task<ActionResult<Resultado<Devolucao>>> Estornar(int id, [FromBody] EstornarDevolucaoCommand command)
+    {
+        var result = await _vendasService.EstornarDevolucao(id, command);
+        if (result.Success)
+            return Ok(result);
+        if (result.Errors!.Any(e => e.Code == VendasService.DevolucaoInexistente))
+            return NotFound(result);
+        return BadRequest(result);
     }
 }

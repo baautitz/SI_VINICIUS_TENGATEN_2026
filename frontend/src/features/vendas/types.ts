@@ -43,9 +43,14 @@ export interface Venda {
 
 export type StatusDevolucao = "NENHUMA" | "PARCIAL" | "TOTAL";
 
-// Imutável: só se cria e consulta.
+// Itens imutáveis; só pode ser estornada (status).
+export type StatusDevolucaoRegistro = "ATIVA" | "ESTORNADA";
+
 export interface Devolucao {
   id: number;
+  status: StatusDevolucaoRegistro;
+  estornadoEm?: string | null;
+  motivoEstorno?: string | null;
   vendaId: number;
   dataDevolucao: string;
   motivo: string;
@@ -60,6 +65,16 @@ export interface Devolucao {
     custoUnitario: number;
     valorTotal: number;
   }>;
+}
+
+export interface DevolucaoResumo {
+  id: number;
+  vendaId: number;
+  clienteNome: string;
+  dataDevolucao: string;
+  valorTotal: number;
+  motivo: string;
+  status: StatusDevolucaoRegistro;
 }
 
 export interface CriarDevolucaoValues {

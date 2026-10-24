@@ -49,11 +49,11 @@ import {
   type VendaFormValues,
 } from "./types";
 import { Trash2, Boxes, Receipt, FileText, Undo2 } from "lucide-react";
-import { DevolucoesHistoricoWindow, type DevolucoesHistoricoWindowProps } from "./devolucao";
+import { DevolucoesFeature, type DevolucoesFeatureProps } from "@/features/devolucoes";
+import { useDevolucaoFlow } from "./devolucao-flow";
 import { estoqueApi } from "@/api/estoque";
-import { ContasReceberUpsertForm } from "@/features/financeiro/contas-receber/upsert";
+import { ContasReceberFeature, type ContasReceberFeatureProps } from "@/features/financeiro/contas-receber";
 import { useRelated, mapItens } from "@/hooks/use-related";
-import { contasReceberApi } from "@/api/financeiro";
 import { MovimentacoesUpsert } from "@/features/estoque/movimentacoes/upsert";
 import { useWindow, useWindowCommands, useUi, WindowCancelButton } from "@/ui/imperative";
 import { Spinner } from "@/ui/primitives";
@@ -279,6 +279,9 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
   const ui = useUi();
   const queryClient = useQueryClient();
   const [gerandoNfe, setGerandoNfe] = useState(false);
+  const { realizarDevolucao } = useDevolucaoFlow();
+  // A venda é recarregada quando uma devolução é registrada ou estornada (invalidação de ["vendas"]).
+  const statusDevolucao = editingItem?.statusDevolucao;
 
   const gerarNfe = async () => {
     if (gerandoNfe || !editingItem) return;
@@ -540,14 +543,12 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     );
 
   const openContasReceber = () =>
-    openList(
-      () => contasReceberApi.listByOrigem("VENDA", editingItem!.id).then(mapItens((x) => ({ id: x.id, descricao: x.descricao, detalhe: x.status }))),
-      contasReceberApi.getById,
-      ContasReceberUpsertForm,
-      "Detalhes da Conta a Receber",
-      "Venda sem contas a receber.",
-      false,
-    );
+    ui.windows.open<true, ContasReceberFeatureProps>({
+      component: ContasReceberFeature,
+      props: { vendaId: editingItem!.id },
+      title: `Contas a receber da venda #${editingItem!.id}`,
+      size: "full",
+    });
 
   const openTexto = (title: string, value: string) =>
     ui.windows.open<string, TextoWindowProps>({
@@ -557,13 +558,19 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
       size: "large",
     });
   const openObservacao = () => openTexto("Observação da Venda", editingItem!.observacao ?? "");
-  const openDevolucoes = () =>
-    ui.windows.open<void, DevolucoesHistoricoWindowProps>({
-      component: DevolucoesHistoricoWindow,
-      props: { vendaId: editingItem!.id },
-      title: `Devoluções da Venda #${editingItem!.id}`,
-      size: "large",
+  const openDevolucoes = async () => {
+    const id = editingItem!.id;
+    if (!statusDevolucao || statusDevolucao === "NENHUMA") {
+      await realizarDevolucao(editingItem!);
+      return;
+    }
+    await ui.windows.open<true, DevolucoesFeatureProps>({
+      component: DevolucoesFeature,
+      props: { vendaId: id },
+      title: `Devoluções da venda #${id}`,
+      size: "full",
     });
+  };
 
   const commands = [
     {
@@ -579,7 +586,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     {
       id: "vendas.view-devolucoes",
       hotkey: combinacaoDe("verDevolucoes"),
-      label: "Visualizar devoluções",
+      label: "Devoluções",
       enabled: readOnly && !!editingItem,
       run: (event: KeyboardEvent) => {
         event.preventDefault();

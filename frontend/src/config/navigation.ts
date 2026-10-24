@@ -22,6 +22,7 @@ import {
   Receipt,
   PackagePlus,
   FileText,
+  Undo2,
 } from "lucide-react";
 import React from "react";
 
@@ -45,7 +46,10 @@ export const navigationConfig: NavGroup[] = [
     title: "Vendas",
     icon: CreditCard,
     urlPrefix: "/vendas",
-    items: [{ title: "Registrar Venda", url: "/vendas", icon: CreditCard }],
+    items: [
+      { title: "Registrar Venda", url: "/vendas", icon: CreditCard },
+      { title: "Devoluções", url: "/devolucoes", icon: Undo2 },
+    ],
   },
   {
     id: "compras",

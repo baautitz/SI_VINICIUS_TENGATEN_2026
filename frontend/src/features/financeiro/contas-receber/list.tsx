@@ -131,6 +131,11 @@ export function ContasReceberList({
       cell: ({ row }) => <div className="text-right text-foreground">{brl(Number(row.original.valorPago))}</div>,
     },
     {
+      accessorKey: "valorAbatido",
+      header: () => <div className="text-right font-semibold">Abatido</div>,
+      cell: ({ row }) => <div className="text-right text-foreground">{brl(Number(row.original.valorAbatido ?? 0))}</div>,
+    },
+    {
       accessorKey: "valorSaldo",
       header: () => <div className="text-right font-semibold">Saldo</div>,
       cell: ({ row }) => <div className="text-right font-semibold text-foreground">{brl(Number(row.original.valorSaldo))}</div>,

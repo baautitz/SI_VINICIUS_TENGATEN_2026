@@ -195,6 +195,20 @@ public class ComprasEstornoTests
     }
 
     [Fact]
+    public async Task Parcela_parcial_bloqueia_o_estorno()
+    {
+        var c = new Cenario(paga: true); // 4 de 10 pagos
+        Assert.Equal(StatusTituloFinanceiro.PARCIAL, c.Conta.Status);
+
+        var r = await c.Service.Estornar(7, new EstornarCompraCommand("motivo valido"));
+
+        Assert.False(r.Success);
+        Assert.Contains("ESTORNO_PARCELA_PAGA", Codigos(r));
+        Assert.Equal(StatusTituloFinanceiro.PARCIAL, c.Conta.Status);
+        Assert.Empty(c.ContasAtualizadas);
+    }
+
+    [Fact]
     public async Task Estoque_menor_que_a_entrada_bloqueia()
     {
         var c = new Cenario();

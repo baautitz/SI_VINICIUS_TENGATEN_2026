@@ -28,6 +28,9 @@ export function VendasList({
   onDelete,
   onView,
   onPageChange,
+  icon,
+  selectionMode = false,
+  onSelect,
 }: VendasListProps) {
   const columns: ColumnDef<Venda>[] = [
     {
@@ -107,7 +110,10 @@ export function VendasList({
     },
     getActionsColumn<Venda>({
       onView,
+      selectionMode,
+      onSelect,
       extra: (item) =>
+        !selectionMode &&
         item.statusDevolucao !== "TOTAL" && (
           <RowAction kind="estornar" label="Devolver itens" onClick={() => onDelete(item)} />
         ),
@@ -119,7 +125,7 @@ export function VendasList({
       <FeatureLayout>
         <FeatureHeader
           title="Vendas"
-          icon={<ShoppingBag />}
+          icon={icon ?? <ShoppingBag />}
           onAdd={onAdd}
           addButtonLabel="Registrar Venda"
         />
@@ -137,7 +143,8 @@ export function VendasList({
           searchPlaceholder="Pesquisar vendas por cliente ou emitente..."
           getRowId={(row) => row.id.toString()}
           onEditRow={onView}
-          onDeleteRow={onDelete}
+          onDeleteRow={selectionMode ? undefined : onDelete}
+          onRowSelect={selectionMode ? onSelect : undefined}
         />
       </FeatureLayout>
     </div>

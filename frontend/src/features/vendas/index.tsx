@@ -2,25 +2,35 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { VendasList } from "./list";
-import {
-  DevolucaoTipoWindow,
-  DevolucaoWindow,
-  type DevolucaoWindowProps,
-  type TipoDevolucao,
-} from "./devolucao";
+import { useDevolucaoFlow } from "./devolucao-flow";
 import { VendasUpsertForm, type VendasUpsertProps } from "./upsert";
-import type { CriarDevolucaoValues, Venda } from "./types";
+import type { Venda } from "./types";
 import { useFeatureList } from "@/hooks/use-feature-list";
 import { vendasApi } from "@/api/vendas";
 import { useUi } from "@/ui/imperative";
-import { abrirNfe } from "@/features/nfes";
+import type { ReactNode } from "react";
+import { ShoppingBag } from "lucide-react";
 
 export * from "./types";
 
-export function VendasFeature() {
+interface VendasFeatureProps {
+  /** O mesmo ícone é usado no cabeçalho da página, seleção modal e titlebar. */
+  icon?: ReactNode;
+  selectionMode?: boolean;
+  onSelect?: (venda: Venda) => void;
+  initialSearchTerm?: string;
+}
+
+export function VendasFeature({
+  icon,
+  selectionMode = false,
+  onSelect,
+  initialSearchTerm = "",
+}: VendasFeatureProps = {}) {
   const ui = useUi();
+  const { realizarDevolucao } = useDevolucaoFlow();
   const queryClient = useQueryClient();
-  const list = useFeatureList<Venda>();
+  const list = useFeatureList<Venda>({ initialSearchTerm });
   const { data, isLoading } = useQuery({
     queryKey: ["vendas", list.deferredSearch, list.page],
     queryFn: async () => {
@@ -68,49 +78,20 @@ export function VendasFeature() {
 
   // Também chamada pela tecla Delete na linha: ignora venda já totalmente devolvida.
   const returnVenda = async (item: Venda) => {
+    await realizarDevolucao(item);
+  };
+
+  const selectVenda = async (item: Venda) => {
     if (item.statusDevolucao === "TOTAL") {
-      ui.feedback.notify({ type: "info", title: "Venda já foi totalmente devolvida." });
+      ui.feedback.notify({ type: "info", title: "Venda totalmente devolvida não pode ser selecionada." });
       return;
     }
-    const tipo = await ui.windows.open<TipoDevolucao, Record<string, never>>({
-      component: DevolucaoTipoWindow,
-      props: {},
-      title: `Devolução da Venda #${item.id}`,
-      size: "medium",
-    });
-    if (tipo.status !== "confirmed") return;
-
-    const result = await ui.windows.open<CriarDevolucaoValues, DevolucaoWindowProps>({
-      component: DevolucaoWindow,
-      props: { venda: item, total: tipo.value === "total" },
-      title: `Devolver Itens da Venda #${item.id}`,
-      size: "large",
-    });
-    if (result.status !== "confirmed") return;
-
-    try {
-      const res = await vendasApi.createDevolucao(item.id, result.value);
-      await invalidate();
-      ui.feedback.notify({ type: "success", title: "Devolução registrada com sucesso." });
-      const nfe = res?.data?.nfeAtiva;
-      if (nfe) {
-        // A devolução não gera NF-e de devolução nem cancela a nota: só avisa.
-        const r = await ui.windows.confirm({
-          title: "Esta venda possui NF-e ativa",
-          description: `A devolução não altera a NF-e (chave ${nfe.chaveAcesso}). Se necessário, cancele-a manualmente. Deseja abrir a NF-e?`,
-          confirmLabel: "Abrir NF-e",
-        });
-        if (r) await abrirNfe(ui, nfe.nfeId);
-      }
-    } catch (error) {
-      ui.feedback.notifyError(error, {
-        fallbackTitle: "Não foi possível registrar a devolução.",
-      });
-    }
+    await onSelect?.(item);
   };
 
   return (
     <VendasList
+      icon={icon ?? <ShoppingBag />}
       items={data?.itens ?? []}
       loading={isLoading}
       searchTerm={list.searchTerm}
@@ -127,6 +108,8 @@ export function VendasFeature() {
       onRowSelectionChange={list.setRowSelection}
       selectAllAcrossPages={list.selectAllAcrossPages}
       onSelectAllAcrossPagesChange={list.setSelectAllAcrossPages}
+      selectionMode={selectionMode}
+      onSelect={selectVenda}
     />
   );
 }
