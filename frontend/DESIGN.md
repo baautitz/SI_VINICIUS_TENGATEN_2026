@@ -197,17 +197,19 @@ Regras para que a mesma ação tenha sempre o mesmo rótulo, ícone, variant e a
 | Novo registro (header) | Plus | default | default | Alt+N | |
 | Adicionar linha/parcela | Plus | outline | default/sm | contextual | `<Plus />` sem classe |
 | Salvar / Lançar / Confirmar | Check (opcional) | default | default | Alt+Enter | 1 primário por janela |
-| Editar | Pencil | ghost | icon-sm | Alt+E | nunca junto de Eye |
-| Visualizar | Eye | ghost | icon-sm | | só quando não há Editar |
+| Editar | Pencil | outline | icon-sm | Alt+E | nunca junto de Eye |
+| Visualizar | Eye | outline | icon-sm | | só quando não há Editar |
 | Excluir | Trash2 | destructive | icon-sm | Delete | confirmação obrigatória |
-| Remover item de formulário | Trash2 ou X | ghost | icon-sm | | rótulo "Remover" |
+| Remover item de formulário | Trash2 ou X | outline | icon-sm | | rótulo "Remover" |
 | Estornar / Devolver | Undo2 | outline (abre janela) / destructive (confirma) | icon-sm | Alt+Z na janela; Delete na listagem | Delete na listagem = ação destrutiva da linha (excluir ou estornar), sempre com janela/confirmação (decidido) |
 | Cancelar documento | Ban | destructive | default/icon-sm | sem tecla única | com motivo |
-| Reabrir baixa de parcela | RotateCcw | ghost | icon-sm | | |
-| Baixar/Pagar título | Check | ghost | icon-sm | | sem verde cru |
+| Reabrir baixa de parcela | RotateCcw | outline | icon-sm | | |
+| Baixar/Pagar título | Check | outline | icon-sm | | sem verde cru |
 | Buscar | Search | outline | default | Alt+Q | |
 | Saída da janela | sem ícone | outline | default | Esc | Cancelar/Fechar |
 | Navegação textual | sem ícone | link | default | | |
+
+Nenhum botão de tela usa `ghost`: ação neutra é `outline` e ação destrutiva é `destructive`. `ghost` fica restrito ao interior de componentes base (fechar de dialog/sheet, calendar, sidebar, botões embutidos em campo ou chip).
 
 Botões de ação de negócio na linha da listagem (baixar, estornar, cancelar) usam `RowAction` de `@/utils/table-columns`, que fixa ícone e variant por tipo; nunca montar `Button` manual para essas ações. Ordem na linha: ação de negócio, Visualizar/Editar, Excluir.
 
