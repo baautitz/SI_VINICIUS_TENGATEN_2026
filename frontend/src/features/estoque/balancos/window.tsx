@@ -28,6 +28,7 @@ import {
 } from "@/ui/primitives";
 import { NumberInput } from "@/ui/composites";
 import { navigationCell } from "@/ui/keyboard-navigation";
+import { combinacaoDe } from "@/lib/atalhos";
 import { cn } from "@/lib/utils";
 import { statusBalancoLabels } from "./types";
 
@@ -252,7 +253,7 @@ function BalancoForm({
       () => [
         {
           id: "balancos.focus-sku",
-          hotkey: "Alt+K" as const,
+          hotkey: combinacaoDe("adicionarSku"),
           label: "Buscar SKU",
           enabled: !readOnly,
           run: (event: KeyboardEvent) => {
@@ -262,7 +263,7 @@ function BalancoForm({
         },
         {
           id: "balancos.save-draft",
-          hotkey: "Alt+R" as const,
+          hotkey: combinacaoDe("salvarRascunho"),
           label: "Salvar rascunho",
           enabled: !readOnly && !busy,
           run: async (event: KeyboardEvent) => {
