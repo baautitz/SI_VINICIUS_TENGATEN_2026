@@ -46,7 +46,6 @@ import {
   vendaSchema,
   type Venda,
   type VendaItem,
-  type StatusDevolucao,
   type VendaFormValues,
 } from "./types";
 import { Trash2, Boxes, Receipt, FileText, Undo2 } from "lucide-react";
@@ -281,9 +280,8 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
   const queryClient = useQueryClient();
   const [gerandoNfe, setGerandoNfe] = useState(false);
   const { realizarDevolucao } = useDevolucaoFlow();
-  // Após devolver pelo modal vale o status local; antes disso, o da venda carregada.
-  const [statusLocal, setStatusLocal] = useState<StatusDevolucao>();
-  const statusDevolucao = statusLocal ?? editingItem?.statusDevolucao;
+  // A venda é recarregada quando uma devolução é registrada ou estornada (invalidação de ["vendas"]).
+  const statusDevolucao = editingItem?.statusDevolucao;
 
   const gerarNfe = async () => {
     if (gerandoNfe || !editingItem) return;
@@ -563,11 +561,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
   const openDevolucoes = async () => {
     const id = editingItem!.id;
     if (!statusDevolucao || statusDevolucao === "NENHUMA") {
-      const ok = await realizarDevolucao(editingItem!);
-      if (ok) {
-        setStatusLocal("PARCIAL");
-        await queryClient.invalidateQueries({ queryKey: ["vendas", "detail", id] });
-      }
+      await realizarDevolucao(editingItem!);
       return;
     }
     await ui.windows.open<true, DevolucoesFeatureProps>({
