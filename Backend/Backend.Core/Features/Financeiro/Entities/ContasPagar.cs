@@ -28,6 +28,8 @@ public class ContasPagar
     public decimal Valor { get; private set; }
     public decimal ValorPago { get; private set; }
     public decimal ValorSaldo => Valor - ValorPago;
+    // Parcela com algum valor pago (quitada ou parcial): nenhum fluxo pode alterá-la ou cancelá-la até o pagamento ser estornado.
+    public bool PossuiBaixa => ValorPago > 0;
     public StatusTituloFinanceiro Status { get; private set; }
     public CondicoesPagamentos? CondicaoPagamento { get; private set; }
     public string? Observacao { get; private set; }
@@ -164,7 +166,7 @@ public class ContasPagar
     // Cancela a parcela (ex.: estorno da compra de origem); exige que nada tenha sido pago.
     public void Cancelar()
     {
-        if (ValorPago > 0)
+        if (PossuiBaixa)
             throw new DomainException("Não é possível cancelar uma conta a pagar com parcelas baixadas.");
 
         Status = StatusTituloFinanceiro.CANCELADO;
@@ -177,7 +179,7 @@ public class ContasPagar
         if (OrigemTipo != OrigemTituloFinanceiro.MANUAL)
             throw new DomainException("Conta gerada por outro documento não pode ser editada manualmente.");
 
-        if (Status != StatusTituloFinanceiro.ABERTO || ValorPago > 0)
+        if (Status != StatusTituloFinanceiro.ABERTO || PossuiBaixa)
             throw new DomainException("Só é possível alterar uma parcela aberta e sem pagamentos.");
 
         if (string.IsNullOrWhiteSpace(descricao))
