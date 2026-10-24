@@ -1,7 +1,7 @@
 "use client";
 
 import { combinacaoDe } from "@/lib/atalhos";
-import { Kbd, KbdGroup } from "@/ui/primitives";
+import { HotkeyKbd } from "@/ui/primitives";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import { useState, useRef, useMemo, useCallback } from "react";
 import type { FormEvent } from "react";
@@ -466,10 +466,7 @@ function ProdutosUpsertForm({
                 ) : (
                   <span className="flex items-center gap-2">
                     Salvar{" "}
-                    <KbdGroup>
-                      <Kbd>Alt</Kbd>
-                      <Kbd>Enter</Kbd>
-                    </KbdGroup>
+                    <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
                   </span>
                 )}
               </Button>
@@ -804,10 +801,7 @@ function ProdutosUpsertForm({
                     disabled={readOnly}
                   >
                     <Plus className="size-3.5" /> Adicionar Opção{" "}
-                    <KbdGroup>
-                      <Kbd>Alt</Kbd>
-                      <Kbd>O</Kbd>
-                    </KbdGroup>
+                    <HotkeyKbd hotkey={combinacaoDe("adicionarOpcaoProduto")} />
                   </Button>
                 </div>
 
@@ -918,10 +912,7 @@ function ProdutosUpsertForm({
                           onClick={openCopyPriceConfirmation}
                         >
                           Replicar Preço Focado
-                          <KbdGroup>
-                            <Kbd>Alt</Kbd>
-                            <Kbd>C</Kbd>
-                          </KbdGroup>
+                          <HotkeyKbd hotkey={combinacaoDe("replicarPreco")} />
                         </Button>
                       )}
                     </div>

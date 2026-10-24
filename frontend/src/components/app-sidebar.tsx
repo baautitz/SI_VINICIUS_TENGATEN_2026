@@ -28,7 +28,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/ui/primitives";
-import { Kbd, KbdGroup } from "@/ui/primitives";
+import { HotkeyKbd } from "@/ui/primitives";
 import { InputGroup, InputGroupInput, InputGroupAddon } from "@/ui/primitives";
 import { navigationConfig as groups, homeItem } from "@/config/navigation";
 import { useWindowCommands, useUi } from "@/ui/imperative";
@@ -305,10 +305,7 @@ export function AppSidebar() {
                 >
                   <homeItem.icon />
                   <span>{homeItem.title}</span>
-                  <KbdGroup className="ml-auto group-data-[collapsible=icon]:hidden">
-                    <Kbd>Alt</Kbd>
-                    <Kbd>H</Kbd>
-                  </KbdGroup>
+                  <HotkeyKbd className="ml-auto group-data-[collapsible=icon]:hidden" hotkey={combinacaoDe("sidebarInicio")} />
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -328,8 +325,7 @@ export function AppSidebar() {
                 </InputGroupAddon>
 
                 <InputGroupAddon align="inline-end">
-                  <Kbd>Alt</Kbd>
-                  <Kbd>S</Kbd>
+                  <HotkeyKbd hotkey={combinacaoDe("sidebarBuscar")} />
                 </InputGroupAddon>
               </InputGroup>
             </SidebarMenuItem>
@@ -387,10 +383,7 @@ export function AppSidebar() {
         </SidebarContent>
         <SidebarFooter>
           <div className="flex items-center justify-end gap-2">
-            <KbdGroup className="group-data-[collapsible=icon]:hidden">
-              <Kbd>Alt</Kbd>
-              <Kbd>B</Kbd>
-            </KbdGroup>
+            <HotkeyKbd className="group-data-[collapsible=icon]:hidden" hotkey={combinacaoDe("sidebarRecolher")} />
             <SidebarTrigger title="Recolher ou expandir o menu (Alt+B)" />
           </div>
         </SidebarFooter>

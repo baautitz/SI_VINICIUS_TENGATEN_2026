@@ -32,19 +32,7 @@ import {
 import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
 import { formatToLocal } from "@/utils/date-utils";
 import { EstornarCompraWindow, type EstornarCompraWindowProps } from "./estornar";
-import {
-  Alert,
-  AlertDescription,
-  Badge,
-  Button,
-  Field,
-  FieldError,
-  FieldLabel,
-  Input,
-  HotkeyKbd,
-  Spinner,
-  Textarea,
-} from "@/ui/primitives";
+import { Alert, AlertDescription, Badge, Button, Field, FieldError, FieldLabel, Input, HotkeyKbd, Spinner, Textarea } from "@/ui/primitives";
 import {
   Table,
   TableBody,

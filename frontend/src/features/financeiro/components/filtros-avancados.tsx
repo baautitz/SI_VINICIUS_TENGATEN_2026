@@ -3,7 +3,7 @@
 import { combinacaoDe } from "@/lib/atalhos";
 import React from "react";
 import { SlidersHorizontal } from "lucide-react";
-import { Button, Input, Kbd, KbdGroup, Popover, PopoverContent, PopoverTrigger } from "@/ui/primitives";
+import { Button, Input, Popover, PopoverContent, PopoverTrigger, HotkeyKbd } from "@/ui/primitives";
 import { DatePicker, NumberInput } from "@/ui/composites";
 import { useWindowCommands } from "@/ui/imperative";
 import { NavigationScope } from "@/ui/keyboard-navigation";
@@ -99,10 +99,7 @@ export function FiltrosAvancadosPopover({ valor, onChange }: {
       <PopoverTrigger asChild>
         <Button variant={ativos ? "default" : "outline"} aria-label="Filtros avançados">
           <SlidersHorizontal /> Filtros{ativos ? ` (${ativos})` : ""}
-          <KbdGroup>
-            <Kbd>Alt</Kbd>
-            <Kbd>F</Kbd>
-          </KbdGroup>
+          <HotkeyKbd hotkey={combinacaoDe("filtros")} />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[24rem] gap-4 p-4">

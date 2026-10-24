@@ -27,7 +27,7 @@ import {
 } from "@/ui/primitives";
 import { Button } from "@/ui/primitives";
 import { Spinner } from "@/ui/primitives";
-import { HotkeyKbd, Kbd, KbdGroup } from "@/ui/primitives";
+import { HotkeyKbd } from "@/ui/primitives";
 import { useWindowCommands } from "@/ui/imperative";
 import { useOptionalActiveWindow } from "@/ui/imperative";
 import { useNavigationScope } from "@/ui/keyboard-navigation";
@@ -240,10 +240,7 @@ export function DataTable<TData, TValue>({
 
                 {!hideSearchKbd && (
                   <InputGroupAddon align="inline-end">
-                    <KbdGroup>
-                      <Kbd>Alt</Kbd>
-                      <Kbd>Q</Kbd>
-                    </KbdGroup>
+                    <HotkeyKbd hotkey={combinacaoDe("busca")} />
                   </InputGroupAddon>
                 )}
               </InputGroup>

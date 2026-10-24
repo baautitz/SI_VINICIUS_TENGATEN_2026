@@ -4,7 +4,7 @@ import { combinacaoDe } from "@/lib/atalhos";
 import React, { useState } from "react";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import { Button } from "@/ui/primitives";
-import { Kbd, KbdGroup } from "@/ui/primitives";
+import { HotkeyKbd } from "@/ui/primitives";
 import { FieldLabel, FieldError } from "@/ui/primitives";
 import { Input } from "@/ui/primitives";
 import { NumberInput } from "@/ui/composites";
@@ -190,7 +190,7 @@ export function ContasReceberUpsertForm({ editingItem, readOnly = false }: Conta
           <Button type="submit" disabled={mutation.isPending}>
             {mutation.isPending ? "Salvando..." : (
               <span className="flex items-center gap-2">
-                Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup>
+                Salvar <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
               </span>
             )}
           </Button>
@@ -318,7 +318,7 @@ export function ContasReceberUpsertForm({ editingItem, readOnly = false }: Conta
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold tracking-wider">Parcelas</h3>
             <Button type="button" variant="outline" onClick={addParcela}>
-              <Plus /> Adicionar Parcela <KbdGroup><Kbd>Alt</Kbd><Kbd>P</Kbd></KbdGroup>
+              <Plus /> Adicionar Parcela <HotkeyKbd hotkey={combinacaoDe("adicionarParcela")} />
             </Button>
           </div>
           <Separator />

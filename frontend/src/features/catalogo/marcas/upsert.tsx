@@ -6,7 +6,7 @@ import { useRelated, mapItens } from "@/hooks/use-related";
 import { RelatedActions } from "@/components/related-actions";
 import { Package } from "lucide-react";
 
-import { Kbd, KbdGroup } from "@/ui/primitives";
+import { HotkeyKbd } from "@/ui/primitives";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import React from "react";
 import { Button } from "@/ui/primitives";
@@ -119,7 +119,7 @@ function MarcasUpsertForm({
         {!readOnly && (<form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
             <Button type="submit" form="upsert-marcas" disabled={readOnly || !canSubmit || isSubmitting}>
-              {isSubmitting ? "Salvando..." : <span className="flex items-center gap-2">Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup></span>}
+              {isSubmitting ? "Salvando..." : <span className="flex items-center gap-2">Salvar <HotkeyKbd hotkey={combinacaoDe("confirmar")} /></span>}
             </Button>
           )}
         </form.Subscribe>)}

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { WindowActions } from "@/ui/imperative";
-import { Button, Field, FieldDescription, FieldLabel, Kbd, KbdGroup, Textarea } from "@/ui/primitives";
+import { Button, Field, FieldDescription, FieldLabel, Textarea, HotkeyKbd } from "@/ui/primitives";
 import { useWindow, useWindowCommands, WindowCancelButton } from "@/ui/imperative";
 import { MIN_JUSTIFICATIVA } from "./types";
 import { combinacaoDe } from "@/lib/atalhos";
@@ -50,10 +50,7 @@ export function CancelarNfeWindow({ numero }: { numero: number }) {
         <WindowCancelButton />
         <Button type="button" variant="destructive" disabled={!valido} onClick={confirmar}>
           Cancelar NF-e
-          <KbdGroup>
-            <Kbd>Alt</Kbd>
-            <Kbd>Enter</Kbd>
-          </KbdGroup>
+          <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
         </Button>
       </WindowActions>
     </div>

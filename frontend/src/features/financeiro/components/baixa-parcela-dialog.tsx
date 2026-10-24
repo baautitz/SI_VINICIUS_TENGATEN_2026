@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { WindowActions } from "@/ui/imperative";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/ui/primitives";
-import { Kbd, KbdGroup } from "@/ui/primitives";
+import { Kbd, HotkeyKbd } from "@/ui/primitives";
 import { Field, FieldLabel, FieldError } from "@/ui/primitives";
 import { NumberInput } from "@/ui/composites";
 import { contasPagarApi, contasReceberApi } from "@/api/financeiro";
@@ -192,10 +192,7 @@ export function BaixaParcelaWindow({
           ) : (
             <span className="flex items-center gap-2">
               Baixar parcela
-              <KbdGroup>
-                <Kbd>Alt</Kbd>
-                <Kbd>Enter</Kbd>
-              </KbdGroup>
+              <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
             </span>
           )}
         </Button>

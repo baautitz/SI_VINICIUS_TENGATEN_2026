@@ -1,7 +1,7 @@
 import React from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/ui/primitives";
-import { Kbd, KbdGroup } from "@/ui/primitives";
+import { HotkeyKbd } from "@/ui/primitives";
 import { useWindowCommands } from "@/ui/imperative";
 import { fireAndForget } from "@/lib/utils";
 import { combinacaoDe } from "@/lib/atalhos";
@@ -50,10 +50,7 @@ export function FeatureHeader({
         <Button onClick={() => fireAndForget(onAdd)} className="gap-2 rounded-lg shadow-sm">
           <Plus className="h-4 w-4" />
           {addButtonLabel}{" "}
-          <KbdGroup>
-            <Kbd>Alt</Kbd>
-            <Kbd>N</Kbd>
-          </KbdGroup>
+          <HotkeyKbd hotkey={combinacaoDe("novo")} />
         </Button>
       </div>
     </div>

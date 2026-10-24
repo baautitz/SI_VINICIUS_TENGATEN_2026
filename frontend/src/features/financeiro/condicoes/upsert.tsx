@@ -1,7 +1,7 @@
 "use client";
 
 import { combinacaoDe } from "@/lib/atalhos";
-import { Kbd, KbdGroup } from "@/ui/primitives";
+import { HotkeyKbd } from "@/ui/primitives";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import React, { useCallback, useState } from "react";
 import { Button } from "@/ui/primitives";
@@ -304,10 +304,7 @@ function CondicoesUpsertForm({
                 ) : (
                   <span className="flex items-center gap-2">
                     Salvar{" "}
-                    <KbdGroup>
-                      <Kbd>Alt</Kbd>
-                      <Kbd>Enter</Kbd>
-                    </KbdGroup>
+                    <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
                   </span>
                 )}
               </Button>
@@ -586,10 +583,7 @@ function CondicoesUpsertForm({
                         disabled={parcelas.length === 0}
                       >
                         Distribuir Porcentagens{" "}
-                        <KbdGroup className="ml-1">
-                          <Kbd>Alt</Kbd>
-                          <Kbd>C</Kbd>
-                        </KbdGroup>
+                        <HotkeyKbd className="ml-1" hotkey={combinacaoDe("distribuir")} />
                       </Button>
                       <Button
                         type="button"
@@ -597,10 +591,7 @@ function CondicoesUpsertForm({
                         onClick={handleAddParcela}
                       >
                         <Plus /> Adicionar Parcela{" "}
-                        <KbdGroup>
-                          <Kbd>Alt</Kbd>
-                          <Kbd>P</Kbd>
-                        </KbdGroup>
+                        <HotkeyKbd hotkey={combinacaoDe("adicionarParcela")} />
                       </Button>
                     </div>
                   )}

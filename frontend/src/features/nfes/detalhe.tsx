@@ -10,9 +10,7 @@ import { contasPagarApi } from "@/api/financeiro";
 import { comprasApi } from "@/api/compras";
 import { CompraInput } from "@/components/entity-inputs/compra-input";
 import { TextoWindow, type TextoWindowProps } from "@/components/texto-window";
-import {
-  Button, Field, FieldLabel, HotkeyKbd, Input, Kbd, Spinner, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Textarea,
-} from "@/ui/primitives";
+import { Button, Field, FieldLabel, HotkeyKbd, Input, Kbd, Spinner, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Textarea } from "@/ui/primitives";
 import { navigationCell } from "@/ui/keyboard-navigation";
 import { useWindow, useWindowCommands, useUi, WindowCancelButton } from "@/ui/imperative";
 import { formatDateToLocal, formatToLocal } from "@/utils/date-utils";

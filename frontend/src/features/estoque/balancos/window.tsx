@@ -9,15 +9,7 @@ import { SkuInput } from "@/components/entity-inputs/sku-input";
 import { SkuViewInput } from "@/components/entity-inputs/sku-view-input";
 import { Sku, getFullSkuName } from "@/features/catalogo/skus/types";
 import { useWindow, useWindowCommands, useUi, WindowCancelButton } from "@/ui/imperative";
-import {
-  Button,
-  Field,
-  FieldLabel,
-  Input,
-  Kbd,
-  KbdGroup,
-  Spinner,
-} from "@/ui/primitives";
+import { Button, Field, FieldLabel, Input, Spinner, HotkeyKbd } from "@/ui/primitives";
 import {
   Table,
   TableBody,
@@ -300,17 +292,11 @@ function BalancoForm({
               onClick={salvarRascunho}
             >
               Salvar Rascunho{" "}
-              <KbdGroup>
-                <Kbd>Alt</Kbd>
-                <Kbd>R</Kbd>
-              </KbdGroup>
+              <HotkeyKbd hotkey={combinacaoDe("salvarRascunho")} />
             </Button>
             <Button type="button" disabled={busy} onClick={fecharBalanco}>
               Finalizar balanço{" "}
-              <KbdGroup>
-                <Kbd>Alt</Kbd>
-                <Kbd>Enter</Kbd>
-              </KbdGroup>
+              <HotkeyKbd hotkey={combinacaoDe("confirmar")} />
             </Button>
           </>
         )}

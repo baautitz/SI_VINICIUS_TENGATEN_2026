@@ -1,6 +1,6 @@
 "use client";
 
-import { Kbd, KbdGroup } from "@/ui/primitives";
+import { HotkeyKbd } from "@/ui/primitives";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import React, { useState } from "react";
 import { Button } from "@/ui/primitives";
@@ -171,7 +171,7 @@ function EmitentesUpsertForm({
               form="upsert-emitentes"
               disabled={readOnly || !canSubmit || isSubmitting}
             >
-              {isSubmitting ? "Salvando..." : <span className="flex items-center gap-2">Salvar <KbdGroup><Kbd>Alt</Kbd><Kbd>Enter</Kbd></KbdGroup></span>}
+              {isSubmitting ? "Salvando..." : <span className="flex items-center gap-2">Salvar <HotkeyKbd hotkey={combinacaoDe("confirmar")} /></span>}
             </Button>
           )}
         </form.Subscribe>

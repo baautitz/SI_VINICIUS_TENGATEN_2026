@@ -16,7 +16,7 @@ import {
   AlertDialogFooter,
   Button,
   Kbd,
-  KbdGroup,
+  HotkeyKbd,
 } from "@/ui/primitives"
 import { WindowController } from "@/ui/imperative/controller"
 import {
@@ -265,10 +265,7 @@ function ConfirmWindow({
       <AlertDialogAction asChild>
         <Button type="button" variant={confirmVariant} onClick={() => window.resolve(true)}>
           {confirmLabel}
-          <KbdGroup className="ml-2">
-            <Kbd>Alt</Kbd>
-            <Kbd>Enter</Kbd>
-          </KbdGroup>
+          <HotkeyKbd className="ml-2" hotkey={combinacaoDe("confirmar")} />
         </Button>
       </AlertDialogAction>
     </AlertDialogFooter>
