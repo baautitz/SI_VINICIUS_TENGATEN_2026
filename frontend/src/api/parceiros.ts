@@ -19,6 +19,7 @@ export const emitentesApi = {
   list: (search?: string, page = 1, pageSize = 20) =>
     http.get<PaginatedResult<Emitente>>(`/api/parceiros/emitentes?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`),
   getById: (id: number) => http.get<Emitente>(`/api/parceiros/emitentes/${id}`),
+  getPadrao: () => http.get<Emitente | undefined>("/api/parceiros/emitentes/padrao"),
   create: (data: EmitenteFormValues) => http.post<Resultado<Emitente>>("/api/parceiros/emitentes", data),
   update: (id: number, data: EmitenteFormValues) => http.put<Resultado<Emitente>>(`/api/parceiros/emitentes/${id}`, data),
   delete: (id: number) => http.delete(`/api/parceiros/emitentes/${id}`),

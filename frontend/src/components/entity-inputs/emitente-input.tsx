@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useUi } from "@/ui/imperative";
 import { EmitentesUpsert } from "@/features/parceiros/emitentes/upsert";
 import { EntityInput } from "@/ui/composites";
@@ -15,6 +16,8 @@ interface EmitenteInputProps {
   onSelectId: (id: number | null) => void;
   onSelectItem?: (item: Emitente | null) => void;
   disabled?: boolean;
+  /** Pré-seleciona o Emitente padrão quando o campo está vazio (use só em criação). */
+  usarPadrao?: boolean;
 }
 
 export function EmitenteInput({
@@ -25,8 +28,21 @@ export function EmitenteInput({
   onSelectId,
   onSelectItem,
   disabled = false,
+  usarPadrao = false,
 }: EmitenteInputProps) {
   const ui = useUi();
+  const preenchido = React.useRef(false);
+  const { data: padrao } = useQuery({
+    queryKey: ["emitentes", "padrao"],
+    queryFn: () => emitentesApi.getPadrao(),
+    enabled: usarPadrao && !initialItem && !disabled,
+  });
+  React.useEffect(() => {
+    if (!padrao || initialItem || preenchido.current) return;
+    preenchido.current = true;
+    onSelectItem?.(padrao);
+    onSelectId(padrao.id);
+  }, [padrao, initialItem, onSelectItem, onSelectId]);
   return (
     <EntityInput<Emitente, Emitente>
       name={name}

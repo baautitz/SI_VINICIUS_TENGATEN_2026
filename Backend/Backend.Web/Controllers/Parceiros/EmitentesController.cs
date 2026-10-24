@@ -26,6 +26,16 @@ public class EmitentesController : ControllerBase
         return _emitentesService.ObterEmitentes(page, pageSize);
     }
 
+    [HttpGet("padrao")]
+    public async Task<ActionResult<Emitentes>> GetEmitentePadrao()
+    {
+        var emitente = await _emitentesService.ObterEmitentePadrao();
+        if (emitente is null)
+            return NoContent();
+
+        return Ok(emitente);
+    }
+
     [HttpGet("{id:int}")]
     public async Task<ActionResult<Emitentes>> GetEmitente(int id)
     {

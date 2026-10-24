@@ -6,6 +6,7 @@ import React, { useState } from "react";
 import { Button } from "@/ui/primitives";
 import { Field, FieldLabel, FieldError } from "@/ui/primitives";
 import { Input } from "@/ui/primitives";
+import { Checkbox } from "@/ui/primitives";
 import { FormFieldUI } from "@/ui/composites";
 import { SexoSelect } from "@/components/sexo-select";
 import { DatePicker } from "@/ui/composites";
@@ -106,6 +107,7 @@ function EmitentesUpsertForm({
       dataNascimento: editingItem?.dataNascimento ? editingItem.dataNascimento.split("T")[0] : "",
       observacao: editingItem?.observacao ?? "",
       ativo: editingItem?.ativo ?? true,
+      padrao: editingItem?.padrao ?? false,
     } as EmitenteFormValues,
     onSubmit: async ({ value, formApi }) => {
       // Barreira final: botão, Enter e atalho passam por aqui, então nada inválido é salvo.
@@ -523,6 +525,21 @@ function EmitentesUpsertForm({
               inputSize="full"
               readOnly={readOnly}
             />
+          )}
+        </form.Field>
+
+        <form.Field name="padrao">
+          {(field) => (
+            <Field orientation="horizontal">
+              <Checkbox
+                id={field.name}
+                name={field.name}
+                checked={field.state.value}
+                disabled={readOnly || editingItem?.ativo === false}
+                onCheckedChange={(checked) => field.handleChange(!!checked)}
+              />
+              <FieldLabel htmlFor={field.name}>Padrão</FieldLabel>
+            </Field>
           )}
         </form.Field>
 

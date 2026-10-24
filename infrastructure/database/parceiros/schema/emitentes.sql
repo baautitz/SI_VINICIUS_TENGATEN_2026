@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS emitentes (
   inscricao_municipal VARCHAR(20),
   regime_tributario VARCHAR(50),
   ativo BOOLEAN NOT NULL DEFAULT TRUE,
+  padrao BOOLEAN NOT NULL DEFAULT FALSE,
   criado_em TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   atualizado_em TIMESTAMP WITH TIME ZONE,
   observacao TEXT,
@@ -26,6 +27,9 @@ CREATE TABLE IF NOT EXISTS emitentes (
   CONSTRAINT emitentes_nome_not_empty CHECK (LENGTH(TRIM(nome_razaosocial)) > 0),
   CONSTRAINT emitentes_cpf_cnpj_not_empty CHECK (LENGTH(TRIM(cpf_cnpj)) > 0),
   CONSTRAINT emitentes_cpf_cnpj_unique UNIQUE (cpf_cnpj),
+  CONSTRAINT emitentes_padrao_ativo_ck CHECK (NOT padrao OR ativo),
   CONSTRAINT emitentes_sexo_ck
     CHECK (sexo IS NULL OR (tipo_pessoa = 'FISICA' AND sexo IN ('M', 'F', 'O')))
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS emitentes_padrao_unico_idx ON emitentes (padrao) WHERE padrao;
