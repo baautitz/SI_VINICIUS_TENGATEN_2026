@@ -11,5 +11,6 @@ public interface IUnidadesMedidaRepository
     public Task<UnidadesMedida> AtualizarUnidadeMedida(int id, UnidadesMedida unidadeMedida);
     public Task<bool> DeletarUnidadeMedida(int id);
     public Task<ResultadoPaginado<UnidadesMedida>> PesquisarUnidadesMedida(string termo, int pagina = 1, int tamanhoDaPagina = 20);
+    public Task<bool> UnidadeTemMovimentacao(int id);
     public Task<bool> ExisteSigla(string sigla, int? ignorarId = null);
 }

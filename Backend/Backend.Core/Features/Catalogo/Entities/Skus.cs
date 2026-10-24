@@ -74,7 +74,8 @@ public class Skus
         Preco = preco;
     }
 
-    public void RegistrarEntradaDeEstoque(decimal quantidadeEntrada, decimal custoUnitarioPago)
+    // Só entrada de compra define o custo da última compra; devolução, balanço e entrada manual só movem estoque e custo médio.
+    public void RegistrarEntradaDeEstoque(decimal quantidadeEntrada, decimal custoUnitarioPago, bool entradaDeCompra = true)
     {
         if (quantidadeEntrada <= 0)
             throw new DomainException("A quantidade de entrada deve ser maior que zero.");
@@ -88,7 +89,7 @@ public class Skus
         decimal novoEstoqueTotal = Estoque + quantidadeEntrada;
 
         CustoMedio = novoEstoqueTotal == 0 ? 0 : Math.Round((valorEstoqueAtual + valorEntrada) / novoEstoqueTotal, 10);
-        CustoUltimaCompra = custoUnitarioPago;
+        if (entradaDeCompra) CustoUltimaCompra = custoUnitarioPago;
         Estoque = novoEstoqueTotal;
     }
 
@@ -141,6 +142,10 @@ public class Skus
         _atributos.Clear();
         _atributos.AddRange(atributos);
     }
+
+    // Unidade sem decimais só aceita quantidade inteira.
+    public bool AceitaQuantidade(decimal quantidade)
+        => Produto is null || Produto.UnidadeMedida.PermiteDecimais || quantidade == decimal.Truncate(quantidade);
 
     public void AtualizarProduto(Produtos produto)
     {

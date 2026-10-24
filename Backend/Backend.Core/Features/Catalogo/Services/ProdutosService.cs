@@ -150,6 +150,22 @@ public sealed class ProdutosService : BaseService
                         $"Não é possível remover os SKUs {string.Join(", ", skusComMovimentacoes)} porque possuem movimentações de estoque vinculadas. Cancele ou estorne essas movimentações antes de alterar as variações do produto."));
                 }
 
+                if (existente.UnidadeMedida.Id != unidadeMedida.Id)
+                {
+                    var skusComMovimentacao = await _skusRepository
+                        .ObterSkusComMovimentacoesEstoque(skusAtuais.Itens.Select(sku => sku.Sku));
+
+                    if (skusComMovimentacao.Count > 0)
+                    {
+                        _unitOfWork.Rollback();
+
+                        return Resultado<Produtos>.Falha(new ResultadoErro(
+                            "UNIDADE_MEDIDA_COM_MOVIMENTACAO",
+                            $"Não é possível trocar a unidade de medida porque os SKUs {string.Join(", ", skusComMovimentacao)} possuem movimentações de estoque. Cancele ou estorne essas movimentações antes de trocar a unidade.",
+                            "UnidadeMedidaId"));
+                    }
+                }
+
                 existente.Atualizar(command.Produto, command.Descricao, categoria, marca, unidadeMedida);
                 if (command.Ativo) existente.Ativar(); else existente.Desativar();
 

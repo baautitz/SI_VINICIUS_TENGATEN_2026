@@ -132,6 +132,9 @@ public sealed class BalancosService : BaseService
             if (sku == null)
                 return (null, new ResultadoErro("SKU_INEXISTENTE", $"O SKU '{codigo}' não existe.", $"itens.{i}.sku"));
 
+            if (!sku.AceitaQuantidade(linha.QuantidadeContada))
+                return (null, new ResultadoErro("QUANTIDADE_FRACIONADA", $"O SKU '{sku.Sku}' usa a unidade {sku.Produto!.UnidadeMedida.Sigla}, que não permite quantidade fracionada.", $"itens.{i}.quantidadeContada"));
+
             itens.Add(new BalancosItens(0, sku.Sku, sku.NomeExibicao, sku.Produto!.UnidadeMedida.Sigla, sku.Estoque, linha.QuantidadeContada));
         }
 

@@ -14,6 +14,8 @@ public class Produtos
     public Marcas Marca { get; private set; } = null!;
     public UnidadesMedida UnidadeMedida { get; private set; } = null!;
     public IReadOnlyCollection<Skus> Skus => _skus.AsReadOnly();
+    // Preenchido só na leitura de detalhe: com movimentação em algum SKU, a unidade de medida não pode ser trocada.
+    public bool TemMovimentacao { get; private set; }
     public decimal EstoqueTotal => _skus.Sum(x => x.Estoque);
 
     public Produtos(string produto, string? descricao, Categorias categoria, Marcas marca, UnidadesMedida unidadeMedida)
@@ -79,6 +81,8 @@ public class Produtos
 
         _skus.Remove(sku);
     }
+
+    public void DefinirTemMovimentacao(bool temMovimentacao) => TemMovimentacao = temMovimentacao;
 
     public void DefinirUnidadeMedida(UnidadesMedida unidadeMedida)
     {

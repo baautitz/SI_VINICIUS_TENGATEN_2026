@@ -83,3 +83,15 @@ _Avoid_: Parcela paga (deixa de fora a parcial e o abatimento)
 **Estorno de devolução**:
 Desfazimento de uma Devolução, com motivo: os Itens saem de novo do estoque, os Abatimentos são desfeitos nas parcelas a receber e o Reembolso é cancelado, se existir. O estorno é barrado se o Reembolso já tiver baixa. A Devolução fica registrada como estornada e libera o saldo devolvível dos Itens.
 _Avoid_: Cancelamento de devolução, exclusão de devolução
+
+**Unidade de medida**:
+Unidade em que o estoque e as quantidades dos Itens de um produto são contados (UN, KG, CX). Cada produto tem uma só, e ela vale para todos os seus SKUs.
+_Avoid_: Unidade, UM
+
+**Permite decimais**:
+Característica da Unidade de medida que diz se as quantidades dos Itens podem ser fracionadas (KG) ou só inteiras (UN).
+_Avoid_: Fracionável, casas decimais
+
+**Troca de unidade**:
+Mudança da Unidade de medida de um produto já cadastrado. É barrada quando o produto já tem estoque ou movimentação, porque as quantidades registradas perderiam o significado.
+_Avoid_: Conversão de unidade (o sistema não converte quantidades)

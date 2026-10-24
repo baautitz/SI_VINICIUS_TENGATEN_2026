@@ -61,6 +61,10 @@ public sealed class UnidadesMedidaService : BaseService
         if (await _unidadesMedidaRepository.ExisteSigla(command.Sigla, id))
             return Resultado<UnidadesMedida>.Falha(new ResultadoErro("DUPLICIDADE", "Já existe outra unidade de medida com esta sigla.", "Sigla"));
 
+        // Passar para "só inteiros" deixaria quantidade fracionada já movimentada numa unidade que não a permite.
+        if (existente.PermiteDecimais && !command.PermiteDecimais && await _unidadesMedidaRepository.UnidadeTemMovimentacao(id))
+            return Resultado<UnidadesMedida>.Falha(new ResultadoErro("UNIDADE_MEDIDA_EM_USO", "Não é possível desmarcar \"permite decimais\" porque há produtos desta unidade com movimentações de estoque.", "PermiteDecimais"));
+
         existente.Atualizar(command.Sigla, command.Descricao, command.Categoria, command.PermiteDecimais, command.Ativo);
         
         return await ExecuteResultAsync(async () =>

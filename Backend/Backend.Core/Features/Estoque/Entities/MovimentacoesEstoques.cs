@@ -84,6 +84,9 @@ public class MovimentacoesEstoques
         if (_itens.Any(x => x.Sku.Sku == sku.Sku))
             throw new DomainException("Já existe um item com este SKU na movimentação.");
 
+        if (!sku.AceitaQuantidade(quantidade))
+            throw new DomainException($"O SKU '{sku.Sku}' usa a unidade {sku.Produto!.UnidadeMedida.Sigla}, que não permite quantidade fracionada.");
+
         _itens.Add(new MovimentacoesEstoquesItens(sku, quantidade, custoUnitario, sku.NomeExibicao, sku.Produto!.UnidadeMedida.Sigla));
     }
 }
