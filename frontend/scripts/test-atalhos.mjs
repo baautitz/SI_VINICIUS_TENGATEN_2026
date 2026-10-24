@@ -25,3 +25,5 @@ assert.equal(ATALHOS.excluirLinha.combinacao, "Delete");
 assert.equal(ATALHOS.excluirLinhaBackspace.combinacao, "Backspace");
 assert.equal(ATALHOS.etapaAnterior.combinacao, "Alt+ArrowLeft");
 assert.equal(ATALHOS.etapaSeguinte.combinacao, "Alt+ArrowRight");
+assert.equal(ATALHOS.devolucaoParcial.combinacao, "Alt+1");
+assert.equal(ATALHOS.devolucaoTotal.combinacao, "Alt+2");

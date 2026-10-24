@@ -14,3 +14,7 @@ A fonte da verdade e `frontend/src/lib/atalhos.ts` (`ATALHOS`: id, combinacao, r
 ## Ver registros relacionados
 
 - `verProdutos` Alt+Shift+P (marcas, categorias, unidades de medida). Alt+R ficou com `verContasReceber`, entao Produtos usa Shift.
+
+## Devolucao de venda
+
+- `devolucaoParcial` Alt+1 e `devolucaoTotal` Alt+2, na ordem dos botoes. Digitos evitam disputar letras ja usadas (Alt+P parcela, Alt+T titulos).
