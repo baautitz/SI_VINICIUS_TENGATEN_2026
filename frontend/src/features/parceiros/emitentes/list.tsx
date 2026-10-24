@@ -7,6 +7,7 @@ import { UserCircle } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 
 import { DataTable } from "@/ui/composites";
+import { Badge } from "@/ui/primitives";
 
 import { FeatureLayout } from "@/ui/composites";
 import { TipoPessoaBadge } from "../tipo-pessoa-badge";
@@ -62,7 +63,10 @@ export function EmitentesList({
         const item = row.original;
         return (
           <div className="flex flex-col">
-            <span className="font-medium">{item.nomeRazaoSocial}</span>
+            <span className="flex items-center gap-2 font-medium">
+              {item.nomeRazaoSocial}
+              {item.padrao && <Badge variant="info">Padrão</Badge>}
+            </span>
             {item.apelidoNomeFantasia && (
               <span className="text-xs text-muted-foreground">
                 {item.apelidoNomeFantasia}
