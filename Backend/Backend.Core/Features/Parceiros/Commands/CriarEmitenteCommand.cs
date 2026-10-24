@@ -19,6 +19,7 @@ public record CriarEmitenteCommand(
     string? Observacao,
     bool Ativo,
     string? Sexo = null,
-    DateTime? DataNascimento = null
+    DateTime? DataNascimento = null,
+    bool Padrao = false
 );
 

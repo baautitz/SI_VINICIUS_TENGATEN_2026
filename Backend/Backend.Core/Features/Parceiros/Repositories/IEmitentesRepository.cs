@@ -7,6 +7,7 @@ public interface IEmitentesRepository
 {
     public Task<ResultadoPaginado<Emitentes>> ObterEmitentes(int pagina = 1, int tamanhoDaPagina = 20);
     public Task<Emitentes?> ObterEmitentePorId(int id);
+    public Task<Emitentes?> ObterEmitentePadrao();
     public Task<Emitentes> CriarEmitente(Emitentes emitente);
     public Task<Emitentes> AtualizarEmitente(int id, Emitentes emitente);
     public Task<bool> DeletarEmitente(int id);

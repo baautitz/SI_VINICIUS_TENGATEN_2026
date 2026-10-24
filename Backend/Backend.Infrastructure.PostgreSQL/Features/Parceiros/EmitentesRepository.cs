@@ -25,7 +25,7 @@ public class EmitentesRepository : IEmitentesRepository
         const string sqlData = @"
             SELECT e.id AS Id, e.tipo_pessoa AS TipoPessoa, e.nome_razaosocial AS NomeRazaoSocial, e.cpf_cnpj AS CpfCnpj, e.apelido_nomefantasia AS ApelidoNomeFantasia, e.logradouro AS Logradouro, e.numero AS Numero, e.sexo AS Sexo, e.data_nascimento AS DataNascimento,
                    e.telefone AS Telefone, e.email AS Email, e.rg_ie AS RgIe, e.inscricao_municipal AS InscricaoMunicipal, e.regime_tributario AS RegimeTributario,
-                   e.ativo AS Ativo, e.criado_em AS CriadoEm, e.observacao AS Observacao,
+                   e.ativo AS Ativo, e.padrao AS Padrao, e.criado_em AS CriadoEm, e.observacao AS Observacao,
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    c.id AS CidadeId, c.id AS Id, c.cidade, c.ddd,
                    st.id AS EstadoId, st.id AS Id, st.estado, st.uf,
@@ -66,7 +66,7 @@ public class EmitentesRepository : IEmitentesRepository
         const string sql = @"
             SELECT e.id AS Id, e.tipo_pessoa AS TipoPessoa, e.nome_razaosocial AS NomeRazaoSocial, e.cpf_cnpj AS CpfCnpj, e.apelido_nomefantasia AS ApelidoNomeFantasia,
                    e.logradouro AS Logradouro, e.numero AS Numero, e.sexo AS Sexo, e.data_nascimento AS DataNascimento, e.telefone AS Telefone, e.email AS Email, e.rg_ie AS RgIe, e.inscricao_municipal AS InscricaoMunicipal,
-                   e.regime_tributario AS RegimeTributario, e.ativo AS Ativo, e.criado_em AS CriadoEm, e.observacao AS Observacao,
+                   e.regime_tributario AS RegimeTributario, e.ativo AS Ativo, e.padrao AS Padrao, e.criado_em AS CriadoEm, e.observacao AS Observacao,
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    c.id AS CidadeId, c.id AS Id, c.cidade, c.ddd,
                    st.id AS EstadoId, st.id AS Id, st.estado, st.uf,
@@ -102,13 +102,16 @@ public class EmitentesRepository : IEmitentesRepository
 
     public async Task<Emitentes> CriarEmitente(Emitentes emitente)
     {
+        if (emitente.Padrao)
+            await LimparPadrao(null);
+
         const string sql = @"
             INSERT INTO emitentes (tipo_pessoa, nome_razaosocial, cpf_cnpj, apelido_nomefantasia, logradouro, numero, sexo, data_nascimento,
                                    bairro_id, nacionalidade_id, telefone, email, rg_ie, inscricao_municipal,
-                                   regime_tributario, ativo, criado_em, observacao)
+                                   regime_tributario, ativo, padrao, criado_em, observacao)
             VALUES (@TipoPessoa::tipo_pessoa, @NomeRazaoSocial, @CpfCnpj, @ApelidoNomeFantasia, @Logradouro, @Numero, @Sexo, @DataNascimento,
                     @BairroId, @NacionalidadeId, @Telefone, @Email, @RgIe, @InscricaoMunicipal,
-                    @RegimeTributario, @Ativo, @CriadoEm, @Observacao)
+                    @RegimeTributario, @Ativo, @Padrao, @CriadoEm, @Observacao)
             RETURNING id;";
 
         var idGerado = await _session.Connection.ExecuteScalarAsync<int>(
@@ -131,6 +134,7 @@ public class EmitentesRepository : IEmitentesRepository
                 emitente.InscricaoMunicipal,
                 emitente.RegimeTributario,
                 emitente.Ativo,
+                emitente.Padrao,
                 CriadoEm = DateTime.UtcNow,
                 emitente.Observacao
             },
@@ -143,13 +147,16 @@ public class EmitentesRepository : IEmitentesRepository
 
     public async Task<Emitentes> AtualizarEmitente(int id, Emitentes emitente)
     {
+        if (emitente.Padrao)
+            await LimparPadrao(id);
+
         const string sql = @"
             UPDATE emitentes
             SET tipo_pessoa = @TipoPessoa::tipo_pessoa, nome_razaosocial = @NomeRazaoSocial, cpf_cnpj = @CpfCnpj,
                 apelido_nomefantasia = @ApelidoNomeFantasia, logradouro = @Logradouro, numero = @Numero, sexo = @Sexo, data_nascimento = @DataNascimento,
                 bairro_id = @BairroId, nacionalidade_id = @NacionalidadeId, telefone = @Telefone, email = @Email,
                 rg_ie = @RgIe, inscricao_municipal = @InscricaoMunicipal,
-                regime_tributario = @RegimeTributario, ativo = @Ativo,
+                regime_tributario = @RegimeTributario, ativo = @Ativo, padrao = @Padrao,
                 atualizado_em = @AtualizadoEm, observacao = @Observacao
             WHERE id = @Id;";
 
@@ -174,6 +181,7 @@ public class EmitentesRepository : IEmitentesRepository
                 emitente.InscricaoMunicipal,
                 emitente.RegimeTributario,
                 emitente.Ativo,
+                emitente.Padrao,
                 AtualizadoEm = DateTime.UtcNow,
                 emitente.Observacao
             },
@@ -183,6 +191,21 @@ public class EmitentesRepository : IEmitentesRepository
         emitente.Id = id;
         return emitente;
     }
+
+    public async Task<Emitentes?> ObterEmitentePadrao()
+    {
+        var id = await _session.Connection.ExecuteScalarAsync<int?>(
+            "SELECT id FROM emitentes WHERE padrao;",
+            transaction: _session.Transaction);
+
+        return id.HasValue ? await ObterEmitentePorId(id.Value) : null;
+    }
+
+    private Task LimparPadrao(int? ignorarId)
+        => _session.Connection.ExecuteAsync(
+            "UPDATE emitentes SET padrao = FALSE WHERE padrao AND (@IgnorarId::int IS NULL OR id <> @IgnorarId);",
+            new { IgnorarId = ignorarId },
+            transaction: _session.Transaction);
 
     public async Task<bool> DeletarEmitente(int id)
     {
@@ -206,7 +229,7 @@ public class EmitentesRepository : IEmitentesRepository
         const string sqlData = @"
             SELECT e.id AS Id, e.tipo_pessoa AS TipoPessoa, e.nome_razaosocial AS NomeRazaoSocial, e.cpf_cnpj AS CpfCnpj, e.apelido_nomefantasia AS ApelidoNomeFantasia, e.logradouro AS Logradouro, e.numero AS Numero, e.sexo AS Sexo, e.data_nascimento AS DataNascimento,
                    e.telefone AS Telefone, e.email AS Email, e.rg_ie AS RgIe, e.inscricao_municipal AS InscricaoMunicipal, e.regime_tributario AS RegimeTributario,
-                   e.ativo AS Ativo, e.criado_em AS CriadoEm, e.observacao AS Observacao,
+                   e.ativo AS Ativo, e.padrao AS Padrao, e.criado_em AS CriadoEm, e.observacao AS Observacao,
                    b.id AS BairroId, b.id AS Id, b.bairro,
                    c.id AS CidadeId, c.id AS Id, c.cidade, c.ddd,
                    st.id AS EstadoId, st.id AS Id, st.estado, st.uf,

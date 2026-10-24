@@ -30,12 +30,18 @@ public sealed class EmitentesService : BaseService
     public Task<Emitentes?> ObterEmitentePorId(int id)
         => _emitentesRepository.ObterEmitentePorId(id);
 
+    public Task<Emitentes?> ObterEmitentePadrao()
+        => _emitentesRepository.ObterEmitentePadrao();
+
     public async Task<Resultado<Emitentes>> CriarEmitente(CriarEmitenteCommand command)
     {
         var validator = new CriarEmitenteCommandValidator();
         var validation = await validator.ValidateAsync(command);
         if (!validation.IsValid)
             return Resultado<Emitentes>.Falha(validation.ToResultadoErros());
+
+        if (command.Padrao && !command.Ativo)
+            return Resultado<Emitentes>.Falha(new ResultadoErro("EMITENTE_PADRAO_INATIVO", "Emitente inativo não pode ser o padrão.", "Padrao"));
 
         var nacionalidade = await _paisesRepository.ObterPaisPorId(command.NacionalidadeId);
         if (nacionalidade is null)
@@ -93,7 +99,8 @@ public sealed class EmitentesService : BaseService
                 command.Observacao,
                 command.Ativo,
                 command.Sexo,
-                command.DataNascimento
+                command.DataNascimento,
+                padrao: command.Padrao
             );
 
             var criado = await _emitentesRepository.CriarEmitente(emitente);
@@ -111,6 +118,15 @@ public sealed class EmitentesService : BaseService
         var existente = await _emitentesRepository.ObterEmitentePorId(id);
         if (existente is null)
             return Resultado<Emitentes>.Falha(new ResultadoErro("EMITENTE_NAO_ENCONTRADO", "Emitente não encontrado."));
+
+        if (command.Padrao && !command.Ativo)
+            return Resultado<Emitentes>.Falha(new ResultadoErro("EMITENTE_PADRAO_INATIVO", "Emitente inativo não pode ser o padrão.", "Padrao"));
+
+        if (existente.Padrao && command.Padrao && !command.Ativo)
+            return Resultado<Emitentes>.Falha(new ResultadoErro("EMITENTE_PADRAO_INATIVO", "Emitente padrão não pode ser inativado.", "Ativo"));
+
+        if (existente.Padrao && !command.Padrao && !command.Ativo)
+            return Resultado<Emitentes>.Falha(new ResultadoErro("EMITENTE_PADRAO_INATIVO", "Desmarque o padrão antes de inativar, ou o emitente padrão não pode ser inativado.", "Ativo"));
 
         var nacionalidade = await _paisesRepository.ObterPaisPorId(command.NacionalidadeId);
         if (nacionalidade is null)
@@ -170,6 +186,7 @@ public sealed class EmitentesService : BaseService
                 command.DataNascimento
             );
 
+            existente.DefinirPadrao(command.Padrao);
             if (command.Ativo) existente.Ativar();
             else existente.Desativar();
 

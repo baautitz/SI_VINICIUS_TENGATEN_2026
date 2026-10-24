@@ -23,6 +23,7 @@ public class Emitentes
     public string? InscricaoMunicipal { get; private set; }
     public string? RegimeTributario { get; private set; }
     public bool Ativo { get; private set; }
+    public bool Padrao { get; private set; }
     public DateTime CriadoEm { get; private set; }
     public string? Sexo { get; private set; }
     public DateTime? DataNascimento { get; private set; }
@@ -53,7 +54,8 @@ public class Emitentes
         string? observacao = null,
         bool ativo = true,
         string? sexo = null,
-        DateTime? dataNascimento = null)
+        DateTime? dataNascimento = null,
+        bool padrao = false)
     {
         nomeRazaoSocial = TextNormalization.Normalize(nomeRazaoSocial);
 
@@ -72,6 +74,9 @@ public class Emitentes
         if (!string.IsNullOrWhiteSpace(sexo) && sexo != "M" && sexo != "F" && sexo != "O")
             throw new DomainException("Sexo inválido.");
 
+        if (padrao && !ativo)
+            throw new DomainException("Emitente inativo não pode ser o padrão.");
+
         TipoPessoa = tipoPessoa;
         NomeRazaoSocial = nomeRazaoSocial;
         CpfCnpj = cpfCnpj;
@@ -87,6 +92,7 @@ public class Emitentes
         RegimeTributario = TextNormalization.NormalizeOrNull(regimeTributario);
         Observacao = TextNormalization.NormalizeOrNull(observacao);
         Ativo = ativo;
+        Padrao = padrao;
         CriadoEm = DateTime.UtcNow;
         Sexo = tipoPessoa == TipoPessoa.FISICA ? TextNormalization.NormalizeOrNull(sexo)?.ToUpper() : null;
         DataNascimento = dataNascimento;
@@ -110,8 +116,9 @@ public class Emitentes
         bool ativo = true,
         string? sexo = null,
         DateTime? dataNascimento = null,
-        DateTime? criadoEm = null)
-        : this(tipoPessoa, nomeRazaoSocial, cpfCnpj, nacionalidade, apelidoNomeFantasia, logradouro, numero, bairro, telefone, email, rgIe, inscricaoMunicipal, regimeTributario, observacao, ativo, sexo, dataNascimento)
+        DateTime? criadoEm = null,
+        bool padrao = false)
+        : this(tipoPessoa, nomeRazaoSocial, cpfCnpj, nacionalidade, apelidoNomeFantasia, logradouro, numero, bairro, telefone, email, rgIe, inscricaoMunicipal, regimeTributario, observacao, ativo, sexo, dataNascimento, padrao)
     {
         Id = id;
         CriadoEm = criadoEm ?? DateTime.UtcNow;
@@ -177,6 +184,20 @@ public class Emitentes
 
     public void Ativar() => Ativo = true;
 
-    public void Desativar() => Ativo = false;
+    public void Desativar()
+    {
+        if (Padrao)
+            throw new DomainException("Emitente padrão não pode ser inativado.");
+
+        Ativo = false;
+    }
+
+    public void DefinirPadrao(bool padrao)
+    {
+        if (padrao && !Ativo)
+            throw new DomainException("Emitente inativo não pode ser o padrão.");
+
+        Padrao = padrao;
+    }
 }
 
