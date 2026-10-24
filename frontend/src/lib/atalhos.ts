@@ -35,6 +35,7 @@ export const ATALHOS = {
   origem: atalho("Alt+Shift+O", "Origem"),
   adicionarOpcaoProduto: atalho("Alt+Shift+A", "Adicionar opcao de produto"),
   replicarPreco: atalho("Alt+Shift+C", "Replicar preco entre variacoes"),
+  verProdutos: atalho("Alt+Shift+P", "Ver produtos"),
 } as const;
 
 export type AtalhoId = keyof typeof ATALHOS;

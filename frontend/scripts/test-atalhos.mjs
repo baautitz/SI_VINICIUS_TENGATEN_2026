@@ -14,3 +14,4 @@ for (const [id, { combinacao, rotulo }] of entradas) {
 
 assert.equal(ATALHOS.novo.combinacao, "Alt+N");
 assert.equal(ATALHOS.baixarXml.combinacao, "Alt+Shift+D");
+assert.equal(ATALHOS.verProdutos.combinacao, "Alt+Shift+P");
