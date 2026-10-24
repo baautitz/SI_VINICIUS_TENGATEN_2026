@@ -1,5 +1,6 @@
 "use client";
 
+import { combinacaoDe } from "@/lib/atalhos";
 import React from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { FileUp, PackagePlus } from "lucide-react";
@@ -35,7 +36,7 @@ export function ComprasList({
   useWindowCommands([
     {
       id: "compras.importar-xml",
-      hotkey: "Alt+I",
+      hotkey: combinacaoDe("importarXml"),
       label: "Importar XML",
       run: (e) => {
         e.preventDefault();
@@ -124,7 +125,7 @@ export function ComprasList({
               className="rounded-lg"
               onClick={() => fireAndForget(async () => onImport())}
             >
-              <FileUp /> Importar XML <HotkeyKbd hotkey="Alt+I" />
+              <FileUp /> Importar XML <HotkeyKbd hotkey={combinacaoDe("importarXml")} />
             </Button>
           }
         />
