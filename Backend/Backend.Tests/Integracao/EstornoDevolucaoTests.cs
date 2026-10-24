@@ -29,8 +29,8 @@ public class EstornoDevolucaoTests
         return await acao(escopo.ServiceProvider.GetRequiredService<VendasService>());
     }
 
-    // Venda de 10 un a R$ 10 (estoque 20 -> 10) em 2 parcelas de 50; a 1a parcela já recebida.
-    private async Task<(int VendaId, int ItemId)> VendaComPrimeiraParcelaRecebida()
+    // Venda de 10 un a R$ 10 (estoque 20 -> 10) em 2 parcelas de 50, sem recebimento.
+    private async Task<(int VendaId, int ItemId)> VendaDe2Parcelas()
     {
         await _db.Executar("INSERT INTO emitentes (tipo_pessoa, nome_razaosocial, cpf_cnpj, nacionalidade_id) VALUES ('JURIDICA', 'Emitente', '45723174000110', (SELECT id FROM paises LIMIT 1));");
         await _db.Executar("INSERT INTO clientes (tipo_pessoa, nome_razaosocial, cpf_cnpj, nacionalidade_id) VALUES ('FISICA', 'Maria', '52998224725', (SELECT id FROM paises LIMIT 1));");
@@ -50,11 +50,10 @@ public class EstornoDevolucaoTests
             new[] { new CriarParcelaReceberCommand(1, DateTime.UtcNow.AddDays(30), 50), new CriarParcelaReceberCommand(2, DateTime.UtcNow.AddDays(60), 50) })));
         Assert.True(venda.Success, venda.Errors?.FirstOrDefault()?.Message);
 
-        await _db.Executar("UPDATE contas_receber SET valor_pago = 50, status = 'PAGO' WHERE numero_parcela = 1;");
         return (venda.Data!.Id, await Escalar<int>("SELECT id FROM vendas_itens LIMIT 1;"));
     }
 
-    // Devolve 6 un (R$ 60): abate 50 da parcela 2 (cancelada) e os 10 restantes viram reembolso ao cliente.
+    // Devolve 6 un (R$ 60): abate 50 da parcela 2 (cancelada) e 10 da parcela 1.
     private async Task<int> Devolver(int vendaId, int itemId)
     {
         var r = await Servico(v => v.CriarDevolucao(vendaId, new CriarDevolucaoCommand("Produto com defeito", new[] { new CriarDevolucaoItemCommand(itemId, 6) })));
@@ -78,12 +77,13 @@ public class EstornoDevolucaoTests
     }
 
     [Fact]
-    public async Task Estorno_reverte_estoque_receber_pagar_e_reabre_saldo()
+    public async Task Estorno_reverte_estoque_e_restitui_contas_a_receber()
     {
-        var (vendaId, itemId) = await VendaComPrimeiraParcelaRecebida();
+        var (vendaId, itemId) = await VendaDe2Parcelas();
         var devolucaoId = await Devolver(vendaId, itemId);
         Assert.Equal(16m, await Estoque());
         Assert.Equal("CANCELADO", await Escalar<string>("SELECT status::text FROM contas_receber WHERE numero_parcela = 2;"));
+        Assert.Equal(("ABERTO", 40m), await Parcela(1));
 
         var r = await Servico(v => v.EstornarDevolucao(devolucaoId, new EstornarDevolucaoCommand("Devolucao lancada errada")));
 
@@ -96,8 +96,8 @@ public class EstornoDevolucaoTests
         Assert.Equal(1, await Escalar<int>($"SELECT COUNT(*) FROM movimentacoes_estoque WHERE origem_tipo::text = 'ESTORNO' AND tipo_movimentacao::text = 'SAIDA';"));
 
         Assert.Equal(("ABERTO", 50m), await Parcela(2));
-        Assert.Equal(("PAGO", 50m), await Parcela(1));
-        Assert.Equal("CANCELADO", await Escalar<string>("SELECT status::text FROM contas_pagar WHERE origem_tipo::text = 'DEVOLUCAO_VENDA';"));
+        Assert.Equal(("ABERTO", 50m), await Parcela(1));
+        Assert.Equal(0, await Escalar<int>("SELECT COUNT(*) FROM contas_pagar;"));
 
         var venda = await Servico(v => v.ObterVendaPorId(vendaId));
         Assert.Equal(0m, venda!.Itens.Single().QuantidadeDevolvida);
@@ -109,28 +109,48 @@ public class EstornoDevolucaoTests
 
     [Theory]
     [InlineData(4, "PARCIAL")]
-    [InlineData(10, "PAGO")]
-    public async Task Estorno_barrado_quando_reembolso_possui_baixa(int valorPago, string status)
+    [InlineData(40, "PAGO")]
+    public async Task Estorno_barrado_quando_conta_a_receber_possui_baixa(int valorPago, string status)
     {
-        var (vendaId, itemId) = await VendaComPrimeiraParcelaRecebida();
+        var (vendaId, itemId) = await VendaDe2Parcelas();
         var devolucaoId = await Devolver(vendaId, itemId);
-        await _db.Executar("UPDATE contas_pagar SET valor_pago = @valorPago, status = @status::status_titulo_financeiro_enum WHERE origem_tipo::text = 'DEVOLUCAO_VENDA';", new { valorPago, status });
+        await _db.Executar("UPDATE contas_receber SET valor_pago = @valorPago, status = @status::status_titulo_financeiro_enum WHERE numero_parcela = 1;", new { valorPago, status });
 
         var r = await Servico(v => v.EstornarDevolucao(devolucaoId, new EstornarDevolucaoCommand("Devolucao lancada errada")));
 
         Assert.False(r.Success);
         Assert.Contains("ESTORNO_PARCELA_BAIXADA", r.Errors!.Select(e => e.Code));
-        Assert.Contains("Estorne o pagamento primeiro", r.Errors!.First().Message);
+        Assert.Contains("Estorne o recebimento primeiro", r.Errors!.First().Message);
         Assert.Equal(16m, await Estoque());
         Assert.Equal("ATIVA", await Escalar<string>("SELECT status FROM devolucoes;"));
         Assert.Equal("CANCELADO", await Escalar<string>("SELECT status::text FROM contas_receber WHERE numero_parcela = 2;"));
-        Assert.Equal(status, await Escalar<string>("SELECT status::text FROM contas_pagar WHERE origem_tipo::text = 'DEVOLUCAO_VENDA';"));
+        Assert.Equal(status, await Escalar<string>("SELECT status::text FROM contas_receber WHERE numero_parcela = 1;"));
+    }
+
+    [Theory]
+    [InlineData(4, "PARCIAL")]
+    [InlineData(50, "PAGO")]
+    public async Task Devolucao_barrada_quando_conta_a_receber_possui_baixa(int valorPago, string status)
+    {
+        var (vendaId, itemId) = await VendaDe2Parcelas();
+        await _db.Executar("UPDATE contas_receber SET valor_pago = @valorPago, status = @status::status_titulo_financeiro_enum WHERE numero_parcela = 1;", new { valorPago, status });
+
+        var r = await Servico(v => v.CriarDevolucao(vendaId, new CriarDevolucaoCommand("Produto com defeito", new[] { new CriarDevolucaoItemCommand(itemId, 6) })));
+
+        Assert.False(r.Success);
+        var erro = Assert.Single(r.Errors!);
+        Assert.Equal("DEVOLUCAO_PARCELA_BAIXADA", erro.Code);
+        Assert.Contains("Estorne o recebimento primeiro", erro.Message);
+        Assert.Equal(10m, await Estoque());
+        Assert.Equal(0, await Escalar<int>("SELECT COUNT(*) FROM devolucoes;"));
+        Assert.Equal(("ABERTO", 50m), await Parcela(2));
+        Assert.Equal(0, await Escalar<int>("SELECT COUNT(*) FROM contas_pagar;"));
     }
 
     [Fact]
     public async Task Estornar_duas_vezes_e_erro_de_validacao()
     {
-        var (vendaId, itemId) = await VendaComPrimeiraParcelaRecebida();
+        var (vendaId, itemId) = await VendaDe2Parcelas();
         var devolucaoId = await Devolver(vendaId, itemId);
         var comando = new EstornarDevolucaoCommand("Devolucao lancada errada");
 
