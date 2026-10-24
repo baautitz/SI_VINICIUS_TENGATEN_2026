@@ -36,6 +36,13 @@ export const ATALHOS = {
   adicionarOpcaoProduto: atalho("Alt+Shift+A", "Adicionar opcao de produto"),
   replicarPreco: atalho("Alt+Shift+C", "Replicar preco entre variacoes"),
   verProdutos: atalho("Alt+Shift+P", "Ver produtos"),
+  confirmar: atalho("Alt+Enter", "Confirmar"),
+  editarLinha: atalho("Alt+E", "Editar linha"),
+  abrirLinha: atalho("Enter", "Abrir linha"),
+  excluirLinha: atalho("Delete", "Excluir linha"),
+  excluirLinhaBackspace: atalho("Backspace", "Excluir linha (Backspace)"),
+  etapaAnterior: atalho("Alt+ArrowLeft", "Etapa anterior"),
+  etapaSeguinte: atalho("Alt+ArrowRight", "Etapa seguinte"),
 } as const;
 
 export type AtalhoId = keyof typeof ATALHOS;
