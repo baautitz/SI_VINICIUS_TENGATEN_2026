@@ -321,8 +321,14 @@ function CondicoesUpsertForm({
           form.handleSubmit();
         }}
       >
-        <div className="flex w-full flex-col gap-6">
-          <div className="flex flex-col gap-4">
+        <div
+          className={cn(
+            "grid w-full gap-8",
+            entradaMinimaPercentual !== 100 &&
+              "lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]",
+          )}
+        >
+          <div className="flex min-w-0 flex-col gap-4">
             <div className="flex flex-col gap-2">
               <h3 className="text-sm font-semibold tracking-wider">
                 Informações Gerais
@@ -472,7 +478,7 @@ function CondicoesUpsertForm({
                       </form.Field>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <form.Field
                         name="acrescimoPercentual"
                         validators={{
@@ -566,10 +572,9 @@ function CondicoesUpsertForm({
           </div>
 
           {entradaMinimaPercentual === 100 ? null : (
-            <div className="flex w-full flex-col gap-4">
-              <Separator />
+            <div className="flex min-w-0 flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="text-sm font-semibold tracking-wider">
                     Parcelas
                   </h3>
@@ -606,7 +611,7 @@ function CondicoesUpsertForm({
                   );
                   return (
                     <div className="flex min-h-0 w-full flex-1 flex-col">
-                      <div className="max-h-60 min-h-0 flex-1 overflow-y-auto">
+                      <div className="max-h-[50vh] min-h-0 flex-1 overflow-y-auto rounded-lg border bg-card">
                         {parcelas.length === 0 ? (
                           <Empty>
                             <EmptyHeader>
@@ -620,7 +625,7 @@ function CondicoesUpsertForm({
                             </EmptyHeader>
                           </Empty>
                         ) : (
-                          <div className="bg-card overflow-clip rounded-lg border">
+                          <div>
                             <Table pageScroll>
                               <TableHeader>
                                 <TableRow className="hover:bg-transparent">
@@ -778,7 +783,7 @@ function CondicoesUpsertForm({
                 }}
               </form.Field>
 
-              <div className="grid grid-cols-3 gap-4 pt-2">
+              <dl className="grid grid-cols-3 gap-4 text-sm">
                 {[
                   ["Entrada Mínima (%)", entradaMinimaPercentual ?? 0],
                   ["Soma das Parcelas (%)", totalParcelasPercent],
@@ -787,22 +792,17 @@ function CondicoesUpsertForm({
                     (entradaMinimaPercentual ?? 0) + totalParcelasPercent,
                   ],
                 ].map(([rotulo, v]) => (
-                  <Field key={rotulo as string}>
-                    <FieldLabel>{rotulo}</FieldLabel>
-                    <NumberInput
-                      value={v as number}
-                      decimals={2}
-                      inputSize="full"
-                      inputMode="decimal"
-                      aria-label={rotulo as string}
-                      readOnly
-                      tabIndex={-1}
-                      className="h-8 text-right font-semibold"
-                      onNumberChange={() => {}}
-                    />
-                  </Field>
+                  <div key={rotulo as string} className="flex flex-col gap-1">
+                    <dt className="text-muted-foreground text-xs">{rotulo}</dt>
+                    <dd className="font-mono font-semibold">
+                      {(v as number).toLocaleString("pt-BR", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </dd>
+                  </div>
                 ))}
-              </div>
+              </dl>
             </div>
           )}
         </div>
