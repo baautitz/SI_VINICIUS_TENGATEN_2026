@@ -55,3 +55,15 @@ _Avoid_: Pedido, entrada
 **Parcelas da compra**:
 Contas a pagar geradas por uma Compra, tanto da mercadoria quanto do frete.
 _Avoid_: Contas vinculadas, títulos
+
+**Devolução**:
+Retorno de Itens de uma Venda pelo cliente, com motivo, que devolve os Itens ao estoque e abate o valor devolvido da conta a receber da Venda. Uma Venda pode ter várias Devoluções até esgotar o saldo devolvível dos seus Itens.
+_Avoid_: Estorno (é o desfazer de uma baixa ou compra), cancelamento
+
+**Devolução parcial**:
+Devolução em que o cliente escolhe as quantidades de cada Item a devolver, dentro do saldo devolvível.
+_Avoid_: Devolução simples
+
+**Devolução total**:
+Devolução de todo o saldo devolvível de todos os Itens da Venda. Após ela a Venda não aceita nova Devolução.
+_Avoid_: Devolução completa
