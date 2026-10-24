@@ -23,3 +23,11 @@ _Avoid_: Hotkey, tecla de atalho
 **Dica de atalho**:
 Indicação visual do atalho exibida na tela, junto da ação que ele aciona.
 _Avoid_: Kbd, legenda de teclado
+
+**Emitente**:
+Parte cadastrada que emite as Vendas e Compras do sistema e consta como emitente na NF-e.
+_Avoid_: Empresa, remetente
+
+**Emitente padrão**:
+O único Emitente marcado como "Padrão", pré-selecionado ao criar um registro que pede um Emitente. Pode não existir, e nunca é um Emitente inativo.
+_Avoid_: Favorito, principal
