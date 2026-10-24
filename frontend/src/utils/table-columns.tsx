@@ -15,7 +15,7 @@ interface ActionColumnOptions<T> {
 }
 
 const ROW_ACTIONS = {
-  baixar: { icon: Check, variant: "ghost" },
+  baixar: { icon: Check, variant: "outline" },
   estornar: { icon: Undo2, variant: "outline" },
   cancelar: { icon: Ban, variant: "destructive" },
 } as const;
