@@ -1160,7 +1160,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                                     column: 3,
                                   })}
                                   size="icon-sm"
-                                  variant="ghost"
+                                  variant="outline"
                                   aria-label="Remover Item"
                                   onClick={() => handleRemoveItem(index)}
                                 >
