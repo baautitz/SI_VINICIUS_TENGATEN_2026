@@ -183,7 +183,7 @@ export const ComboboxChips = ({
       <div
         ref={ref}
         className={cn(
-          "border-input bg-background ring-offset-background focus-within:ring-ring flex min-h-8 w-full cursor-text flex-wrap items-center gap-2 rounded-lg border px-2.5 py-0.5 text-base focus-within:ring-2 focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+          "border-input bg-background ring-offset-background focus-within:ring-ring flex min-h-8 w-full cursor-text flex-wrap items-center gap-2 rounded-lg border px-2.5 py-0.5 text-base focus-within:ring-2 focus-within:ring-offset-2 has-disabled:bg-field-disabled has-disabled:cursor-not-allowed md:text-sm",
           className,
         )}
         onClick={(e) => {
