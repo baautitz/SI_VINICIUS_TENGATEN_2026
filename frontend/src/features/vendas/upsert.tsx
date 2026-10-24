@@ -1,5 +1,6 @@
 "use client";
 
+import { combinacaoDe } from "@/lib/atalhos";
 import type React from "react";
 import { useState, useRef, useMemo, useCallback } from "react";
 import { WindowActions } from "@/ui/imperative";
@@ -567,7 +568,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
   const commands = [
     {
       id: "vendas.gerar-nfe",
-      hotkey: "Alt+G" as const,
+      hotkey: combinacaoDe("gerar"),
       label: "Gerar NF-e",
       enabled: readOnly && !!editingItem,
       run: (event: KeyboardEvent) => {
@@ -577,7 +578,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     },
     {
       id: "vendas.view-devolucoes",
-      hotkey: "Alt+D" as const,
+      hotkey: combinacaoDe("verDevolucoes"),
       label: "Visualizar devoluções",
       enabled: readOnly && !!editingItem,
       run: (event: KeyboardEvent) => {
@@ -587,7 +588,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     },
     {
       id: "vendas.view-observacao",
-      hotkey: "Alt+O" as const,
+      hotkey: combinacaoDe("verObservacao"),
       label: "Visualizar observação",
       enabled: readOnly && !!editingItem,
       run: (event: KeyboardEvent) => {
@@ -597,7 +598,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     },
     {
       id: "vendas.view-contas-receber",
-      hotkey: "Alt+R" as const,
+      hotkey: combinacaoDe("verContasReceber"),
       label: "Visualizar contas a receber",
       enabled: readOnly && !!editingItem,
       run: (event: KeyboardEvent) => {
@@ -607,7 +608,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     },
     {
       id: "vendas.view-movimentacao",
-      hotkey: "Alt+M" as const,
+      hotkey: combinacaoDe("verMovimentacao"),
       label: "Visualizar movimentação de estoque",
       enabled: readOnly && !!editingItem,
       run: (event: KeyboardEvent) => {
@@ -617,7 +618,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     },
     {
       id: "vendas.focus-sku",
-      hotkey: "Alt+K" as const,
+      hotkey: combinacaoDe("adicionarSku"),
       label: "Adicionar SKU",
       enabled: !readOnly,
       run: (event: KeyboardEvent) => {
@@ -850,19 +851,19 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
               variant="outline"
               onClick={openMovimentacao}
             >
-              <Boxes /> Movimentação de Estoque <HotkeyKbd hotkey="Alt+M" />
+              <Boxes /> Movimentação de Estoque <HotkeyKbd hotkey={combinacaoDe("verMovimentacao")} />
             </Button>
             <Button type="button" variant="outline" onClick={openContasReceber}>
-              <Receipt /> Contas a Receber <HotkeyKbd hotkey="Alt+R" />
+              <Receipt /> Contas a Receber <HotkeyKbd hotkey={combinacaoDe("verContasReceber")} />
             </Button>
             <Button type="button" variant="outline" onClick={openDevolucoes}>
-              <Undo2 /> Devoluções <HotkeyKbd hotkey="Alt+D" />
+              <Undo2 /> Devoluções <HotkeyKbd hotkey={combinacaoDe("verDevolucoes")} />
             </Button>
             <Button type="button" variant="outline" onClick={openObservacao}>
-              <FileText /> Observação <HotkeyKbd hotkey="Alt+O" />
+              <FileText /> Observação <HotkeyKbd hotkey={combinacaoDe("verObservacao")} />
             </Button>
             <Button type="button" variant="outline" disabled={gerandoNfe} onClick={gerarNfe}>
-              <FilePlus2 /> {gerandoNfe ? "Gerando..." : "Gerar NF-e"} <HotkeyKbd hotkey="Alt+G" />
+              <FilePlus2 /> {gerandoNfe ? "Gerando..." : "Gerar NF-e"} <HotkeyKbd hotkey={combinacaoDe("gerar")} />
             </Button>
           </div>
         )}
