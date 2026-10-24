@@ -21,7 +21,7 @@ public class ContasReceberRepository : IContasReceberRepository
 
     private const string SelectSql = @"
         SELECT cr.id AS Id, cr.descricao AS Descricao, cr.data_emissao AS DataEmissao, cr.data_vencimento AS DataVencimento,
-               cr.valor AS Valor, cr.valor_pago AS ValorPago, cr.status AS Status, cr.observacao AS Observacao, cr.criado_em AS CriadoEm,
+               cr.valor AS Valor, cr.valor_pago AS ValorPago, cr.valor_abatido AS ValorAbatido, cr.status AS Status, cr.observacao AS Observacao, cr.criado_em AS CriadoEm,
                cr.origem_tipo::text AS OrigemTipo, cr.origem_id AS OrigemId, cr.numero_documento AS NumeroDocumento,
                cr.numero_parcela AS NumeroParcela, cr.total_parcelas AS TotalParcelas,
                c.id AS Id, c.tipo_pessoa AS TipoPessoa, c.nome_razaosocial AS NomeRazaoSocial, c.cpf_cnpj AS CpfCnpj,
@@ -56,7 +56,7 @@ public class ContasReceberRepository : IContasReceberRepository
                 return new ContasReceber(
                     conta.Id, conta.Descricao, conta.Valor, cl, conta.DataVencimento, conta.NumeroDocumento,
                     conta.NumeroParcela, conta.TotalParcelas, conta.DataEmissao, condicao, conta.OrigemTipo, conta.OrigemId,
-                    conta.Observacao, conta.CriadoEm, conta.ValorPago, conta.Status);
+                    conta.Observacao, conta.CriadoEm, conta.ValorPago, conta.Status, conta.ValorAbatido);
             },
             param,
             transaction: _session.Transaction,
@@ -73,24 +73,24 @@ public class ContasReceberRepository : IContasReceberRepository
         const string sql = @"
             INSERT INTO contas_receber (origem_tipo, origem_id, numero_documento, numero_parcela, total_parcelas,
                                         cliente_id, descricao, data_emissao, data_vencimento,
-                                        valor, valor_pago, status, condicao_pagamento_id, observacao, criado_em, atualizado_em)
+                                        valor, valor_pago, valor_abatido, status, condicao_pagamento_id, observacao, criado_em, atualizado_em)
             VALUES (@OrigemTipo::origem_titulo_financeiro_enum, @OrigemId, @NumeroDocumento, @NumeroParcela, @TotalParcelas,
                     @ClienteId, @Descricao, @DataEmissao, @DataVencimento,
-                    @Valor, @ValorPago, @Status::status_titulo_financeiro_enum, @CondicaoPagamentoId, @Observacao, @CriadoEm, @CriadoEm)
+                    @Valor, @ValorPago, @ValorAbatido, @Status::status_titulo_financeiro_enum, @CondicaoPagamentoId, @Observacao, @CriadoEm, @CriadoEm)
             RETURNING id;";
 
         var id = await _session.Connection.ExecuteScalarAsync<int>(sql, Parametros(0, conta), transaction: _session.Transaction);
 
         return new ContasReceber(id, conta.Descricao, conta.Valor, conta.Cliente, conta.DataVencimento, conta.NumeroDocumento,
             conta.NumeroParcela, conta.TotalParcelas, conta.DataEmissao, conta.CondicaoPagamento, conta.OrigemTipo, conta.OrigemId,
-            conta.Observacao, conta.CriadoEm, conta.ValorPago, conta.Status);
+            conta.Observacao, conta.CriadoEm, conta.ValorPago, conta.Status, conta.ValorAbatido);
     }
 
     public async Task<ContasReceber> AtualizarContaReceber(int id, ContasReceber conta)
     {
         const string sql = @"
             UPDATE contas_receber
-            SET descricao = @Descricao, data_vencimento = @DataVencimento, valor = @Valor, valor_pago = @ValorPago,
+            SET descricao = @Descricao, data_vencimento = @DataVencimento, valor = @Valor, valor_pago = @ValorPago, valor_abatido = @ValorAbatido,
                 status = @Status::status_titulo_financeiro_enum, observacao = @Observacao, atualizado_em = NOW()
             WHERE id = @Id;";
 
@@ -174,6 +174,7 @@ public class ContasReceberRepository : IContasReceberRepository
         c.DataVencimento,
         c.Valor,
         c.ValorPago,
+        c.ValorAbatido,
         Status = c.Status.ToString(),
         CondicaoPagamentoId = c.CondicaoPagamento?.Id,
         c.Observacao,

@@ -31,20 +31,71 @@ public class ContasReceberTests
     }
 
     [Fact]
-    public void Abater_reduz_o_aberto_cancela_se_zerar_e_devolve_o_abatido()
+    public void Abater_incrementa_abatido_sem_mudar_valor_e_devolve_o_abatido()
     {
         var parcial = new ContasReceber("Venda", 100m, Cliente, DateTime.Today, "VENDA-1");
         parcial.RegistrarRecebimento(30m);
 
         Assert.Equal(70m, parcial.Abater(500m));
-        Assert.Equal(30m, parcial.Valor);
+        Assert.Equal(100m, parcial.Valor);
+        Assert.Equal(30m, parcial.ValorPago);
+        Assert.Equal(70m, parcial.ValorAbatido);
+        Assert.Equal(0m, parcial.ValorSaldo);
         Assert.Equal(StatusTituloFinanceiro.PAGO, parcial.Status);
 
         var aberta = new ContasReceber("Venda", 100m, Cliente, DateTime.Today, "VENDA-1");
-        Assert.Equal(100m, aberta.Abater(100m));
-        Assert.Equal(StatusTituloFinanceiro.CANCELADO, aberta.Status);
+        Assert.Equal(40m, aberta.Abater(40m));
+        Assert.Equal(StatusTituloFinanceiro.PARCIAL, aberta.Status);
+        Assert.Equal(60m, aberta.ValorSaldo);
+        Assert.Equal(60m, aberta.Abater(100m));
+        Assert.Equal(StatusTituloFinanceiro.PAGO, aberta.Status);
         Assert.Equal(100m, aberta.Valor);
         Assert.Equal(0m, aberta.Abater(10m));
+    }
+
+    [Fact]
+    public void Restituir_decrementa_abatido_recalcula_status_e_nao_mexe_no_pago()
+    {
+        var c = new ContasReceber("Venda", 100m, Cliente, DateTime.Today, "VENDA-1");
+        c.RegistrarRecebimento(50m);
+        c.Abater(50m);
+
+        Assert.Equal(20m, c.Restituir(20m));
+        Assert.Equal(StatusTituloFinanceiro.PARCIAL, c.Status);
+        Assert.Equal(30m, c.ValorAbatido);
+        Assert.Equal(50m, c.ValorPago);
+        Assert.Equal(30m, c.Restituir(500m));
+        Assert.Equal(StatusTituloFinanceiro.PARCIAL, c.Status);
+        Assert.Equal(0m, c.ValorAbatido);
+
+        var so = new ContasReceber("Venda", 100m, Cliente, DateTime.Today, "VENDA-1");
+        so.Abater(100m);
+        so.Restituir(100m);
+        Assert.Equal(StatusTituloFinanceiro.ABERTO, so.Status);
+    }
+
+    [Fact]
+    public void Abatimento_e_baixa_barra_cancelar_e_atualizar()
+    {
+        var manual = new ContasReceber("Aluguel", 100m, Cliente, DateTime.Today, "MAN-1");
+        manual.Abater(10m);
+
+        Assert.True(manual.PossuiBaixa);
+        Assert.Throws<DomainException>(() => manual.Cancelar());
+        Assert.Throws<DomainException>(() => manual.Atualizar("X", DateTime.Today, 50m, null));
+    }
+
+    [Fact]
+    public void Recebimento_respeita_saldo_descontado_o_abatido()
+    {
+        var c = new ContasReceber("Venda", 100m, Cliente, DateTime.Today, "VENDA-1");
+        c.Abater(60m);
+
+        Assert.Throws<DomainException>(() => c.RegistrarRecebimento(50m));
+        c.RegistrarRecebimento(40m);
+        Assert.Equal(StatusTituloFinanceiro.PAGO, c.Status);
+        c.EstornarRecebimento(40m);
+        Assert.Equal(StatusTituloFinanceiro.PARCIAL, c.Status);
     }
 
     [Fact]
