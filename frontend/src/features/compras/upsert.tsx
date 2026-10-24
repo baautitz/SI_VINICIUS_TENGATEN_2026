@@ -819,6 +819,15 @@ function CompraForm({
       )}
 
       <WindowActions>
+        {podeEstornar && (
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={() => void estornar()}
+          >
+            <Undo2 /> Estornar compra <HotkeyKbd hotkey={combinacaoDe("estornar")} />
+          </Button>
+        )}
         {compra && (
           <RelatedActions
             actions={[
@@ -837,15 +846,6 @@ function CompraForm({
               },
             ]}
           />
-        )}
-        {podeEstornar && (
-          <Button
-            type="button"
-            variant="destructive"
-            onClick={() => void estornar()}
-          >
-            <Undo2 /> Estornar compra <HotkeyKbd hotkey={combinacaoDe("estornar")} />
-          </Button>
         )}
         <WindowCancelButton readOnly={readOnly} />
         {etapa > 0 && (
