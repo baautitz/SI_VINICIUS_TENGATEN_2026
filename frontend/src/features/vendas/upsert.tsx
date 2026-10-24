@@ -46,10 +46,12 @@ import {
   vendaSchema,
   type Venda,
   type VendaItem,
+  type StatusDevolucao,
   type VendaFormValues,
 } from "./types";
 import { Trash2, Boxes, Receipt, FileText, Undo2 } from "lucide-react";
-import { DevolucoesHistoricoWindow, type DevolucoesHistoricoWindowProps } from "./devolucao";
+import { DevolucoesFeature, type DevolucoesFeatureProps } from "@/features/devolucoes";
+import { useDevolucaoFlow } from "./devolucao-flow";
 import { estoqueApi } from "@/api/estoque";
 import { ContasReceberFeature, type ContasReceberFeatureProps } from "@/features/financeiro/contas-receber";
 import { useRelated, mapItens } from "@/hooks/use-related";
@@ -278,6 +280,10 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
   const ui = useUi();
   const queryClient = useQueryClient();
   const [gerandoNfe, setGerandoNfe] = useState(false);
+  const { realizarDevolucao } = useDevolucaoFlow();
+  // Após devolver pelo modal vale o status local; antes disso, o da venda carregada.
+  const [statusLocal, setStatusLocal] = useState<StatusDevolucao>();
+  const statusDevolucao = statusLocal ?? editingItem?.statusDevolucao;
 
   const gerarNfe = async () => {
     if (gerandoNfe || !editingItem) return;
@@ -554,13 +560,23 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
       size: "large",
     });
   const openObservacao = () => openTexto("Observação da Venda", editingItem!.observacao ?? "");
-  const openDevolucoes = () =>
-    ui.windows.open<void, DevolucoesHistoricoWindowProps>({
-      component: DevolucoesHistoricoWindow,
-      props: { vendaId: editingItem!.id },
-      title: `Devoluções da Venda #${editingItem!.id}`,
-      size: "large",
+  const openDevolucoes = async () => {
+    const id = editingItem!.id;
+    if (!statusDevolucao || statusDevolucao === "NENHUMA") {
+      const ok = await realizarDevolucao(editingItem!);
+      if (ok) {
+        setStatusLocal("PARCIAL");
+        await queryClient.invalidateQueries({ queryKey: ["vendas", "detail", id] });
+      }
+      return;
+    }
+    await ui.windows.open<true, DevolucoesFeatureProps>({
+      component: DevolucoesFeature,
+      props: { vendaId: id },
+      title: `Devoluções da venda #${id}`,
+      size: "full",
     });
+  };
 
   const commands = [
     {
@@ -576,7 +592,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     {
       id: "vendas.view-devolucoes",
       hotkey: combinacaoDe("verDevolucoes"),
-      label: "Visualizar devoluções",
+      label: "Devoluções",
       enabled: readOnly && !!editingItem,
       run: (event: KeyboardEvent) => {
         event.preventDefault();
