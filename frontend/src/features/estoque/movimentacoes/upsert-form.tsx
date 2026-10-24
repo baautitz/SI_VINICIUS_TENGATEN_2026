@@ -829,7 +829,7 @@ export function MovimentacoesUpsertForm({
                                         column: 5,
                                       })}
                                       type="button"
-                                      variant="ghost"
+                                      variant="outline"
                                       size="icon-sm"
                                       aria-label="Remover Item"
                                       onClick={() => removeItemRow(index)}
