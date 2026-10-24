@@ -423,15 +423,6 @@ export function DataTable<TData, TValue>({
 
       <div className="mt-auto flex items-center justify-between">
         <div className="flex flex-1 flex-col gap-0.5">
-          {isSelectionMode ? (
-            <span className="text-muted-foreground text-xs font-medium">
-              ↑↓ para navegar · Enter para selecionar{onEditRow && " · Alt+E para editar"}
-            </span>
-          ) : (
-            <span className="text-muted-foreground text-xs font-medium">
-              ↑↓ para navegar · Alt+E para editar
-            </span>
-          )}
           {!isSelectionMode && Object.keys(rowSelection).length > 0 && (
             <span className="text-primary text-xs font-semibold">
               {selectAllAcrossPages
