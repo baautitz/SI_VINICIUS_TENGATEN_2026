@@ -18,6 +18,9 @@ const ROW_ACTIONS = {
   baixar: { icon: Check, variant: "outline" },
   estornar: { icon: Undo2, variant: "outline" },
   cancelar: { icon: Ban, variant: "destructive" },
+  visualizar: { icon: Eye, variant: "outline" },
+  editar: { icon: Pencil, variant: "outline" },
+  excluir: { icon: Trash2, variant: "destructive" },
 } as const;
 
 interface RowActionProps {
@@ -53,37 +56,10 @@ export function getActionsColumn<T>({
       return (
         <div className="flex justify-end gap-2 px-4">
           {extra?.(item)}
-          {onEdit && (
-            <Button
-              size="icon-sm"
-              variant="outline"
-              onClick={() => fireAndForget(() => onEdit(item))}
-              aria-label="Editar"
-            >
-              <Pencil className="size-4" />
-            </Button>
-          )}
+          {onEdit && <RowAction kind="editar" label="Editar" onClick={() => onEdit(item)} />}
           {/* Editar ou visualizar, nunca os dois: a edição já abre o registro. */}
-          {onView && !onEdit && (
-            <Button
-              size="icon-sm"
-              variant="outline"
-              onClick={() => fireAndForget(() => onView(item))}
-              aria-label="Visualizar"
-            >
-              <Eye className="size-4" />
-            </Button>
-          )}
-          {onDelete && (
-            <Button
-              size="icon-sm"
-              variant="destructive"
-              aria-label="Excluir"
-              onClick={() => fireAndForget(() => onDelete(item))}
-            >
-              <Trash2 className="size-4" />
-            </Button>
-          )}
+          {onView && !onEdit && <RowAction kind="visualizar" label="Visualizar" onClick={() => onView(item)} />}
+          {onDelete && <RowAction kind="excluir" label="Excluir" onClick={() => onDelete(item)} />}
           {selectionMode && onSelect && (
             <Button variant="secondary" onClick={() => fireAndForget(() => onSelect(item))}>
               <Check className="mr-2 size-4" />
