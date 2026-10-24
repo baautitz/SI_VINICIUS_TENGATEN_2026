@@ -6,15 +6,14 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/ui/primitives";
 import { DataTable, FeatureLayout, FeatureHeader } from "@/ui/composites";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/primitives";
-import { getActionsColumn } from "@/utils/table-columns";
+import { getActionsColumn, RowAction } from "@/utils/table-columns";
 import { FiltrosAvancadosPopover, type FiltrosAvancados } from "../components/filtros-avancados";
 import type { DocumentoFiltro } from "../components/documento-filtro";
 import { StatusTituloBadge } from "../components/status-titulo-badge";
 import { formatDateToLocal } from "@/utils/date-utils";
-import { Landmark, Check, RotateCcw, X } from "lucide-react";
+import { Landmark, X } from "lucide-react";
 import { ContasPagar, statusTituloLabels } from "./types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
-import { fireAndForget } from "@/lib/utils";
 
 export const TODOS = "TODOS";
 
@@ -62,14 +61,10 @@ export function ContasPagarList({
   const extra = (item: ContasPagar) => (
     <>
       {emAberto(item) && (
-        <Button size="icon-sm" variant="ghost" aria-label="Pagar parcela" title="Pagar parcela" onClick={() => fireAndForget(() => onBaixa(item))}>
-          <Check />
-        </Button>
+        <RowAction kind="baixar" label="Pagar parcela" onClick={() => onBaixa(item)} />
       )}
       {item.valorPago > 0 && item.status !== "CANCELADO" && (
-        <Button size="icon-sm" variant="ghost" aria-label="Estornar pagamento" title="Estornar pagamento" onClick={() => fireAndForget(() => onEstorno(item))}>
-          <RotateCcw />
-        </Button>
+        <RowAction kind="estornar" label="Estornar pagamento" onClick={() => onEstorno(item)} />
       )}
     </>
   );

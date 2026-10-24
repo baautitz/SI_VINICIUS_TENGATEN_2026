@@ -2,12 +2,12 @@
 
 import React from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { FileUp, PackagePlus, Undo2 } from "lucide-react";
+import { FileUp, PackagePlus } from "lucide-react";
 import { Badge, Button, Kbd } from "@/ui/primitives";
 import { DataTable, FeatureLayout } from "@/ui/composites";
 import { FeatureHeader } from "@/ui/composites";
 import { useWindowCommands } from "@/ui/imperative";
-import { getActionsColumn } from "@/utils/table-columns";
+import { getActionsColumn, RowAction } from "@/utils/table-columns";
 import { fireAndForget } from "@/lib/utils";
 import { formatDateToLocal } from "@/utils/date-utils";
 import type { FeatureListProps } from "@/hooks/use-feature-orchestrator";
@@ -105,15 +105,7 @@ export function ComprasList({
       onView,
       extra: (item) =>
         !item.estornada && (
-          <Button
-            size="icon-sm"
-            variant="outline"
-            title="Estornar compra (Del)"
-            aria-label="Estornar compra"
-            onClick={() => fireAndForget(() => onDelete(item))}
-          >
-            <Undo2 />
-          </Button>
+          <RowAction kind="estornar" label="Estornar compra" onClick={() => onDelete(item)} />
         ),
     }),
   ];
