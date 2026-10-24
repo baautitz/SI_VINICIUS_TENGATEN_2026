@@ -3,7 +3,7 @@
 import { combinacaoDe } from "@/lib/atalhos";
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, RefreshCw, Trash2, TriangleAlert, Undo2 } from "lucide-react";
+import { Plus, Receipt, RefreshCw, Trash2, TriangleAlert, Undo2 } from "lucide-react";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import { fornecedoresApi, transportadorasApi } from "@/api/parceiros";
 import { FornecedoresUpsert } from "@/features/parceiros/fornecedores/upsert";
@@ -31,6 +31,8 @@ import {
 } from "@/hooks/use-upsert-mutation";
 import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
 import { formatToLocal } from "@/utils/date-utils";
+import { RelatedActions } from "@/components/related-actions";
+import { ContasPagarFeature, type ContasPagarFeatureProps } from "@/features/financeiro/contas-pagar";
 import { EstornarCompraWindow, type EstornarCompraWindowProps } from "./estornar";
 import { Alert, AlertDescription, Badge, Button, Field, FieldError, FieldLabel, Input, HotkeyKbd, Spinner, Textarea } from "@/ui/primitives";
 import {
@@ -817,6 +819,25 @@ function CompraForm({
       )}
 
       <WindowActions>
+        {compra && (
+          <RelatedActions
+            actions={[
+              {
+                id: "compras.parcelas",
+                hotkey: combinacaoDe("verTitulos"),
+                label: "Parcelas da compra",
+                icon: <Receipt className="size-4" />,
+                run: () =>
+                  ui.windows.open<true, ContasPagarFeatureProps>({
+                    component: ContasPagarFeature,
+                    props: { compraId: compra.id },
+                    title: `Parcelas da compra #${compra.id}`,
+                    size: "full",
+                  }),
+              },
+            ]}
+          />
+        )}
         {podeEstornar && (
           <Button
             type="button"
