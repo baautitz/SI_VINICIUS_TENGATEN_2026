@@ -8,7 +8,7 @@ import {
 import { ClipboardList, Undo2 } from "lucide-react";
 import { formatToLocal } from "@/utils/date-utils";
 
-import { Kbd, KbdGroup } from "@/ui/primitives";
+import { HotkeyKbd, Kbd, KbdGroup } from "@/ui/primitives";
 import { WindowActions } from "@/ui/imperative";
 import React, { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -433,7 +433,7 @@ export function MovimentacoesUpsertForm({
             className="mr-auto"
             onClick={() => void estornarAqui()}
           >
-            <Undo2 /> Estornar movimentação <Kbd>Alt+Z</Kbd>
+            <Undo2 /> Estornar movimentação <HotkeyKbd hotkey="Alt+Z" />
           </Button>
         )}
         {readOnly && <RelatedActions actions={acoesRelacionadas} />}
