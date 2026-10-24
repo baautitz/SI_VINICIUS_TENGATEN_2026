@@ -466,7 +466,7 @@ function CompraForm({
   };
 
   // Igual às parcelas de contas a pagar/receber: lança quantas precisar (o saldo restante, ou zero);
-  // a divergência com a nota aparece nos próprios lançamentos e em "Redistribuir" (Alt+C).
+  // a divergência com a nota aparece nos próprios lançamentos e em "Redistribuir" (atalho `distribuir`).
   const adicionarParcela = () => {
     const base = new Date(dataCompra + "T12:00:00");
     base.setDate(base.getDate() + (parcelas.length + 1) * 30);
@@ -1406,7 +1406,7 @@ function CompraForm({
                                       !(p.valorParcela > 0)
                                         ? "O valor da parcela deve ser maior que zero."
                                         : parcelasDivergem
-                                          ? "A soma das parcelas diverge do valor da nota. Ajuste ou use Redistribuir (Alt+C)."
+                                          ? `A soma das parcelas diverge do valor da nota. Ajuste ou use Redistribuir (${combinacaoDe("distribuir")}).`
                                           : undefined
                                     }
                                     onNumberChange={(n) =>

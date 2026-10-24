@@ -384,7 +384,7 @@ export function AppSidebar() {
         <SidebarFooter>
           <div className="flex items-center justify-end gap-2">
             <HotkeyKbd className="group-data-[collapsible=icon]:hidden" hotkey={combinacaoDe("sidebarRecolher")} />
-            <SidebarTrigger title="Recolher ou expandir o menu (Alt+B)" />
+            <SidebarTrigger title={`Recolher ou expandir o menu (${combinacaoDe("sidebarRecolher")})`} />
           </div>
         </SidebarFooter>
         <SidebarRail />
