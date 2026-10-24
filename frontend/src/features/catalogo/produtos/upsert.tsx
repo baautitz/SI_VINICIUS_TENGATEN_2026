@@ -12,7 +12,6 @@ import { FormFieldUI } from "@/ui/composites";
 import { Textarea } from "@/ui/primitives";
 import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
-import { UnidadeMedida } from "@/features/catalogo/unidades-medida/types";
 import { Produto, ProdutoFormValues, produtoSchema } from "./types";
 import { SkuFormValues, skuFormSchema } from "./types-sku";
 import { useQuery } from "@tanstack/react-query";
@@ -98,9 +97,6 @@ function ProdutosUpsertForm({
     return match ? match.custoMedio : 0;
   };
 
-  const [selectedUM, setSelectedUM] = useState<UnidadeMedida | null>(
-    editingItem?.unidadeMedida ?? null,
-  );
   const [focusedSkuIndex, setFocusedSkuIndex] = useState<number | null>(null);
   const hasLocalChanges = useRef(false);
 
@@ -212,22 +208,6 @@ function ProdutosUpsertForm({
         return void formApi.validateAllFields("submit");
       if (readOnly) return;
       resetErrors();
-
-      const isChangingToNonDecimal =
-        editingItem?.unidadeMedida.permiteDecimais &&
-        selectedUM &&
-        !selectedUM.permiteDecimais;
-
-      if (isChangingToNonDecimal) {
-        const confirmation = await ui.windows.confirm({
-          title: "Ajuste de Estoque Necessário",
-          description:
-            "Você está alterando a unidade de medida para uma que não permite quantidades decimais. Isso exige um ajuste de estoque obrigatório para garantir que todos os SKUs tenham quantidades inteiras. Uma movimentação de balanço será gerada automaticamente após salvar.",
-          confirmLabel: "Entendi e Confirmar",
-          cancelLabel: "Cancelar",
-        });
-        if (!confirmation) return;
-      }
 
       const submissionValue = { ...value };
       if (!hasVariants) {
@@ -612,7 +592,6 @@ function ProdutosUpsertForm({
                     initialItem={editingItem?.unidadeMedida}
                     disabled={readOnly}
                     onSelectItem={(item) => {
-                      setSelectedUM(item);
                       field.handleChange(item?.id as number);
                     }}
                     onSelectId={() => {}}
