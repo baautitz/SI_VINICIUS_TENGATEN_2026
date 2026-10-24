@@ -67,3 +67,11 @@ _Avoid_: Devolução simples
 **Devolução total**:
 Devolução de todo o saldo devolvível de todos os Itens da Venda. Após ela a Venda não aceita nova Devolução.
 _Avoid_: Devolução completa
+
+**Parcela baixada**:
+Parcela de conta a pagar com algum valor pago, quitada ou parcial. Nenhum fluxo pode alterá-la, excluí-la ou cancelá-la, nem o documento de origem pode ser estornado, até o pagamento ser estornado.
+_Avoid_: Parcela paga (deixa de fora a parcial)
+
+**Estorno de devolução**:
+Desfazimento de uma Devolução, com motivo: os Itens saem de novo do estoque, o valor volta à conta a receber da Venda e a conta a pagar ao cliente gerada por ela é cancelada. A Devolução fica registrada como estornada e libera o saldo devolvível dos Itens.
+_Avoid_: Cancelamento de devolução, exclusão de devolução
