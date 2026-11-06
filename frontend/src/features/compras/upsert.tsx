@@ -2,7 +2,7 @@
 
 import { combinacaoDe } from "@/lib/atalhos";
 import React from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Receipt, RefreshCw, Trash2, TriangleAlert, Undo2 } from "lucide-react";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import { fornecedoresApi, transportadorasApi } from "@/api/parceiros";
@@ -15,6 +15,7 @@ import { fornecedorSchema, type ItensSelecionados } from "@/features/parceiros/f
 import { transportadoraSchema } from "@/features/parceiros/transportadoras/types";
 import { comprasApi } from "@/api/compras";
 import { condicoesApi } from "@/api/financeiro";
+import { skusApi } from "@/api/catalogo";
 import { SkuInput } from "@/components/entity-inputs/sku-input";
 import { SkuViewInput } from "@/components/entity-inputs/sku-view-input";
 import { EmitenteInput } from "@/components/entity-inputs/emitente-input";
@@ -429,6 +430,18 @@ function CompraForm({
 
   const atualizar = (key: number, patch: Partial<Linha>) =>
     setItens((a) => a.map((i) => (i.key === key ? { ...i, ...patch } : i)));
+
+  // Preço de venda e custo da última compra atuais de cada SKU lançado (só leitura).
+  const codigosSku = Array.from(new Set(itens.map((i) => i.sku).filter((c): c is string => !!c)));
+  const skusLancados = useQueries({
+    queries: codigosSku.map((codigo) => ({
+      queryKey: ["skus", "detail", codigo],
+      queryFn: () => skusApi.getBySku(codigo),
+    })),
+  });
+  const precosPorSku = new Map(
+    codigosSku.map((codigo, i) => [codigo, skusLancados[i]?.data] as const),
+  );
 
   const adicionarSku = (sku: Sku | null, quantidade = 1) => {
     if (!sku) return;
@@ -1155,7 +1168,7 @@ function CompraForm({
               ) : (
                 <>
               <div className="rounded-lg border bg-card overflow-clip">
-                <Table pageScroll className="min-w-250" aria-label="Itens da compra">
+                <Table pageScroll className="min-w-300" aria-label="Itens da compra">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-10">#</TableHead>
@@ -1171,6 +1184,12 @@ function CompraForm({
                       </TableHead>
                       <TableHead className="w-24 text-right">
                         Desconto unit.
+                      </TableHead>
+                      <TableHead className="w-28 text-right">
+                        Preço de venda
+                      </TableHead>
+                      <TableHead className="w-28 text-right">
+                        Última compra
                       </TableHead>
                       <TableHead className="w-24 text-right">
                         Rateio
@@ -1193,7 +1212,7 @@ function CompraForm({
                     {itens.length === 0 && (
                       <TableRow>
                         <TableCell
-                          colSpan={readOnly ? 10 : modoXml ? 9 : 10}
+                          colSpan={readOnly ? 12 : modoXml ? 11 : 12}
                           className="text-muted-foreground py-8 text-center"
                         >
                           Nenhum item. Digite um SKU acima e pressione Enter
@@ -1300,6 +1319,16 @@ function CompraForm({
                                 Maior que o preço unitário.
                               </p>
                             )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {item.sku && precosPorSku.get(item.sku)
+                              ? moeda(Number(precosPorSku.get(item.sku)!.preco))
+                              : "-"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {Number(precosPorSku.get(item.sku ?? "")?.custoUltimaCompra) > 0
+                              ? moeda(Number(precosPorSku.get(item.sku ?? "")!.custoUltimaCompra))
+                              : "-"}
                           </TableCell>
                           <TableCell className="text-right">
                             {moeda(rateio)}
