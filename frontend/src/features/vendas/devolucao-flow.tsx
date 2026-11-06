@@ -41,7 +41,7 @@ export function useDevolucaoFlow() {
     const tipo = await ui.windows.open<TipoDevolucao, Record<string, never>>({
       component: DevolucaoTipoWindow,
       props: {},
-      title: `Devolução da Venda #${venda.id}`,
+      title: `Devolução de venda #${venda.id}`,
       size: "medium",
     });
     if (tipo.status !== "confirmed") return false;
@@ -57,7 +57,7 @@ export function useDevolucaoFlow() {
     try {
       const res = await vendasApi.createDevolucao(venda.id, result.value);
       await invalidate();
-      ui.feedback.notify({ type: "success", title: "Devolução registrada com sucesso." });
+      ui.feedback.notify({ type: "success", title: "Devolução de venda registrada com sucesso." });
       const nfe = res?.data?.nfeAtiva;
       if (nfe) {
         // A devolução não gera NF-e de devolução nem cancela a nota: só avisa.

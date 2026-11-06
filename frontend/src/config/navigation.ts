@@ -48,7 +48,7 @@ export const navigationConfig: NavGroup[] = [
     urlPrefix: "/vendas",
     items: [
       { title: "Registrar Venda", url: "/vendas", icon: CreditCard },
-      { title: "Devoluções", url: "/devolucoes", icon: Undo2 },
+      { title: "Devoluções de venda", url: "/devolucoes", icon: Undo2 },
     ],
   },
   {
