@@ -20,6 +20,7 @@ import { EntityInput } from "@/ui/composites";
 import { SkusFeature } from "@/features/catalogo/skus";
 import { useUi } from "@/ui/imperative";
 import { cn } from "@/lib/utils";
+import { descontoLinha } from "./types";
 
 export interface ItemXml {
   key: number;
@@ -33,7 +34,7 @@ export interface ItemXml {
   ean?: string | null;
   quantidade: number;
   valorUnitario: number;
-  valorDesconto: number;
+  descontoUnitario: number;
 }
 
 const moeda = (v: number) =>
@@ -153,7 +154,7 @@ export function ItensXml({
               </TableRow>
             )}
             {visiveis.map((item, i) => {
-              const total = item.quantidade * item.valorUnitario - item.valorDesconto;
+              const total = item.quantidade * item.valorUnitario - descontoLinha(item.quantidade, item.descontoUnitario);
               return (
                 <TableRow
                   key={item.key}
