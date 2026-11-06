@@ -117,14 +117,12 @@ public class ContasPagarRepository : IContasPagarRepository
         param.Add("FornecedorId", filtro?.FornecedorId);
         param.Add("CompraId", filtro?.CompraId);
 
-        const string haystack = @"concat_ws(' ', cp.descricao, cp.numero_documento, cp.observacao, f.nome_razaosocial, f.apelido_nomefantasia, f.cpf_cnpj,
-                cli.nome_razaosocial, cli.cpf_cnpj, tr.nome_razaosocial, cp.valor::text, to_char(cp.data_vencimento, 'DD/MM/YYYY'), to_char(cp.data_emissao, 'DD/MM/YYYY'),
-                cp.status::text, cp.origem_tipo::text)";
-        var where = PesquisaTitulos.Where(haystack) + @"
+        var where = PesquisaTitulos.Where("cp.texto_pesquisa", PesquisaTitulos.Analisar(termo)) + @"
               AND (@FornecedorId::int IS NULL OR cp.fornecedor_id = @FornecedorId)
               AND (@CompraId::int IS NULL OR (cp.origem_id = @CompraId AND cp.origem_tipo::text IN ('COMPRA', 'FRETE_COMPRA')))" + PesquisaTitulos.FiltroComum("cp") + @"
               AND (@CpfCnpj::text IS NULL OR @CpfCnpj IN (regexp_replace(COALESCE(f.cpf_cnpj, ''), '\D', '', 'g'), regexp_replace(COALESCE(cli.cpf_cnpj, ''), '\D', '', 'g')))";
 
+        await PesquisaTitulos.AjustarLimiar(_session.Connection, _session.Transaction);
         var total = await _session.Connection.ExecuteScalarAsync<int>(@"
             SELECT COUNT(*)
             FROM contas_pagar cp
@@ -134,7 +132,7 @@ public class ContasPagarRepository : IContasPagarRepository
             param, transaction: _session.Transaction);
 
         var contas = (await Consultar(where + @"
-            ORDER BY " + PesquisaTitulos.Relevancia("cp.numero_documento", "cp.descricao") + @",
+            ORDER BY " + PesquisaTitulos.Relevancia("cp.texto_pesquisa", "cp.numero_documento", "cp.descricao") + @",
                      cp.data_vencimento, cp.numero_documento, cp.numero_parcela, cp.id
             LIMIT @TamanhoDaPagina OFFSET @Offset;", param)).ToList();
 

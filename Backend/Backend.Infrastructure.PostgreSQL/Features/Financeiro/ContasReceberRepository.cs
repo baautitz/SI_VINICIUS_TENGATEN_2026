@@ -111,12 +111,11 @@ public class ContasReceberRepository : IContasReceberRepository
     {
         var param = PesquisaTitulos.Parametros(termo, filtro, pagina, tamanhoDaPagina);
 
-        const string haystack = @"concat_ws(' ', cr.descricao, cr.numero_documento, cr.observacao, c.nome_razaosocial, c.apelido_nomefantasia, c.cpf_cnpj,
-                cr.valor::text, to_char(cr.data_vencimento, 'DD/MM/YYYY'), to_char(cr.data_emissao, 'DD/MM/YYYY'), cr.status::text, cr.origem_tipo::text)";
-        var where = PesquisaTitulos.Where(haystack) + @"
+        var where = PesquisaTitulos.Where("cr.texto_pesquisa", PesquisaTitulos.Analisar(termo)) + @"
               " + PesquisaTitulos.FiltroComum("cr") + @"
               AND (@CpfCnpj::text IS NULL OR regexp_replace(c.cpf_cnpj, '\D', '', 'g') = @CpfCnpj)";
 
+        await PesquisaTitulos.AjustarLimiar(_session.Connection, _session.Transaction);
         var total = await _session.Connection.ExecuteScalarAsync<int>(@"
             SELECT COUNT(*)
             FROM contas_receber cr
@@ -124,7 +123,7 @@ public class ContasReceberRepository : IContasReceberRepository
             param, transaction: _session.Transaction);
 
         var contas = (await Consultar(where + @"
-            ORDER BY " + PesquisaTitulos.Relevancia("cr.numero_documento", "cr.descricao") + @",
+            ORDER BY " + PesquisaTitulos.Relevancia("cr.texto_pesquisa", "cr.numero_documento", "cr.descricao") + @",
                      cr.data_vencimento, cr.numero_documento, cr.numero_parcela, cr.id
             LIMIT @TamanhoDaPagina OFFSET @Offset;", param)).ToList();
 
