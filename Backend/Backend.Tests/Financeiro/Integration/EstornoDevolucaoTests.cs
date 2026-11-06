@@ -10,6 +10,7 @@ namespace Backend.Tests.Financeiro.Integration;
 
 using Backend.Tests.Common;
 
+[Trait("Category", "Integration")]
 [Collection(PostgresCollection.Nome)]
 public class EstornoDevolucaoTests
 {
