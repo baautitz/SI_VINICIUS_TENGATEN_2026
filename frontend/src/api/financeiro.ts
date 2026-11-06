@@ -48,6 +48,9 @@ export interface ListagemTitulosParams {
   origemTipo?: string;
   origemId?: number;
   numeroDocumento?: string;
+  fornecedorId?: number;
+  clienteId?: number;
+  transportadoraId?: number;
   cpfCnpj?: string;
   vencimentoDe?: string;
   vencimentoAte?: string;

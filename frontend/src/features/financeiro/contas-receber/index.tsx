@@ -14,6 +14,7 @@ import { filtrosAvancadosParaApi } from "../components/filtros-avancados";
 import { FILTROS_TITULOS_VAZIOS, TODOS, type FiltrosTitulos } from "../components/filtros-titulos";
 import { useFeatureList } from "@/hooks/use-feature-list";
 import { contasReceberApi } from "@/api/financeiro";
+import { contraparteParaApi } from "../components/documento-filtro";
 import { useUi } from "@/ui/imperative";
 
 export * from "./types";
@@ -39,6 +40,7 @@ export function ContasReceberFeature({ vendaId }: ContasReceberFeatureProps = {}
         origemTipo: vendaId !== undefined ? "VENDA" : (documento?.origemTipo ?? (origem === TODOS ? undefined : origem)),
         origemId: vendaId ?? documento?.origemId ?? undefined,
         numeroDocumento: documento?.numeroDocumento,
+        ...contraparteParaApi(documento),
         ...filtrosAvancadosParaApi(avancados),
         page: list.page,
         pageSize: 50,
