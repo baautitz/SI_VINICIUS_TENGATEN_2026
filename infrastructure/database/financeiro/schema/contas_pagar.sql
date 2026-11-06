@@ -79,8 +79,10 @@ BEGIN
     (SELECT concat_ws(' ', f.nome_razaosocial, f.apelido_nomefantasia, f.cpf_cnpj) FROM fornecedores f WHERE f.id = NEW.fornecedor_id),
     (SELECT concat_ws(' ', c.nome_razaosocial, c.cpf_cnpj) FROM clientes c WHERE c.id = NEW.cliente_id),
     (SELECT t.nome_razaosocial FROM transportadoras t WHERE t.id = NEW.transportadora_id),
-    NEW.valor::text, to_char(NEW.data_vencimento, 'DD/MM/YYYY'), to_char(NEW.data_emissao, 'DD/MM/YYYY'),
-    NEW.status::text, NEW.origem_tipo::text)));
+    to_char(NEW.data_vencimento, 'DD/MM/YYYY'), to_char(NEW.data_emissao, 'DD/MM/YYYY'),
+    CASE NEW.status WHEN 'ABERTO' THEN 'aberto' WHEN 'PARCIAL' THEN 'parcial' WHEN 'PAGO' THEN 'pago' WHEN 'CANCELADO' THEN 'cancelado' END,
+    CASE NEW.origem_tipo WHEN 'MANUAL' THEN 'manual' WHEN 'VENDA' THEN 'venda' WHEN 'COMPRA' THEN 'compra'
+      WHEN 'FRETE_COMPRA' THEN 'frete compra' WHEN 'DEVOLUCAO_VENDA' THEN 'devolucao venda' END)));
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -119,4 +121,6 @@ CREATE TRIGGER transportadoras_contas_pagar_texto_tg
   AFTER UPDATE OF nome_razaosocial ON transportadoras
   FOR EACH ROW EXECUTE FUNCTION contas_pagar_refazer_texto_pesquisa();
 
+-- O valor é pesquisado por igualdade (não entra no texto: trecho de dígitos seria ruído).
+CREATE INDEX IF NOT EXISTS contas_pagar_valor_idx ON contas_pagar (valor);
 CREATE INDEX IF NOT EXISTS contas_pagar_texto_pesquisa_idx ON contas_pagar USING gin (texto_pesquisa public.gin_trgm_ops);
