@@ -1,4 +1,5 @@
 import React from "react";
+import { capturarFocoDeRemocao } from "@/ui/foco-remocao";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/ui/primitives";
 import { Ban, Check, CornerUpLeft, Eye, Pencil, Trash2, Undo2 } from "lucide-react";
@@ -31,11 +32,20 @@ interface RowActionProps {
   onClick: () => void | Promise<void>;
 }
 
+function focarBusca() {
+  document.querySelector<HTMLElement>('[data-window-scope] input[type="search"], input[placeholder^="Pesquisar"]')?.focus();
+}
+
 /** Botão de ação de negócio da linha: ícone e variant fixos por tipo (DESIGN.md, Action grammar). */
 export function RowAction({ kind, label, onClick }: RowActionProps) {
   const { icon: Icon, variant } = ROW_ACTIONS[kind];
   return (
-    <Button size="icon-sm" variant={variant} aria-label={label} title={label} onClick={() => fireAndForget(onClick)}>
+    <Button size="icon-sm" variant={variant} aria-label={label} title={label} onClick={() => fireAndForget(async () => {
+      // Excluir: o foco segue para a lixeira da linha mais proxima, ou para a busca se a lista esvaziar.
+      const restaurarFoco = kind === "excluir" ? capturarFocoDeRemocao(focarBusca) : null;
+      await onClick();
+      restaurarFoco?.();
+    })}>
       <Icon className="size-4" />
     </Button>
   );

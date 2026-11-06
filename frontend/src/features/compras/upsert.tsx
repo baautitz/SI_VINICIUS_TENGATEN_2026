@@ -14,6 +14,7 @@ import { CadastroSugeridoCard, valoresDoCadastroSugerido, erroDoCadastro } from 
 import { fornecedorSchema, type ItensSelecionados } from "@/features/parceiros/fornecedores/types";
 import { transportadoraSchema } from "@/features/parceiros/transportadoras/types";
 import { comprasApi } from "@/api/compras";
+import { capturarFocoDeRemocao } from "@/ui/foco-remocao";
 import { condicoesApi } from "@/api/financeiro";
 import { SkuInput } from "@/components/entity-inputs/sku-input";
 import { SkuViewInput } from "@/components/entity-inputs/sku-view-input";
@@ -455,6 +456,7 @@ function CompraForm({
   };
 
   const removerItem = async (key: number) => {
+    const restaurarFoco = capturarFocoDeRemocao(() => setSkuInputKey((k) => k + 1));
     const ok = await ui.windows.confirm({
       title: "Remover Item?",
       description: "Deseja realmente remover este item da entrada?",
@@ -462,6 +464,7 @@ function CompraForm({
       confirmVariant: "destructive",
     });
     if (ok) setItens((a) => a.filter((i) => i.key !== key));
+    restaurarFoco();
   };
 
   const recalcularParcelas = () => {

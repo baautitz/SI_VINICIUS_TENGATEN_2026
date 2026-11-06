@@ -1,4 +1,5 @@
 "use client";
+import { capturarFocoDeRemocao } from "@/ui/foco-remocao";
 import { mapItens, useRelated } from "@/hooks/use-related";
 import { useOrigemAction } from "@/hooks/use-origem-action";
 import {
@@ -265,16 +266,21 @@ export function MovimentacoesUpsertForm({
   const removeItemRow = async (index: number) => {
     const itemToRemove = itens[index];
     if (!itemToRemove) return;
+    const restaurarFoco = capturarFocoDeRemocao(() => setSkuInputKey((prev) => prev + 1));
     const result = await ui.windows.confirm({
       title: "Remover Item?",
       description: `Deseja realmente remover o SKU ${itemToRemove.sku} desta movimentação?`,
       confirmLabel: "Remover Item",
       confirmVariant: "destructive",
     });
-    if (!result) return;
+    if (!result) {
+      restaurarFoco();
+      return;
+    }
     setItens((current) =>
       current.filter((_, itemIndex) => itemIndex !== index),
     );
+    restaurarFoco();
     ui.feedback.notify({
       type: "info",
       title: `SKU "${itemToRemove.sku}" removido.`,
