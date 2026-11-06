@@ -227,7 +227,6 @@ export function DevolucaoCompraWindow({ compraId, total: devolucaoTotal }: Devol
           inputMode="decimal"
           readOnly
           className="text-right font-semibold"
-          onNumberChange={() => {}}
         />
       </Field>
       <Field data-invalid={!!error}>
