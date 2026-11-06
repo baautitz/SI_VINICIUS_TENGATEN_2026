@@ -49,6 +49,7 @@ export function VeiculosFeature({
   ) => {
     const result = await ui.windows.open<true, VeiculosUpsertProps>({
       component: VeiculosUpsert,
+      size: "medium",
       props: { editingItem, readOnly },
       title: readOnly
         ? "Visualizar Veículo"

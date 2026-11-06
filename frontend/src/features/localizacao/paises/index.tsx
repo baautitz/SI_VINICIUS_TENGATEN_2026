@@ -39,6 +39,7 @@ export function PaisesFeature({
   const openUpsert = async (editingItem: Pais | null, readOnly = false) => {
     const result = await ui.windows.open<true, PaisesUpsertProps>({
       component: PaisesUpsert,
+      size: "small",
       props: { editingItem, readOnly },
       title: readOnly ? "Visualizar País" : editingItem ? "Editar País" : "Novo País",
     });

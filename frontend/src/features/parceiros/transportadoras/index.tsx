@@ -51,6 +51,7 @@ export function TransportadorasFeature({
   ) => {
     const result = await ui.windows.open<true, TransportadorasUpsertProps>({
       component: TransportadorasUpsert,
+      size: "large",
       props: { editingItem, readOnly },
       title: readOnly
         ? "Visualizar Transportadora"

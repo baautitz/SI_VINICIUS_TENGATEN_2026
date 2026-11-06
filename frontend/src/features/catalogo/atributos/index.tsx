@@ -52,6 +52,7 @@ export function AtributosFeature({
   const openCreate = async () => {
     const result = await ui.windows.open<true, AtributosUpsertProps>({
       component: AtributosUpsert,
+      size: "small",
       props: { editingItem: null },
       title: "Novo Atributo",
     });
@@ -64,6 +65,7 @@ export function AtributosFeature({
   const openEdit = async (item: SkuAtributoChave) => {
     const result = await ui.windows.open<true, AtributosUpsertProps>({
       component: AtributosUpsert,
+      size: "small",
       props: { editingItem: item },
       title: "Editar Atributo",
     });
