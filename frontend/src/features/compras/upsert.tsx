@@ -49,8 +49,12 @@ import { todayLocalISODate, todayBrasiliaISODate, toLocalISODate } from "@/utils
 import { cn } from "@/lib/utils";
 import { ItensXml } from "./itens-xml";
 import {
+  descontoLinha,
+  descontoUnitarioDe,
+  descontoUnitarioExcedePreco,
   moeda,
   ratearCompra,
+  valorLiquidoItem,
   round2,
   type Compra,
   type ParcelaCompra,
@@ -83,7 +87,8 @@ interface Linha {
   sugestao?: string | null;
   quantidade: number;
   valorUnitario: number;
-  valorDesconto: number;
+  /** Desconto por unidade (o backend grava o total da linha). */
+  descontoUnitario: number;
   permiteDecimais: boolean;
   /** Leitura: valores gravados. */
   rateioFixo?: number;
@@ -243,7 +248,7 @@ function CompraForm({
         produtoNome: getFullSkuName(i.sku) || i.sku.sku,
         quantidade: Number(i.quantidade),
         valorUnitario: Number(i.valorUnitario),
-        valorDesconto: Number(i.valorDesconto),
+        descontoUnitario: descontoUnitarioDe(Number(i.valorDesconto), Number(i.quantidade)),
         permiteDecimais: true,
         rateioFixo: Number(i.valorRateio),
         custoFixo: Number(i.custoUnitario),
@@ -263,7 +268,7 @@ function CompraForm({
           ean: i.ean,
           quantidade: Number(i.quantidade),
           valorUnitario: Number(i.valorUnitario),
-          valorDesconto: Number(i.valorDesconto),
+          descontoUnitario: descontoUnitarioDe(Number(i.valorDesconto), Number(i.quantidade)),
           permiteDecimais: true,
         };
       });
@@ -386,13 +391,13 @@ function CompraForm({
 
   // Se o XML traz frete (modFrete=1) sem frete de terceiro, a previa avisa; o usuário informa aqui.
   const produtos = itens.reduce(
-    (s, i) => s + round2(i.quantidade * i.valorUnitario - i.valorDesconto),
+    (s, i) => s + valorLiquidoItem(i.quantidade, i.valorUnitario, i.descontoUnitario),
     0,
   );
   const valorNota = round2(produtos + frete + seguro + outras - desconto);
   const despesas = round2(frete + seguro + outras + freteTerceiro - desconto);
   const valoresItens = itens.map((i) =>
-    round2(i.quantidade * i.valorUnitario - i.valorDesconto),
+    valorLiquidoItem(i.quantidade, i.valorUnitario, i.descontoUnitario),
   );
   const rateios = ratearCompra(valoresItens, despesas);
   const somaParcelas = round2(parcelas.reduce((s, p) => s + p.valorParcela, 0));
@@ -439,7 +444,7 @@ function CompraForm({
         produtoNome: getFullSkuName(sku),
         quantidade,
         valorUnitario: Number(sku.custoUltimaCompra) || 0,
-        valorDesconto: 0,
+        descontoUnitario: 0,
         permiteDecimais: !!sku.produto?.unidadeMedida?.permiteDecimais,
       },
     ]);
@@ -537,6 +542,8 @@ function CompraForm({
       return `Há ${pendentes} item(ns) sem SKU. Escolha o SKU de cada item.`;
     if (itens.some((i) => i.quantidade <= 0 || i.valorUnitario <= 0))
       return "Quantidade e valor unitário devem ser maiores que zero.";
+    if (itens.some((i) => descontoUnitarioExcedePreco(i.valorUnitario, i.descontoUnitario)))
+      return "O desconto unitário não pode exceder o preço unitário.";
     if (
       freteTerceiro > 0 &&
       !transportadoraId &&
@@ -615,7 +622,7 @@ function CompraForm({
                 sku: i.sku!,
                 quantidade: i.quantidade,
                 valorUnitario: i.valorUnitario,
-                valorDesconto: i.valorDesconto,
+                valorDesconto: descontoLinha(i.quantidade, i.descontoUnitario),
                 codigoProdutoFornecedor: i.codigoProduto ?? null,
               })),
               condicaoPagamentoId: condicao?.id ?? null,
@@ -1160,7 +1167,7 @@ function CompraForm({
                         Valor unit.
                       </TableHead>
                       <TableHead className="w-24 text-right">
-                        Desconto
+                        Desconto unit.
                       </TableHead>
                       <TableHead className="w-24 text-right">
                         Rateio
@@ -1276,9 +1283,14 @@ function CompraForm({
                           <TableCell>
                             {numCell(
                               3,
-                              item.valorDesconto,
-                              (n) => atualizar(item.key, { valorDesconto: n }),
-                              2,
+                              item.descontoUnitario,
+                              (n) => atualizar(item.key, { descontoUnitario: n }),
+                              4,
+                            )}
+                            {descontoUnitarioExcedePreco(item.valorUnitario, item.descontoUnitario) && (
+                              <p role="alert" className="text-destructive mt-1 text-xs">
+                                Maior que o preço unitário.
+                              </p>
                             )}
                           </TableCell>
                           <TableCell className="text-right">
