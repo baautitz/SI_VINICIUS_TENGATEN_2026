@@ -19,8 +19,8 @@ public class DevolucaoCompra
     public DevolucaoCompra(Compra compra, string motivo, IEnumerable<DevolucaoCompraItens> itens)
     {
         motivo = (motivo ?? "").Trim(); // texto livre: preserva caixa e acentos
-        if (motivo.Length < 5 || motivo.Length > 500)
-            throw new DomainException("O motivo da devolução deve ter entre 5 e 500 caracteres.");
+        if (motivo.Length < 5 || motivo.Length > 255)
+            throw new DomainException("O motivo da devolução deve ter entre 5 e 255 caracteres.");
 
         _itens.AddRange(itens);
         if (_itens.Count == 0)

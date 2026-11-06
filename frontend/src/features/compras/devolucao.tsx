@@ -28,6 +28,7 @@ import {
 import { comprasApi } from "@/api/compras";
 import { getFullSkuName } from "@/features/catalogo/skus/types";
 import { combinacaoDe } from "@/lib/atalhos";
+import { MAX_MOTIVO_ESTORNO, MIN_MOTIVO_ESTORNO } from "@/lib/motivo-estorno";
 import {
   moeda,
   quantidadeDevolvivel,
@@ -134,7 +135,7 @@ export function DevolucaoCompraWindow({ compraId, total: devolucaoTotal }: Devol
       return setError(
         `${getFullSkuName(acima.sku) || acima.sku.sku}: quantidade acima do saldo devolvível (${quantidadeDevolvivel(acima)}). O que já foi vendido não pode ser devolvido.`,
       );
-    if (motivo.length < 5) return setError("O motivo deve ter pelo menos 5 caracteres.");
+    if (motivo.length < MIN_MOTIVO_ESTORNO) return setError(`O motivo deve ter pelo menos ${MIN_MOTIVO_ESTORNO} caracteres.`);
 
     activeWindow.resolve({ motivo, itens: selecionados });
   }, [activeWindow, itens, qtdDe]);
@@ -235,9 +236,9 @@ export function DevolucaoCompraWindow({ compraId, total: devolucaoTotal }: Devol
           id="motivo-devolucao-compra"
           ref={registerMotivo}
           onChange={() => error && setError("")}
-          placeholder="Informe o motivo (mínimo de 5 caracteres)..."
+          placeholder={`Informe o motivo (mínimo de ${MIN_MOTIVO_ESTORNO} caracteres)...`}
           rows={3}
-          maxLength={500}
+          maxLength={MAX_MOTIVO_ESTORNO}
         />
         {error && <FieldError>{error}</FieldError>}
       </Field>

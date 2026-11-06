@@ -159,6 +159,15 @@ public class DevolucaoCompraTests
     }
 
     [Fact]
+    public async Task Motivo_acima_de_255_caracteres_e_recusado()
+    {
+        var c = new Cenario();
+        var r = await c.Devolver(1, new string('a', 256));
+        Assert.Contains("MOTIVO_INVALIDO", Codigos(r));
+        Assert.Empty(c.Criadas);
+    }
+
+    [Fact]
     public async Task Sem_quantidade_a_devolver_e_recusado()
     {
         var c = new Cenario();

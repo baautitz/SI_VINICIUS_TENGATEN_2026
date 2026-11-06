@@ -48,8 +48,8 @@ public sealed class DevolucoesCompraService : BaseService
     public async Task<Resultado<DevolucaoCompra>> CriarDevolucao(int compraId, CriarDevolucaoCompraCommand command)
     {
         var motivo = command?.Motivo?.Trim() ?? "";
-        if (motivo.Length < 5 || motivo.Length > 500)
-            return Resultado<DevolucaoCompra>.Falha(new ResultadoErro("MOTIVO_INVALIDO", "O motivo da devolução deve ter entre 5 e 500 caracteres.", "Motivo"));
+        if (motivo.Length < 5 || motivo.Length > 255)
+            return Resultado<DevolucaoCompra>.Falha(new ResultadoErro("MOTIVO_INVALIDO", "O motivo da devolução deve ter entre 5 e 255 caracteres.", "Motivo"));
 
         var pedidos = (command!.Itens ?? Array.Empty<CriarDevolucaoCompraItemCommand>())
             .Where(i => i.Quantidade != 0).GroupBy(i => i.CompraItemId)
