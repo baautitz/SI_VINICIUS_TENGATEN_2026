@@ -159,6 +159,7 @@ Os componentes são compactos, uniformes e desenhados para responder de forma im
 - **Error:** Borda vermelha (`aria-invalid:border-destructive`) e anel avermelhado (`aria-invalid:ring-destructive/20`).
 
 - **Desabilitado / Visualização:** Fundo `bg-field-disabled` (token único, nunca `opacity-50` no campo todo). O texto permanece legível (`text-foreground`, contraste 4.5:1). Campos em Visualização usam `readOnly` quando o componente permite, para continuar focáveis e copiáveis.
+- **Regra única:** O visual vive no componente base (`Input`, `Textarea`, `InputGroup`) via `disabled:bg-field-disabled` e `read-only:bg-field-disabled` (e as variantes `dark:`). Calculados, travados por regra e em Visualização usam `readOnly`/`disabled` e herdam o visual; nunca estilizar fundo de campo bloqueado localmente na tela.
 ### Feedback and transient states
 
 - **Field validation:** Erros de preenchimento pertencem ao campo: usar `aria-invalid`, mensagem inline e foco no primeiro campo inválido quando a ação de envio for bloqueada.
