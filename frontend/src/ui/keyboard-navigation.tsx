@@ -558,8 +558,15 @@ function findDestination(
         scroller.contains(candidates[Number(candidate.id)].element),
       )
     : []
+  // Tab/Shift+Tab fora de tabelas seguem a ordem do DOM (a ordem de leitura do formulário), não a
+  // geometria: a distância na tela levava de um campo ao vizinho errado de outra coluna ou linha.
+  const domIndex = candidates.findIndex((candidate) => candidate.element === source)
+  const tabPorOrdemDom =
+    (direction === "forward" || direction === "backward") && !sourceCandidate.cell && domIndex >= 0
   const destinationId =
-    (inScroller.length > 0
+    tabPorOrdemDom
+      ? String(domIndex + (direction === "forward" ? 1 : -1))
+      : (inScroller.length > 0
       ? chooseSpatialDestination(sourceCandidate, inScroller, direction, goalX)
       : null) ??
     chooseSpatialDestination(sourceCandidate, geometryCandidates, direction, goalX)
