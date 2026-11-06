@@ -10,7 +10,7 @@ public class CriarDevolucaoCommandValidator : AbstractValidator<CriarDevolucaoCo
         RuleFor(x => x.Motivo)
             .NotEmpty().WithMessage("Motivo da devolução é obrigatório.")
             .MinimumLength(5).WithMessage("Motivo da devolução deve ter pelo menos 5 caracteres.")
-            .MaximumLength(500).WithMessage("Motivo da devolução não pode ter mais de 500 caracteres.");
+            .MaximumLength(255).WithMessage("Motivo da devolução não pode ter mais de 255 caracteres.");
 
         RuleFor(x => x.Itens)
             .NotEmpty().WithMessage("Informe ao menos um item para devolver.");
