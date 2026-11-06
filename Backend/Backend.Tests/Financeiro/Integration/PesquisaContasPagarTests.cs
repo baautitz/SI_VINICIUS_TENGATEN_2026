@@ -223,4 +223,41 @@ public class PesquisaContasPagarTests
         Assert.Equal(["DEC-1"], (await repo.PesquisarContasPagar("10.50")).Itens.Select(c => c.NumeroDocumento));
         Assert.Empty((await repo.PesquisarContasPagar("1050")).Itens);
     }
+
+    private Task Parcela(int fornecedorId, string documento, int parcela, string vencimento, string status) =>
+        _db.Executar("INSERT INTO contas_pagar (numero_documento, numero_parcela, total_parcelas, fornecedor_id, descricao, data_vencimento, valor, valor_pago, status) VALUES (@documento, @parcela, 9, @fornecedorId, 'Parcela', @vencimento::date, 100, CASE WHEN @status = 'PAGO' THEN 100 ELSE 0 END, @status::status_titulo_financeiro_enum);",
+            new { documento, parcela, fornecedorId, vencimento, status });
+
+    [Fact]
+    public async Task Sem_termo_pendentes_e_vencidas_vem_antes_das_pagas_por_vencimento_crescente()
+    {
+        var p = await Fornecedor("Forn Ord", "11222333000181");
+        await Parcela(p, "ORD", 1, "2026-01-10", "PAGO");
+        await Parcela(p, "ORD", 2, "2026-03-10", "ABERTO");
+        await Parcela(p, "ORD", 3, "2026-02-10", "PARCIAL");
+        await Parcela(p, "ORD", 4, "2026-01-05", "PAGO");
+        await Parcela(p, "ORD", 5, "2025-12-01", "ABERTO");
+
+        using var s = _db.NovaSessao();
+        var r = await new ContasPagarRepository(s).PesquisarContasPagar("");
+
+        Assert.Equal(new[] { 5, 3, 2, 4, 1 }, r.Itens.Select(c => c.NumeroParcela));
+    }
+
+    [Fact]
+    public async Task Ordem_padrao_e_estavel_entre_paginas()
+    {
+        var p = await Fornecedor("Forn Ord", "11222333000181");
+        await Parcela(p, "ORD", 1, "2026-01-10", "PAGO");
+        await Parcela(p, "ORD", 2, "2026-03-10", "ABERTO");
+        await Parcela(p, "ORD", 3, "2026-03-10", "ABERTO");
+        await Parcela(p, "ORD", 4, "2026-01-05", "PAGO");
+
+        using var s = _db.NovaSessao();
+        var repo = new ContasPagarRepository(s);
+        var a = await repo.PesquisarContasPagar("", 1, 2);
+        var b = await repo.PesquisarContasPagar("", 2, 2);
+
+        Assert.Equal(new[] { 2, 3, 4, 1 }, a.Itens.Concat(b.Itens).Select(c => c.NumeroParcela));
+    }
 }
