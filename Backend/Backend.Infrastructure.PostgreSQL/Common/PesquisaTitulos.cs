@@ -32,21 +32,31 @@ public static class PesquisaTitulos
         return Regex.Replace(palavra, @"\D", "");
     }
 
-    // `haystack`: expressão SQL com o texto pesquisável do título; `documento` e `descricao`: campos que pesam mais no ranking.
-    public static string Where(string haystack) => $@"
-            CROSS JOIN LATERAL (SELECT unaccent(lower({haystack})) AS texto) h
-            WHERE NOT EXISTS (
-                SELECT 1 FROM unnest(@Palavras, @Alternativas) t(palavra, alternativa)
-                WHERE NOT (h.texto LIKE '%' || unaccent(lower(t.palavra)) || '%'
-                           OR (t.alternativa <> '' AND h.texto LIKE '%' || t.alternativa || '%')
-                           OR (length(t.palavra) >= 4 AND word_similarity(unaccent(lower(t.palavra)), h.texto) >= 0.5)))";
+    // `texto`: coluna texto_pesquisa do título (já sem acento/caixa, mantida por trigger, com índice trigram). Uma cláusula por palavra,
+    // cada uma indexável (LIKE, forma alternativa ou `<%`, que equivale a word_similarity >= 0.5 com o limiar de AjustarLimiar).
+    public static string Where(string texto, Termo termo)
+    {
+        var sb = new System.Text.StringBuilder("\n            WHERE TRUE");
+        for (var i = 0; i < termo.Palavras.Length; i++)
+        {
+            var ramos = new List<string> { $"{texto} LIKE '%' || unaccent(lower(@Palavra{i})) || '%'" };
+            if (termo.Alternativas[i] != "") ramos.Add($"{texto} LIKE '%' || @Alternativa{i} || '%'");
+            if (termo.Palavras[i].Length >= 4) ramos.Add($"unaccent(lower(@Palavra{i})) <% {texto}");
+            sb.Append($"\n              AND ({string.Join(" OR ", ramos)})");
+        }
+        return sb.ToString();
+    }
 
-    public static string Relevancia(string documento, string descricao) => $@"
+    // O operador `<%` usa pg_trgm.word_similarity_threshold (padrão 0.6); a pesquisa sempre usou 0.5. Vale para a conexão.
+    public static Task AjustarLimiar(System.Data.IDbConnection conexao, System.Data.IDbTransaction? transacao)
+        => conexao.ExecuteAsync("SELECT set_config('pg_trgm.word_similarity_threshold', '0.5', false);", transaction: transacao);
+
+    public static string Relevancia(string texto, string documento, string descricao) => $@"
             (SELECT COALESCE(SUM(
                 CASE WHEN unaccent(lower({documento})) = unaccent(lower(t.palavra)) THEN 6 ELSE 0 END
                 + CASE WHEN unaccent(lower({descricao})) = unaccent(lower(t.palavra)) THEN 3 ELSE 0 END
                 + CASE WHEN unaccent(lower({descricao})) LIKE '%' || unaccent(lower(t.palavra)) || '%' THEN 2 ELSE 0 END
-                + word_similarity(unaccent(lower(t.palavra)), h.texto)), 0)
+                + word_similarity(unaccent(lower(t.palavra)), {texto})), 0)
              FROM unnest(@Palavras) t(palavra)) DESC";
 
     // Parâmetros comuns da pesquisa paginada (termo, filtros comuns e paginação); cada repositório soma os seus.
@@ -73,6 +83,11 @@ public static class PesquisaTitulos
             TamanhoDaPagina = tamanhoDaPagina,
             Offset = (pagina - 1) * tamanhoDaPagina
         });
+        for (var i = 0; i < pesquisa.Palavras.Length; i++)
+        {
+            p.Add($"Palavra{i}", pesquisa.Palavras[i]);
+            p.Add($"Alternativa{i}", pesquisa.Alternativas[i]);
+        }
         return p;
     }
 
