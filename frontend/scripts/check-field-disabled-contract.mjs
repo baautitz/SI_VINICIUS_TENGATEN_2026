@@ -19,6 +19,12 @@ for (const file of [
   check(file, /dark:read-only:bg-field-disabled/, "somente leitura no tema escuro deve usar bg-field-disabled");
 }
 
+check(
+  "src/features/estoque/movimentacoes/upsert-form.tsx",
+  /^(?![\s\S]*bg-muted\/50 text-foreground\/80)/,
+  "codigo da movimentacao nao pode ter estilo local de campo bloqueado; usar Input readOnly",
+);
+
 if (failures.length) {
   console.error(failures.join("\n"));
   process.exit(1);
