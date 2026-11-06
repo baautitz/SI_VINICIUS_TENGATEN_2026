@@ -58,7 +58,7 @@ export function ProdutosList({
       cell: ({ row }) => {
         const value = row.getValue("estoqueTotal");
         return (
-          <div className="text-right font-mono text-xs">
+          <div className="text-right font-mono text-sm">
             {value !== undefined && value !== null ? Number(value) : 0}
           </div>
         );

@@ -66,7 +66,7 @@ export function VendasList({
       id: "quantidadeItens",
       header: () => <div className="text-right">Itens</div>,
       cell: ({ row }) => (
-        <div className="text-right text-xs font-medium">{row.original.itens?.length ?? 0}</div>
+        <div className="text-right text-sm font-medium">{row.original.itens?.length ?? 0}</div>
       ),
     },
     {

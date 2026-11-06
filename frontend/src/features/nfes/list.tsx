@@ -59,7 +59,7 @@ export function NfesList({
     { id: "emissao", header: "Emissão", cell: ({ row }) => formatToLocal(row.original.dataEmissao) },
     {
       id: "chave", header: "Chave de acesso",
-      cell: ({ row }) => <span className="font-mono text-xs text-muted-foreground">{row.original.chaveAcesso ?? "—"}</span>,
+      cell: ({ row }) => <span className="font-mono text-sm text-muted-foreground">{row.original.chaveAcesso ?? "—"}</span>,
     },
     { id: "total", header: () => <div className="text-right">Total</div>, cell: ({ row }) => <div className="text-right font-semibold">{brl(row.original.valorTotal)}</div> },
     { id: "status", header: "Status", cell: ({ row }) => <NfeStatusBadge status={row.original.statusNfe} /> },

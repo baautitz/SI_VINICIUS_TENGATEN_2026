@@ -83,11 +83,11 @@ export function DevolucaoDetalheWindow({
           </span>
           <span>{brl(d.valorTotal)}</span>
         </div>
-        <p className="text-muted-foreground mt-1 text-xs">
+        <p className="text-muted-foreground mt-1 text-sm">
           Venda de origem: #{d.vendaId}
         </p>
-        <p className="text-muted-foreground mt-1 text-xs">Motivo: {d.motivo}</p>
-        <ul className="mt-2 text-xs">
+        <p className="text-muted-foreground mt-1 text-sm">Motivo: {d.motivo}</p>
+        <ul className="mt-2 text-sm">
           {d.itens.map((i) => (
             <li key={i.id}>
               {i.sku}: {Number(i.quantidade)} x {brl(i.valorUnitario)} ={" "}

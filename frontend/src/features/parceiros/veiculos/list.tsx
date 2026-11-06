@@ -55,7 +55,7 @@ export function VeiculosList({
               {item.placa} / {item.estado.uf}
             </span>
             {item.marcaModelo && (
-              <span className="text-xs text-muted-foreground">
+              <span className="text-sm text-muted-foreground">
                 {item.marcaModelo}
               </span>
             )}

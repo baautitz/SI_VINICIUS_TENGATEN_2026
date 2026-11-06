@@ -177,7 +177,7 @@ export function EstornoWindow({ pergunta, aviso }: EstornoWindowProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-destructive text-xs font-semibold">{aviso}</p>
+      <p className="text-destructive text-sm font-semibold">{aviso}</p>
       <p className="text-sm">{pergunta}</p>
       <Field data-invalid={!!error}>
         <FieldLabel htmlFor="motivo-estorno">Motivo do Estorno</FieldLabel>

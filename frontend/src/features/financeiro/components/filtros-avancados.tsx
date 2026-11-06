@@ -114,7 +114,7 @@ export function FiltrosAvancadosPopover({ valor, onChange }: {
           </div>
           {grupos.map((g) => (
             <fieldset key={g.titulo} className="flex flex-col gap-1.5">
-              <legend className="mb-1.5 text-xs font-medium text-muted-foreground">{g.titulo}</legend>
+              <legend className="mb-1.5 text-sm font-medium text-muted-foreground">{g.titulo}</legend>
               <div className={g.campos.length > 1 ? "grid grid-cols-2 gap-2" : "grid grid-cols-1"}>
                 {g.campos.map((c) => {
                   const rotulo = `${g.titulo} ${c.rotulo}`;

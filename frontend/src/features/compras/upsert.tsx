@@ -789,7 +789,7 @@ function CompraForm({
       inputMode="decimal"
       aria-label={rotulo}
       readOnly
-      className={cn("h-8 text-right text-xs font-semibold", className)}
+      className={cn("h-8 text-right text-sm font-semibold", className)}
       onNumberChange={() => {}}
     />
   );
@@ -808,7 +808,7 @@ function CompraForm({
         decimals={2}
         inputSize="full"
         inputMode="decimal"
-        className="h-8 text-right text-xs font-semibold"
+        className="h-8 text-right text-sm font-semibold"
         readOnly={readOnly || desabilitado}
         onNumberChange={(n) => set(Number.isNaN(n) ? 0 : n)}
       />
@@ -891,7 +891,7 @@ function CompraForm({
         )}
       </WindowActions>
 
-      <ol className="flex gap-2 text-xs">
+      <ol className="flex gap-2 text-sm">
         {ETAPAS.map((nome, i) => (
           <li key={nome} className="flex-1">
             <button
@@ -1046,7 +1046,7 @@ function CompraForm({
                     <span>
                       <b>NF-e</b> {dados.numero} / série {dados.serie}
                     </span>
-                    <span className="font-mono text-xs">
+                    <span className="font-mono text-sm">
                       {dados.chaveAcesso}
                     </span>
                     <span>
@@ -1115,7 +1115,7 @@ function CompraForm({
                 </div>
               )}
               {dados?.destinatario && (
-                <p className="text-muted-foreground text-xs">
+                <p className="text-muted-foreground text-sm">
                   Destinatário no XML: {dados.destinatario.nome} (
                   {dados.destinatario.documento})
                 </p>
@@ -1296,7 +1296,7 @@ function CompraForm({
                               4,
                             )}
                             {descontoUnitarioExcedePreco(item.valorUnitario, item.descontoUnitario) && (
-                              <p role="alert" className="text-destructive mt-1 text-xs">
+                              <p role="alert" className="text-destructive mt-1 text-sm">
                                 Maior que o preço unitário.
                               </p>
                             )}
@@ -1391,7 +1391,7 @@ function CompraForm({
                         <RefreshCw /> Gerar parcelas <HotkeyKbd hotkey={combinacaoDe("gerar")} />
                       </Button>
                     </div>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-muted-foreground text-sm">
                       {dados && dados.parcelas.length > 0 && !divergeDoXml
                         ? "Parcelas vindas das duplicatas (cobr/dup) do XML. Gerar parcelas refaz pela condição escolhida."
                         : "Gerar parcelas divide o valor da nota conforme a condição escolhida e descarta as parcelas atuais."}
@@ -1511,7 +1511,7 @@ function CompraForm({
                         </div>
                         <span
                           className={cn(
-                            "text-xs font-semibold",
+                            "text-sm font-semibold",
                             parcelasDivergem ? "text-destructive" : "text-muted-foreground",
                           )}
                         >

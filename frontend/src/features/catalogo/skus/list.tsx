@@ -36,7 +36,7 @@ export function SkusList({
       accessorKey: "sku",
       header: "SKU",
       cell: ({ row }) => (
-        <span className="font-mono text-xs font-semibold">{row.getValue("sku")}</span>
+        <span className="font-mono text-sm font-semibold">{row.getValue("sku")}</span>
       ),
     },
     {
@@ -51,7 +51,7 @@ export function SkusList({
           <div className="flex flex-col">
             <span className="font-medium">{produtoNome}</span>
             {variacao && (
-              <span className="text-xs text-muted-foreground">{variacao}</span>
+              <span className="text-sm text-muted-foreground">{variacao}</span>
             )}
           </div>
         );

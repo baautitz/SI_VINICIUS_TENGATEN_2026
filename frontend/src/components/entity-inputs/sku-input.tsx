@@ -488,7 +488,7 @@ export const SkuInput = ({
           onChange={handleInputChange}
           onKeyDown={handleInputKeyDown}
           onBlur={handleInputBlur}
-          className="h-8 pr-10 text-xs"
+          className="h-8 pr-10 text-sm"
           placeholder="Digite o código SKU e pressione Enter..."
         />
         <Button

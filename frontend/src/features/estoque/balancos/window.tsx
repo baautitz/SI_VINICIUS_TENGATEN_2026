@@ -379,7 +379,7 @@ function BalancoForm({
                         </TableCell>
                         <TableCell>
                           {item.produtoNome}{" "}
-                          <span className="text-muted-foreground font-mono text-[10px] font-semibold uppercase">
+                          <span className="text-muted-foreground font-mono text-xs font-semibold uppercase">
                             {item.unidadeMedidaSigla}
                           </span>
                         </TableCell>

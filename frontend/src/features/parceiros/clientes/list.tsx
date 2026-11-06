@@ -66,7 +66,7 @@ export function ClientesList({
           <div className="flex flex-col">
             <span className="font-medium">{item.nomeRazaoSocial}</span>
             {item.apelidoNomeFantasia && (
-              <span className="text-xs text-muted-foreground">
+              <span className="text-sm text-muted-foreground">
                 {item.apelidoNomeFantasia}
               </span>
             )}

@@ -46,12 +46,12 @@ export function CadastroSugeridoCard(props: {
   const { titulo, nome, documento, existente, editado, onEditar, erro } = props;
   return (
     <div className={`flex flex-col gap-1 rounded-lg border p-4 text-sm ${erro ? "border-destructive" : ""}`}>
-      <span className="text-muted-foreground text-xs font-semibold uppercase">
+      <span className="text-muted-foreground text-sm font-semibold uppercase">
         {titulo}
       </span>
       <span className="text-base font-semibold">{nome}</span>
       <span>CNPJ/CPF: {documento}</span>
-      {erro && <span className="text-destructive text-xs whitespace-pre-line">{erro}{"\n"}Clique em Editar para corrigir.</span>}
+      {erro && <span className="text-destructive text-sm whitespace-pre-line">{erro}{"\n"}Clique em Editar para corrigir.</span>}
       <div className="flex items-center gap-2">
         <Badge variant={existente ? "outline" : "secondary"}>
           {existente ? "Já cadastrado" : "Será cadastrado ao confirmar"}

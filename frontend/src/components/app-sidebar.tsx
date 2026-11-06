@@ -317,7 +317,7 @@ export function AppSidebar() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={handleSearchInputKeyDown}
-                  className="h-8 rounded-lg border-none text-xs"
+                  className="h-8 rounded-lg border-none text-sm"
                 />
 
                 <InputGroupAddon>
