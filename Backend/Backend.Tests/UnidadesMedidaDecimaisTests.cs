@@ -2,7 +2,8 @@ using Backend.Core.Features.Catalogo.Commands;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Catalogo.Repositories;
 using Backend.Core.Features.Catalogo.Services;
-using static Backend.Tests.ComprasServiceTests;
+using Backend.Tests.Common;
+using static Backend.Tests.Common.Fakes;
 
 namespace Backend.Tests;
 
