@@ -45,4 +45,22 @@ public class OrdenacaoPadraoParceirosTests
         var pag2 = await repo.ObterClientes(2, 2);
         Assert.Equal(["ANA", "BRUNO"], pag2.Itens.Select(c => c.NomeRazaoSocial));
     }
+
+    [Fact]
+    public async Task Fornecedores_abrem_em_ordem_alfabetica_com_desempate_por_id()
+    {
+        await Inserir("fornecedores", Nomes);
+        using var s = _db.NovaSessao();
+        var repo = new FornecedoresRepository(s);
+
+        var lista = await repo.ObterFornecedores();
+        Assert.Equal(Esperado, lista.Itens.Select(f => f.NomeRazaosocial));
+        Assert.True(lista.Itens.ElementAt(1).Id < lista.Itens.ElementAt(2).Id);
+
+        var pesquisa = await repo.PesquisarFornecedores("a");
+        Assert.Equal(["ÁBACO", "ANA", "ANA", "ZECA"], pesquisa.Itens.Select(f => f.NomeRazaosocial));
+
+        var pag2 = await repo.ObterFornecedores(2, 2);
+        Assert.Equal(["ANA", "BRUNO"], pag2.Itens.Select(f => f.NomeRazaosocial));
+    }
 }
