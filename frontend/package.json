@@ -10,6 +10,7 @@
     "test:api-errors": "node --no-warnings --experimental-strip-types scripts/tests/test-api-error-contracts.mjs",
     "test:documento-filtro": "node --no-warnings --experimental-strip-types scripts/tests/test-documento-filtro.mjs",
     "test:debounce": "node --no-warnings --experimental-strip-types scripts/tests/test-debounce.mjs",
+    "test:debounce-desmontar": "node scripts/tests/test-debounce-desmontar.mjs",
     "test:compras-desconto": "node --no-warnings --experimental-strip-types scripts/tests/test-compras-desconto.mjs",
     "test:atalhos": "node --no-warnings --experimental-strip-types scripts/tests/test-atalhos.mjs",
     "test:feedback-format": "node --no-warnings --experimental-strip-types scripts/tests/test-feedback-format.mjs",
