@@ -7,8 +7,8 @@ import { Button } from "@/ui/primitives";
 import { DataTable, FeatureLayout, FeatureHeader } from "@/ui/composites";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/primitives";
 import { getActionsColumn, RowAction } from "@/utils/table-columns";
-import { FiltrosAvancadosPopover, type FiltrosAvancados } from "../components/filtros-avancados";
-import type { DocumentoFiltro } from "../components/documento-filtro";
+import { FiltrosAvancadosPopover } from "../components/filtros-avancados";
+import { TODOS, type FiltrosTitulos } from "../components/filtros-titulos";
 import { StatusTituloBadge } from "../components/status-titulo-badge";
 import { formatDateToLocal } from "@/utils/date-utils";
 import { Landmark, X } from "lucide-react";
@@ -16,17 +16,11 @@ import { ContasReceber } from "./types";
 import { statusTituloLabels } from "../contas-pagar/types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 
-export const TODOS = "TODOS";
+export { TODOS };
 
 interface ContasReceberListProps extends FeatureListProps<ContasReceber> {
-  status: string;
-  origem: string;
-  documento: DocumentoFiltro | null;
-  avancados: FiltrosAvancados;
-  onAvancadosChange: (v: FiltrosAvancados) => void;
-  onStatusChange: (v: string) => void;
-  onOrigemChange: (v: string) => void;
-  onDocumentoChange: (v: DocumentoFiltro | null) => void;
+  filtros: FiltrosTitulos;
+  onFiltrosChange: (parcial: Partial<FiltrosTitulos>) => void;
   onBaixa: (item: ContasReceber) => void;
   onEstorno: (item: ContasReceber) => void;
 }
@@ -51,10 +45,11 @@ const Filtro = ({ valor, onChange, rotulo, opcoes }: {
 
 export function ContasReceberList({
   items: contas, loading, searchTerm, page, totalPages, totalItems,
-  status, origem, documento, avancados, onAvancadosChange,
+  filtros, onFiltrosChange,
   onSearchChange, onAdd, onEdit, onDelete, onView, onPageChange,
-  onStatusChange, onOrigemChange, onDocumentoChange, onBaixa, onEstorno,
+  onBaixa, onEstorno,
 }: ContasReceberListProps) {
+  const { status, origem, documento, avancados } = filtros;
   const emAberto = (i: ContasReceber) => i.status === "ABERTO" || i.status === "PARCIAL";
   // Só lançamento manual, em aberto e sem pagamento, pode ser editado/excluído.
   const editavel = (i: ContasReceber) => i.origemTipo === "MANUAL" && i.status === "ABERTO" && i.valorPago === 0;
@@ -83,7 +78,7 @@ export function ContasReceberList({
             type="button"
             className="text-left hover:underline"
             title="Ver todas as parcelas deste documento"
-            onClick={() => onDocumentoChange({ numeroDocumento: i.numeroDocumento, origemTipo: i.origemTipo, origemId: i.origemId ?? null })}
+            onClick={() => onFiltrosChange({ documento: { numeroDocumento: i.numeroDocumento, origemTipo: i.origemTipo, origemId: i.origemId ?? null } })}
           >
             <span className="text-muted-foreground">{origemTituloLabels[i.origemTipo] ?? i.origemTipo}</span>{" "}
             <span className="font-semibold text-foreground">{i.numeroDocumento}</span>
@@ -180,11 +175,11 @@ export function ContasReceberList({
           }}
           actions={
             <>
-              <Filtro valor={status} onChange={onStatusChange} rotulo="Status" opcoes={statusTituloLabels} />
-              <Filtro valor={origem} onChange={onOrigemChange} rotulo="Origem" opcoes={origemTituloLabels} />
-              <FiltrosAvancadosPopover valor={avancados} onChange={onAvancadosChange} />
+              <Filtro valor={status} onChange={(v) => onFiltrosChange({ status: v })} rotulo="Status" opcoes={statusTituloLabels} />
+              <Filtro valor={origem} onChange={(v) => onFiltrosChange({ origem: v })} rotulo="Origem" opcoes={origemTituloLabels} />
+              <FiltrosAvancadosPopover valor={avancados} onChange={(v) => onFiltrosChange({ avancados: v })} />
               {documento && (
-                <Button variant="outline" onClick={() => onDocumentoChange(null)}>
+                <Button variant="outline" onClick={() => onFiltrosChange({ documento: null })}>
                   Parcelas do documento {documento.numeroDocumento} <X />
                 </Button>
               )}
