@@ -98,6 +98,8 @@ public static class DependencyInjection
 
         services.AddScoped<IComprasRepository, ComprasRepository>();
         services.AddScoped<ComprasService>();
+        services.AddScoped<IDevolucoesCompraRepository, DevolucoesCompraRepository>();
+        services.AddScoped<DevolucoesCompraService>();
         services.AddScoped<Backend.Core.Features.NFe.Services.NfesImportacaoService>();
         services.AddScoped<Backend.Core.Features.NFe.Services.NfesSaidaService>();
 
