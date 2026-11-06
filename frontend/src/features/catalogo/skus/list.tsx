@@ -43,7 +43,6 @@ export function SkusList({
     {
       id: "produto",
       header: "Produto",
-      size: 420,
       cell: ({ row }) => {
         const sku = row.original;
         const fullName = getFullSkuName(sku);
@@ -85,7 +84,7 @@ export function SkusList({
     {
       accessorKey: "ativo",
       header: "Status",
-      size: 100,
+      size: 110,
       cell: ({ row }) => {
         const ativo = row.getValue("ativo") as boolean;
         return (
@@ -93,13 +92,16 @@ export function SkusList({
         );
       },
     },
-    getActionsColumn<Sku>({
-      onEdit,
-      onView,
-      onDelete,
-      selectionMode,
-      onSelect,
-    }),
+    {
+      ...getActionsColumn<Sku>({
+        onEdit,
+        onView,
+        onDelete,
+        selectionMode,
+        onSelect,
+      }),
+      size: 240,
+    },
   ];
 
   return (
