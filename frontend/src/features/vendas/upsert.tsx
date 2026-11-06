@@ -9,6 +9,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FilePlus2 } from "lucide-react";
 import { nfesApi } from "@/api/nfes";
 import { abrirNfe } from "@/features/nfes";
+import { CampoLinhaErro } from "./campo-linha-erro";
 import { ApiRequestError } from "@/utils/api-error";
 import { cn } from "@/lib/utils";
 import { Button } from "@/ui/primitives";
@@ -1036,8 +1037,19 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                             </TableCell>
 
                             <TableCell className="text-right">
-                              <div className="flex flex-col items-end">
+                              <CampoLinhaErro
+                                id={`venda-item-${index}-quantidade-erro`}
+                                mensagem={
+                                  item.quantidade <= 0
+                                    ? "Mín: >0"
+                                    : item.quantidade > item.estoqueAtual
+                                      ? `Estoque: ${item.estoqueAtual.toFixed(item.permiteDecimais ? 4 : 0)}`
+                                      : null
+                                }
+                              >
+                                {(describedBy) => (
                                 <NumberInput
+                                  aria-describedby={describedBy}
                                   {...navigationCell({
                                     grid: "venda-itens",
                                     row: index,
@@ -1064,15 +1076,8 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                                     updateItemRow(index, "quantidade", val)
                                   }
                                 />
-                                {(item.quantidade <= 0 ||
-                                  item.quantidade > item.estoqueAtual) && (
-                                  <span className="text-destructive text-2xs mt-0.5 text-right font-semibold whitespace-nowrap">
-                                    {item.quantidade <= 0
-                                      ? "Mín: >0"
-                                      : `Estoque: ${item.estoqueAtual.toFixed(item.permiteDecimais ? 4 : 0)}`}
-                                  </span>
                                 )}
-                              </div>
+                              </CampoLinhaErro>
                             </TableCell>
 
                             <TableCell className="text-right">
@@ -1080,8 +1085,13 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                             </TableCell>
 
                             <TableCell className="text-right">
-                              <div className="flex flex-col items-end">
+                              <CampoLinhaErro
+                                id={`venda-item-${index}-desconto-erro`}
+                                mensagem={item.percentualDesconto > 100 ? "Máx: 100%" : null}
+                              >
+                                {(describedBy) => (
                                 <NumberInput
+                                  aria-describedby={describedBy}
                                   {...navigationCell({
                                     grid: "venda-itens",
                                     row: index,
@@ -1108,17 +1118,18 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                                     )
                                   }
                                 />
-                                {item.percentualDesconto > 100 && (
-                                  <span className="text-destructive text-2xs mt-0.5 text-right font-semibold whitespace-nowrap">
-                                    Máx: 100%
-                                  </span>
                                 )}
-                              </div>
+                              </CampoLinhaErro>
                             </TableCell>
 
                             <TableCell className="text-right">
-                              <div className="flex flex-col items-end">
+                              <CampoLinhaErro
+                                id={`venda-item-${index}-preco-erro`}
+                                mensagem={item.precoFinal < 0 ? "Mín: 0" : null}
+                              >
+                                {(describedBy) => (
                                 <NumberInput
+                                  aria-describedby={describedBy}
                                   {...navigationCell({
                                     grid: "venda-itens",
                                     row: index,
@@ -1139,12 +1150,8 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                                     updateItemRow(index, "precoFinal", val)
                                   }
                                 />
-                                {item.precoFinal < 0 && (
-                                  <span className="text-destructive text-2xs mt-0.5 text-right font-semibold whitespace-nowrap">
-                                    Mín: 0
-                                  </span>
                                 )}
-                              </div>
+                              </CampoLinhaErro>
                             </TableCell>
 
                             <TableCell className="text-right">

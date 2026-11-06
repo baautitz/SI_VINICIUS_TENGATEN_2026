@@ -15,6 +15,7 @@
     "test:keyboard-navigation": "node scripts/test-keyboard-navigation.mjs",
     "imperative-ui:check-boundaries": "node scripts/check-imperative-ui-boundaries.mjs",
     "test:imperative-ui": "node scripts/test-imperative-ui-contracts.mjs",
+    "test:linha-item-erro": "node scripts/test-linha-item-erro-layout.mjs",
     "test:window-controller": "node scripts/test-window-controller.mjs",
     "check:effects": "node scripts/check-no-effects.mjs"
   },
