@@ -14,6 +14,9 @@ public class CompraItens
     public decimal ValorTotal { get; private set; }
     public decimal ValorRateio { get; private set; }
     public decimal CustoUnitario { get; private set; }
+    // Soma das devoluções de compra já registradas para este item (vem do banco).
+    public decimal QuantidadeDevolvida { get; private set; }
+    public decimal SaldoDevolvivel => Quantidade - QuantidadeDevolvida;
     // Código do produto no fornecedor (cProd); só usado para gravar o vínculo, não é persistido no item.
     public string? CodigoProdutoFornecedor { get; private set; }
 
