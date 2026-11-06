@@ -1,4 +1,6 @@
 using System.Text.RegularExpressions;
+using Backend.Core.Features.Financeiro.DTOs;
+using Dapper;
 
 namespace Backend.Infrastructure.PostgreSQL.Common;
 
@@ -46,4 +48,45 @@ public static class PesquisaTitulos
                 + CASE WHEN unaccent(lower({descricao})) LIKE '%' || unaccent(lower(t.palavra)) || '%' THEN 2 ELSE 0 END
                 + word_similarity(unaccent(lower(t.palavra)), h.texto)), 0)
              FROM unnest(@Palavras) t(palavra)) DESC";
+
+    // Parâmetros comuns da pesquisa paginada (termo, filtros comuns e paginação); cada repositório soma os seus.
+    public static DynamicParameters Parametros(string? termo, IFiltroTitulos? filtro, int pagina, int tamanhoDaPagina)
+    {
+        var pesquisa = Analisar(termo);
+        var p = new DynamicParameters();
+        p.AddDynamicParams(new
+        {
+            pesquisa.Palavras,
+            pesquisa.Alternativas,
+            filtro?.ClienteId,
+            OrigemTipo = filtro?.OrigemTipo?.ToString(),
+            filtro?.OrigemId,
+            filtro?.NumeroDocumento,
+            Status = filtro?.Status?.ToString(),
+            CpfCnpj = SomenteDigitos(filtro?.CpfCnpj),
+            filtro?.VencimentoDe,
+            filtro?.VencimentoAte,
+            filtro?.EmissaoDe,
+            filtro?.EmissaoAte,
+            filtro?.ValorMinimo,
+            filtro?.ValorMaximo,
+            TamanhoDaPagina = tamanhoDaPagina,
+            Offset = (pagina - 1) * tamanhoDaPagina
+        });
+        return p;
+    }
+
+    // Cláusulas dos filtros comuns (menos CPF/CNPJ, que depende das contrapartes de cada tela); `t` é o alias da tabela do título.
+    public static string FiltroComum(string t) => $@"
+              AND (@ClienteId::int IS NULL OR {t}.cliente_id = @ClienteId)
+              AND (@OrigemTipo::text IS NULL OR {t}.origem_tipo::text = @OrigemTipo)
+              AND (@OrigemId::int IS NULL OR {t}.origem_id = @OrigemId)
+              AND (@NumeroDocumento::text IS NULL OR {t}.numero_documento = @NumeroDocumento)
+              AND (@Status::text IS NULL OR {t}.status::text = @Status)
+              AND (@VencimentoDe::date IS NULL OR {t}.data_vencimento >= @VencimentoDe)
+              AND (@VencimentoAte::date IS NULL OR {t}.data_vencimento <= @VencimentoAte)
+              AND (@EmissaoDe::date IS NULL OR {t}.data_emissao >= @EmissaoDe)
+              AND (@EmissaoAte::date IS NULL OR {t}.data_emissao <= @EmissaoAte)
+              AND (@ValorMinimo::numeric IS NULL OR {t}.valor >= @ValorMinimo)
+              AND (@ValorMaximo::numeric IS NULL OR {t}.valor <= @ValorMaximo)";
 }

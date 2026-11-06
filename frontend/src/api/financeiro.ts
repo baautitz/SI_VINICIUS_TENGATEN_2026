@@ -41,6 +41,24 @@ export type ContaReceberUpdateValues = ContaPagarUpdateValues;
 
 export type OrigemTituloFinanceiro = "MANUAL" | "VENDA" | "COMPRA" | "FRETE_COMPRA" | "DEVOLUCAO_VENDA";
 
+// Parâmetros da listagem de títulos (contas a pagar/receber); filtro novo comum entra aqui.
+export interface ListagemTitulosParams {
+  search?: string;
+  status?: string;
+  origemTipo?: string;
+  origemId?: number;
+  numeroDocumento?: string;
+  cpfCnpj?: string;
+  vencimentoDe?: string;
+  vencimentoAte?: string;
+  emissaoDe?: string;
+  emissaoAte?: string;
+  valorMinimo?: string;
+  valorMaximo?: string;
+  page?: number;
+  pageSize?: number;
+}
+
 const queryFiltro = (f: Record<string, string | number | undefined>) =>
   Object.entries(f)
     .filter(([, v]) => v !== undefined)
@@ -55,7 +73,7 @@ export const contasPagarApi = {
   listByOrigem: (origemTipo: OrigemTituloFinanceiro, origemId: number, pageSize = 100) =>
     http.get<PaginatedResult<ContasPagar>>(`/api/financeiro/contas-pagar?${queryFiltro({ origemTipo, origemId, pageSize })}`),
   list: (
-    f: { search?: string; status?: string; origemTipo?: string; origemId?: number; compraId?: number; numeroDocumento?: string; cpfCnpj?: string; vencimentoDe?: string; vencimentoAte?: string; emissaoDe?: string; emissaoAte?: string; valorMinimo?: string; valorMaximo?: string; page?: number; pageSize?: number } = {},
+    f: ListagemTitulosParams & { compraId?: number } = {},
   ) =>
     http.get<PaginatedResult<ContasPagar>>(
       `/api/financeiro/contas-pagar?${queryFiltro({ ...f, search: f.search ?? "", page: f.page ?? 1, pageSize: f.pageSize ?? 20 })}`,
@@ -78,7 +96,7 @@ export const contasReceberApi = {
   listByOrigem: (origemTipo: OrigemTituloFinanceiro, origemId: number, pageSize = 100) =>
     http.get<PaginatedResult<ContasReceber>>(`/api/financeiro/contas-receber?${queryFiltro({ origemTipo, origemId, pageSize })}`),
   list: (
-    f: { search?: string; status?: string; origemTipo?: string; origemId?: number; numeroDocumento?: string; cpfCnpj?: string; vencimentoDe?: string; vencimentoAte?: string; emissaoDe?: string; emissaoAte?: string; valorMinimo?: string; valorMaximo?: string; page?: number; pageSize?: number } = {},
+    f: ListagemTitulosParams = {},
   ) =>
     http.get<PaginatedResult<ContasReceber>>(
       `/api/financeiro/contas-receber?${queryFiltro({ ...f, search: f.search ?? "", page: f.page ?? 1, pageSize: f.pageSize ?? 20 })}`,
