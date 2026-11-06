@@ -7,7 +7,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/ui/primitives";
-import { cn } from "@/lib/utils";
+import { cn, forceUppercase } from "@/lib/utils";
 import { selectInputTextOnFocus } from "@/ui/keyboard-navigation";
 
 const semAcento = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -470,6 +470,7 @@ export function ComboboxChipsInput({
       autoComplete={autoComplete}
       value={context.searchText}
       onChange={(e) => {
+        forceUppercase(e.currentTarget);
         context.setSearchText(e.target.value);
         context.setActiveChipIndex(null);
         context.setIsOpen(true);

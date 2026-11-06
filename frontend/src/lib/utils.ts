@@ -15,3 +15,16 @@ export function cn(...inputs: ClassValue[]) {
 export function fireAndForget(action: () => unknown): void {
   void Promise.resolve().then(action).catch(() => undefined);
 }
+
+/** Converte o valor do campo para maiusculas preservando a posicao do cursor. */
+export function forceUppercase(el: HTMLInputElement | HTMLTextAreaElement) {
+  const upper = el.value.toUpperCase()
+  if (upper === el.value) return
+  const { selectionStart, selectionEnd } = el
+  el.value = upper
+  try {
+    el.setSelectionRange(selectionStart, selectionEnd)
+  } catch {
+    // tipos sem suporte a selecao
+  }
+}

@@ -1,14 +1,18 @@
 import * as React from "react"
 
-import { cn } from "@/lib/utils"
+import { cn, forceUppercase } from "@/lib/utils"
 import { selectInputTextOnFocus } from "@/ui/keyboard-navigation"
 
-const Textarea = ({ className, autoComplete = "off", ref, onFocus, ...props }: React.ComponentProps<"textarea">) => {
+const Textarea = ({ className, autoComplete = "off", ref, onFocus, onChange, ...props }: React.ComponentProps<"textarea">) => {
   return (
     <textarea
       autoComplete={autoComplete}
       data-slot="textarea"
       ref={ref}
+      onChange={(event) => {
+        forceUppercase(event.currentTarget)
+        onChange?.(event)
+      }}
       onFocus={(event) => {
         onFocus?.(event)
         selectInputTextOnFocus(event.currentTarget)

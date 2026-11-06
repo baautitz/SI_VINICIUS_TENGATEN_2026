@@ -1,19 +1,27 @@
 import * as React from "react"
 
-import { cn } from "@/lib/utils"
+import { cn, forceUppercase } from "@/lib/utils"
 import { selectInputTextOnFocus } from "@/ui/keyboard-navigation"
+
+const NO_UPPERCASE_TYPES = new Set(["password", "file", "hidden", "checkbox", "radio", "range"])
 
 export interface InputProps extends React.ComponentProps<"input"> {
   inputSize?: "small" | "medium" | "large" | "full"
 }
 
-const Input = ({ className, type, inputSize = "full", autoComplete = "off", ref, onFocus, ...props }: InputProps) => {
+const Input = ({ className, type, inputSize = "full", autoComplete = "off", ref, onFocus, onChange, ...props }: InputProps) => {
     return (
       <input
         type={type}
         autoComplete={autoComplete}
         data-slot="input"
         ref={ref}
+        onChange={(event) => {
+          if (!NO_UPPERCASE_TYPES.has(type ?? "")) {
+            forceUppercase(event.currentTarget)
+          }
+          onChange?.(event)
+        }}
         onFocus={(event) => {
           onFocus?.(event)
           selectInputTextOnFocus(event.currentTarget)
