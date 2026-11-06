@@ -213,8 +213,8 @@ export function ContasPagarUpsertForm({ editingItem, readOnly = false }: ContasP
               ["Saldo", brl(editingItem.valorSaldo)],
             ].map(([r, v]) => (
               <div key={r} className="flex flex-col gap-1">
-                <span className="text-muted-foreground text-xs">{r}</span>
-                <span className="font-semibold">{v}</span>
+                <span className="text-muted-foreground text-sm">{r}</span>
+                <span className="text-sm font-semibold">{v}</span>
               </div>
             ))}
           </div>
