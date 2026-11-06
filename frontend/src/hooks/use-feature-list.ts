@@ -45,7 +45,12 @@ export function useFeatureList<T>({
     );
     setSelectAllAcrossPages(false);
   };
-  const handleSearchChange = useCallback((val: string, opcoes?: { imediato?: boolean }) => {
+  const handleSearchChange = useCallback((val: string, opcoes?: { imediato?: boolean; cancelar?: boolean }) => {
+    // O campo de busca saiu da tela: descarta o timer pendente, sem tocar no estado.
+    if (opcoes?.cancelar) {
+      debounceBusca.cancelar();
+      return;
+    }
     setSearchTerm(val);
     setPage(1);
     // Limpar e Enter respondem na hora; digitar espera a pausa.

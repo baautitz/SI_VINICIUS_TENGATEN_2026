@@ -1,5 +1,6 @@
 "use client";
 
+import { useRefComLimpeza } from "@/hooks/use-debounce";
 import * as React from "react";
 import {
   ColumnDef,
@@ -46,7 +47,7 @@ interface DataTableProps<TData, TValue> {
   totalItems?: number;
 
   globalFilter?: string;
-  onGlobalFilterChange?: (filter: string, opcoes?: { imediato?: boolean }) => void;
+  onGlobalFilterChange?: (filter: string, opcoes?: { imediato?: boolean; cancelar?: boolean }) => void;
   searchPlaceholder?: string;
 
   rowSelection?: RowSelectionState;
@@ -112,6 +113,11 @@ export function DataTable<TData, TValue>({
   const navigationRootRef = React.useRef<HTMLDivElement>(null);
   const internalSearchInputRef = React.useRef<HTMLInputElement>(null);
   const activeSearchInputRef = searchInputRef || internalSearchInputRef;
+  // Campo de busca desmontado cancela o debounce pendente de quem o alimenta.
+  const refBusca = useRefComLimpeza<HTMLInputElement>(
+    () => onGlobalFilterChange?.("", { cancelar: true }),
+    activeSearchInputRef,
+  );
   const activeWindow = useOptionalActiveWindow<unknown>();
 
   // WindowManagerHost owns the normal modal scope. This low-priority local
@@ -261,7 +267,7 @@ export function DataTable<TData, TValue>({
             <div className="w-full flex-1">
               <InputGroup>
                 <InputGroupInput
-                  ref={activeSearchInputRef}
+                  ref={refBusca}
                   autoFocus
                   placeholder={searchPlaceholder}
                   value={globalFilter ?? ""}
