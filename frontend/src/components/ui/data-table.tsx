@@ -46,7 +46,7 @@ interface DataTableProps<TData, TValue> {
   totalItems?: number;
 
   globalFilter?: string;
-  onGlobalFilterChange?: (filter: string) => void;
+  onGlobalFilterChange?: (filter: string, opcoes?: { imediato?: boolean }) => void;
   searchPlaceholder?: string;
 
   rowSelection?: RowSelectionState;
@@ -266,6 +266,10 @@ export function DataTable<TData, TValue>({
                   placeholder={searchPlaceholder}
                   value={globalFilter ?? ""}
                   onChange={(event) => onGlobalFilterChange(event.target.value)}
+                  onKeyDown={(event) => {
+                    // Enter descarta o atraso da digitacao e consulta na hora.
+                    if (event.key === "Enter") onGlobalFilterChange(event.currentTarget.value, { imediato: true });
+                  }}
                   className="h-8"
                   data-navigation-list-search="true"
                 />

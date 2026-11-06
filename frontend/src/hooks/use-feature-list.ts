@@ -45,11 +45,11 @@ export function useFeatureList<T>({
     );
     setSelectAllAcrossPages(false);
   };
-  const handleSearchChange = useCallback((val: string) => {
+  const handleSearchChange = useCallback((val: string, opcoes?: { imediato?: boolean }) => {
     setSearchTerm(val);
     setPage(1);
-    // Limpar responde na hora; digitar espera a pausa.
-    if (val === "") debounceBusca.imediato("");
+    // Limpar e Enter respondem na hora; digitar espera a pausa.
+    if (val === "" || opcoes?.imediato) debounceBusca.imediato(val);
     else debounceBusca.chamar(val);
   }, [debounceBusca]);
 
