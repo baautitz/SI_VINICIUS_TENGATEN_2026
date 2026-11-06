@@ -2,10 +2,11 @@ using Backend.Core.Features.Financeiro.DTOs;
 using Backend.Infrastructure.PostgreSQL.Features.Financeiro;
 using Dapper;
 
-namespace Backend.Tests.Integracao;
+namespace Backend.Tests.Financeiro.Integration;
 
 using Backend.Tests.Common;
 
+[Trait("Category", "Integration")]
 [Collection(PostgresCollection.Nome)]
 public class PesquisaContasPagarTests
 {
@@ -170,6 +171,32 @@ public class PesquisaContasPagarTests
         Assert.Equal(["P-2"], Docs(await repo.PesquisarContasPagar("", filtro: new FiltroContasPagar(EmissaoDe: new DateTime(2026, 2, 1), EmissaoAte: new DateTime(2026, 2, 28)))));
         Assert.Equal(["P-2"], Docs(await repo.PesquisarContasPagar("", filtro: new FiltroContasPagar(ValorMinimo: 100m, ValorMaximo: 200m))));
         Assert.Equal(["P-1", "P-2"], Docs(await repo.PesquisarContasPagar("", filtro: new FiltroContasPagar(CpfCnpj: "11.222.333/0001-81"))));
+    }
+
+    [Fact]
+    public async Task Parcelas_do_documento_so_trazem_a_mesma_contraparte()
+    {
+        var a = await Fornecedor("Fornecedor A", "11222333000181");
+        var b = await Fornecedor("Fornecedor B", "45723174000110");
+        var ta = await TransportadoraCnpj("Transp A", "11222333000181");
+        var tb = await TransportadoraCnpj("Transp B", "45723174000110");
+        await _db.Executar("INSERT INTO contas_pagar (numero_documento, numero_parcela, total_parcelas, fornecedor_id, descricao, data_vencimento, valor) VALUES ('NF-1',1,2,@a,'A1',CURRENT_DATE,10), ('NF-1',2,2,@a,'A2',CURRENT_DATE,10), ('NF-1',1,1,@b,'B1',CURRENT_DATE,10);", new { a, b });
+        await _db.Executar("INSERT INTO contas_pagar (numero_documento, numero_parcela, total_parcelas, transportadora_id, descricao, data_vencimento, valor) VALUES ('FR-1',1,1,@ta,'TA',CURRENT_DATE,10), ('FR-1',1,1,@tb,'TB',CURRENT_DATE,10);", new { a, ta, tb });
+
+        using var s = _db.NovaSessao();
+        var repo = new ContasPagarRepository(s);
+        string[] Desc(Backend.Core.Common.Results.ResultadoPaginado<Backend.Core.Features.Financeiro.Entities.ContasPagar> r) => r.Itens.Select(x => x.Descricao).Order().ToArray();
+
+        Assert.Equal(["A1", "A2"], Desc(await repo.PesquisarContasPagar("", filtro: new FiltroContasPagar(OrigemTipo: Backend.Core.Features.Financeiro.Entities.Enums.OrigemTituloFinanceiro.MANUAL, NumeroDocumento: "NF-1", FornecedorId: a))));
+        Assert.Equal(["TA"], Desc(await repo.PesquisarContasPagar("", filtro: new FiltroContasPagar(NumeroDocumento: "FR-1", TransportadoraId: ta))));
+    }
+
+    private async Task<int> TransportadoraCnpj(string nome, string cpfCnpj)
+    {
+        using var s = _db.NovaSessao();
+        return await s.Connection.ExecuteScalarAsync<int>(
+            "INSERT INTO transportadoras (tipo_pessoa, nome_razaosocial, cpf_cnpj, nacionalidade_id) VALUES ('JURIDICA', @nome, @cpfCnpj, (SELECT id FROM paises LIMIT 1)) RETURNING id;",
+            new { nome, cpfCnpj });
     }
 
     [Fact]

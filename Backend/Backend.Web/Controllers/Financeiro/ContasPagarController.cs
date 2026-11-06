@@ -1,9 +1,11 @@
+using Backend.Core.Common.Extensions;
 using Backend.Core.Common.Results;
 using Backend.Core.Features.Financeiro.Commands;
 using Backend.Core.Features.Financeiro.DTOs;
 using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.Financeiro.Services;
+using Backend.Core.Features.Financeiro.Validators;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
@@ -24,8 +26,16 @@ public class ContasPagarController : ControllerBase
     }
 
     [HttpGet]
-    public Task<ResultadoPaginado<ContasPagar>> GetContas([FromQuery] string? search, [FromQuery] FiltroContasPagar filtro, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-        => _service.PesquisarContasPagar(search ?? "", page, pageSize, filtro);
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [Produces("application/json")]
+    public async Task<ActionResult<ResultadoPaginado<ContasPagar>>> GetContas([FromQuery] string? search, [FromQuery] FiltroContasPagar filtro, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        var validacao = await new FiltroTitulosValidator().ValidateAsync(filtro);
+        if (!validacao.IsValid)
+            return BadRequest(Resultado.Falha(validacao.ToResultadoErros()));
+
+        return Ok(await _service.PesquisarContasPagar(search ?? "", page, pageSize, filtro));
+    }
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<ContasPagar>> GetConta(int id)

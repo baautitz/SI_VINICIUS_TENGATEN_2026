@@ -114,6 +114,23 @@ npm run dev
 
 O `appsettings.Development.json` usa os valores padrão do `.env.example`. Se os valores do `.env` forem alterados, sobrescreva `ConnectionStrings__DefaultConnection` no ambiente do backend.
 
+## Testes do backend
+
+Os testes ficam em `Backend/Backend.Tests`, organizados por feature em `Unit` e `Integration`. Os testes de integração usam PostgreSQL via Testcontainers (exigem Docker) e carregam a trait `Category=Integration`.
+
+```bash
+# Tudo (exige Docker)
+dotnet test Backend/Backend.Tests
+
+# Só unitários (sem Docker)
+dotnet test Backend/Backend.Tests --filter "Category!=Integration"
+
+# Só integração (Postgres, exige Docker)
+dotnet test Backend/Backend.Tests --filter "Category=Integration"
+```
+
+Todo teste que usa `PostgresFixture` deve receber `[Trait("Category", "Integration")]`.
+
 ## Comandos auxiliares
 
 Os aliases `prod:up`, `prod:down` e `prod:<comando>` continuam disponíveis para compatibilidade com o fluxo anterior e usam o Compose principal.
