@@ -321,7 +321,8 @@ export function DataTable<TData, TValue>({
                   {onRowSelect ? "Selecionar" : "Editar"}
                 </span>
               )}
-              {onEditRow && (
+              {/* Sem onRowSelect o Enter já edita; repetir "Editar" com Alt+E seria redundante. */}
+              {onEditRow && onRowSelect && (
                 <span className="flex items-center gap-1">
                   <HotkeyKbd hotkey={combinacaoDe("editarLinha")} /> Editar
                 </span>
