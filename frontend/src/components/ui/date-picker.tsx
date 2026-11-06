@@ -113,6 +113,7 @@ export function DatePicker({
   invalid,
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = React.useState(false);
+  const inputRef = React.useRef<HTMLInputElement>(null);
   const [prevValue, setPrevValue] = React.useState(value);
   const [inputValue, setInputValue] = React.useState(() => {
     if (value && value !== "invalid-date") {
@@ -207,6 +208,7 @@ export function DatePicker({
       )}
     >
       <Input
+        ref={inputRef}
         id={id}
         name={name}
         onBlur={onBlur}
@@ -241,7 +243,24 @@ export function DatePicker({
             <CalendarIcon className="h-4 w-4 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="end">
+        <PopoverContent
+          className="w-auto p-0"
+          align="end"
+          // O calendario aberto e dono das setas: o navegador espacial ignora
+          // qualquer tecla vinda daqui, mesmo em portal sobre janela ou popover.
+          data-navigation-popup-open="true"
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            const content = event.currentTarget as HTMLElement;
+            content
+              .querySelector<HTMLElement>('button[data-day][tabindex="0"]')
+              ?.focus();
+          }}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            inputRef.current?.focus();
+          }}
+        >
           <Calendar
             mode="single"
             selected={selectedDate}

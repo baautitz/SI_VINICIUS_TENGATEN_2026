@@ -47,6 +47,7 @@ SET search_path TO projeto_sistemas, public;
 
 \ir compras/schema/compras.sql
 \ir compras/schema/compras_itens.sql
+\ir compras/schema/devolucoes_compra.sql
 \ir compras/schema/fornecedores_skus.sql
 
 \ir nfe/schema/nfe_tipos.sql

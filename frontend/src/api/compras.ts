@@ -2,6 +2,8 @@ import { http } from "./http";
 import type { PaginatedResult, Resultado } from "./types";
 import type {
   Compra,
+  CriarDevolucaoCompraValues,
+  DevolucaoCompra,
   CriarCompraPayload,
   ImportarNfePayload,
   ImportarNfeResultado,
@@ -18,6 +20,10 @@ export const comprasApi = {
     http.post<Resultado<Compra>>("/api/compras", data),
   estornar: (id: number, motivo: string) =>
     http.postQuietly<Resultado<Compra>>(`/api/compras/${id}/estornar`, { motivo }),
+  createDevolucao: (compraId: number, data: CriarDevolucaoCompraValues) =>
+    http.post<Resultado<DevolucaoCompra>>(`/api/compras/${compraId}/devolucoes`, data),
+  listDevolucoes: (compraId: number) =>
+    http.get<DevolucaoCompra[]>(`/api/compras/${compraId}/devolucoes`),
   previaNfe: (xml: string, emitenteId?: number) =>
     http.post<Resultado<PreviaNfe>>("/api/nfes/importar/previa", {
       xml,

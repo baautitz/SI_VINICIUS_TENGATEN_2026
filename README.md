@@ -62,6 +62,8 @@ Após a inicialização:
 
 Os scripts SQL de `infrastructure/database` são executados automaticamente na primeira inicialização de um volume PostgreSQL vazio.
 
+Bancos já criados (sem migrations) devem aplicar `psql -d <banco> -f infrastructure/database/migracoes/texto_pesquisa_contas.sql` (idempotente: coluna `texto_pesquisa`, backfill e índices de contas a pagar/receber).
+
 ## Desenvolvimento local
 
 O Compose de desenvolvimento sobe somente o PostgreSQL. Backend e frontend são executados localmente em modo de desenvolvimento pelo `infra.js`.
@@ -113,6 +115,23 @@ npm run dev
 ```
 
 O `appsettings.Development.json` usa os valores padrão do `.env.example`. Se os valores do `.env` forem alterados, sobrescreva `ConnectionStrings__DefaultConnection` no ambiente do backend.
+
+## Testes do backend
+
+Os testes ficam em `Backend/Backend.Tests`, organizados por feature em `Unit` e `Integration`. Os testes de integração usam PostgreSQL via Testcontainers (exigem Docker) e carregam a trait `Category=Integration`.
+
+```bash
+# Tudo (exige Docker)
+dotnet test Backend/Backend.Tests
+
+# Só unitários (sem Docker)
+dotnet test Backend/Backend.Tests --filter "Category!=Integration"
+
+# Só integração (Postgres, exige Docker)
+dotnet test Backend/Backend.Tests --filter "Category=Integration"
+```
+
+Todo teste que usa `PostgresFixture` deve receber `[Trait("Category", "Integration")]`.
 
 ## Comandos auxiliares
 

@@ -31,8 +31,40 @@ export interface Compra {
     valorTotal: number;
     valorRateio: number;
     custoUnitario: number;
+    quantidadeDevolvida: number;
+    saldoDevolvivel: number;
   }>;
 }
+
+export interface DevolucaoCompra {
+  id: number;
+  compraId: number;
+  dataDevolucao: string;
+  motivo: string;
+  valorTotal: number;
+  itens: Array<{
+    id: number;
+    compraItemId: number;
+    sku: string;
+    quantidade: number;
+    valorUnitario: number;
+    custoUnitario: number;
+    valorTotal: number;
+  }>;
+}
+
+export interface CriarDevolucaoCompraValues {
+  motivo: string;
+  itens: Array<{ compraItemId: number; quantidade: number }>;
+}
+
+/** Quanto do item ainda pode voltar ao fornecedor: o saldo da compra, limitado ao que há em estoque. */
+export const quantidadeDevolvivel = (item: Compra["itens"][number]) =>
+  Math.max(0, Math.min(Number(item.saldoDevolvivel), Number(item.sku.estoque)));
+
+/** Compra sem nada a devolver (saldo esgotado ou estornada). */
+export const compraSemSaldoDevolvivel = (c: Compra) =>
+  c.estornada || c.itens.every((i) => Number(i.saldoDevolvivel) <= 0);
 
 export interface ParcelaCompra {
   numeroParcela: number;
@@ -144,6 +176,26 @@ export interface PreviaNfe {
 
 export const round2 = (n: number) =>
   Math.round((n + Number.EPSILON) * 100) / 100;
+
+/** Desconto total da linha a partir do desconto por unidade (o backend grava o total da linha). */
+export const descontoLinha = (quantidade: number, descontoUnitario: number) =>
+  round2(quantidade * descontoUnitario);
+
+/** Valor líquido do item: quantidade * (preço unitário - desconto unitário). */
+export const valorLiquidoItem = (
+  quantidade: number,
+  valorUnitario: number,
+  descontoUnitario: number,
+) => round2(quantidade * valorUnitario - descontoLinha(quantidade, descontoUnitario));
+
+/** Desconto por unidade a partir do desconto total gravado na linha. */
+export const descontoUnitarioDe = (valorDesconto: number, quantidade: number) =>
+  quantidade > 0 ? valorDesconto / quantidade : 0;
+
+export const descontoUnitarioExcedePreco = (
+  valorUnitario: number,
+  descontoUnitario: number,
+) => descontoUnitario > valorUnitario;
 
 /** Espelha o rateio do backend: proporcional ao valor líquido do item, resíduo no maior item. */
 export function ratearCompra(

@@ -7,26 +7,21 @@ import { Badge, Button } from "@/ui/primitives";
 import { DataTable, FeatureLayout, FeatureHeader } from "@/ui/composites";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/primitives";
 import { getActionsColumn, RowAction } from "@/utils/table-columns";
-import { FiltrosAvancadosPopover, type FiltrosAvancados } from "../components/filtros-avancados";
-import type { DocumentoFiltro } from "../components/documento-filtro";
+import { FiltrosAvancadosPopover } from "../components/filtros-avancados";
+import { TODOS, type FiltrosTitulos } from "../components/filtros-titulos";
 import { StatusTituloBadge } from "../components/status-titulo-badge";
 import { formatDateToLocal } from "@/utils/date-utils";
 import { Landmark, X } from "lucide-react";
 import { ContasPagar, statusTituloLabels } from "./types";
+import { documentoDeContaPagar } from "../components/documento-filtro";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 
-export const TODOS = "TODOS";
+export { TODOS };
 
 interface ContasPagarListProps extends FeatureListProps<ContasPagar> {
-  status: string;
-  origem: string;
-  documento: DocumentoFiltro | null;
+  filtros: FiltrosTitulos;
+  onFiltrosChange: (parcial: Partial<FiltrosTitulos>) => void;
   compraId?: number;
-  avancados: FiltrosAvancados;
-  onAvancadosChange: (v: FiltrosAvancados) => void;
-  onStatusChange: (v: string) => void;
-  onOrigemChange: (v: string) => void;
-  onDocumentoChange: (v: DocumentoFiltro | null) => void;
   onBaixa: (item: ContasPagar) => void;
   onEstorno: (item: ContasPagar) => void;
 }
@@ -51,10 +46,11 @@ const Filtro = ({ valor, onChange, rotulo, opcoes, disabled }: {
 
 export function ContasPagarList({
   items: contas, loading, searchTerm, page, totalPages, totalItems,
-  status, origem, documento, compraId, avancados, onAvancadosChange,
+  filtros, onFiltrosChange, compraId,
   onSearchChange, onAdd, onEdit, onDelete, onView, onPageChange,
-  onStatusChange, onOrigemChange, onDocumentoChange, onBaixa, onEstorno,
+  onBaixa, onEstorno,
 }: ContasPagarListProps) {
+  const { status, origem, documento, avancados } = filtros;
   const emAberto = (i: ContasPagar) => i.status === "ABERTO" || i.status === "PARCIAL";
   // Só lançamento manual, em aberto e sem pagamento, pode ser editado/excluído.
   const editavel = (i: ContasPagar) => i.origemTipo === "MANUAL" && i.status === "ABERTO" && i.valorPago === 0;
@@ -85,7 +81,7 @@ export function ContasPagarList({
             type="button"
             className="flex items-center gap-2 text-left"
             title="Ver todas as parcelas deste documento"
-            onClick={() => onDocumentoChange({ numeroDocumento: i.numeroDocumento, origemTipo: i.origemTipo, origemId: i.origemId ?? null })}
+            onClick={() => onFiltrosChange({ documento: documentoDeContaPagar(i) })}
           >
             <Badge variant="outline">{origemTituloLabels[i.origemTipo] ?? i.origemTipo}</Badge>
             <span className="font-medium text-foreground hover:underline">{i.numeroDocumento}</span>
@@ -181,14 +177,14 @@ export function ContasPagarList({
           }}
           actions={
             <>
-              <Filtro valor={status} onChange={onStatusChange} rotulo="Status" opcoes={statusTituloLabels} />
-              <Filtro valor={origem} onChange={onOrigemChange} rotulo="Origem" opcoes={origemTituloLabels} disabled={compraId !== undefined} />
-              <FiltrosAvancadosPopover valor={avancados} onChange={onAvancadosChange} />
+              <Filtro valor={status} onChange={(v) => onFiltrosChange({ status: v })} rotulo="Status" opcoes={statusTituloLabels} />
+              <Filtro valor={origem} onChange={(v) => onFiltrosChange({ origem: v })} rotulo="Origem" opcoes={origemTituloLabels} disabled={compraId !== undefined} />
+              <FiltrosAvancadosPopover valor={avancados} onChange={(v) => onFiltrosChange({ avancados: v })} />
               {compraId !== undefined && (
                 <Button variant="outline" disabled>Compra: #{compraId}</Button>
               )}
               {documento && (
-                <Button variant="outline" onClick={() => onDocumentoChange(null)}>
+                <Button variant="outline" onClick={() => onFiltrosChange({ documento: null })}>
                   Parcelas do documento {documento.numeroDocumento} <X />
                 </Button>
               )}

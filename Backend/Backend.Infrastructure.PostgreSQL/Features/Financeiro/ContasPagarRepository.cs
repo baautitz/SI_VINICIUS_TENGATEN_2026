@@ -113,48 +113,18 @@ public class ContasPagarRepository : IContasPagarRepository
 
     public async Task<ResultadoPaginado<ContasPagar>> PesquisarContasPagar(string termo, int pagina = 1, int tamanhoDaPagina = 20, FiltroContasPagar? filtro = null)
     {
-        var pesquisa = PesquisaTitulos.Analisar(termo);
-        var param = new
-        {
-            pesquisa.Palavras,
-            pesquisa.Alternativas,
-            filtro?.FornecedorId,
-            filtro?.ClienteId,
-            OrigemTipo = filtro?.OrigemTipo?.ToString(),
-            filtro?.OrigemId,
-            filtro?.CompraId,
-            filtro?.NumeroDocumento,
-            Status = filtro?.Status?.ToString(),
-            CpfCnpj = PesquisaTitulos.SomenteDigitos(filtro?.CpfCnpj),
-            filtro?.VencimentoDe,
-            filtro?.VencimentoAte,
-            filtro?.EmissaoDe,
-            filtro?.EmissaoAte,
-            filtro?.ValorMinimo,
-            filtro?.ValorMaximo,
-            TamanhoDaPagina = tamanhoDaPagina,
-            Offset = (pagina - 1) * tamanhoDaPagina
-        };
+        var param = PesquisaTitulos.Parametros(termo, filtro, pagina, tamanhoDaPagina);
+        param.Add("FornecedorId", filtro?.FornecedorId);
+        param.Add("CompraId", filtro?.CompraId);
+        param.Add("TransportadoraId", filtro?.TransportadoraId);
 
-        const string haystack = @"concat_ws(' ', cp.descricao, cp.numero_documento, cp.observacao, f.nome_razaosocial, f.apelido_nomefantasia, f.cpf_cnpj,
-                cli.nome_razaosocial, cli.cpf_cnpj, tr.nome_razaosocial, cp.valor::text, to_char(cp.data_vencimento, 'DD/MM/YYYY'), to_char(cp.data_emissao, 'DD/MM/YYYY'),
-                cp.status::text, cp.origem_tipo::text)";
-        var where = PesquisaTitulos.Where(haystack) + @"
+        var where = PesquisaTitulos.Where("cp.texto_pesquisa", PesquisaTitulos.Analisar(termo)) + @"
               AND (@FornecedorId::int IS NULL OR cp.fornecedor_id = @FornecedorId)
-              AND (@ClienteId::int IS NULL OR cp.cliente_id = @ClienteId)
-              AND (@OrigemTipo::text IS NULL OR cp.origem_tipo::text = @OrigemTipo)
-              AND (@OrigemId::int IS NULL OR cp.origem_id = @OrigemId)
-              AND (@CompraId::int IS NULL OR (cp.origem_id = @CompraId AND cp.origem_tipo::text IN ('COMPRA', 'FRETE_COMPRA')))
-              AND (@NumeroDocumento::text IS NULL OR cp.numero_documento = @NumeroDocumento)
-              AND (@Status::text IS NULL OR cp.status::text = @Status)
-              AND (@VencimentoDe::date IS NULL OR cp.data_vencimento >= @VencimentoDe)
-              AND (@VencimentoAte::date IS NULL OR cp.data_vencimento <= @VencimentoAte)
-              AND (@EmissaoDe::date IS NULL OR cp.data_emissao >= @EmissaoDe)
-              AND (@EmissaoAte::date IS NULL OR cp.data_emissao <= @EmissaoAte)
-              AND (@ValorMinimo::numeric IS NULL OR cp.valor >= @ValorMinimo)
-              AND (@ValorMaximo::numeric IS NULL OR cp.valor <= @ValorMaximo)
+              AND (@TransportadoraId::int IS NULL OR cp.transportadora_id = @TransportadoraId)
+              AND (@CompraId::int IS NULL OR (cp.origem_id = @CompraId AND cp.origem_tipo::text IN ('COMPRA', 'FRETE_COMPRA')))" + PesquisaTitulos.FiltroComum("cp") + @"
               AND (@CpfCnpj::text IS NULL OR @CpfCnpj IN (regexp_replace(COALESCE(f.cpf_cnpj, ''), '\D', '', 'g'), regexp_replace(COALESCE(cli.cpf_cnpj, ''), '\D', '', 'g')))";
 
+        await PesquisaTitulos.AjustarLimiar(_session.Connection, _session.Transaction);
         var total = await _session.Connection.ExecuteScalarAsync<int>(@"
             SELECT COUNT(*)
             FROM contas_pagar cp
@@ -164,7 +134,7 @@ public class ContasPagarRepository : IContasPagarRepository
             param, transaction: _session.Transaction);
 
         var contas = (await Consultar(where + @"
-            ORDER BY " + PesquisaTitulos.Relevancia("cp.numero_documento", "cp.descricao") + @",
+            ORDER BY " + PesquisaTitulos.Relevancia("cp.texto_pesquisa", "cp.numero_documento", "cp.descricao") + @",
                      cp.data_vencimento, cp.numero_documento, cp.numero_parcela, cp.id
             LIMIT @TamanhoDaPagina OFFSET @Offset;", param)).ToList();
 

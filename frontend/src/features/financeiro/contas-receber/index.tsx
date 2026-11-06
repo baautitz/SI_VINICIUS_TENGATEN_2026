@@ -3,17 +3,18 @@
 import { avisoTituloExterno } from "../origem";
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ContasReceberList, TODOS } from "./list";
+import { ContasReceberList } from "./list";
 import { ContasReceberUpsertForm, type ContasReceberUpsertProps } from "./upsert";
 import { ContasReceber } from "./types";
 import {
   BaixaParcelaWindow,
   type BaixaParcelaWindowProps,
 } from "../components/baixa-parcela-dialog";
-import { FILTROS_AVANCADOS_VAZIOS, filtrosAvancadosParaApi, type FiltrosAvancados } from "../components/filtros-avancados";
-import type { DocumentoFiltro } from "../components/documento-filtro";
+import { filtrosAvancadosParaApi } from "../components/filtros-avancados";
+import { FILTROS_TITULOS_VAZIOS, TODOS, type FiltrosTitulos } from "../components/filtros-titulos";
 import { useFeatureList } from "@/hooks/use-feature-list";
 import { contasReceberApi } from "@/api/financeiro";
+import { contraparteParaApi } from "../components/documento-filtro";
 import { useUi } from "@/ui/imperative";
 
 export * from "./types";
@@ -27,10 +28,8 @@ export function ContasReceberFeature({ vendaId }: ContasReceberFeatureProps = {}
   const ui = useUi();
   const queryClient = useQueryClient();
   const list = useFeatureList<ContasReceber>();
-  const [status, setStatus] = React.useState(TODOS);
-  const [origem, setOrigem] = React.useState(TODOS);
-  const [documento, setDocumento] = React.useState<DocumentoFiltro | null>(null);
-  const [avancados, setAvancados] = React.useState<FiltrosAvancados>(FILTROS_AVANCADOS_VAZIOS);
+  const [filtros, setFiltros] = React.useState<FiltrosTitulos>(FILTROS_TITULOS_VAZIOS);
+  const { status, origem, documento, avancados } = filtros;
   const { setPage } = list;
   const { data, isLoading } = useQuery({
     queryKey: ["contas-receber", list.deferredSearch, status, origem, documento, avancados, vendaId, list.page],
@@ -41,6 +40,7 @@ export function ContasReceberFeature({ vendaId }: ContasReceberFeatureProps = {}
         origemTipo: vendaId !== undefined ? "VENDA" : (documento?.origemTipo ?? (origem === TODOS ? undefined : origem)),
         origemId: vendaId ?? documento?.origemId ?? undefined,
         numeroDocumento: documento?.numeroDocumento,
+        ...contraparteParaApi(documento),
         ...filtrosAvancadosParaApi(avancados),
         page: list.page,
         pageSize: 50,
@@ -157,14 +157,8 @@ export function ContasReceberFeature({ vendaId }: ContasReceberFeatureProps = {}
       onRowSelectionChange={list.setRowSelection}
       selectAllAcrossPages={list.selectAllAcrossPages}
       onSelectAllAcrossPagesChange={list.setSelectAllAcrossPages}
-      status={status}
-      origem={origem}
-      documento={documento}
-      avancados={avancados}
-      onAvancadosChange={(v) => { setAvancados(v); setPage(1); }}
-      onStatusChange={(v) => { setStatus(v); setPage(1); }}
-      onOrigemChange={(v) => { setOrigem(v); setPage(1); }}
-      onDocumentoChange={(v) => { setDocumento(v); setPage(1); }}
+      filtros={filtros}
+      onFiltrosChange={(parcial) => { setFiltros((f) => ({ ...f, ...parcial })); setPage(1); }}
       onBaixa={(item) => openBaixa(item)}
       onEstorno={(item) => openBaixa(item, true)}
     />

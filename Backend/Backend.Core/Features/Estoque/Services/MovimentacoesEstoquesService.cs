@@ -101,6 +101,9 @@ public sealed class MovimentacoesEstoquesService : BaseService
         if (original.OrigemTipo == OrigemMovimentacaoEstoque.DEVOLUCAO_VENDA)
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_DEVOLUCAO", "Esta movimentação foi gerada por uma devolução de venda e não pode ser estornada."));
 
+        if (original.OrigemTipo == OrigemMovimentacaoEstoque.DEVOLUCAO_COMPRA)
+            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_DEVOLUCAO_COMPRA", "Esta movimentação foi gerada por uma devolução de compra e não pode ser estornada."));
+
         if (original.OrigemTipo == OrigemMovimentacaoEstoque.ESTORNO)
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_ESTORNO", "Um estorno não pode ser estornado. Lance uma nova movimentação."));
 
@@ -127,7 +130,7 @@ public sealed class MovimentacoesEstoquesService : BaseService
                 var sku = await _skusRepository.ObterSkuPorSku(item.Sku.Sku);
                 if (sku is not null && sku.Estoque < item.Quantidade)
                     erros.Add(new ResultadoErro("ESTORNO_ESTOQUE_INSUFICIENTE",
-                        $"SKU '{item.Sku.Sku}': estoque atual ({sku.Estoque:0.####}) menor que a quantidade da entrada ({item.Quantidade:0.####}); parte já foi vendida ou baixada. O caminho é a devolução ao fornecedor.", "Itens"));
+                        $"SKU '{item.Sku.Sku}': estoque atual ({sku.Estoque:0.####}) menor que a quantidade da entrada ({item.Quantidade:0.####}); parte já foi vendida ou baixada. {OrientacaoEstoqueInsuficiente(origemTipo)}", "Itens"));
                 else if (posteriores.Where(p => p.Sku == item.Sku.Sku).ToList() is { Count: > 0 } lista)
                     erros.Add(new ResultadoErro("ESTORNO_MOVIMENTACAO_POSTERIOR",
                         $"SKU '{item.Sku.Sku}': há movimentações posteriores à entrada ({string.Join(", ", lista.Select(p => $"#{p.MovimentacaoId} {p.Origem}"))}); estornar agora tornaria o custo médio incorreto.", "Itens"));
@@ -135,6 +138,11 @@ public sealed class MovimentacoesEstoquesService : BaseService
         }
         return erros;
     }
+
+    private static string OrientacaoEstoqueInsuficiente(OrigemMovimentacaoEstoque origemTipo) =>
+        origemTipo == OrigemMovimentacaoEstoque.DEVOLUCAO_VENDA
+            ? "Os itens da devolução da venda já saíram do estoque; não é possível estornar a devolução."
+            : "O caminho é a devolução ao fornecedor.";
 
     // Usado ao cancelar o documento de origem (balanço, compra): estorna todas as movimentações dele
     // que ainda não foram estornadas. O chamador controla a transação.
@@ -176,6 +184,11 @@ public sealed class MovimentacoesEstoquesService : BaseService
             if (movimentacao.TipoMovimentacao == TipoMovimentacaoEstoque.ENTRADA)
             {
                 sku.RegistrarEntradaDeEstoque(item.Quantidade, item.CustoUnitario, movimentacao.OrigemTipo == OrigemMovimentacaoEstoque.COMPRA);
+            }
+            else if (movimentacao.OrigemTipo == OrigemMovimentacaoEstoque.DEVOLUCAO_COMPRA)
+            {
+                // Devolução ao fornecedor sai pelo custo da compra, que também é o que se desfaz do custo médio.
+                sku.RemoverEntradaDeCompra(item.Quantidade, item.CustoUnitario);
             }
             else
             {

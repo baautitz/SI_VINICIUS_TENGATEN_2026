@@ -1,7 +1,7 @@
 import React from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/ui/primitives";
-import { Ban, Check, Eye, Pencil, Trash2, Undo2 } from "lucide-react";
+import { Ban, Check, CornerUpLeft, Eye, Pencil, Trash2, Undo2 } from "lucide-react";
 import { fireAndForget } from "@/lib/utils";
 
 interface ActionColumnOptions<T> {
@@ -17,6 +17,7 @@ interface ActionColumnOptions<T> {
 const ROW_ACTIONS = {
   baixar: { icon: Check, variant: "success" },
   estornar: { icon: Undo2, variant: "outline" },
+  devolver: { icon: CornerUpLeft, variant: "outline" },
   cancelar: { icon: Ban, variant: "destructive" },
   visualizar: { icon: Eye, variant: "outline" },
   editar: { icon: Pencil, variant: "outline" },

@@ -1,5 +1,8 @@
-import React, { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { RowSelectionState } from "@tanstack/react-table";
+import { useDebounce } from "@/hooks/use-debounce";
+
+const ATRASO_BUSCA_MS = 400;
 
 interface UseFeatureListOptions<T> {
   initialSearchTerm?: string;
@@ -20,7 +23,9 @@ export function useFeatureList<T>({
   recipes: suppliedRecipes,
 }: UseFeatureListOptions<T> = {}) {
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm ?? "");
-  const deferredSearch = React.useDeferredValue(searchTerm);
+  // Termo que vai para a consulta: so muda depois que a digitacao para.
+  const [deferredSearch, setDeferredSearch] = useState(initialSearchTerm ?? "");
+  const debounceBusca = useDebounce(setDeferredSearch, ATRASO_BUSCA_MS);
   const [page, setPage] = useState(1);
 
   const [rowSelection, setRowSelectionRaw] = useState<RowSelectionState>({});
@@ -40,10 +45,18 @@ export function useFeatureList<T>({
     );
     setSelectAllAcrossPages(false);
   };
-  const handleSearchChange = useCallback((val: string) => {
+  const handleSearchChange = useCallback((val: string, opcoes?: { imediato?: boolean; cancelar?: boolean }) => {
+    // O campo de busca saiu da tela: descarta o timer pendente, sem tocar no estado.
+    if (opcoes?.cancelar) {
+      debounceBusca.cancelar();
+      return;
+    }
     setSearchTerm(val);
     setPage(1);
-  }, []);
+    // Limpar e Enter respondem na hora; digitar espera a pausa.
+    if (val === "" || opcoes?.imediato) debounceBusca.imediato(val);
+    else debounceBusca.chamar(val);
+  }, [debounceBusca]);
 
   // Product code owns interaction orchestration. Recipes are always async so
   // callers can await windows, APIs, invalidation and feedback in one place.

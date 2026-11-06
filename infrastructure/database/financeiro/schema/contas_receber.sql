@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS contas_receber (
   observacao TEXT,
   criado_em TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   atualizado_em TIMESTAMP WITH TIME ZONE,
+  -- Texto da pesquisa (sem acento/caixa), mantido por trigger; ver contas_receber_atualizar_texto_pesquisa.
+  texto_pesquisa TEXT NOT NULL DEFAULT '',
   CONSTRAINT contas_receber_cliente_fk
     FOREIGN KEY (cliente_id)
     REFERENCES clientes (id)
@@ -51,3 +53,40 @@ CREATE UNIQUE INDEX IF NOT EXISTS contas_receber_parcela_uk
 CREATE INDEX IF NOT EXISTS contas_receber_origem_idx ON contas_receber (origem_tipo, origem_id);
 CREATE INDEX IF NOT EXISTS contas_receber_numero_documento_idx ON contas_receber (numero_documento);
 CREATE INDEX IF NOT EXISTS contas_receber_status_vencimento_idx ON contas_receber (status, data_vencimento);
+
+-- Texto pesquisável precomputado (mesmos campos que a pesquisa usava) para o índice trigram; refeito a cada
+-- gravação do título e quando o cliente muda.
+CREATE OR REPLACE FUNCTION contas_receber_atualizar_texto_pesquisa() RETURNS trigger AS $$
+BEGIN
+  NEW.texto_pesquisa := unaccent(lower(concat_ws(' ',
+    NEW.descricao, NEW.numero_documento, NEW.observacao,
+    (SELECT concat_ws(' ', c.nome_razaosocial, c.apelido_nomefantasia, c.cpf_cnpj) FROM clientes c WHERE c.id = NEW.cliente_id),
+    to_char(NEW.data_vencimento, 'DD/MM/YYYY'), to_char(NEW.data_emissao, 'DD/MM/YYYY'),
+    CASE NEW.status WHEN 'ABERTO' THEN 'aberto' WHEN 'PARCIAL' THEN 'parcial' WHEN 'PAGO' THEN 'pago' WHEN 'CANCELADO' THEN 'cancelado' END,
+    CASE NEW.origem_tipo WHEN 'MANUAL' THEN 'manual' WHEN 'VENDA' THEN 'venda' WHEN 'COMPRA' THEN 'compra'
+      WHEN 'FRETE_COMPRA' THEN 'frete compra' WHEN 'DEVOLUCAO_VENDA' THEN 'devolucao venda' END)));
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS contas_receber_texto_pesquisa_tg ON contas_receber;
+CREATE TRIGGER contas_receber_texto_pesquisa_tg
+  BEFORE INSERT OR UPDATE ON contas_receber
+  FOR EACH ROW EXECUTE FUNCTION contas_receber_atualizar_texto_pesquisa();
+
+CREATE OR REPLACE FUNCTION contas_receber_refazer_texto_pesquisa() RETURNS trigger AS $$
+BEGIN
+  -- O UPDATE dispara o trigger BEFORE da própria conta, que recalcula o texto.
+  UPDATE contas_receber SET texto_pesquisa = '' WHERE cliente_id = NEW.id;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS clientes_contas_receber_texto_tg ON clientes;
+CREATE TRIGGER clientes_contas_receber_texto_tg
+  AFTER UPDATE OF nome_razaosocial, apelido_nomefantasia, cpf_cnpj ON clientes
+  FOR EACH ROW EXECUTE FUNCTION contas_receber_refazer_texto_pesquisa();
+
+-- O valor é pesquisado por igualdade (não entra no texto: trecho de dígitos seria ruído).
+CREATE INDEX IF NOT EXISTS contas_receber_valor_idx ON contas_receber (valor);
+CREATE INDEX IF NOT EXISTS contas_receber_texto_pesquisa_idx ON contas_receber USING gin (texto_pesquisa public.gin_trgm_ops);

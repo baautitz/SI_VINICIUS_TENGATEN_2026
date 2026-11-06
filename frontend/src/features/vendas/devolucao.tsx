@@ -10,6 +10,7 @@ import { useWindow, useWindowCommands, WindowCancelButton } from "@/ui/imperativ
 import { vendasApi } from "@/api/vendas";
 import { getFullSkuName } from "@/features/catalogo/skus/types";
 import { formatToLocal } from "@/utils/date-utils";
+import { MAX_MOTIVO_ESTORNO, MIN_MOTIVO_ESTORNO } from "@/lib/motivo-estorno";
 import type { CriarDevolucaoValues, Venda } from "./types";
 import { combinacaoDe } from "@/lib/atalhos";
 
@@ -30,7 +31,7 @@ export function DevolucaoTipoWindow() {
         {
           id: "vendas.devolucao.parcial",
           hotkey: combinacaoDe("devolucaoParcial"),
-          label: "Devolução parcial",
+          label: "Devolução parcial de venda",
           run: (event: KeyboardEvent) => {
             event.preventDefault();
             activeWindow.resolve("parcial");
@@ -39,7 +40,7 @@ export function DevolucaoTipoWindow() {
         {
           id: "vendas.devolucao.total",
           hotkey: combinacaoDe("devolucaoTotal"),
-          label: "Devolução total",
+          label: "Devolução total de venda",
           run: (event: KeyboardEvent) => {
             event.preventDefault();
             activeWindow.resolve("total");
@@ -114,7 +115,7 @@ export function DevolucaoWindow({ venda, total: devolucaoTotal }: DevolucaoWindo
     if (selecionados.length === 0) return setError("Informe a quantidade de ao menos um item.");
     if (itens.some((i) => qtdDe(i) > Number(i.saldoDevolvivel ?? i.quantidade)))
       return setError("Há quantidade acima do saldo devolvível.");
-    if (motivo.length < 5) return setError("O motivo deve ter pelo menos 5 caracteres.");
+    if (motivo.length < MIN_MOTIVO_ESTORNO) return setError(`O motivo deve ter pelo menos ${MIN_MOTIVO_ESTORNO} caracteres.`);
 
     activeWindow.resolve({ motivo, itens: selecionados });
   }, [activeWindow, itens, qtdDe]);
@@ -210,14 +211,14 @@ export function DevolucaoWindow({ venda, total: devolucaoTotal }: DevolucaoWindo
         />
       </Field>
       <Field data-invalid={!!error}>
-        <FieldLabel htmlFor="motivo-devolucao">Motivo da Devolução</FieldLabel>
+        <FieldLabel htmlFor="motivo-devolucao">Motivo da Devolução de venda</FieldLabel>
         <Textarea
           id="motivo-devolucao"
           ref={registerMotivo}
           onChange={() => error && setError("")}
-          placeholder="Informe o motivo (mínimo de 5 caracteres)..."
+          placeholder={`Informe o motivo (mínimo de ${MIN_MOTIVO_ESTORNO} caracteres)...`}
           rows={3}
-          maxLength={500}
+          maxLength={MAX_MOTIVO_ESTORNO}
         />
         {error && <FieldError>{error}</FieldError>}
       </Field>

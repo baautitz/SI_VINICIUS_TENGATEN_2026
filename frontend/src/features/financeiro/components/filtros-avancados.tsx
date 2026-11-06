@@ -1,4 +1,5 @@
 "use client";
+import { useDebounce, useRefComLimpeza } from "@/hooks/use-debounce";
 
 import { combinacaoDe } from "@/lib/atalhos";
 import React from "react";
@@ -76,7 +77,8 @@ export function FiltrosAvancadosPopover({ valor, onChange }: {
 }) {
   const [aberto, setAberto] = React.useState(false);
   const [rascunho, setRascunho] = React.useState(valor);
-  const timer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const debounceFiltros = useDebounce(onChange, ATRASO_MS);
+  const refGatilho = useRefComLimpeza<HTMLButtonElement>(debounceFiltros.cancelar);
   const ativos = Object.values(valor).filter(Boolean).length;
 
   useWindowCommands([
@@ -85,19 +87,17 @@ export function FiltrosAvancadosPopover({ valor, onChange }: {
 
   const alterar = (novo: FiltrosAvancados) => {
     setRascunho(novo);
-    clearTimeout(timer.current);
-    timer.current = setTimeout(() => onChange(novo), ATRASO_MS);
+    debounceFiltros.chamar(novo);
   };
   const limpar = () => {
-    clearTimeout(timer.current);
     setRascunho(FILTROS_AVANCADOS_VAZIOS);
-    onChange(FILTROS_AVANCADOS_VAZIOS);
+    debounceFiltros.imediato(FILTROS_AVANCADOS_VAZIOS);
   };
 
   return (
     <Popover open={aberto} onOpenChange={setAberto}>
       <PopoverTrigger asChild>
-        <Button variant={ativos ? "default" : "outline"} aria-label="Filtros avançados">
+        <Button ref={refGatilho} variant={ativos ? "default" : "outline"} aria-label="Filtros avançados">
           <SlidersHorizontal /> Filtros{ativos ? ` (${ativos})` : ""}
           <HotkeyKbd hotkey={combinacaoDe("filtros")} />
         </Button>
