@@ -12,6 +12,7 @@ import { DataTable, FeatureHeader, FeatureLayout } from "@/ui/composites";
 import { formatToLocal } from "@/utils/date-utils";
 import { fireAndForget } from "@/lib/utils";
 import { getActionsColumn, RowAction } from "@/utils/table-columns";
+import type { Ordenacao } from "@/lib/ordenacao";
 import { Balanco, statusBalancoLabels } from "./types";
 import { EstornoWindow, type EstornoWindowProps } from "@/features/estoque/movimentacoes";
 import { BalancoWindow, type BalancoWindowProps } from "./window";
@@ -20,10 +21,12 @@ export function BalancosFeature() {
   const ui = useUi();
   const queryClient = useQueryClient();
   const list = useFeatureList<Balanco>();
+  // Escolha do usuário no cabeçalho; null mantém a ordenação padrão (mais recente primeiro).
+  const [ordenacao, setOrdenacao] = React.useState<Ordenacao | null>(null);
   const { data, isLoading } = useQuery({
-    queryKey: ["balancos", list.page],
+    queryKey: ["balancos", list.page, ordenacao],
     queryFn: async () => {
-      const res = await balancosApi.list(list.page, 50);
+      const res = await balancosApi.list(list.page, 50, ordenacao);
       return {
         itens: res?.itens ?? [],
         totalPages: res?.totalDePaginas ?? 1,
@@ -92,16 +95,18 @@ export function BalancosFeature() {
   };
 
   const columns: ColumnDef<Balanco>[] = [
-    { accessorKey: "id", header: "Código", size: 80, cell: ({ row }) => <span className="font-semibold">{row.original.id}</span> },
-    { accessorKey: "dataAbertura", header: "Abertura", cell: ({ row }) => formatToLocal(row.original.dataAbertura) },
+    { accessorKey: "id", header: "Código", size: 80, meta: { campoOrdenacao: "id" }, cell: ({ row }) => <span className="font-semibold">{row.original.id}</span> },
+    { accessorKey: "dataAbertura", header: "Abertura", meta: { campoOrdenacao: "dataAbertura" }, cell: ({ row }) => formatToLocal(row.original.dataAbertura) },
     {
       accessorKey: "dataFechamento",
       header: "Fechamento",
+      meta: { campoOrdenacao: "dataFechamento" },
       cell: ({ row }) => (row.original.dataFechamento ? formatToLocal(row.original.dataFechamento) : "-"),
     },
     {
       accessorKey: "status",
       header: "Status",
+      meta: { campoOrdenacao: "status" },
       cell: ({ row }) => {
         const status = row.original.status;
         return (
@@ -134,6 +139,11 @@ export function BalancosFeature() {
           columns={columns}
           data={data?.itens ?? []}
           loading={isLoading}
+          ordenacao={ordenacao}
+          onOrdenacaoChange={(proxima) => {
+            setOrdenacao(proxima);
+            list.setPage(1);
+          }}
           pageCount={data?.totalPages ?? 1}
           pageIndex={list.page}
           onPageChange={list.setPage}

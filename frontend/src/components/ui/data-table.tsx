@@ -16,6 +16,9 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
 } from "lucide-react";
 
 import {
@@ -35,6 +38,15 @@ import { useNavigationScope } from "@/ui/keyboard-navigation";
 import { InputGroup, InputGroupInput, InputGroupAddon } from "./input-group";
 import { fireAndForget } from "@/lib/utils";
 import { combinacaoDe } from "@/lib/atalhos";
+import { proximaOrdenacao, type Ordenacao } from "@/lib/ordenacao";
+
+declare module "@tanstack/react-table" {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface ColumnMeta<TData, TValue> {
+    /** Campo enviado à API (lista branca da listagem); sem ele o cabeçalho não ordena. */
+    campoOrdenacao?: string;
+  }
+}
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -47,6 +59,10 @@ interface DataTableProps<TData, TValue> {
   totalItems?: number;
 
   globalFilter?: string;
+  /** Ordenação escolhida no cabeçalho; `null` é a ordenação padrão. Habilita o clique nas colunas com `meta.campoOrdenacao`. */
+  ordenacao?: Ordenacao | null;
+  onOrdenacaoChange?: (ordenacao: Ordenacao | null) => void;
+
   onGlobalFilterChange?: (filter: string, opcoes?: { imediato?: boolean; cancelar?: boolean }) => void;
   searchPlaceholder?: string;
 
@@ -84,6 +100,8 @@ export function DataTable<TData, TValue>({
   onPageChange,
   totalItems,
   globalFilter,
+  ordenacao = null,
+  onOrdenacaoChange,
   onGlobalFilterChange,
   searchPlaceholder = "Filtrar...",
   rowSelection = {},
@@ -303,7 +321,8 @@ export function DataTable<TData, TValue>({
                   {onRowSelect ? "Selecionar" : "Editar"}
                 </span>
               )}
-              {onEditRow && (
+              {/* Sem onRowSelect o Enter já edita; repetir "Editar" com Alt+E seria redundante. */}
+              {onEditRow && onRowSelect && (
                 <span className="flex items-center gap-1">
                   <HotkeyKbd hotkey={combinacaoDe("editarLinha")} /> Editar
                 </span>
@@ -338,9 +357,15 @@ export function DataTable<TData, TValue>({
                 className="border-b hover:bg-transparent"
               >
                 {headerGroup.headers.map((header) => {
+                  const campo = header.column.columnDef.meta?.campoOrdenacao;
                   return (
                     <TableHead
                       key={header.id}
+                      aria-sort={
+                        campo && ordenacao?.campo === campo
+                          ? ordenacao.direcao === "asc" ? "ascending" : "descending"
+                          : undefined
+                      }
                       style={{
                         width:
                           header.column.getSize() !== 150
@@ -348,12 +373,25 @@ export function DataTable<TData, TValue>({
                             : undefined,
                       }}
                     >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
+                      {header.isPlaceholder ? null : campo && onOrdenacaoChange ? (
+                        <button
+                          type="button"
+                          className="hover:text-foreground inline-flex items-center gap-1 uppercase"
+                          aria-label={`Ordenar por ${campo}`}
+                          onClick={() => onOrdenacaoChange(proximaOrdenacao(ordenacao, campo))}
+                        >
+                          {flexRender(header.column.columnDef.header, header.getContext())}
+                          {ordenacao?.campo !== campo ? (
+                            <ArrowUpDown className="size-3 opacity-40" />
+                          ) : ordenacao.direcao === "asc" ? (
+                            <ArrowUp className="size-3" />
+                          ) : (
+                            <ArrowDown className="size-3" />
                           )}
+                        </button>
+                      ) : (
+                        flexRender(header.column.columnDef.header, header.getContext())
+                      )}
                     </TableHead>
                   );
                 })}

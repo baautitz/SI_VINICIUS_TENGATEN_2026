@@ -1,3 +1,4 @@
+import { paramsDeOrdenacao, type Ordenacao } from "@/lib/ordenacao";
 import { http } from "./http";
 import type { PaginatedResult, Resultado } from "./types";
 import type { MovimentacaoEstoque, MovimentacaoEstoqueFormValues } from "@/features/estoque/movimentacoes/types";
@@ -23,8 +24,8 @@ export interface BalancoPayload {
 }
 
 export const balancosApi = {
-  list: (page = 1, pageSize = 20) =>
-    http.get<PaginatedResult<Balanco>>(`/api/estoque/balancos?page=${page}&pageSize=${pageSize}`),
+  list: (page = 1, pageSize = 20, ordenacao: Ordenacao | null = null) =>
+    http.get<PaginatedResult<Balanco>>(`/api/estoque/balancos?page=${page}&pageSize=${pageSize}${paramsDeOrdenacao(ordenacao)}`),
   getById: (id: number) => http.get<Balanco>(`/api/estoque/balancos/${id}`),
   create: (data: BalancoPayload) => http.post<Resultado<Balanco>>("/api/estoque/balancos", data),
   update: (id: number, data: BalancoPayload) => http.put<Resultado<Balanco>>(`/api/estoque/balancos/${id}`, data),

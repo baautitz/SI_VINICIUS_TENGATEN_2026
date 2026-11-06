@@ -23,7 +23,7 @@ public class CidadesRepository : ICidadesRepository
             INNER JOIN estados st ON st.id = ci.estado_id
             INNER JOIN paises p ON p.id = st.pais_id
             WHERE (@EstadoId::int IS NULL OR ci.estado_id = @EstadoId)
-            ORDER BY ci.id DESC
+            ORDER BY lower(unaccent(ci.cidade)), ci.id
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { EstadoId = estadoId }, transaction: _session.Transaction);
@@ -86,7 +86,7 @@ public class CidadesRepository : ICidadesRepository
             INNER JOIN estados st ON st.id = ci.estado_id
             INNER JOIN paises p ON p.id = st.pais_id
             WHERE (unaccent(ci.id::text) ILIKE unaccent(@Termo::text) OR unaccent(ci.cidade::text) ILIKE unaccent(@Termo::text) OR unaccent(ci.ddd::text) ILIKE unaccent(@Termo::text)) AND (@EstadoId::int IS NULL OR ci.estado_id = @EstadoId)
-            ORDER BY ci.id DESC
+            ORDER BY lower(unaccent(ci.cidade)), ci.id
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%", EstadoId = estadoId }, transaction: _session.Transaction);

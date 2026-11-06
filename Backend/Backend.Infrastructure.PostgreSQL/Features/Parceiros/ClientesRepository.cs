@@ -38,7 +38,7 @@ public class ClientesRepository : IClientesRepository
             LEFT JOIN cidades ci ON ci.id = b.cidade_id
             LEFT JOIN estados e ON e.id = ci.estado_id
             LEFT JOIN paises pe ON pe.id = e.pais_id
-            ORDER BY c.criado_em DESC, c.id DESC
+            ORDER BY unaccent(lower(c.nome_razaosocial)), c.id
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
@@ -221,7 +221,7 @@ public class ClientesRepository : IClientesRepository
             LEFT JOIN paises pe ON pe.id = e.pais_id
             WHERE unaccent(c.id::text) ILIKE unaccent(@Termo::text) OR unaccent(c.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(c.cpf_cnpj::text) ILIKE unaccent(@Termo::text)
                OR unaccent(c.apelido_nomefantasia::text) ILIKE unaccent(@Termo::text) OR unaccent(c.email::text) ILIKE unaccent(@Termo::text)
-            ORDER BY c.criado_em DESC, c.id DESC
+            ORDER BY unaccent(lower(c.nome_razaosocial)), c.id
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
