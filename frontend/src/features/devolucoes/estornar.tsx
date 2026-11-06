@@ -110,7 +110,7 @@ export function useEstornarDevolucao() {
     const r = await ui.windows.open<{ nfeAtiva?: Devolucao["nfeAtiva"] }, EstornarDevolucaoWindowProps>({
       component: EstornarDevolucaoWindow,
       props: { devolucaoId },
-      title: `Estornar Devolução #${devolucaoId}`,
+      title: `Estornar Devolução de venda #${devolucaoId}`,
       size: "small",
     });
     if (r.status !== "confirmed") return false;
@@ -119,7 +119,7 @@ export function useEstornarDevolucao() {
         queryClient.invalidateQueries({ queryKey: [k] }),
       ),
     );
-    ui.feedback.notify({ type: "success", title: `Devolução #${devolucaoId} estornada.` });
+    ui.feedback.notify({ type: "success", title: `Devolução de venda #${devolucaoId} estornada.` });
     const nfe = r.value?.nfeAtiva;
     if (nfe) {
       // O estorno não altera a NF-e: só avisa.

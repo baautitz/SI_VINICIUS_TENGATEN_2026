@@ -42,7 +42,7 @@ export function DevolucoesFeature({ vendaId }: DevolucoesFeatureProps = {}) {
     await ui.windows.open<true, DevolucaoDetalheWindowProps>({
       component: DevolucaoDetalheWindow,
       props: { devolucaoId: item.id },
-      title: `Devolução #${item.id}`,
+      title: `Devolução de venda #${item.id}`,
       size: "medium",
     });
   };

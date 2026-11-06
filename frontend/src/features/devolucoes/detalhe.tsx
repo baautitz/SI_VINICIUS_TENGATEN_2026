@@ -60,7 +60,7 @@ export function DevolucaoDetalheWindow({
 
   if (!d)
     return (
-      <p className="text-muted-foreground text-sm">Devolução não encontrada.</p>
+      <p className="text-muted-foreground text-sm">Devolução de venda não encontrada.</p>
     );
 
   return (

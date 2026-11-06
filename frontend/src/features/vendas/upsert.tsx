@@ -567,7 +567,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     await ui.windows.open<true, DevolucoesFeatureProps>({
       component: DevolucoesFeature,
       props: { vendaId: id },
-      title: `Devoluções da venda #${id}`,
+      title: `Devoluções de venda #${id}`,
       size: "full",
     });
   };
@@ -586,7 +586,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     {
       id: "vendas.view-devolucoes",
       hotkey: combinacaoDe("verDevolucoes"),
-      label: "Devoluções",
+      label: "Devoluções de venda",
       enabled: readOnly && !!editingItem,
       run: (event: KeyboardEvent) => {
         event.preventDefault();
@@ -864,7 +864,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
               <Receipt /> Contas a Receber <HotkeyKbd hotkey={combinacaoDe("verContasReceber")} />
             </Button>
             <Button type="button" variant="outline" onClick={openDevolucoes}>
-              <Undo2 /> Devoluções <HotkeyKbd hotkey={combinacaoDe("verDevolucoes")} />
+              <Undo2 /> Devoluções de venda <HotkeyKbd hotkey={combinacaoDe("verDevolucoes")} />
             </Button>
             <Button type="button" variant="outline" onClick={openObservacao}>
               <FileText /> Observação <HotkeyKbd hotkey={combinacaoDe("verObservacao")} />
