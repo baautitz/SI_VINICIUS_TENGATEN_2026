@@ -23,7 +23,7 @@ public class PaisesRepository : IPaisesRepository
         const string sqlData = @"
             SELECT id, pais, codigo_iso_pais AS CodigoIsoPais, ddi, codigo_iso_moeda AS CodigoIsoMoeda, simbolo_moeda AS SimboloMoeda
             FROM paises
-            ORDER BY id DESC
+            ORDER BY lower(unaccent(pais)), id
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
@@ -69,7 +69,7 @@ public class PaisesRepository : IPaisesRepository
             SELECT id, pais, codigo_iso_pais AS CodigoIsoPais, ddi, codigo_iso_moeda AS CodigoIsoMoeda, simbolo_moeda AS SimboloMoeda
             FROM paises
             WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(pais::text) ILIKE unaccent(@Termo::text) OR unaccent(codigo_iso_pais::text) ILIKE unaccent(@Termo::text)
-            ORDER BY id DESC
+            ORDER BY lower(unaccent(pais)), id
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);
