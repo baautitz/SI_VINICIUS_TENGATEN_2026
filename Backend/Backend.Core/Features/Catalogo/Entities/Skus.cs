@@ -102,6 +102,21 @@ public class Skus
         CustoUltimaCompra = custoUltimaCompraAnterior ?? CustoUltimaCompra;
     }
 
+    // Saída de itens devolvidos ao fornecedor: tira do custo médio o que a compra havia somado (qtd x custo do item).
+    // Sem estoque restante, o custo médio fica como estava; o custo da última compra não muda.
+    public void RemoverEntradaDeCompra(decimal quantidade, decimal custoUnitarioDaCompra)
+    {
+        if (quantidade <= 0)
+            throw new DomainException("A quantidade devolvida deve ser maior que zero.");
+        if (Estoque - quantidade < 0)
+            throw new DomainException("Estoque não pode ficar negativo.");
+
+        var restante = Estoque - quantidade;
+        if (restante > 0)
+            CustoMedio = Math.Max(0, Math.Round((Estoque * CustoMedio - quantidade * custoUnitarioDaCompra) / restante, 10));
+        Estoque = restante;
+    }
+
     public void AjustarEstoque(decimal quantidade)
     {
         if (Estoque + quantidade < 0)

@@ -18,11 +18,15 @@ BEGIN
     'COMPRA',
     'BALANCO',
     'ESTORNO',
-    'DEVOLUCAO_VENDA'
+    'DEVOLUCAO_VENDA',
+    'DEVOLUCAO_COMPRA'
   );
 EXCEPTION
   WHEN duplicate_object THEN NULL;
 END $$;
+
+-- Migração: bancos já criados não têm o valor.
+ALTER TYPE projeto_sistemas.origem_movimentacao_estoque_enum ADD VALUE IF NOT EXISTS 'DEVOLUCAO_COMPRA';
 
 DO $$
 BEGIN

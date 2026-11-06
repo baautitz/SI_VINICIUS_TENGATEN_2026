@@ -101,6 +101,9 @@ public sealed class MovimentacoesEstoquesService : BaseService
         if (original.OrigemTipo == OrigemMovimentacaoEstoque.DEVOLUCAO_VENDA)
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_DEVOLUCAO", "Esta movimentação foi gerada por uma devolução de venda e não pode ser estornada."));
 
+        if (original.OrigemTipo == OrigemMovimentacaoEstoque.DEVOLUCAO_COMPRA)
+            return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_DEVOLUCAO_COMPRA", "Esta movimentação foi gerada por uma devolução de compra e não pode ser estornada."));
+
         if (original.OrigemTipo == OrigemMovimentacaoEstoque.ESTORNO)
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_ORIGEM_ESTORNO", "Um estorno não pode ser estornado. Lance uma nova movimentação."));
 
@@ -181,6 +184,11 @@ public sealed class MovimentacoesEstoquesService : BaseService
             if (movimentacao.TipoMovimentacao == TipoMovimentacaoEstoque.ENTRADA)
             {
                 sku.RegistrarEntradaDeEstoque(item.Quantidade, item.CustoUnitario);
+            }
+            else if (movimentacao.OrigemTipo == OrigemMovimentacaoEstoque.DEVOLUCAO_COMPRA)
+            {
+                // Devolução ao fornecedor sai pelo custo da compra, que também é o que se desfaz do custo médio.
+                sku.RemoverEntradaDeCompra(item.Quantidade, item.CustoUnitario);
             }
             else
             {
