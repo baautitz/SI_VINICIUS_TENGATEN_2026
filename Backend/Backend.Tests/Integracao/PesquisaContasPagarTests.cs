@@ -4,6 +4,8 @@ using Dapper;
 
 namespace Backend.Tests.Integracao;
 
+using Backend.Tests.Common;
+
 [Collection(PostgresCollection.Nome)]
 public class PesquisaContasPagarTests
 {

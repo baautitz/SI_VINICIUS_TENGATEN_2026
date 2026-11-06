@@ -12,8 +12,8 @@ public class EmitentePadraoTests
 {
     private static T Criar<T>(Action<Dictionary<string, Func<object?[]?, object?>>> config) where T : class
     {
-        var p = DispatchProxy.Create<T, ComprasServiceTests.Stub>();
-        config(((ComprasServiceTests.Stub)(object)p).Handlers);
+        var p = DispatchProxy.Create<T, Backend.Tests.Common.Stub>();
+        config(((Backend.Tests.Common.Stub)(object)p).Handlers);
         return p;
     }
 
