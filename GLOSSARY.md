@@ -99,3 +99,7 @@ _Avoid_: Fracionável, casas decimais
 **Troca de unidade**:
 Mudança da Unidade de medida de um produto já cadastrado. É barrada quando o produto já tem estoque ou movimentação, porque as quantidades registradas perderiam o significado.
 _Avoid_: Conversão de unidade (o sistema não converte quantidades)
+
+**Ordenação padrão**:
+Critério com que uma listagem abre, sempre com desempate estável. Operações abrem pela mais recente; contas a pagar e a receber abrem com pendentes e vencidas antes das pagas, por vencimento crescente; parceiros, catálogo e referência abrem em ordem alfabética. A pesquisa por texto continua mandando quando há termo. O usuário pode trocá-la ordenando pelo cabeçalho da coluna.
+_Avoid_: Ordem natural, ordem de cadastro
