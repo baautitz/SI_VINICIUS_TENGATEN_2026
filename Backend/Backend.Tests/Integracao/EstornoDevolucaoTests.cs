@@ -236,6 +236,27 @@ public class EstornoDevolucaoTests
     }
 
     [Fact]
+    public async Task Estorno_barrado_com_estoque_insuficiente_nao_altera_nada()
+    {
+        var (vendaId, itemId, _) = await VendaDe5ParcelasDe100();
+        for (var i = 1; i <= 5; i++) await Receber(i, 100, "PAGO");
+        var devolucaoId = await DevolverQtd(vendaId, itemId, 1);
+        await _db.Executar($"UPDATE skus SET estoque = 0 WHERE sku = '{Sku}';");
+
+        var r = await Servico(v => v.EstornarDevolucao(devolucaoId, new EstornarDevolucaoCommand("Devolucao lancada errada")));
+
+        Assert.False(r.Success);
+        var erro = Assert.Single(r.Errors!, e => e.Code == "ESTORNO_ESTOQUE_INSUFICIENTE");
+        Assert.Contains("devolução", erro.Message);
+        Assert.DoesNotContain("fornecedor", erro.Message);
+        Assert.Equal(0m, await Estoque());
+        Assert.Equal("ATIVA", await Escalar<string>("SELECT status FROM devolucoes;"));
+        Assert.Equal(0, await Escalar<int>("SELECT COUNT(*) FROM devolucao_abatimentos WHERE estornado_em IS NOT NULL;"));
+        Assert.Equal(1, await Escalar<int>("SELECT COUNT(*) FROM contas_pagar WHERE status::text <> 'CANCELADO';"));
+        Assert.Equal(5, await Escalar<int>("SELECT COUNT(*) FROM contas_receber WHERE status::text = 'PAGO';"));
+    }
+
+    [Fact]
     public async Task Estornar_duas_vezes_e_erro_de_validacao()
     {
         var (vendaId, itemId) = await VendaDe2Parcelas();
