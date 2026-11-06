@@ -9,7 +9,7 @@ using Backend.Core.Features.NFe.Services;
 using Backend.Core.Features.Parceiros.Entities;
 using Backend.Core.Features.Parceiros.Enums;
 
-namespace Backend.Tests;
+namespace Backend.Tests.NFe.Unit;
 
 public class NfeSaidaTests
 {

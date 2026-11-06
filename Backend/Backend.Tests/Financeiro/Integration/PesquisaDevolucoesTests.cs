@@ -1,10 +1,11 @@
 using Backend.Infrastructure.PostgreSQL.Features.Vendas;
 using Dapper;
 
-namespace Backend.Tests.Integracao;
+namespace Backend.Tests.Financeiro.Integration;
 
 using Backend.Tests.Common;
 
+[Trait("Category", "Integration")]
 [Collection(PostgresCollection.Nome)]
 public class PesquisaDevolucoesTests
 {

@@ -14,7 +14,7 @@ using Backend.Core.Features.Parceiros.Repositories;
 using Backend.Core.Features.Acesso.Repositories;
 using Backend.Core.Features.Estoque.Repositories;
 
-namespace Backend.Tests;
+namespace Backend.Tests.Compras.Unit;
 
 public class ComprasServiceTests
 {
