@@ -56,7 +56,7 @@ export const navigationConfig: NavGroup[] = [
     title: "Compras",
     icon: PackagePlus,
     urlPrefix: "/compras",
-    items: [{ title: "Compras e Importar XML", url: "/compras", icon: PackagePlus }],
+    items: [{ title: "Registrar Compra", url: "/compras", icon: PackagePlus }],
   },
   {
     id: "nfes",
