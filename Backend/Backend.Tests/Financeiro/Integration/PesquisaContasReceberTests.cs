@@ -108,4 +108,41 @@ public class PesquisaContasReceberTests
         Assert.Equal([1, 2], r.Itens.Select(x => x.NumeroParcela));
         Assert.All(r.Itens, x => Assert.Equal(2, x.TotalParcelas));
     }
+
+    private Task Parcela(int clienteId, string documento, int parcela, string vencimento, string status) =>
+        _db.Executar("INSERT INTO contas_receber (numero_documento, numero_parcela, total_parcelas, cliente_id, descricao, data_vencimento, valor, valor_pago, status) VALUES (@documento, @parcela, 9, @clienteId, 'Parcela', @vencimento::date, 100, CASE WHEN @status = 'PAGO' THEN 100 ELSE 0 END, @status::status_titulo_financeiro_enum);",
+            new { documento, parcela, clienteId, vencimento, status });
+
+    [Fact]
+    public async Task Sem_termo_pendentes_e_vencidas_vem_antes_das_pagas_por_vencimento_crescente()
+    {
+        var p = await Cliente("Cli Ord", "52998224725");
+        await Parcela(p, "ORD", 1, "2026-01-10", "PAGO");
+        await Parcela(p, "ORD", 2, "2026-03-10", "ABERTO");
+        await Parcela(p, "ORD", 3, "2026-02-10", "PARCIAL");
+        await Parcela(p, "ORD", 4, "2026-01-05", "PAGO");
+        await Parcela(p, "ORD", 5, "2025-12-01", "ABERTO");
+
+        using var s = _db.NovaSessao();
+        var r = await new ContasReceberRepository(s).PesquisarContasReceber("");
+
+        Assert.Equal(new[] { 5, 3, 2, 4, 1 }, r.Itens.Select(c => c.NumeroParcela));
+    }
+
+    [Fact]
+    public async Task Ordem_padrao_e_estavel_entre_paginas()
+    {
+        var p = await Cliente("Cli Ord", "52998224725");
+        await Parcela(p, "ORD", 1, "2026-01-10", "PAGO");
+        await Parcela(p, "ORD", 2, "2026-03-10", "ABERTO");
+        await Parcela(p, "ORD", 3, "2026-03-10", "ABERTO");
+        await Parcela(p, "ORD", 4, "2026-01-05", "PAGO");
+
+        using var s = _db.NovaSessao();
+        var repo = new ContasReceberRepository(s);
+        var a = await repo.PesquisarContasReceber("", 1, 2);
+        var b = await repo.PesquisarContasReceber("", 2, 2);
+
+        Assert.Equal(new[] { 2, 3, 4, 1 }, a.Itens.Concat(b.Itens).Select(c => c.NumeroParcela));
+    }
 }

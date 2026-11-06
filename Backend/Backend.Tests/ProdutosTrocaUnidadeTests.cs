@@ -1,11 +1,10 @@
-using Backend.Tests.Common;
-using static Backend.Tests.Common.Fakes;
 using Backend.Core.Features.Catalogo.Commands;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Catalogo.Repositories;
 using Backend.Core.Features.Catalogo.Services;
 using Backend.Core.Common.Results;
-using static Backend.Tests.Compras.Unit.ComprasServiceTests;
+using static Backend.Tests.Common.Fakes;
+using Backend.Tests.Common;
 
 namespace Backend.Tests;
 
