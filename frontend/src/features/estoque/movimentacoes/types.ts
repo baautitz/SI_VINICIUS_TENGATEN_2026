@@ -13,7 +13,7 @@ export interface MovimentacaoEstoqueItem {
 }
 
 export type TipoMovimentacao = "ENTRADA" | "SAIDA";
-export type OrigemMovimentacao = "MANUAL" | "VENDA" | "COMPRA" | "BALANCO" | "ESTORNO" | "DEVOLUCAO_VENDA";
+export type OrigemMovimentacao = "MANUAL" | "VENDA" | "COMPRA" | "BALANCO" | "ESTORNO" | "DEVOLUCAO_VENDA" | "DEVOLUCAO_COMPRA";
 
 // Linha imutável do razão de estoque: o estorno é uma nova movimentação (origem ESTORNO).
 export interface MovimentacaoEstoque {
@@ -42,6 +42,7 @@ export const origemMovimentacaoLabels: Record<string, string> = {
   BALANCO: "Balanço",
   ESTORNO: "Estorno",
   DEVOLUCAO_VENDA: "Devolução de venda",
+  DEVOLUCAO_COMPRA: "Devolução de compra",
 };
 
 // Só lançamento manual se estorna direto; venda, compra e balanço se estornam cancelando o documento de origem.

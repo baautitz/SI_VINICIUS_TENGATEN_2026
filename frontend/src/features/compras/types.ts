@@ -31,8 +31,40 @@ export interface Compra {
     valorTotal: number;
     valorRateio: number;
     custoUnitario: number;
+    quantidadeDevolvida: number;
+    saldoDevolvivel: number;
   }>;
 }
+
+export interface DevolucaoCompra {
+  id: number;
+  compraId: number;
+  dataDevolucao: string;
+  motivo: string;
+  valorTotal: number;
+  itens: Array<{
+    id: number;
+    compraItemId: number;
+    sku: string;
+    quantidade: number;
+    valorUnitario: number;
+    custoUnitario: number;
+    valorTotal: number;
+  }>;
+}
+
+export interface CriarDevolucaoCompraValues {
+  motivo: string;
+  itens: Array<{ compraItemId: number; quantidade: number }>;
+}
+
+/** Quanto do item ainda pode voltar ao fornecedor: o saldo da compra, limitado ao que há em estoque. */
+export const quantidadeDevolvivel = (item: Compra["itens"][number]) =>
+  Math.max(0, Math.min(Number(item.saldoDevolvivel), Number(item.sku.estoque)));
+
+/** Compra sem nada a devolver (saldo esgotado ou estornada). */
+export const compraSemSaldoDevolvivel = (c: Compra) =>
+  c.estornada || c.itens.every((i) => Number(i.saldoDevolvivel) <= 0);
 
 export interface ParcelaCompra {
   numeroParcela: number;
