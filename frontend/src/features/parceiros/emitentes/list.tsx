@@ -68,7 +68,7 @@ export function EmitentesList({
               {item.padrao && <Badge variant="info">Padrão</Badge>}
             </span>
             {item.apelidoNomeFantasia && (
-              <span className="text-xs text-muted-foreground">
+              <span className="text-sm text-muted-foreground">
                 {item.apelidoNomeFantasia}
               </span>
             )}

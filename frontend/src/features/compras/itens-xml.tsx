@@ -121,7 +121,7 @@ export function ItensXml({
         </Badge>
         {pendentes > 0 && (
           <>
-            <span className="text-muted-foreground text-xs">
+            <span className="text-muted-foreground text-sm">
               Vincule cada item da nota a um produto do sistema para avançar.
             </span>
             <label className="ml-auto flex cursor-pointer items-center gap-2 text-sm">
@@ -167,7 +167,7 @@ export function ItensXml({
                   <TableCell>
                     <span className="flex min-w-0 flex-col">
                       <span className="truncate text-sm">{item.produtoNome}</span>
-                      <span className="text-muted-foreground truncate text-xs">
+                      <span className="text-muted-foreground truncate text-sm">
                         {[item.codigoProduto && `Cód. ${item.codigoProduto}`, item.ean && `EAN ${item.ean}`]
                           .filter(Boolean)
                           .join(" · ")}
@@ -179,8 +179,8 @@ export function ItensXml({
                       {!item.sku && item.sugestao && (
                         <span className="flex shrink-0 items-center gap-1">
                           <TriangleAlert className="size-4 text-warning" />
-                          <span className="text-muted-foreground text-xs">Sugestão:</span>
-                          <span className="font-mono text-xs">{item.sugestao}</span>
+                          <span className="text-muted-foreground text-sm">Sugestão:</span>
+                          <span className="font-mono text-sm">{item.sugestao}</span>
                           <Button
                             type="button"
                             size="icon-sm"
@@ -204,7 +204,7 @@ export function ItensXml({
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <span className="flex flex-col text-xs">
+                    <span className="flex flex-col text-sm">
                       <span>
                         {item.quantidade.toLocaleString("pt-BR")} × {moeda(item.valorUnitario)}
                       </span>

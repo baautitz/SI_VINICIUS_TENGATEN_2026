@@ -69,7 +69,7 @@ export function CondicoesList({
         const desc = row.original.descontoPercentual;
         const acr = row.original.acrescimoPercentual;
         return (
-          <div className="flex flex-col text-right text-xs">
+          <div className="flex flex-col text-right text-sm">
             <span className="font-medium text-emerald-600">
               Desc: {desc.toFixed(2)}%
             </span>
@@ -88,7 +88,7 @@ export function CondicoesList({
         const juros = row.original.taxaJurosPercentual;
         const multa = row.original.multaPercentual;
         return (
-          <div className="text-muted-foreground flex flex-col text-right text-xs">
+          <div className="text-muted-foreground flex flex-col text-right text-sm">
             <span>Juros: {juros.toFixed(2)}%</span>
             <span>Multa: {multa.toFixed(2)}%</span>
           </div>

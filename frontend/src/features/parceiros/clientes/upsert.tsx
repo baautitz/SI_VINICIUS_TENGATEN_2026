@@ -209,7 +209,7 @@ function ClientesUpsertForm({
                     value={editingItem.id}
                     readOnly
                     aria-label="Código"
-                    className="h-8 text-xs"
+                    className="h-8 text-sm"
                     inputSize="small"
                   />
                 </div>

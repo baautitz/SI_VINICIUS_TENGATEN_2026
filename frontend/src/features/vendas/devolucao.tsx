@@ -146,7 +146,7 @@ export function DevolucaoWindow({ venda, total: devolucaoTotal }: DevolucaoWindo
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-muted-foreground text-xs">
+      <p className="text-muted-foreground text-sm">
         Os itens voltam ao estoque pelo custo original da venda. O valor abate o
         saldo em aberto da conta a receber, sem alterar o que já foi recebido; o
         que passar do saldo em aberto gera uma conta a pagar de reembolso ao
@@ -263,8 +263,8 @@ export function DevolucoesHistoricoWindow({ vendaId }: DevolucoesHistoricoWindow
             </span>
             <span>{brl(d.valorTotal)}</span>
           </div>
-          <p className="text-muted-foreground mt-1 text-xs">Motivo: {d.motivo}</p>
-          <ul className="mt-2 text-xs">
+          <p className="text-muted-foreground mt-1 text-sm">Motivo: {d.motivo}</p>
+          <ul className="mt-2 text-sm">
             {d.itens.map((i) => (
               <li key={i.id}>
                 {i.sku}: {Number(i.quantidade)} x {brl(i.valorUnitario)} = {brl(i.valorTotal)}

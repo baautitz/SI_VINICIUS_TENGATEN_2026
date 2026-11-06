@@ -665,7 +665,7 @@ export function MovimentacoesUpsertForm({
                                 <TableCell>
                                   <SkuViewInput name={`mov-sku-${index}`} sku={item.sku} />
                                   {skuErr && (
-                                    <p className="mt-0.5 text-xs text-destructive">
+                                    <p className="mt-0.5 text-sm text-destructive">
                                       {skuErr}
                                     </p>
                                   )}
@@ -675,7 +675,7 @@ export function MovimentacoesUpsertForm({
                                   <div className="flex items-baseline gap-1.5">
                                     <span>{item.produtoNome}</span>
                                     {item.unidadeMedidaSigla && (
-                                      <span className="text-muted-foreground font-mono text-[10px] font-semibold uppercase">
+                                      <span className="text-muted-foreground font-mono text-xs font-semibold uppercase">
                                         {item.unidadeMedidaSigla}
                                       </span>
                                     )}
@@ -752,7 +752,7 @@ export function MovimentacoesUpsertForm({
                                       )}
                                     />
                                     {qtdErr && (
-                                      <p className="text-right text-xs text-destructive">
+                                      <p className="text-right text-sm text-destructive">
                                         {qtdErr}
                                       </p>
                                     )}
@@ -791,7 +791,7 @@ export function MovimentacoesUpsertForm({
                                         )}
                                       />
                                       {custoErr && (
-                                        <p className="text-right text-xs text-destructive">
+                                        <p className="text-right text-sm text-destructive">
                                           {custoErr}
                                         </p>
                                       )}

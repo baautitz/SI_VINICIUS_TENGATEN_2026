@@ -477,7 +477,7 @@ function ProdutosUpsertForm({
                     value={editingItem.id}
                     readOnly
                     aria-label="Código"
-                    className="h-8 text-xs"
+                    className="h-8 text-sm"
                     inputSize="small"
                   />
                 </div>
@@ -733,7 +733,7 @@ function ProdutosUpsertForm({
                       value={field.state.value}
                       readOnly
                       aria-label="Estoque atual"
-                      className="h-8 font-mono text-xs"
+                      className="h-8 font-mono text-sm"
                       inputSize="full"
                     />
                   </div>
@@ -977,7 +977,7 @@ function ProdutosUpsertForm({
                                           )}
                                         />
                                         {error && (
-                                          <span className="text-[10px] font-medium text-destructive">
+                                          <span className="text-xs font-medium text-destructive">
                                             {error}
                                           </span>
                                         )}
@@ -1028,7 +1028,7 @@ function ProdutosUpsertForm({
                                           )}
                                         />
                                         {error && (
-                                          <span className="text-[10px] font-medium text-destructive">
+                                          <span className="text-xs font-medium text-destructive">
                                             {error}
                                           </span>
                                         )}
@@ -1074,7 +1074,7 @@ function ProdutosUpsertForm({
                                           )}
                                         />
                                         {error && (
-                                          <span className="text-[10px] font-medium text-destructive">
+                                          <span className="text-xs font-medium text-destructive">
                                             {error}
                                           </span>
                                         )}
@@ -1174,7 +1174,7 @@ function ProdutosUpsertForm({
                           field.state.meta.errors,
                         );
                         return error ? (
-                          <p className="text-destructive mt-2 text-xs font-medium">
+                          <p className="text-destructive mt-2 text-sm font-medium">
                             {error}
                           </p>
                         ) : null;

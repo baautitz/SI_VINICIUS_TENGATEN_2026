@@ -166,7 +166,7 @@ export function DevolucaoCompraWindow({ compraId, total: devolucaoTotal }: Devol
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-muted-foreground text-xs">
+      <p className="text-muted-foreground text-sm">
         Os itens saem do estoque e o custo médio volta ao que era sem eles. Só dá para devolver
         o que ainda está em estoque: o que já foi vendido não volta ao fornecedor.
       </p>

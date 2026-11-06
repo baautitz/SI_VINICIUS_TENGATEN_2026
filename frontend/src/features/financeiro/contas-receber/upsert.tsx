@@ -215,7 +215,7 @@ export function ContasReceberUpsertForm({ editingItem, readOnly = false }: Conta
               ["Saldo", brl(editingItem.valorSaldo)],
             ].map(([r, v]) => (
               <div key={r} className="flex flex-col gap-1">
-                <span className="text-muted-foreground text-xs">{r}</span>
+                <span className="text-muted-foreground text-sm">{r}</span>
                 <span className="font-semibold">{v}</span>
               </div>
             ))}
@@ -341,7 +341,7 @@ export function ContasReceberUpsertForm({ editingItem, readOnly = false }: Conta
                     <TableRow key={i} className="hover:bg-transparent">
                       <TableCell className="font-semibold">{i + 1}/{parcelas.length}</TableCell>
                       <TableCell>
-                        <DatePicker value={p.dataVencimento} onChange={(v) => updParcela(i, { dataVencimento: v ?? "" })} className="h-8 text-xs" />
+                        <DatePicker value={p.dataVencimento} onChange={(v) => updParcela(i, { dataVencimento: v ?? "" })} className="h-8 text-sm" />
                       </TableCell>
                       <TableCell>
                         <NumberInput

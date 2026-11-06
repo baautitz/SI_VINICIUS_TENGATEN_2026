@@ -258,9 +258,9 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
           <Button type="button" variant="outline" onClick={() => void acoes.verXml()}><FileCode /> Ver XML <HotkeyKbd hotkey={combinacaoDe("verXml")} /></Button>
           <Button type="button" variant="outline" onClick={() => void acoes.baixar()}><Download /> Baixar XML <HotkeyKbd hotkey={combinacaoDe("baixarXml")} /></Button>
           <Button type="button" variant="outline" onClick={() => void imprimir()}><Printer /> Imprimir DANFE <HotkeyKbd hotkey={combinacaoDe("imprimir")} /></Button>
-          {!podeCancelar && <span role="status" className="text-muted-foreground self-center text-xs">{motivo}</span>}
+          {!podeCancelar && <span role="status" className="text-muted-foreground self-center text-sm">{motivo}</span>}
           {!podeCancelar && entrada && nfe.compraId && (
-            <Button type="button" variant="link" className="self-center px-0 text-xs" onClick={() => void abrirCompra()}>
+            <Button type="button" variant="link" className="self-center px-0 text-sm" onClick={() => void abrirCompra()}>
               Abrir compra #{nfe.compraId}
             </Button>
           )}
