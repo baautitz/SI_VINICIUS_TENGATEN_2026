@@ -35,6 +35,7 @@ export function SkusList({
     {
       accessorKey: "sku",
       header: "SKU",
+      size: 160,
       cell: ({ row }) => (
         <span className="font-mono text-sm font-semibold">{row.getValue("sku")}</span>
       ),
@@ -48,10 +49,10 @@ export function SkusList({
         const [produtoNome, variacao] = fullName.split(" - ");
         
         return (
-          <div className="flex flex-col">
-            <span className="font-medium">{produtoNome}</span>
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate font-medium" title={fullName}>{produtoNome}</span>
             {variacao && (
-              <span className="text-sm text-muted-foreground">{variacao}</span>
+              <span className="truncate text-sm text-muted-foreground">{variacao}</span>
             )}
           </div>
         );
@@ -59,6 +60,7 @@ export function SkusList({
     },
     {
       accessorKey: "preco",
+      size: 130,
       header: () => <div className="text-right">Preço</div>,
       cell: ({ row }) => (
         <div className="text-right">
@@ -71,6 +73,7 @@ export function SkusList({
     },
     {
       accessorKey: "estoque",
+      size: 110,
       header: () => <div className="text-right">Estoque</div>,
       cell: ({ row }) => (
         <div className="text-right">
@@ -81,7 +84,7 @@ export function SkusList({
     {
       accessorKey: "ativo",
       header: "Status",
-      size: 100,
+      size: 110,
       cell: ({ row }) => {
         const ativo = row.getValue("ativo") as boolean;
         return (
@@ -89,13 +92,16 @@ export function SkusList({
         );
       },
     },
-    getActionsColumn<Sku>({
-      onEdit,
-      onView,
-      onDelete,
-      selectionMode,
-      onSelect,
-    }),
+    {
+      ...getActionsColumn<Sku>({
+        onEdit,
+        onView,
+        onDelete,
+        selectionMode,
+        onSelect,
+      }),
+      size: 240,
+    },
   ];
 
   return (
