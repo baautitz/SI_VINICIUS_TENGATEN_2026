@@ -26,11 +26,23 @@ public class BalancosRepository : IBalancosRepository
         FROM balancos b
         LEFT JOIN usuarios u ON u.id = b.usuario_id";
 
-    public async Task<ResultadoPaginado<Balancos>> ObterBalancos(int pagina = 1, int tamanhoDaPagina = 20)
+    private const string OrdenacaoPadrao = "b.data_abertura DESC, b.id DESC";
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> coluna).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
     {
+        ["id"] = "b.id",
+        ["dataAbertura"] = "b.data_abertura",
+        ["dataFechamento"] = "b.data_fechamento",
+        ["status"] = "b.status",
+    };
+
+    public async Task<ResultadoPaginado<Balancos>> ObterBalancos(int pagina = 1, int tamanhoDaPagina = 20, string? ordenarPor = null, string? direcao = null)
+    {
+        var ordem = OrdenacaoListagem.MontarOrderBy(ordenarPor, direcao, CamposOrdenaveis, "b.id") ?? OrdenacaoPadrao;
         var total = await _session.Connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM balancos;", transaction: _session.Transaction);
         var rows = (await _session.Connection.QueryAsync<BalancoDbRow>(
-            $"{SelecaoBalanco} ORDER BY b.data_abertura DESC, b.id DESC LIMIT @Tamanho OFFSET @Offset;",
+            $"{SelecaoBalanco} ORDER BY {ordem} LIMIT @Tamanho OFFSET @Offset;",
             new { Tamanho = tamanhoDaPagina, Offset = (pagina - 1) * tamanhoDaPagina },
             transaction: _session.Transaction)).ToList();
 
