@@ -135,7 +135,7 @@ public class ContasPagarRepository : IContasPagarRepository
 
         var contas = (await Consultar(where + @"
             ORDER BY " + PesquisaTitulos.Relevancia("cp.texto_pesquisa", "cp.numero_documento", "cp.descricao") + @",
-                     cp.data_vencimento, cp.numero_documento, cp.numero_parcela, cp.id
+                     CASE WHEN cp.status::text IN ('PAGO', 'CANCELADO') THEN 1 ELSE 0 END, cp.data_vencimento, cp.numero_documento, cp.numero_parcela, cp.id
             LIMIT @TamanhoDaPagina OFFSET @Offset;", param)).ToList();
 
         return new ResultadoPaginado<ContasPagar>(contas, total, pagina, tamanhoDaPagina);
