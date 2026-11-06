@@ -19,7 +19,8 @@ using Backend.Core.Features.Parceiros.Entities;
 using Backend.Core.Features.Parceiros.Repositories;
 using Backend.Core.Features.Acesso.Repositories;
 using Backend.Core.Features.Catalogo.Repositories;
-using static Backend.Tests.ComprasServiceTests;
+using Backend.Tests.Common;
+using static Backend.Tests.Common.Fakes;
 
 namespace Backend.Tests;
 

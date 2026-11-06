@@ -17,7 +17,7 @@ public class AtributosSkuVinculoTests
     }
 
     private static SkuAtributosChavesService Servico(Dictionary<int, int> vinculos, bool[] atualizou)
-        => new(ComprasServiceTests.Criar<ISkuAtributosChavesRepository>(h =>
+        => new(Backend.Tests.Common.Fakes.Criar<ISkuAtributosChavesRepository>(h =>
         {
             h["ObterAtributoPorId"] = _ => Atributo();
             h["ExisteChave"] = _ => false;

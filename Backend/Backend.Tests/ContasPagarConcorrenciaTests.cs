@@ -3,7 +3,8 @@ using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Financeiro.Repositories;
 using Backend.Core.Features.Financeiro.Services;
 using Backend.Core.Features.Parceiros.Repositories;
-using static Backend.Tests.ComprasServiceTests;
+using Backend.Tests.Common;
+using static Backend.Tests.Common.Fakes;
 
 namespace Backend.Tests;
 
