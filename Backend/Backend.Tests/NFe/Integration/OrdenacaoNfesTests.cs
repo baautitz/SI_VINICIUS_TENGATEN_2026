@@ -14,14 +14,15 @@ public class OrdenacaoNfesTests
     {
         _db = db;
         _db.Limpar().GetAwaiter().GetResult();
-        _db.Executar("TRUNCATE nfes, emitentes RESTART IDENTITY CASCADE;").GetAwaiter().GetResult();
+        _db.Executar("TRUNCATE nfes, emitentes, clientes RESTART IDENTITY CASCADE;").GetAwaiter().GetResult();
         _db.Executar("INSERT INTO emitentes (tipo_pessoa, nome_razaosocial, cpf_cnpj, nacionalidade_id) VALUES ('JURIDICA', 'Emitente', '45723174000110', (SELECT id FROM paises LIMIT 1));").GetAwaiter().GetResult();
+        _db.Executar("INSERT INTO clientes (tipo_pessoa, nome_razaosocial, cpf_cnpj, nacionalidade_id) VALUES ('FISICA', 'Maria', '52998224725', (SELECT id FROM paises LIMIT 1));").GetAwaiter().GetResult();
     }
 
     private Task Nfe(int numero) =>
-        _db.Executar(@"INSERT INTO nfes (numero, serie, data_emissao, emitente_id, emitente_nome_razaosocial, emitente_cpf_cnpj,
+        _db.Executar(@"INSERT INTO nfes (numero, serie, data_emissao, emitente_id, cliente_id, emitente_nome_razaosocial, emitente_cpf_cnpj,
                 cliente_nome_razaosocial, cliente_cpf_cnpj, tipo_operacao)
-            VALUES (@numero, 1, '2026-01-01T10:00:00Z', (SELECT id FROM emitentes LIMIT 1), 'Emitente', '45723174000110', 'Cliente', '52998224725', 'SAIDA');",
+            VALUES (@numero, 1, '2026-01-01T10:00:00Z', (SELECT id FROM emitentes LIMIT 1), (SELECT id FROM clientes LIMIT 1), 'Emitente', '45723174000110', 'Cliente', '52998224725', 'SAIDA');",
             new { numero });
 
     [Fact]
