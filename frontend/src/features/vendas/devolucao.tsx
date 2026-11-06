@@ -30,7 +30,7 @@ export function DevolucaoTipoWindow() {
         {
           id: "vendas.devolucao.parcial",
           hotkey: combinacaoDe("devolucaoParcial"),
-          label: "Devolução parcial",
+          label: "Devolução parcial de venda",
           run: (event: KeyboardEvent) => {
             event.preventDefault();
             activeWindow.resolve("parcial");
@@ -39,7 +39,7 @@ export function DevolucaoTipoWindow() {
         {
           id: "vendas.devolucao.total",
           hotkey: combinacaoDe("devolucaoTotal"),
-          label: "Devolução total",
+          label: "Devolução total de venda",
           run: (event: KeyboardEvent) => {
             event.preventDefault();
             activeWindow.resolve("total");
@@ -210,7 +210,7 @@ export function DevolucaoWindow({ venda, total: devolucaoTotal }: DevolucaoWindo
         />
       </Field>
       <Field data-invalid={!!error}>
-        <FieldLabel htmlFor="motivo-devolucao">Motivo da Devolução</FieldLabel>
+        <FieldLabel htmlFor="motivo-devolucao">Motivo da Devolução de venda</FieldLabel>
         <Textarea
           id="motivo-devolucao"
           ref={registerMotivo}

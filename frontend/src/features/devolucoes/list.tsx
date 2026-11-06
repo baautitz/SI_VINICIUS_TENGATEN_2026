@@ -92,7 +92,7 @@ export function DevolucoesList({
     <div className="flex h-full min-h-0 flex-1 flex-col">
       <FeatureLayout>
         <FeatureHeader
-          title="Devoluções"
+          title="Devoluções de venda"
           icon={icon ?? <Undo2 />}
           onAdd={onAdd}
           addButtonLabel="Nova devolução"

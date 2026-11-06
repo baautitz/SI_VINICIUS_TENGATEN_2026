@@ -2,7 +2,7 @@ using Backend.Infrastructure.PostgreSQL.Common;
 using Dapper;
 using Testcontainers.PostgreSql;
 
-namespace Backend.Tests.Integracao;
+namespace Backend.Tests.Common;
 
 // Sobe um Postgres descartável e carrega o schema real (infrastructure/database/00_master.sql).
 public sealed class PostgresFixture : IAsyncLifetime

@@ -107,6 +107,12 @@ assert.match(
 assert.match(keyboardNavigation, /export function markKeyboardFocus/);
 assert.match(host, /markKeyboardFocus\(\)/);
 assert.match(datePicker, /event\.key === "Enter" \|\| event\.key === " " /);
+// Calendario aberto: setas pertencem ao calendario (mesmo em portal/janela), foco entra num dia e Esc devolve ao campo.
+assert.match(datePicker, /data-navigation-popup-open="true"/);
+assert.match(datePicker, /onOpenAutoFocus/);
+assert.match(datePicker, /button\[data-day\]\[tabindex="0"\]/);
+assert.match(datePicker, /onCloseAutoFocus/);
+assert.match(datePicker, /inputRef\.current\?\.focus\(\)/);
 assert.match(host, /Conteúdo da janela\./);
 assert.match(host, /Confirme ou cancele esta ação\./);
 assert.match(alertDialog, /<AlertDialogOverlay \/>/);
