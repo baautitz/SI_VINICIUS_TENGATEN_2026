@@ -3,7 +3,7 @@ import {
   MAX_TOAST_TITLE_LENGTH,
   splitLongMessage,
   toastDuration,
-} from "../src/ui/adapters/feedback-format.ts";
+} from "../../src/ui/adapters/feedback-format.ts";
 
 assert.equal(toastDuration("success"), 4000);
 assert.equal(toastDuration("info"), 4000);

@@ -158,7 +158,7 @@ público e a camada de reexportação. `components/ui` é a implementação visu
 shadcn/Radix legada, reexportada pelas superfícies públicas, e não deve ser
 importada diretamente por novas features.
 
-`scripts/check-imperative-ui-boundaries.mjs` verifica imports de Router,
+`scripts/checks/check-imperative-ui-boundaries.mjs` verifica imports de Router,
 Sonner, hotkeys, Radix/Base UI e superfícies de janela fora dos adaptadores.
 
 ## Feedback, falhas e navegação

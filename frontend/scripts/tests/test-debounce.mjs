@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { criarDebounce } from "../src/lib/debounce.ts";
+import { criarDebounce } from "../../src/lib/debounce.ts";
 
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
 

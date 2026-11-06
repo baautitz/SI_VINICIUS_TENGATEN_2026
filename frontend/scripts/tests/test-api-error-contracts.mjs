@@ -5,7 +5,7 @@ import {
   extractApiErrors,
   getApiErrorMessage,
   getOperationalErrorMessage,
-} from "../src/utils/api-error.ts";
+} from "../../src/utils/api-error.ts";
 
 const skuPayload = {
   success: false,

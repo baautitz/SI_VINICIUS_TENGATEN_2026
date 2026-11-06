@@ -5,7 +5,7 @@ import {
   descontoUnitarioExcedePreco,
   ratearCompra,
   valorLiquidoItem,
-} from "../src/features/compras/types.ts";
+} from "../../src/features/compras/types.ts";
 
 // desconto por unidade: 10 un a 5,00 com 0,50 de desconto cada = 45,00
 assert.equal(descontoLinha(10, 0.5), 5);
