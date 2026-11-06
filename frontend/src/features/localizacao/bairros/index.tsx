@@ -35,6 +35,7 @@ export function BairrosFeature({
   const openUpsert = async (editingItem: Bairro | null, readOnly = false) => {
     const result = await ui.windows.open<true, BairrosUpsertProps>({
       component: BairrosUpsert,
+      size: "small",
       props: { editingItem, readOnly },
       title: readOnly ? "Visualizar Bairro" : editingItem ? "Editar Bairro" : "Novo Bairro",
     });

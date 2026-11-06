@@ -52,6 +52,7 @@ export function ProdutosFeature({
   const openCreate = async () => {
     const result = await ui.windows.open<true, ProdutosUpsertProps>({
       component: ProdutosUpsert,
+      size: "large",
       props: { editingItem: null },
       title: "Novo Produto",
     });
@@ -64,6 +65,7 @@ export function ProdutosFeature({
   const openEdit = async (item: Produto) => {
     const result = await ui.windows.open<true, ProdutosUpsertProps>({
       component: ProdutosUpsert,
+      size: "large",
       props: { editingItem: item },
       title: "Editar Produto",
     });
@@ -76,6 +78,7 @@ export function ProdutosFeature({
   const openView = async (item: Produto) => {
     await ui.windows.open<true, ProdutosUpsertProps>({
       component: ProdutosUpsert,
+      size: "large",
       props: { editingItem: item, readOnly: true },
       title: "Visualizar Produto",
     });

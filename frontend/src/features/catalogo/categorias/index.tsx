@@ -51,6 +51,7 @@ export function CategoriasFeature({
   const openCreate = async () => {
     const result = await ui.windows.open<true, CategoriasUpsertProps>({
       component: CategoriasUpsert,
+      size: "small",
       props: { editingItem: null },
       title: "Nova Categoria",
     });
@@ -63,6 +64,7 @@ export function CategoriasFeature({
   const openEdit = async (item: Categoria) => {
     const result = await ui.windows.open<true, CategoriasUpsertProps>({
       component: CategoriasUpsert,
+      size: "small",
       props: { editingItem: item },
       title: "Editar Categoria",
     });

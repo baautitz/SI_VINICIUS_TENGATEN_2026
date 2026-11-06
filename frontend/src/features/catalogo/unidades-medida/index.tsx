@@ -51,6 +51,7 @@ export function UnidadesMedidaFeature({
   const openCreate = async () => {
     const result = await ui.windows.open<true, UnidadesMedidaUpsertProps>({
       component: UnidadesMedidaUpsert,
+      size: "small",
       props: { editingItem: null },
       title: "Nova Unidade de Medida",
     });
@@ -66,6 +67,7 @@ export function UnidadesMedidaFeature({
   const openEdit = async (item: UnidadeMedida) => {
     const result = await ui.windows.open<true, UnidadesMedidaUpsertProps>({
       component: UnidadesMedidaUpsert,
+      size: "small",
       props: { editingItem: item },
       title: "Editar Unidade de Medida",
     });

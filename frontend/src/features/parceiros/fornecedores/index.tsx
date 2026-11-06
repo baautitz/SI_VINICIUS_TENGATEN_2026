@@ -46,6 +46,7 @@ export function FornecedoresFeature({
   const openCreate = async () => {
     const result = await ui.windows.open<true, FornecedoresUpsertProps>({
       component: FornecedoresUpsert,
+      size: "large",
       props: { editingItem: null },
       title: "Novo Fornecedor",
     });
@@ -58,6 +59,7 @@ export function FornecedoresFeature({
   const openEdit = async (item: Fornecedor, readOnly = false) => {
     const result = await ui.windows.open<true, FornecedoresUpsertProps>({
       component: FornecedoresUpsert,
+      size: "large",
       props: { editingItem: item, readOnly },
       title: readOnly ? "Visualizar Fornecedor" : "Editar Fornecedor",
     });

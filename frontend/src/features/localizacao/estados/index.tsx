@@ -36,6 +36,7 @@ export function EstadosFeature({
   const openUpsert = async (editingItem: Estado | null, readOnly = false) => {
     const result = await ui.windows.open<true, EstadosUpsertProps>({
       component: EstadosUpsert,
+      size: "small",
       props: { editingItem, readOnly },
       title: readOnly ? "Visualizar Estado" : editingItem ? "Editar Estado" : "Novo Estado",
     });

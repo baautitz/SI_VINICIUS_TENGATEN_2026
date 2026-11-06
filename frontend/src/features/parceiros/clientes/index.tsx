@@ -51,6 +51,7 @@ export function ClientesFeature({
   const openCreate = async () => {
     const result = await ui.windows.open<true, ClientesUpsertProps>({
       component: ClientesUpsert,
+      size: "large",
       props: { editingItem: null },
       title: "Novo Cliente",
       icon: icon ?? <Users />,
@@ -64,6 +65,7 @@ export function ClientesFeature({
   const openEdit = async (item: Cliente, readOnly = false) => {
     const result = await ui.windows.open<true, ClientesUpsertProps>({
       component: ClientesUpsert,
+      size: "large",
       props: { editingItem: item, readOnly },
       title: readOnly ? "Visualizar Cliente" : "Editar Cliente",
       icon: icon ?? <Users />,

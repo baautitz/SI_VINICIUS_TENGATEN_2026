@@ -36,6 +36,7 @@ export function CidadesFeature({
   const openUpsert = async (editingItem: Cidade | null, readOnly = false) => {
     const result = await ui.windows.open<true, CidadesUpsertProps>({
       component: CidadesUpsert,
+      size: "small",
       props: { editingItem, readOnly },
       title: readOnly ? "Visualizar Cidade" : editingItem ? "Editar Cidade" : "Nova Cidade",
     });

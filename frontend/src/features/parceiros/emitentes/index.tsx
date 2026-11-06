@@ -49,6 +49,7 @@ export function EmitentesFeature({
   const openCreate = async () => {
     const result = await ui.windows.open<true, EmitentesUpsertProps>({
       component: EmitentesUpsert,
+      size: "large",
       props: { editingItem: null },
       title: "Novo Emitente",
     });
@@ -61,6 +62,7 @@ export function EmitentesFeature({
   const openEdit = async (item: Emitente) => {
     const result = await ui.windows.open<true, EmitentesUpsertProps>({
       component: EmitentesUpsert,
+      size: "large",
       props: { editingItem: item },
       title: "Editar Emitente",
     });
@@ -73,6 +75,7 @@ export function EmitentesFeature({
   const openView = async (item: Emitente) => {
     await ui.windows.open<true, EmitentesUpsertProps>({
       component: EmitentesUpsert,
+      size: "large",
       props: { editingItem: item, readOnly: true },
       title: "Visualizar Emitente",
     });

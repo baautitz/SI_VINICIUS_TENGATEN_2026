@@ -47,6 +47,7 @@ export function MarcasFeature({
   const openCreate = async () => {
     const result = await ui.windows.open<true, MarcasUpsertProps>({
       component: MarcasUpsert,
+      size: "small",
       props: { editingItem: null },
       title: "Nova Marca",
     });
@@ -59,6 +60,7 @@ export function MarcasFeature({
   const openEdit = async (item: Marca) => {
     const result = await ui.windows.open<true, MarcasUpsertProps>({
       component: MarcasUpsert,
+      size: "small",
       props: { editingItem: item },
       title: "Editar Marca",
     });
