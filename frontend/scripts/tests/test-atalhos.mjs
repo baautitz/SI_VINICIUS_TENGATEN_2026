@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { ATALHOS } from "../src/lib/atalhos.ts";
+import { ATALHOS } from "../../src/lib/atalhos.ts";
 
 const entradas = Object.entries(ATALHOS);
 assert.ok(entradas.length > 0);

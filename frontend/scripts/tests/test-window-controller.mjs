@@ -5,7 +5,7 @@ import { join, resolve } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
 import ts from "typescript"
 
-const projectRoot = resolve(fileURLToPath(new URL("..", import.meta.url)))
+const projectRoot = resolve(fileURLToPath(new URL("../..", import.meta.url)))
 const source = readFileSync(join(projectRoot, "src/ui/imperative/controller.ts"), "utf8")
 const compiled = ts.transpileModule(source, {
   compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.CommonJS },

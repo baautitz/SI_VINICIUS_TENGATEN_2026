@@ -5,7 +5,7 @@ import { join, resolve } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
 import ts from "typescript"
 
-const root = resolve(fileURLToPath(new URL("..", import.meta.url)))
+const root = resolve(fileURLToPath(new URL("../..", import.meta.url)))
 const sourceCode = readFileSync(join(root, "src/ui/keyboard-navigation-core.ts"), "utf8")
 const compiled = ts.transpileModule(sourceCode, {
   compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.CommonJS },

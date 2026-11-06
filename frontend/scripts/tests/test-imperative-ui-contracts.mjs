@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const read = (relativePath) =>
   readFileSync(resolve(root, relativePath), "utf8");
 
@@ -213,11 +213,11 @@ assert.doesNotMatch(
 assert.match(docs, /WindowController|useUi|useWindow/i);
 assert.match(docs, /cada janela|próprio overlay|overlay próprio/i);
 
-execFileSync("node", ["scripts/check-imperative-ui-boundaries.mjs"], {
+execFileSync("node", ["scripts/checks/check-imperative-ui-boundaries.mjs"], {
   cwd: root,
   stdio: "inherit",
 });
-execFileSync("node", ["scripts/test-window-controller.mjs"], {
+execFileSync("node", ["scripts/tests/test-window-controller.mjs"], {
   cwd: root,
   stdio: "inherit",
 });

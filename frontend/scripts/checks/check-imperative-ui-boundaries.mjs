@@ -4,7 +4,7 @@ import { glob } from "node:fs/promises"
 import { resolve, sep } from "node:path"
 import { fileURLToPath } from "node:url"
 
-const projectRoot = resolve(fileURLToPath(new URL("..", import.meta.url)))
+const projectRoot = resolve(fileURLToPath(new URL("../..", import.meta.url)))
 const sourceRoot = resolve(projectRoot, "src")
 
 const authorized = (file) => {

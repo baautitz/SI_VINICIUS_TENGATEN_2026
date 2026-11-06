@@ -1,15 +1,15 @@
 // Trava de useEffect/useLayoutEffect fora do núcleo. Compara com a linha de base
-// em scripts/effects-baseline.json: o número por arquivo só pode cair. Quando a
+// em scripts/checks/effects-baseline.json: o número por arquivo só pode cair. Quando a
 // linha de base ficar vazia, qualquer efeito novo fora do núcleo quebra o script.
 import { readFileSync, readdirSync, statSync } from "node:fs"
 import { join, relative, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
-const root = resolve(fileURLToPath(new URL("..", import.meta.url)))
+const root = resolve(fileURLToPath(new URL("../..", import.meta.url)))
 const src = join(root, "src")
 // Núcleo e libs externas (shadcn) onde o efeito é sincronização com sistema externo.
 const allowed = [/^src\/ui\//, /^src\/imperative-ui\//, /^src\/components\/ui\//, /^src\/providers\//]
-const baseline = JSON.parse(readFileSync(join(root, "scripts/effects-baseline.json"), "utf8"))
+const baseline = JSON.parse(readFileSync(join(root, "scripts/checks/effects-baseline.json"), "utf8"))
 const pattern = /\b(?:React\.)?use(?:Layout)?Effect\s*\(/g
 
 const counts = {}
