@@ -473,9 +473,13 @@ export function MovimentacoesUpsertForm({
             {editingItem && (
               <div className="flex w-fit flex-col gap-2">
                 <FieldLabel>Código</FieldLabel>
-                <div className="bg-muted/50 text-foreground/80 flex h-8 items-center rounded-lg border px-3 font-mono text-sm">
-                  {editingItem.id}
-                </div>
+                <Input
+                  inputSize="small"
+                  readOnly
+                  aria-label="Código"
+                  value={editingItem.id}
+                  className="font-mono"
+                />
               </div>
             )}
 

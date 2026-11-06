@@ -12,6 +12,7 @@
     "test:atalhos": "node --no-warnings --experimental-strip-types scripts/test-atalhos.mjs",
     "test:feedback-format": "node --no-warnings --experimental-strip-types scripts/test-feedback-format.mjs",
     "check:ui-feedback": "node scripts/check-ui-feedback-contracts.mjs",
+    "check:field-disabled": "node scripts/check-field-disabled-contract.mjs",
     "check:dialog-layout": "node scripts/check-dialog-layout-contract.mjs",
     "test:keyboard-navigation": "node scripts/test-keyboard-navigation.mjs",
     "imperative-ui:check-boundaries": "node scripts/check-imperative-ui-boundaries.mjs",
