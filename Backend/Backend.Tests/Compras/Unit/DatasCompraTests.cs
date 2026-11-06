@@ -1,6 +1,6 @@
 using Backend.Core.Features.Compras.Services;
 
-namespace Backend.Tests;
+namespace Backend.Tests.Compras.Unit;
 
 public class DatasCompraTests
 {

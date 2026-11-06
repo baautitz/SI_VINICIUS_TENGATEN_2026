@@ -2,10 +2,11 @@ using Backend.Core.Features.Financeiro.DTOs;
 using Backend.Infrastructure.PostgreSQL.Features.Financeiro;
 using Dapper;
 
-namespace Backend.Tests.Integracao;
+namespace Backend.Tests.Financeiro.Integration;
 
 using Backend.Tests.Common;
 
+[Trait("Category", "Integration")]
 [Collection(PostgresCollection.Nome)]
 public class PesquisaContasReceberTests
 {
@@ -28,6 +29,20 @@ public class PesquisaContasReceberTests
     private Task Titulo(int clienteId, string descricao, string documento, decimal valor = 100m) =>
         _db.Executar("INSERT INTO contas_receber (numero_documento, numero_parcela, total_parcelas, cliente_id, descricao, data_vencimento, valor) VALUES (@documento, 1, 1, @clienteId, @descricao, CURRENT_DATE, @valor);",
             new { documento, clienteId, descricao, valor });
+
+    [Fact]
+    public async Task Parcelas_do_documento_so_trazem_o_mesmo_cliente()
+    {
+        var maria = await Cliente("Maria", "52998224725");
+        var joao = await Cliente("Joao", "11144477735");
+        await Titulo(maria, "da Maria", "DOC-1");
+        await Titulo(joao, "do Joao", "DOC-1");
+
+        using var s = _db.NovaSessao();
+        var r = await new ContasReceberRepository(s).PesquisarContasReceber("", filtro: new FiltroContasReceber(NumeroDocumento: "DOC-1", ClienteId: maria));
+
+        Assert.Equal(["DA MARIA"], r.Itens.Select(x => x.Descricao));
+    }
 
     [Fact]
     public async Task Termo_com_erro_de_digitacao_acento_e_cpf_formatado_encontram_o_titulo()

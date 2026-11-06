@@ -3,8 +3,9 @@ using Backend.Infrastructure.PostgreSQL.Features.Financeiro;
 using Backend.Tests.Common;
 using Dapper;
 
-namespace Backend.Tests.Integracao;
+namespace Backend.Tests.Financeiro.Integration;
 
+[Trait("Category", "Integration")]
 [Collection(PostgresCollection.Nome)]
 public class PesquisaTitulosIndiceTests
 {

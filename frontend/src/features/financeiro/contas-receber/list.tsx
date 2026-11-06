@@ -13,6 +13,7 @@ import { StatusTituloBadge } from "../components/status-titulo-badge";
 import { formatDateToLocal } from "@/utils/date-utils";
 import { Landmark, X } from "lucide-react";
 import { ContasReceber } from "./types";
+import { documentoDeContaReceber } from "../components/documento-filtro";
 import { statusTituloLabels } from "../contas-pagar/types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 
@@ -78,7 +79,7 @@ export function ContasReceberList({
             type="button"
             className="text-left hover:underline"
             title="Ver todas as parcelas deste documento"
-            onClick={() => onFiltrosChange({ documento: { numeroDocumento: i.numeroDocumento, origemTipo: i.origemTipo, origemId: i.origemId ?? null } })}
+            onClick={() => onFiltrosChange({ documento: documentoDeContaReceber(i) })}
           >
             <span className="text-muted-foreground">{origemTituloLabels[i.origemTipo] ?? i.origemTipo}</span>{" "}
             <span className="font-semibold text-foreground">{i.numeroDocumento}</span>

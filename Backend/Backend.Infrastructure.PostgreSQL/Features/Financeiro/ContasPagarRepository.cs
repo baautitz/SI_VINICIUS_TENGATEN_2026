@@ -116,9 +116,11 @@ public class ContasPagarRepository : IContasPagarRepository
         var param = PesquisaTitulos.Parametros(termo, filtro, pagina, tamanhoDaPagina);
         param.Add("FornecedorId", filtro?.FornecedorId);
         param.Add("CompraId", filtro?.CompraId);
+        param.Add("TransportadoraId", filtro?.TransportadoraId);
 
         var where = PesquisaTitulos.Where("cp.texto_pesquisa", PesquisaTitulos.Analisar(termo)) + @"
               AND (@FornecedorId::int IS NULL OR cp.fornecedor_id = @FornecedorId)
+              AND (@TransportadoraId::int IS NULL OR cp.transportadora_id = @TransportadoraId)
               AND (@CompraId::int IS NULL OR (cp.origem_id = @CompraId AND cp.origem_tipo::text IN ('COMPRA', 'FRETE_COMPRA')))" + PesquisaTitulos.FiltroComum("cp") + @"
               AND (@CpfCnpj::text IS NULL OR @CpfCnpj IN (regexp_replace(COALESCE(f.cpf_cnpj, ''), '\D', '', 'g'), regexp_replace(COALESCE(cli.cpf_cnpj, ''), '\D', '', 'g')))";
 

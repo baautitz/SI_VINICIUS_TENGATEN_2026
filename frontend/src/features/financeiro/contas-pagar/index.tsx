@@ -14,6 +14,7 @@ import { filtrosAvancadosParaApi } from "../components/filtros-avancados";
 import { FILTROS_TITULOS_VAZIOS, TODOS, type FiltrosTitulos } from "../components/filtros-titulos";
 import { useFeatureList } from "@/hooks/use-feature-list";
 import { contasPagarApi } from "@/api/financeiro";
+import { contraparteParaApi } from "../components/documento-filtro";
 import { useUi } from "@/ui/imperative";
 
 export * from "./types";
@@ -40,6 +41,7 @@ export function ContasPagarFeature({ compraId }: ContasPagarFeatureProps = {}) {
         origemId: documento?.origemId ?? undefined,
         compraId,
         numeroDocumento: documento?.numeroDocumento,
+        ...contraparteParaApi(documento),
         ...filtrosAvancadosParaApi(avancados),
         page: list.page,
         pageSize: 50,

@@ -13,6 +13,7 @@ import { StatusTituloBadge } from "../components/status-titulo-badge";
 import { formatDateToLocal } from "@/utils/date-utils";
 import { Landmark, X } from "lucide-react";
 import { ContasPagar, statusTituloLabels } from "./types";
+import { documentoDeContaPagar } from "../components/documento-filtro";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 
 export { TODOS };
@@ -80,7 +81,7 @@ export function ContasPagarList({
             type="button"
             className="flex items-center gap-2 text-left"
             title="Ver todas as parcelas deste documento"
-            onClick={() => onFiltrosChange({ documento: { numeroDocumento: i.numeroDocumento, origemTipo: i.origemTipo, origemId: i.origemId ?? null } })}
+            onClick={() => onFiltrosChange({ documento: documentoDeContaPagar(i) })}
           >
             <Badge variant="outline">{origemTituloLabels[i.origemTipo] ?? i.origemTipo}</Badge>
             <span className="font-medium text-foreground hover:underline">{i.numeroDocumento}</span>

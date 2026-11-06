@@ -3,7 +3,7 @@ using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Catalogo.Repositories;
 using Backend.Core.Features.Catalogo.Services;
 
-namespace Backend.Tests;
+namespace Backend.Tests.Catalogo.Unit;
 
 // Valor de atributo ligado a SKU não pode sair por edição do atributo, nem o atributo ser excluído.
 public class AtributosSkuVinculoTests
