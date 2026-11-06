@@ -45,7 +45,7 @@ public class NfesRepository : INfesRepository
             JOIN emitentes e ON e.id = n.emitente_id
             LEFT JOIN clientes c ON c.id = n.cliente_id
             LEFT JOIN fornecedores f ON f.id = n.fornecedor_id
-            ORDER BY n.data_emissao DESC
+            ORDER BY n.data_emissao DESC, n.id DESC
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(

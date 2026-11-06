@@ -36,8 +36,8 @@ public sealed class BalancosService : BaseService
         _unitOfWork = unitOfWork;
     }
 
-    public Task<ResultadoPaginado<Balancos>> ObterBalancos(int pagina = 1, int tamanhoPagina = 20)
-        => _balancosRepository.ObterBalancos(pagina, tamanhoPagina);
+    public Task<ResultadoPaginado<Balancos>> ObterBalancos(int pagina = 1, int tamanhoPagina = 20, string? ordenarPor = null, string? direcao = null)
+        => _balancosRepository.ObterBalancos(pagina, tamanhoPagina, ordenarPor, direcao);
 
     public Task<Balancos?> ObterBalancoPorId(int id)
         => _balancosRepository.ObterBalancoPorId(id);

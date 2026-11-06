@@ -20,8 +20,8 @@ public class BalancosController : ControllerBase
     }
 
     [HttpGet]
-    public Task<ResultadoPaginado<Balancos>> GetBalancos([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-        => _balancosService.ObterBalancos(page, pageSize);
+    public Task<ResultadoPaginado<Balancos>> GetBalancos([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] string? ordenarPor = null, [FromQuery] string? direcao = null)
+        => _balancosService.ObterBalancos(page, pageSize, ordenarPor, direcao);
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<Balancos>> GetBalanco(int id)

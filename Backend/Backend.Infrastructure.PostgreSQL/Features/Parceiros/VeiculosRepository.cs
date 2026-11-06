@@ -32,7 +32,7 @@ public class VeiculosRepository : IVeiculosRepository
             LEFT JOIN transportadoras t ON t.id = v.transportadora_id
             LEFT JOIN estados e ON e.id = v.estado_id
             LEFT JOIN paises p ON p.id = e.pais_id
-            ORDER BY v.criado_em DESC, v.id DESC
+            ORDER BY lower(v.placa), v.id
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
@@ -200,7 +200,7 @@ public class VeiculosRepository : IVeiculosRepository
             LEFT JOIN estados e ON e.id = v.estado_id
             LEFT JOIN paises p ON p.id = e.pais_id
             WHERE unaccent(v.id::text) ILIKE unaccent(@Termo::text) OR unaccent(v.placa::text) ILIKE unaccent(@Termo::text) OR unaccent(v.marca_modelo::text) ILIKE unaccent(@Termo::text) OR unaccent(t.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(e.uf::text) ILIKE unaccent(@Termo::text)
-            ORDER BY v.criado_em DESC, v.id DESC
+            ORDER BY lower(v.placa), v.id
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(

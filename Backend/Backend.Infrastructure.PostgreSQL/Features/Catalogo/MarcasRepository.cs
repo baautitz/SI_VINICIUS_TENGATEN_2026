@@ -26,7 +26,7 @@ public class MarcasRepository : IMarcasRepository
 
             SELECT id, marca, descricao, ativo
             FROM marcas
-            ORDER BY id DESC
+            ORDER BY unaccent(lower(marca)), id
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(
@@ -134,7 +134,7 @@ public class MarcasRepository : IMarcasRepository
             FROM marcas
             WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(marca::text) ILIKE unaccent(@Termo::text) 
                OR unaccent(descricao::text) ILIKE unaccent(@Termo::text)
-            ORDER BY id DESC
+            ORDER BY unaccent(lower(marca)), id
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(

@@ -40,7 +40,7 @@ public class FornecedoresRepository : IFornecedoresRepository
             LEFT JOIN estados e ON e.id = ci.estado_id
             LEFT JOIN paises pe ON pe.id = e.pais_id
             LEFT JOIN condicoes_pagamentos cp ON cp.id = f.condicao_pagamento_id
-            ORDER BY f.criado_em DESC, f.id DESC
+            ORDER BY unaccent(lower(f.nome_razaosocial)), f.id
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
@@ -229,7 +229,7 @@ public class FornecedoresRepository : IFornecedoresRepository
             LEFT JOIN condicoes_pagamentos cp ON cp.id = f.condicao_pagamento_id
             WHERE unaccent(f.id::text) ILIKE unaccent(@Termo::text) OR unaccent(f.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(f.cpf_cnpj::text) ILIKE unaccent(@Termo::text)
                OR unaccent(f.apelido_nomefantasia::text) ILIKE unaccent(@Termo::text) OR unaccent(f.email::text) ILIKE unaccent(@Termo::text)
-            ORDER BY f.criado_em DESC, f.id DESC
+            ORDER BY unaccent(lower(f.nome_razaosocial)), f.id
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);

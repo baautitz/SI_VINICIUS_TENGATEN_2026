@@ -36,7 +36,7 @@ public class TransportadorasRepository : ITransportadorasRepository
             LEFT JOIN cidades ci ON ci.id = b.cidade_id
             LEFT JOIN estados e ON e.id = ci.estado_id
             LEFT JOIN paises pe ON pe.id = e.pais_id
-            ORDER BY t.criado_em DESC, t.id DESC
+            ORDER BY unaccent(lower(t.nome_razaosocial)), t.id
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
@@ -249,7 +249,7 @@ public class TransportadorasRepository : ITransportadorasRepository
             LEFT JOIN paises pe ON pe.id = e.pais_id
             WHERE unaccent(t.id::text) ILIKE unaccent(@Termo::text) OR unaccent(t.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(t.cpf_cnpj::text) ILIKE unaccent(@Termo::text)
                OR unaccent(t.apelido_nomefantasia::text) ILIKE unaccent(@Termo::text) OR unaccent(t.email::text) ILIKE unaccent(@Termo::text)
-            ORDER BY t.criado_em DESC, t.id DESC
+            ORDER BY unaccent(lower(t.nome_razaosocial)), t.id
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(
