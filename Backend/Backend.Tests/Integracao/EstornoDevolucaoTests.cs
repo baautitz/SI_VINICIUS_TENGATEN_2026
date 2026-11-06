@@ -8,6 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Backend.Tests.Integracao;
 
+using Backend.Tests.Common;
+
 [Collection(PostgresCollection.Nome)]
 public class EstornoDevolucaoTests
 {
