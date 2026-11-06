@@ -61,4 +61,24 @@ public class RateioCompraTests
 
         Assert.Equal((decimal)pago, Math.Round(sku.Estoque * sku.CustoMedio, 2, MidpointRounding.AwayFromZero));
     }
+
+    // Desconto unitário 0,50 em 10 un a 5,00 chega ao backend como desconto de linha 5,00.
+    [Fact]
+    public void Total_do_item_reflete_o_desconto_da_linha_e_o_rateio_entra_no_custo()
+    {
+        var sku = new Skus("SKU-1", 10m);
+        var item = new Backend.Core.Features.Compras.Entities.CompraItens(10m, 5m, 5m, sku);
+
+        Assert.Equal(45m, item.ValorTotal);
+        Assert.Equal(4.5m, item.CustoUnitario);
+
+        var rateio = RateioCompra.Ratear(new[] { item.ValorTotal, 40m }, 8.5m);
+
+        Assert.Equal(new[] { 4.5m, 4m }, rateio);
+    }
+
+    [Fact]
+    public void Rejeita_desconto_de_linha_maior_que_o_valor_do_item()
+        => Assert.Throws<DomainException>(() =>
+            new Backend.Core.Features.Compras.Entities.CompraItens(10m, 5m, 50.01m, new Skus("SKU-1", 10m)));
 }
