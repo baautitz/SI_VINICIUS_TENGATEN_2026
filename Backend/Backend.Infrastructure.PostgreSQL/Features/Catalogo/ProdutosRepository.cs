@@ -33,7 +33,7 @@ public class ProdutosRepository : IProdutosRepository
             JOIN marcas m ON m.id = p.marca_id
             JOIN unidades_medida u ON u.id = p.unidade_medida_id
             WHERE TRUE AND (@CategoriaId::int IS NULL OR p.categoria_id = @CategoriaId) AND (@MarcaId::int IS NULL OR p.marca_id = @MarcaId) AND (@UnidadeMedidaId::int IS NULL OR p.unidade_medida_id = @UnidadeMedidaId)
-            ORDER BY p.id DESC
+            ORDER BY unaccent(lower(p.produto)), p.id
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(
@@ -287,7 +287,7 @@ public class ProdutosRepository : IProdutosRepository
             JOIN marcas m ON m.id = p.marca_id
             JOIN unidades_medida u ON u.id = p.unidade_medida_id
             WHERE (unaccent(p.id::text) ILIKE unaccent(@Termo::text) OR unaccent(p.produto::text) ILIKE unaccent(@Termo::text) OR unaccent(p.descricao::text) ILIKE unaccent(@Termo::text)) AND (@CategoriaId::int IS NULL OR p.categoria_id = @CategoriaId) AND (@MarcaId::int IS NULL OR p.marca_id = @MarcaId) AND (@UnidadeMedidaId::int IS NULL OR p.unidade_medida_id = @UnidadeMedidaId)
-            ORDER BY p.id DESC
+            ORDER BY unaccent(lower(p.produto)), p.id
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(

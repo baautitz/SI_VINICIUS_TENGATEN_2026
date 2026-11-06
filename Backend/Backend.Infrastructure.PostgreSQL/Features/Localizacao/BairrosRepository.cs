@@ -24,7 +24,7 @@ public class BairrosRepository : IBairrosRepository
             INNER JOIN estados st ON st.id = ci.estado_id
             INNER JOIN paises p ON p.id = st.pais_id
             WHERE (@CidadeId::int IS NULL OR b.cidade_id = @CidadeId)
-            ORDER BY b.id DESC
+            ORDER BY lower(unaccent(b.bairro)), b.id
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { CidadeId = cidadeId }, transaction: _session.Transaction);
@@ -89,7 +89,7 @@ public class BairrosRepository : IBairrosRepository
             INNER JOIN estados st ON st.id = ci.estado_id
             INNER JOIN paises p ON p.id = st.pais_id
             WHERE (unaccent(b.id::text) ILIKE unaccent(@Termo::text) OR unaccent(b.bairro::text) ILIKE unaccent(@Termo::text)) AND (@CidadeId::int IS NULL OR b.cidade_id = @CidadeId)
-            ORDER BY b.id DESC
+            ORDER BY lower(unaccent(b.bairro)), b.id
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%", CidadeId = cidadeId }, transaction: _session.Transaction);

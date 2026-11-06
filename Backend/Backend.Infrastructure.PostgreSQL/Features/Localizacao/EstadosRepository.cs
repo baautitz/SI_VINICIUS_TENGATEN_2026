@@ -22,7 +22,7 @@ public class EstadosRepository : IEstadosRepository
             FROM estados e
             INNER JOIN paises p ON p.id = e.pais_id
             WHERE (@PaisId::int IS NULL OR e.pais_id = @PaisId)
-            ORDER BY e.id DESC
+            ORDER BY lower(unaccent(e.estado)), e.id
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { PaisId = paisId }, transaction: _session.Transaction);
@@ -83,7 +83,7 @@ public class EstadosRepository : IEstadosRepository
             FROM estados e
             INNER JOIN paises p ON p.id = e.pais_id
             WHERE (unaccent(e.id::text) ILIKE unaccent(@Termo::text) OR unaccent(e.estado::text) ILIKE unaccent(@Termo::text) OR unaccent(e.uf::text) ILIKE unaccent(@Termo::text)) AND (@PaisId::int IS NULL OR e.pais_id = @PaisId)
-            ORDER BY e.id DESC
+            ORDER BY lower(unaccent(e.estado)), e.id
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%", PaisId = paisId }, transaction: _session.Transaction);
