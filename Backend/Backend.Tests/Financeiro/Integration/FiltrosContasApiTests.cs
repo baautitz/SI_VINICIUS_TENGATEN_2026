@@ -3,8 +3,9 @@ using System.Text.Json;
 using Backend.Tests.Common;
 using Microsoft.AspNetCore.Mvc.Testing;
 
-namespace Backend.Tests.Api;
+namespace Backend.Tests.Financeiro.Integration;
 
+[Trait("Category", "Integration")]
 [Collection(PostgresCollection.Nome)]
 public class FiltrosContasApiTests
 {
