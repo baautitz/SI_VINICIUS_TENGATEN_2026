@@ -36,7 +36,7 @@ const Filtro = ({ valor, onChange, rotulo, opcoes, disabled }: {
       <SelectValue />
     </SelectTrigger>
     <SelectContent>
-      <SelectItem value={TODOS}>{rotulo}: todos</SelectItem>
+      <SelectItem value={TODOS}>{rotulo}: Todos</SelectItem>
       {Object.entries(opcoes).map(([k, v]) => (
         <SelectItem key={k} value={k}>{v}</SelectItem>
       ))}
