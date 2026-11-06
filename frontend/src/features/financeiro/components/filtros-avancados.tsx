@@ -1,4 +1,5 @@
 "use client";
+import { useDebounce } from "@/hooks/use-debounce";
 
 import { combinacaoDe } from "@/lib/atalhos";
 import React from "react";
@@ -76,7 +77,7 @@ export function FiltrosAvancadosPopover({ valor, onChange }: {
 }) {
   const [aberto, setAberto] = React.useState(false);
   const [rascunho, setRascunho] = React.useState(valor);
-  const timer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const debounceFiltros = useDebounce(onChange, ATRASO_MS);
   const ativos = Object.values(valor).filter(Boolean).length;
 
   useWindowCommands([
@@ -85,13 +86,11 @@ export function FiltrosAvancadosPopover({ valor, onChange }: {
 
   const alterar = (novo: FiltrosAvancados) => {
     setRascunho(novo);
-    clearTimeout(timer.current);
-    timer.current = setTimeout(() => onChange(novo), ATRASO_MS);
+    debounceFiltros.chamar(novo);
   };
   const limpar = () => {
-    clearTimeout(timer.current);
     setRascunho(FILTROS_AVANCADOS_VAZIOS);
-    onChange(FILTROS_AVANCADOS_VAZIOS);
+    debounceFiltros.imediato(FILTROS_AVANCADOS_VAZIOS);
   };
 
   return (
