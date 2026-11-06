@@ -20,7 +20,7 @@ public interface IFiltroTitulos
 }
 
 public sealed record FiltroContasPagar(int? FornecedorId = null, int? ClienteId = null, OrigemTituloFinanceiro? OrigemTipo = null, int? OrigemId = null, string? NumeroDocumento = null, StatusTituloFinanceiro? Status = null,
-    string? CpfCnpj = null, DateTime? VencimentoDe = null, DateTime? VencimentoAte = null, DateTime? EmissaoDe = null, DateTime? EmissaoAte = null, decimal? ValorMinimo = null, decimal? ValorMaximo = null, int? CompraId = null) : IFiltroTitulos;
+    string? CpfCnpj = null, DateTime? VencimentoDe = null, DateTime? VencimentoAte = null, DateTime? EmissaoDe = null, DateTime? EmissaoAte = null, decimal? ValorMinimo = null, decimal? ValorMaximo = null, int? CompraId = null, int? TransportadoraId = null) : IFiltroTitulos;
 
 public sealed record FiltroContasReceber(int? ClienteId = null, OrigemTituloFinanceiro? OrigemTipo = null, int? OrigemId = null, string? NumeroDocumento = null, StatusTituloFinanceiro? Status = null,
     string? CpfCnpj = null, DateTime? VencimentoDe = null, DateTime? VencimentoAte = null, DateTime? EmissaoDe = null, DateTime? EmissaoAte = null, decimal? ValorMinimo = null, decimal? ValorMaximo = null) : IFiltroTitulos;

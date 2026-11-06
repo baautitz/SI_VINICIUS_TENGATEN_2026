@@ -116,12 +116,14 @@ public class ContasPagarRepository : IContasPagarRepository
         var param = PesquisaTitulos.Parametros(termo, filtro, pagina, tamanhoDaPagina);
         param.Add("FornecedorId", filtro?.FornecedorId);
         param.Add("CompraId", filtro?.CompraId);
+        param.Add("TransportadoraId", filtro?.TransportadoraId);
 
         const string haystack = @"concat_ws(' ', cp.descricao, cp.numero_documento, cp.observacao, f.nome_razaosocial, f.apelido_nomefantasia, f.cpf_cnpj,
                 cli.nome_razaosocial, cli.cpf_cnpj, tr.nome_razaosocial, cp.valor::text, to_char(cp.data_vencimento, 'DD/MM/YYYY'), to_char(cp.data_emissao, 'DD/MM/YYYY'),
                 cp.status::text, cp.origem_tipo::text)";
         var where = PesquisaTitulos.Where(haystack) + @"
               AND (@FornecedorId::int IS NULL OR cp.fornecedor_id = @FornecedorId)
+              AND (@TransportadoraId::int IS NULL OR cp.transportadora_id = @TransportadoraId)
               AND (@CompraId::int IS NULL OR (cp.origem_id = @CompraId AND cp.origem_tipo::text IN ('COMPRA', 'FRETE_COMPRA')))" + PesquisaTitulos.FiltroComum("cp") + @"
               AND (@CpfCnpj::text IS NULL OR @CpfCnpj IN (regexp_replace(COALESCE(f.cpf_cnpj, ''), '\D', '', 'g'), regexp_replace(COALESCE(cli.cpf_cnpj, ''), '\D', '', 'g')))";
 
