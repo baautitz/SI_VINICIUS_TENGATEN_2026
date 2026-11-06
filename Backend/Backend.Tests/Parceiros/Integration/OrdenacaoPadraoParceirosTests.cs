@@ -81,4 +81,41 @@ public class OrdenacaoPadraoParceirosTests
         var pag2 = await repo.ObterTransportadoras(2, 2);
         Assert.Equal(["ANA", "BRUNO"], pag2.Itens.Select(t => t.NomeRazaosocial));
     }
+
+    [Fact]
+    public async Task Emitentes_abrem_em_ordem_alfabetica_com_desempate_por_id()
+    {
+        await Inserir("emitentes", Nomes);
+        using var s = _db.NovaSessao();
+        var repo = new EmitentesRepository(s);
+
+        var lista = await repo.ObterEmitentes();
+        Assert.Equal(Esperado, lista.Itens.Select(e => e.NomeRazaoSocial));
+        Assert.True(lista.Itens.ElementAt(1).Id < lista.Itens.ElementAt(2).Id);
+
+        var pesquisa = await repo.PesquisarEmitentes("a");
+        Assert.Equal(["ÁBACO", "ANA", "ANA", "ZECA"], pesquisa.Itens.Select(e => e.NomeRazaoSocial));
+
+        var pag2 = await repo.ObterEmitentes(2, 2);
+        Assert.Equal(["ANA", "BRUNO"], pag2.Itens.Select(e => e.NomeRazaoSocial));
+    }
+
+    [Fact]
+    public async Task Veiculos_abrem_em_ordem_alfabetica_de_placa_com_desempate_por_id()
+    {
+        foreach (var placa in new[] { "ZZZ9999", "abc1234", "ABC1234", "MMM0000" })
+            await _db.Executar("INSERT INTO veiculos (estado_id, placa) VALUES ((SELECT id FROM estados LIMIT 1), @placa);", new { placa });
+        using var s = _db.NovaSessao();
+        var repo = new VeiculosRepository(s);
+
+        var lista = await repo.ObterVeiculos();
+        Assert.Equal(["abc1234", "ABC1234", "MMM0000", "ZZZ9999"], lista.Itens.Select(v => v.Placa));
+        Assert.True(lista.Itens.ElementAt(0).Id < lista.Itens.ElementAt(1).Id);
+
+        var pesquisa = await repo.PesquisarVeiculos("abc");
+        Assert.Equal(["abc1234", "ABC1234"], pesquisa.Itens.Select(v => v.Placa));
+
+        var pag2 = await repo.ObterVeiculos(2, 2);
+        Assert.Equal(["MMM0000", "ZZZ9999"], pag2.Itens.Select(v => v.Placa));
+    }
 }
