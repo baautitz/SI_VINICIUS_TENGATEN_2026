@@ -145,6 +145,26 @@ export interface PreviaNfe {
 export const round2 = (n: number) =>
   Math.round((n + Number.EPSILON) * 100) / 100;
 
+/** Desconto total da linha a partir do desconto por unidade (o backend grava o total da linha). */
+export const descontoLinha = (quantidade: number, descontoUnitario: number) =>
+  round2(quantidade * descontoUnitario);
+
+/** Valor líquido do item: quantidade * (preço unitário - desconto unitário). */
+export const valorLiquidoItem = (
+  quantidade: number,
+  valorUnitario: number,
+  descontoUnitario: number,
+) => round2(quantidade * valorUnitario - descontoLinha(quantidade, descontoUnitario));
+
+/** Desconto por unidade a partir do desconto total gravado na linha. */
+export const descontoUnitarioDe = (valorDesconto: number, quantidade: number) =>
+  quantidade > 0 ? valorDesconto / quantidade : 0;
+
+export const descontoUnitarioExcedePreco = (
+  valorUnitario: number,
+  descontoUnitario: number,
+) => descontoUnitario > valorUnitario;
+
 /** Espelha o rateio do backend: proporcional ao valor líquido do item, resíduo no maior item. */
 export function ratearCompra(
   valoresItens: number[],
