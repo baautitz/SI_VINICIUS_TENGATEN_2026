@@ -791,8 +791,8 @@ function CondicoesUpsertForm({
                   ],
                 ].map(([rotulo, v]) => (
                   <div key={rotulo as string} className="flex flex-col gap-1">
-                    <dt className="text-muted-foreground text-xs">{rotulo}</dt>
-                    <dd className="font-mono font-semibold">
+                    <dt className="text-muted-foreground text-sm">{rotulo}</dt>
+                    <dd className="text-sm font-semibold">
                       {(v as number).toLocaleString("pt-BR", {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
