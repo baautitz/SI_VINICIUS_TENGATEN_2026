@@ -1323,12 +1323,12 @@ function CompraForm({
                           <TableCell className="text-right">
                             {item.sku && precosPorSku.get(item.sku)
                               ? moeda(Number(precosPorSku.get(item.sku)!.preco))
-                              : "—"}
+                              : "-"}
                           </TableCell>
                           <TableCell className="text-right">
-                            {item.sku && precosPorSku.get(item.sku)
-                              ? moeda(Number(precosPorSku.get(item.sku)!.custoUltimaCompra))
-                              : "—"}
+                            {Number(precosPorSku.get(item.sku ?? "")?.custoUltimaCompra) > 0
+                              ? moeda(Number(precosPorSku.get(item.sku ?? "")!.custoUltimaCompra))
+                              : "-"}
                           </TableCell>
                           <TableCell className="text-right">
                             {moeda(rateio)}
