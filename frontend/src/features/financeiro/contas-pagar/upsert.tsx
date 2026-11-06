@@ -339,7 +339,7 @@ export function ContasPagarUpsertForm({ editingItem, readOnly = false }: ContasP
                     <TableRow key={i} className="hover:bg-transparent">
                       <TableCell className="font-semibold">{i + 1}/{parcelas.length}</TableCell>
                       <TableCell>
-                        <DatePicker value={p.dataVencimento} onChange={(v) => updParcela(i, { dataVencimento: v ?? "" })} className="h-8 text-xs" />
+                        <DatePicker value={p.dataVencimento} onChange={(v) => updParcela(i, { dataVencimento: v ?? "" })} className="h-8 text-sm" />
                       </TableCell>
                       <TableCell>
                         <NumberInput

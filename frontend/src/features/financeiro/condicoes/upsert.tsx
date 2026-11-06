@@ -357,7 +357,7 @@ function CondicoesUpsertForm({
                           value={editingItem.id}
                           readOnly
                           aria-label="ID"
-                          className="mt-2 h-8 text-xs"
+                          className="mt-2 h-8 text-sm"
                           inputSize="full"
                         />
                       </div>
@@ -445,7 +445,7 @@ function CondicoesUpsertForm({
                               />
                               <FieldLabel
                                 htmlFor="a-vista-checkbox"
-                                className="cursor-pointer text-xs font-semibold select-none"
+                                className="cursor-pointer text-sm font-semibold select-none"
                               >
                                 À Vista
                               </FieldLabel>
@@ -687,7 +687,7 @@ function CondicoesUpsertForm({
                                         {localErrors[
                                           `parcelas.${index}.percentual`
                                         ] && (
-                                          <span className="text-destructive mt-1 block text-right text-xs">
+                                          <span className="text-destructive mt-1 block text-right text-sm">
                                             {
                                               localErrors[
                                                 `parcelas.${index}.percentual`
@@ -736,7 +736,7 @@ function CondicoesUpsertForm({
                                         {localErrors[
                                           `parcelas.${index}.prazoDias`
                                         ] && (
-                                          <span className="text-destructive mt-1 block text-right text-xs">
+                                          <span className="text-destructive mt-1 block text-right text-sm">
                                             {
                                               localErrors[
                                                 `parcelas.${index}.prazoDias`
