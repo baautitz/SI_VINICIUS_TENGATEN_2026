@@ -7,7 +7,7 @@ import { vendasApi } from "@/api/vendas";
 import { Alert, AlertDescription, Button, Checkbox, Field, FieldDescription, FieldLabel, Textarea, HotkeyKbd } from "@/ui/primitives";
 import { extractApiErrors, getApiErrorMessage, type ApiErrorItem } from "@/utils/api-error";
 import { combinacaoDe } from "@/lib/atalhos";
-import { MAX_MOTIVO_ESTORNO, MIN_MOTIVO_ESTORNO } from "@/features/compras/estornar";
+import { MAX_MOTIVO_ESTORNO, MIN_MOTIVO_ESTORNO } from "@/lib/motivo-estorno";
 import { abrirNfe } from "@/features/nfes";
 import type { Devolucao } from "@/features/vendas/types";
 

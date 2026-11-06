@@ -3,13 +3,12 @@
 import React from "react";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import { comprasApi } from "@/api/compras";
+import { MAX_MOTIVO_ESTORNO, MIN_MOTIVO_ESTORNO } from "@/lib/motivo-estorno";
 import { Alert, AlertDescription, Button, Checkbox, Field, FieldDescription, FieldLabel, Textarea, HotkeyKbd } from "@/ui/primitives";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
 import { extractApiErrors, getApiErrorMessage, type ApiErrorItem } from "@/utils/api-error";
 import { combinacaoDe } from "@/lib/atalhos";
 
-export const MIN_MOTIVO_ESTORNO = 5;
-export const MAX_MOTIVO_ESTORNO = 255;
 
 export interface EstornarCompraWindowProps {
   compraId: number;
