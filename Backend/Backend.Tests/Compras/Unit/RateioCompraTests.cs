@@ -2,7 +2,7 @@ using Backend.Core.Common.Exceptions;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Compras.Services;
 
-namespace Backend.Tests;
+namespace Backend.Tests.Compras.Unit;
 
 public class RateioCompraTests
 {

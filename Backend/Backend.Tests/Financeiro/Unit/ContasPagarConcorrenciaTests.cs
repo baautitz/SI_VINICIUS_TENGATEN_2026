@@ -6,7 +6,7 @@ using Backend.Core.Features.Parceiros.Repositories;
 using Backend.Tests.Common;
 using static Backend.Tests.Common.Fakes;
 
-namespace Backend.Tests;
+namespace Backend.Tests.Financeiro.Unit;
 
 public class ContasPagarConcorrenciaTests
 {

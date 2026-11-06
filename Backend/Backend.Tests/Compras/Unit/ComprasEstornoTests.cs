@@ -22,7 +22,7 @@ using Backend.Core.Features.Catalogo.Repositories;
 using Backend.Tests.Common;
 using static Backend.Tests.Common.Fakes;
 
-namespace Backend.Tests;
+namespace Backend.Tests.Compras.Unit;
 
 public class ComprasEstornoTests
 {

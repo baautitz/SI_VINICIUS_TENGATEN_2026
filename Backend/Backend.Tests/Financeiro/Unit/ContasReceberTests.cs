@@ -6,7 +6,7 @@ using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.Parceiros.Entities;
 using Xunit;
 
-namespace Backend.Tests;
+namespace Backend.Tests.Financeiro.Unit;
 
 public class ContasReceberTests
 {

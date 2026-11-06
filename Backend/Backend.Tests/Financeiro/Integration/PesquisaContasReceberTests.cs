@@ -2,7 +2,7 @@ using Backend.Core.Features.Financeiro.DTOs;
 using Backend.Infrastructure.PostgreSQL.Features.Financeiro;
 using Dapper;
 
-namespace Backend.Tests.Integracao;
+namespace Backend.Tests.Financeiro.Integration;
 
 using Backend.Tests.Common;
 

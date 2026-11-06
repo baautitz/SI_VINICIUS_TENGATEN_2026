@@ -8,7 +8,7 @@ using Backend.Core.Features.Parceiros.Enums;
 using Backend.Core.Features.Parceiros.Repositories;
 using Backend.Core.Features.Parceiros.Services;
 
-namespace Backend.Tests;
+namespace Backend.Tests.Parceiros.Unit;
 
 public class FornecedoresCondicaoTests
 {

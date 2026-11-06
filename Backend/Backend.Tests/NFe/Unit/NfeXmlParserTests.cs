@@ -1,7 +1,7 @@
 using Backend.Core.Common.Exceptions;
 using Backend.Core.Features.NFe.Services;
 
-namespace Backend.Tests;
+namespace Backend.Tests.NFe.Unit;
 
 public class NfeXmlParserTests
 {

@@ -6,7 +6,7 @@ using Backend.Infrastructure.PostgreSQL;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Backend.Tests.Integracao;
+namespace Backend.Tests.Financeiro.Integration;
 
 using Backend.Tests.Common;
 
