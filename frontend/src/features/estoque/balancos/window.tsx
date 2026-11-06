@@ -1,4 +1,5 @@
 "use client";
+import { capturarFocoDeRemocao } from "@/ui/foco-remocao";
 
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -163,6 +164,7 @@ function BalancoForm({
 
   const removerItem = async (index: number) => {
     const item = itens[index];
+    const restaurarFoco = capturarFocoDeRemocao(() => setSkuInputKey((k) => k + 1));
     const ok = await ui.windows.confirm({
       title: "Remover Item?",
       description: `Deseja realmente remover o SKU ${item.sku} deste balanço?`,
@@ -170,6 +172,7 @@ function BalancoForm({
       confirmVariant: "destructive",
     });
     if (ok) setItens((atual) => atual.filter((_, i) => i !== index));
+    restaurarFoco();
   };
 
   // Cria ou atualiza o balanço; devolve o id salvo ou null se houve erro (já notificado).
