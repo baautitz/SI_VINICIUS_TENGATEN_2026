@@ -62,6 +62,8 @@ Após a inicialização:
 
 Os scripts SQL de `infrastructure/database` são executados automaticamente na primeira inicialização de um volume PostgreSQL vazio.
 
+Bancos já criados (sem migrations) devem aplicar `psql -d <banco> -f infrastructure/database/migracoes/texto_pesquisa_contas.sql` (idempotente: coluna `texto_pesquisa`, backfill e índices de contas a pagar/receber).
+
 ## Desenvolvimento local
 
 O Compose de desenvolvimento sobe somente o PostgreSQL. Backend e frontend são executados localmente em modo de desenvolvimento pelo `infra.js`.
