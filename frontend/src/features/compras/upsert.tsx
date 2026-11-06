@@ -93,6 +93,8 @@ interface Linha {
   /** Leitura: valores gravados. */
   rateioFixo?: number;
   custoFixo?: number;
+  /** Leitura: quanto ainda pode ser devolvido ao fornecedor. */
+  saldoDevolvivel?: number;
 }
 
 export function CompraWindow(props: CompraWindowProps) {
@@ -252,6 +254,7 @@ function CompraForm({
         permiteDecimais: true,
         rateioFixo: Number(i.valorRateio),
         custoFixo: Number(i.custoUnitario),
+        saldoDevolvivel: Number(i.saldoDevolvivel),
       }));
     if (dados && previa)
       return dados.itens.map((i) => {
@@ -1178,6 +1181,11 @@ function CompraForm({
                       <TableHead className="w-24 text-right">
                         Total
                       </TableHead>
+                      {readOnly && (
+                        <TableHead className="w-24 text-right">
+                          Saldo devolvível
+                        </TableHead>
+                      )}
                       {!readOnly && !modoXml && <TableHead className="w-12" />}
                     </TableRow>
                   </TableHeader>
@@ -1185,7 +1193,7 @@ function CompraForm({
                     {itens.length === 0 && (
                       <TableRow>
                         <TableCell
-                          colSpan={readOnly || modoXml ? 9 : 10}
+                          colSpan={readOnly ? 10 : modoXml ? 9 : 10}
                           className="text-muted-foreground py-8 text-center"
                         >
                           Nenhum item. Digite um SKU acima e pressione Enter
@@ -1306,6 +1314,11 @@ function CompraForm({
                           <TableCell className="text-right font-bold">
                             {moeda(valoresItens[idx])}
                           </TableCell>
+                          {readOnly && (
+                            <TableCell className="text-right">
+                              {item.saldoDevolvivel ?? 0}
+                            </TableCell>
+                          )}
                           {!readOnly && !modoXml && (
                             <TableCell>
                               <Button

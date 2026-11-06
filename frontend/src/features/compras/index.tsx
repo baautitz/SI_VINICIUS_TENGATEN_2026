@@ -9,7 +9,13 @@ import {
 } from "./upsert";
 import { ImportarXmlWindow } from "./importar";
 import { EstornarCompraWindow, type EstornarCompraWindowProps } from "./estornar";
-import type { Compra } from "./types";
+import {
+  DevolucaoCompraTipoWindow,
+  DevolucaoCompraWindow,
+  type DevolucaoCompraWindowProps,
+  type TipoDevolucaoCompra,
+} from "./devolucao";
+import { compraSemSaldoDevolvivel, type Compra, type CriarDevolucaoCompraValues } from "./types";
 import { useFeatureList } from "@/hooks/use-feature-list";
 import { comprasApi } from "@/api/compras";
 import { useUi } from "@/ui/imperative";
@@ -77,6 +83,45 @@ export function ComprasFeature() {
     ui.feedback.notify({ type: "success", title: `Compra #${c.id} estornada.` });
   };
 
+  const devolver = async (c: Compra) => {
+    if (compraSemSaldoDevolvivel(c)) {
+      ui.feedback.notify({
+        type: "info",
+        title: c.estornada ? "Compra estornada não aceita devolução." : "Compra sem saldo a devolver.",
+      });
+      return;
+    }
+    const tipo = await ui.windows.open<TipoDevolucaoCompra, Record<string, never>>({
+      component: DevolucaoCompraTipoWindow,
+      props: {},
+      title: `Devolução de compra #${c.id}`,
+      size: "medium",
+    });
+    if (tipo.status !== "confirmed") return;
+
+    const result = await ui.windows.open<CriarDevolucaoCompraValues, DevolucaoCompraWindowProps>({
+      component: DevolucaoCompraWindow,
+      props: { compraId: c.id, total: tipo.value === "total" },
+      title: `Devolver Itens da Compra #${c.id}`,
+      size: "large",
+    });
+    if (result.status !== "confirmed") return;
+
+    try {
+      await comprasApi.createDevolucao(c.id, result.value);
+      await Promise.all(
+        ["compras", "skus", "produtos", "movimentacoes"].map((k) =>
+          queryClient.invalidateQueries({ queryKey: [k] }),
+        ),
+      );
+      ui.feedback.notify({ type: "success", title: "Devolução de compra registrada com sucesso." });
+    } catch (error) {
+      ui.feedback.notifyError(error, {
+        fallbackTitle: "Não foi possível registrar a devolução.",
+      });
+    }
+  };
+
   const importar = async () => {
     const r = await ui.windows.open<ImportacaoXml, Record<string, never>>({
       component: ImportarXmlWindow,
@@ -105,6 +150,7 @@ export function ComprasFeature() {
       onView={(c) => abrir({ compraId: c.id }, `Compra #${c.id}`)}
       onDelete={estornar}
       onImport={importar}
+      onReturn={devolver}
       onPageChange={list.setPage}
       rowSelection={list.rowSelection}
       onRowSelectionChange={list.setRowSelection}

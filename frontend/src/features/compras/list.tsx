@@ -12,11 +12,12 @@ import { getActionsColumn, RowAction } from "@/utils/table-columns";
 import { fireAndForget } from "@/lib/utils";
 import { formatDateToLocal } from "@/utils/date-utils";
 import type { FeatureListProps } from "@/hooks/use-feature-orchestrator";
-import { moeda, type Compra } from "./types";
+import { compraSemSaldoDevolvivel, moeda, type Compra } from "./types";
 
 interface ComprasListProps extends FeatureListProps<Compra> {
   onView: (item: Compra) => void;
   onImport: () => void;
+  onReturn: (item: Compra) => void;
 }
 
 export function ComprasList({
@@ -31,6 +32,7 @@ export function ComprasList({
   onView,
   onDelete,
   onImport,
+  onReturn,
   onPageChange,
 }: ComprasListProps) {
   useWindowCommands([
@@ -58,10 +60,14 @@ export function ComprasList({
       id: "status",
       header: "Situação",
       size: 110,
-      cell: ({ row }) =>
-        row.original.estornada ? (
-          <Badge variant="destructive">Estornada</Badge>
-        ) : null,
+      cell: ({ row }) => {
+        const c = row.original;
+        if (c.estornada) return <Badge variant="destructive">Estornada</Badge>;
+        if (compraSemSaldoDevolvivel(c)) return <Badge variant="secondary">Devolvida</Badge>;
+        if (c.itens.some((i) => Number(i.quantidadeDevolvida) > 0))
+          return <Badge variant="outline">Devolvida parcialmente</Badge>;
+        return null;
+      },
     },
     {
       accessorKey: "dataCompra",
@@ -104,10 +110,16 @@ export function ComprasList({
     },
     getActionsColumn<Compra>({
       onView,
-      extra: (item) =>
-        !item.estornada && (
-          <RowAction kind="estornar" label="Estornar compra" onClick={() => onDelete(item)} />
-        ),
+      extra: (item) => (
+        <>
+          {!compraSemSaldoDevolvivel(item) && (
+            <RowAction kind="devolver" label="Devolver itens ao fornecedor" onClick={() => onReturn(item)} />
+          )}
+          {!item.estornada && (
+            <RowAction kind="estornar" label="Estornar compra" onClick={() => onDelete(item)} />
+          )}
+        </>
+      ),
     }),
   ];
 
