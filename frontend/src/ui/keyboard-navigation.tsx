@@ -494,7 +494,13 @@ function findDestination(
       : horizontalCandidates.filter((candidate) => !sidebar.contains(candidate.element))
     : direction === "forward" || direction === "backward"
       ? horizontalCandidates
-      : allCandidates
+      : direction === "up" || direction === "down"
+        // Do conteúdo, as setas verticais nunca caem na sidebar (só ← volta a ela).
+        ? allCandidates.filter(
+            (candidate) =>
+              !candidate.element.closest("[data-navigation-sidebar='true']"),
+          )
+        : allCandidates
   // Da sidebar, seta para a direita entra sempre no campo principal da página: a pesquisa da listagem
   // ou, sem ela, o primeiro campo de formulário — nunca no controle geometricamente mais próximo.
   if (sidebar && direction === "right") {
