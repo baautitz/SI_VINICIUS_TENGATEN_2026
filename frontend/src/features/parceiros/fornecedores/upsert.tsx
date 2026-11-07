@@ -112,7 +112,7 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
       sexo: editingItem?.sexo ?? "",
       dataNascimento: editingItem?.dataNascimento ? editingItem.dataNascimento.split("T")[0] : "",
       observacao: editingItem?.observacao ?? "",
-      condicaoPagamentoId: editingItem?.condicaoPagamento?.id ?? null,
+      condicaoPagamentoId: editingItem?.condicaoPagamento?.id || null,
       ativo: editingItem?.ativo ?? true,
       ...valoresIniciais,
     } as FornecedorFormValues,
@@ -521,7 +521,7 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
               name={field.name}
               label="Condição de pagamento padrão"
               error={getFieldError(field.name, field.state.meta.errors)}
-              initialItem={editingItem?.condicaoPagamento ?? itensIniciais?.condicaoPagamento}
+              initialItem={(editingItem?.condicaoPagamento?.id ? editingItem.condicaoPagamento : null) ?? itensIniciais?.condicaoPagamento}
               onSelectItem={(item) => { itens.current.condicaoPagamento = item; }}
               onSelectId={(id) => field.handleChange(id)}
               disabled={readOnly}
