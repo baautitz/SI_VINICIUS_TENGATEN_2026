@@ -1,8 +1,9 @@
 using Backend.Core.Common.Exceptions;
+using Backend.Core.Features.Compras.Entities.Enums;
 
 namespace Backend.Core.Features.Compras.Entities;
 
-// Devolução de compra: itens da compra devolvidos ao fornecedor. Depois de registrada não é alterada nem excluída.
+// Devolução de compra: itens da compra devolvidos ao fornecedor. Depois de registrada não é alterada nem excluída; só pode ser estornada (uma vez).
 public class DevolucaoCompra
 {
     private readonly List<DevolucaoCompraItens> _itens = new();
@@ -12,6 +13,9 @@ public class DevolucaoCompra
     public DateTime DataDevolucao { get; private set; }
     public string Motivo { get; private set; } = null!;
     public decimal ValorTotal { get; private set; }
+    public StatusDevolucaoCompra Status { get; private set; } = StatusDevolucaoCompra.ATIVA;
+    public DateTime? EstornadoEm { get; private set; }
+    public string? MotivoEstorno { get; private set; }
     public IReadOnlyCollection<DevolucaoCompraItens> Itens => _itens.AsReadOnly();
 
     protected DevolucaoCompra() { }
@@ -32,13 +36,30 @@ public class DevolucaoCompra
         ValorTotal = Math.Round(_itens.Sum(i => i.ValorTotal), 2, MidpointRounding.AwayFromZero);
     }
 
-    public DevolucaoCompra(int id, int compraId, DateTime dataDevolucao, string motivo, decimal valorTotal)
+    public DevolucaoCompra(int id, int compraId, DateTime dataDevolucao, string motivo, decimal valorTotal, StatusDevolucaoCompra status = StatusDevolucaoCompra.ATIVA, DateTime? estornadoEm = null, string? motivoEstorno = null)
     {
         Id = id;
         CompraId = compraId;
         DataDevolucao = dataDevolucao;
         Motivo = motivo;
         ValorTotal = valorTotal;
+        Status = status;
+        EstornadoEm = estornadoEm;
+        MotivoEstorno = motivoEstorno;
+    }
+
+    public void Estornar(string motivo, DateTime? quando = null)
+    {
+        if (Status == StatusDevolucaoCompra.ESTORNADA)
+            throw new DomainException("A devolução já foi estornada.");
+
+        motivo = (motivo ?? "").Trim(); // texto livre: preserva caixa e acentos
+        if (motivo.Length < 5 || motivo.Length > 255)
+            throw new DomainException("O motivo do estorno deve ter entre 5 e 255 caracteres.");
+
+        Status = StatusDevolucaoCompra.ESTORNADA;
+        MotivoEstorno = motivo;
+        EstornadoEm = quando ?? DateTime.UtcNow;
     }
 
     public void AdicionarItemExistente(DevolucaoCompraItens item) => _itens.Add(item);
@@ -99,5 +120,12 @@ public class DevolucaoCompraAbatimento
         DevolucaoCompraId = devolucaoCompraId;
         ContaPagarId = contaPagarId;
         Valor = valor;
+    }
+
+    public DevolucaoCompraAbatimento(int id, int devolucaoCompraId, int contaPagarId, decimal valor, DateTime? estornadoEm)
+        : this(devolucaoCompraId, contaPagarId, valor)
+    {
+        Id = id;
+        EstornadoEm = estornadoEm;
     }
 }

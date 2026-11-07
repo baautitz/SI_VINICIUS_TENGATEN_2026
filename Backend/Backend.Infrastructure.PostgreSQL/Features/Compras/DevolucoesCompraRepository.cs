@@ -1,4 +1,5 @@
 using Backend.Core.Features.Compras.Entities;
+using Backend.Core.Features.Compras.Entities.Enums;
 using Backend.Core.Features.Compras.Repositories;
 using Backend.Infrastructure.PostgreSQL.Common;
 using Dapper;
@@ -14,7 +15,7 @@ public class DevolucoesCompraRepository : IDevolucoesCompraRepository
         _session = session;
     }
 
-    private const string SelecaoDevolucao = "SELECT id, compra_id AS CompraId, data_devolucao AS DataDevolucao, motivo AS Motivo, valor_total AS ValorTotal FROM devolucoes_compra";
+    private const string SelecaoDevolucao = "SELECT id, compra_id AS CompraId, data_devolucao AS DataDevolucao, motivo AS Motivo, valor_total AS ValorTotal, status AS Status, estornado_em AS EstornadoEm, motivo_estorno AS MotivoEstorno FROM devolucoes_compra";
 
     public async Task<DevolucaoCompra?> ObterDevolucaoPorId(int id)
         => (await Montar(await Consultar("WHERE id = @Id", new { Id = id }))).SingleOrDefault();
@@ -39,6 +40,24 @@ public class DevolucoesCompraRepository : IDevolucoesCompraRepository
         return devolucao;
     }
 
+    public async Task<bool> MarcarEstornada(DevolucaoCompra devolucao)
+        => await _session.Connection.ExecuteAsync(
+            @"UPDATE devolucoes_compra SET status = 'ESTORNADA', estornado_em = @EstornadoEm, motivo_estorno = @MotivoEstorno
+              WHERE id = @Id AND status = 'ATIVA';",
+            new { devolucao.Id, devolucao.EstornadoEm, devolucao.MotivoEstorno }, transaction: _session.Transaction) > 0;
+
+    public async Task<IReadOnlyList<DevolucaoCompraAbatimento>> ObterAbatimentosAtivos(int devolucaoId)
+        => (await _session.Connection.QueryAsync<AbatimentoRow>(
+            @"SELECT id, devolucao_compra_id AS DevolucaoCompraId, conta_pagar_id AS ContaPagarId, valor AS Valor, estornado_em AS EstornadoEm
+              FROM devolucao_compra_abatimentos WHERE devolucao_compra_id = @DevolucaoId AND estornado_em IS NULL ORDER BY id;",
+            new { DevolucaoId = devolucaoId }, transaction: _session.Transaction))
+            .Select(r => new DevolucaoCompraAbatimento(r.Id, r.DevolucaoCompraId, r.ContaPagarId, r.Valor, r.EstornadoEm)).ToList();
+
+    public async Task MarcarAbatimentosEstornados(int devolucaoId, DateTime estornadoEm)
+        => await _session.Connection.ExecuteAsync(
+            "UPDATE devolucao_compra_abatimentos SET estornado_em = @EstornadoEm WHERE devolucao_compra_id = @DevolucaoId AND estornado_em IS NULL;",
+            new { DevolucaoId = devolucaoId, EstornadoEm = estornadoEm }, transaction: _session.Transaction);
+
     public async Task CriarAbatimento(DevolucaoCompraAbatimento a)
         => await _session.Connection.ExecuteAsync(
             "INSERT INTO devolucao_compra_abatimentos (devolucao_compra_id, conta_pagar_id, valor) VALUES (@DevolucaoCompraId, @ContaPagarId, @Valor);",
@@ -59,14 +78,16 @@ public class DevolucoesCompraRepository : IDevolucoesCompraRepository
 
         return rows.Select(r =>
         {
-            var d = new DevolucaoCompra(r.Id, r.CompraId, r.DataDevolucao, r.Motivo, r.ValorTotal);
+            var d = new DevolucaoCompra(r.Id, r.CompraId, r.DataDevolucao, r.Motivo, r.ValorTotal, Enum.Parse<StatusDevolucaoCompra>(r.Status), r.EstornadoEm, r.MotivoEstorno);
             foreach (var i in itens[r.Id])
                 d.AdicionarItemExistente(new DevolucaoCompraItens(i.Id, i.CompraItemId, i.Sku, i.Quantidade, i.ValorUnitario, i.CustoUnitario));
             return d;
         }).ToList();
     }
 
-    private sealed record DevolucaoRow(int Id, int CompraId, DateTime DataDevolucao, string Motivo, decimal ValorTotal);
+    private sealed record DevolucaoRow(int Id, int CompraId, DateTime DataDevolucao, string Motivo, decimal ValorTotal, string Status, DateTime? EstornadoEm, string? MotivoEstorno);
+
+    private sealed record AbatimentoRow(int Id, int DevolucaoCompraId, int ContaPagarId, decimal Valor, DateTime? EstornadoEm);
 
     private sealed record ItemRow(int Id, int DevolucaoId, int CompraItemId, string Sku, decimal Quantidade, decimal ValorUnitario, decimal CustoUnitario);
 }

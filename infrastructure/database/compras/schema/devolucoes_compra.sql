@@ -1,12 +1,15 @@
 SET search_path TO projeto_sistemas;
 
--- Imutável: devolução de compra registrada não é alterada nem excluída.
+-- Imutável: devolução de compra registrada não é alterada nem excluída; só pode ser estornada (status ESTORNADA).
 CREATE TABLE IF NOT EXISTS devolucoes_compra (
   id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   compra_id INTEGER NOT NULL,
   data_devolucao TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   motivo VARCHAR(500) NOT NULL,
   valor_total NUMERIC(14, 2) NOT NULL,
+  status VARCHAR(10) NOT NULL DEFAULT 'ATIVA',
+  estornado_em TIMESTAMP WITH TIME ZONE,
+  motivo_estorno VARCHAR(255),
   CONSTRAINT devolucoes_compra_compra_fk
     FOREIGN KEY (compra_id)
     REFERENCES compras (id)
@@ -15,7 +18,9 @@ CREATE TABLE IF NOT EXISTS devolucoes_compra (
   CONSTRAINT devolucoes_compra_motivo_ck
     CHECK (LENGTH(TRIM(motivo)) >= 5),
   CONSTRAINT devolucoes_compra_valor_total_ck
-    CHECK (valor_total >= 0)
+    CHECK (valor_total >= 0),
+  CONSTRAINT devolucoes_compra_status_ck
+    CHECK (status IN ('ATIVA', 'ESTORNADA') AND ((status = 'ESTORNADA') = (estornado_em IS NOT NULL)))
 );
 
 CREATE INDEX IF NOT EXISTS devolucoes_compra_compra_idx ON devolucoes_compra (compra_id);

@@ -155,7 +155,7 @@ public class ComprasRepository : IComprasRepository
         const string sql = @"
             SELECT ci.id, ci.compra_id, ci.quantidade, ci.valor_unitario, ci.valor_desconto, ci.valor_total,
                    ci.valor_rateio, ci.custo_unitario,
-                   (SELECT COALESCE(SUM(di.quantidade), 0) FROM devolucoes_compra_itens di WHERE di.compra_item_id = ci.id) AS quantidade_devolvida,
+                   (SELECT COALESCE(SUM(di.quantidade), 0) FROM devolucoes_compra_itens di JOIN devolucoes_compra dv ON dv.id = di.devolucao_compra_id WHERE di.compra_item_id = ci.id AND dv.status = 'ATIVA') AS quantidade_devolvida,
                    s.sku, s.gtin_ean, s.preco, s.estoque, s.ativo,
                    p.id, p.produto,
                    u.id, u.sigla, u.permite_decimais
