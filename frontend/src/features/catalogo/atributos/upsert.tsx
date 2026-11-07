@@ -241,7 +241,7 @@ function AtributosUpsertForm({
               };
 
               return (
-                <Field data-invalid={!!error} className="w-full max-w-md">
+                <Field data-invalid={!!error} className="w-full">
                   <FieldLabel>Valores Possíveis</FieldLabel>
 
                   <div className="flex gap-2">
