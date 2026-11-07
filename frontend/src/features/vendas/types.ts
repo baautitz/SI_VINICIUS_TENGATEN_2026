@@ -56,7 +56,9 @@ export interface Devolucao {
   dataDevolucao: string;
   motivo: string;
   valorTotal: number;
-  nfeAtiva?: { nfeId: number; chaveAcesso: string } | null;
+  /** NF-e de devolução emitida com a devolução e NF-e de estorno emitida no estorno; vazias se a venda não tinha NF-e ativa. */
+  nfeDevolucao?: { nfeId: number; chaveAcesso: string } | null;
+  nfeEstorno?: { nfeId: number; chaveAcesso: string } | null;
   itens: Array<{
     id: number;
     vendaItemId: number;

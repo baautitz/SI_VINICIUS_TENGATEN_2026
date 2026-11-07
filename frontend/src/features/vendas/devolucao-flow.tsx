@@ -30,6 +30,7 @@ export function useDevolucaoFlow() {
       queryClient.invalidateQueries({ queryKey: ["contas-receber"] }),
       queryClient.invalidateQueries({ queryKey: ["contas-pagar"] }),
       queryClient.invalidateQueries({ queryKey: ["movimentacoes"] }),
+      queryClient.invalidateQueries({ queryKey: ["nfes"] }),
     ]);
   };
 
@@ -58,12 +59,12 @@ export function useDevolucaoFlow() {
       const res = await vendasApi.createDevolucao(venda.id, result.value);
       await invalidate();
       ui.feedback.notify({ type: "success", title: "Devolução de venda registrada com sucesso." });
-      const nfe = res?.data?.nfeAtiva;
+      const nfe = res?.data?.nfeDevolucao;
       if (nfe) {
-        // A devolução não gera NF-e de devolução nem cancela a nota: só avisa.
+        // A nota original continua ativa; a devolução emite a sua própria NF-e.
         const r = await ui.windows.confirm({
-          title: "Esta venda possui NF-e ativa",
-          description: `A devolução não altera a NF-e (chave ${nfe.chaveAcesso}). Se necessário, cancele-a manualmente. Deseja abrir a NF-e?`,
+          title: "NF-e de devolução emitida",
+          description: `A devolução emitiu a NF-e de devolução (chave ${nfe.chaveAcesso}). Deseja abrir a NF-e?`,
           confirmLabel: "Abrir NF-e",
         });
         if (r) await abrirNfe(ui, nfe.nfeId);
