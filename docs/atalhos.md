@@ -9,7 +9,7 @@ A fonte da verdade e `frontend/src/lib/atalhos.ts` (`ATALHOS`: id, combinacao, r
 ## Navegacao e confirmacao
 
 - `confirmar` Alt+Enter, `etapaAnterior` Alt+ArrowLeft, `etapaSeguinte` Alt+ArrowRight.
-- Tabelas: `abrirLinha` Enter, `editarLinha` Alt+E, `excluirLinha` Delete. `excluirLinhaBackspace` (Backspace) e a segunda combinacao da mesma acao, com id proprio para manter a unicidade.
+- Tabelas: `ordenar` Alt+J abre o menu de ordenacao pelo teclado (↑ ↓ coluna, ← → modo, Enter fecha). `abrirLinha` Enter, `editarLinha` Alt+E, `excluirLinha` Delete. `excluirLinhaBackspace` (Backspace) e a segunda combinacao da mesma acao, com id proprio para manter a unicidade.
 
 ## Ver registros relacionados
 

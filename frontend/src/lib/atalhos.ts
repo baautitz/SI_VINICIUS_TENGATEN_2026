@@ -9,6 +9,7 @@ export const ATALHOS = {
   novo: atalho("Alt+N", "Novo"),
   busca: atalho("Alt+Q", "Busca"),
   filtros: atalho("Alt+F", "Filtros"),
+  ordenar: atalho("Alt+J", "Ordenar"),
   sidebarBuscar: atalho("Alt+S", "Sidebar: buscar"),
   sidebarRecolher: atalho("Alt+B", "Sidebar: recolher"),
   sidebarInicio: atalho("Alt+H", "Sidebar: inicio"),
