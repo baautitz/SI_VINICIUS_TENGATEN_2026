@@ -4,6 +4,7 @@ using Backend.Core.Common.Results;
 using Backend.Core.Features.Catalogo.Repositories;
 using Backend.Core.Features.Compras.Commands;
 using Backend.Core.Features.Compras.Entities;
+using Backend.Core.Features.Compras.Entities.Enums;
 using Backend.Core.Features.Compras.Repositories;
 using Backend.Core.Features.Estoque.Entities;
 using Backend.Core.Features.Estoque.Entities.Enums;
@@ -20,6 +21,7 @@ public sealed class DevolucoesCompraService : BaseService
 {
     public const string CompraInexistente = "COMPRA_INEXISTENTE";
     public const string DevolucaoInexistente = "DEVOLUCAO_INEXISTENTE";
+    public const string DevolucaoJaEstornada = "DEVOLUCAO_JA_ESTORNADA";
 
     private readonly IComprasRepository _comprasRepository;
     private readonly IDevolucoesCompraRepository _devolucoesRepository;
@@ -156,6 +158,77 @@ public sealed class DevolucoesCompraService : BaseService
         await AbaterParcelasEReembolsar(compra, criada);
 
         return Resultado<DevolucaoCompra>.Sucesso(criada);
+    }
+
+    // Desfaz a devolução na mesma transação: os itens voltam ao estoque, os abatimentos voltam às parcelas a pagar
+    // e o reembolso do fornecedor (conta a receber) é cancelado, barrado se já tiver recebimento.
+    public async Task<Resultado<DevolucaoCompra>> EstornarDevolucao(int id, EstornarDevolucaoCompraCommand command)
+    {
+        var motivo = command?.Motivo?.Trim() ?? "";
+        if (motivo.Length < 5 || motivo.Length > 255)
+            return Resultado<DevolucaoCompra>.Falha(new ResultadoErro("MOTIVO_INVALIDO", "O motivo do estorno deve ter entre 5 e 255 caracteres.", "motivo"));
+
+        var devolucao = await _devolucoesRepository.ObterDevolucaoPorId(id);
+        if (devolucao is null)
+            return Resultado<DevolucaoCompra>.Falha(new ResultadoErro(DevolucaoInexistente, "Devolução não encontrada."));
+        if (devolucao.Status == StatusDevolucaoCompra.ESTORNADA)
+            return Resultado<DevolucaoCompra>.Falha(new ResultadoErro(DevolucaoJaEstornada, "Esta devolução já foi estornada.", "Status"));
+
+        return await ExecuteResultAsync(async () =>
+        {
+            try
+            {
+                _unitOfWork.BeginTransaction();
+                var resultado = await EstornarNaTransacao(devolucao, motivo);
+                if (resultado.Success) _unitOfWork.Commit(); else _unitOfWork.Rollback();
+                return resultado;
+            }
+            catch
+            {
+                _unitOfWork.Rollback();
+                throw;
+            }
+        });
+    }
+
+    private async Task<Resultado<DevolucaoCompra>> EstornarNaTransacao(DevolucaoCompra devolucao, string motivo)
+    {
+        // UPDATE guardado primeiro: trava a linha, então um estorno concorrente espera e cai em JA_ESTORNADA.
+        devolucao.Estornar(motivo);
+        if (!await _devolucoesRepository.MarcarEstornada(devolucao))
+            return Resultado<DevolucaoCompra>.Falha(new ResultadoErro(DevolucaoJaEstornada, "Esta devolução já foi estornada.", "Status"));
+
+        await _skusRepository.TravarSkus(devolucao.Itens.Select(i => i.Sku).Distinct().OrderBy(s => s));
+
+        var reembolsos = (await _contasReceberRepository.PesquisarContasReceber("", 1, 100,
+                new FiltroContasReceber(OrigemTipo: OrigemTituloFinanceiro.DEVOLUCAO_COMPRA, OrigemId: devolucao.Id))).Itens
+            .Where(c => c.OrigemTipo == OrigemTituloFinanceiro.DEVOLUCAO_COMPRA && c.OrigemId == devolucao.Id && c.Status != StatusTituloFinanceiro.CANCELADO)
+            .ToList();
+
+        var baixados = reembolsos.Where(c => c.PossuiBaixa).ToList();
+        if (baixados.Count > 0)
+            return Resultado<DevolucaoCompra>.Falha(baixados.Select(c => new ResultadoErro("ESTORNO_REEMBOLSO_BAIXADO",
+                $"O reembolso '{c.Descricao}' já tem R$ {c.ValorPago:0.00} recebido. Estorne o recebimento primeiro.", "ContasReceber")).ToList());
+
+        await _estoqueService.EstornarPorOrigem(OrigemMovimentacaoEstoque.DEVOLUCAO_COMPRA, devolucao.Id, $"Estorno da devolução de compra nº {devolucao.Id}: {motivo}");
+
+        // Reverte exatamente o que a devolução abateu de cada parcela; os registros são marcados, não apagados.
+        var contasCompra = (await ObterContasDaCompra(devolucao.CompraId)).ToDictionary(c => c.Id);
+        foreach (var abatimento in await _devolucoesRepository.ObterAbatimentosAtivos(devolucao.Id))
+        {
+            if (!contasCompra.TryGetValue(abatimento.ContaPagarId, out var conta)) continue;
+            conta.Restituir(abatimento.Valor);
+            await _contasPagarRepository.AtualizarContaPagar(conta.Id, conta);
+        }
+        await _devolucoesRepository.MarcarAbatimentosEstornados(devolucao.Id, devolucao.EstornadoEm ?? DateTime.UtcNow);
+
+        foreach (var reembolso in reembolsos)
+        {
+            reembolso.Cancelar();
+            await _contasReceberRepository.AtualizarContaReceber(reembolso.Id, reembolso);
+        }
+
+        return Resultado<DevolucaoCompra>.Sucesso(devolucao);
     }
 
     // O valor pago nunca é consumido: o que não couber no saldo em aberto vira Reembolso (título único, vence na data da devolução).

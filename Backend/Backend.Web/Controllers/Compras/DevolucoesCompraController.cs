@@ -42,4 +42,15 @@ public class DevolucoesCompraController : ControllerBase
             return NotFound(result);
         return BadRequest(result);
     }
+
+    [HttpPost("api/devolucoes-compra/{id:int}/estornar")]
+    public async Task<ActionResult<Resultado<DevolucaoCompra>>> Estornar(int id, [FromBody] EstornarDevolucaoCompraCommand command)
+    {
+        var result = await _service.EstornarDevolucao(id, command);
+        if (result.Success)
+            return Ok(result);
+        if (result.Errors!.Any(e => e.Code == DevolucoesCompraService.DevolucaoInexistente))
+            return NotFound(result);
+        return BadRequest(result);
+    }
 }

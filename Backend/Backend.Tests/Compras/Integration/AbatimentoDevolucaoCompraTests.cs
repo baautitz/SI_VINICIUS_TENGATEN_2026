@@ -109,4 +109,60 @@ public class AbatimentoDevolucaoCompraTests
         Assert.Null((int?)r.c);
         Assert.Equal(1, (int)r.tp);
     }
+
+    private Task<Backend.Core.Common.Results.Resultado<Backend.Core.Features.Compras.Entities.DevolucaoCompra>> Estornar(int devolucaoId, string motivo = "Devolucao lancada errada")
+        => Servico<Backend.Core.Common.Results.Resultado<Backend.Core.Features.Compras.Entities.DevolucaoCompra>, DevolucoesCompraService>(
+            s => s.EstornarDevolucao(devolucaoId, new EstornarDevolucaoCompraCommand(motivo)));
+
+    [Fact]
+    public async Task Estorno_restaura_estoque_parcelas_cancela_reembolso_e_libera_o_saldo_devolvivel()
+    {
+        var (compraId, itemId, _) = await CompraDe2Parcelas();
+        await _db.Executar("UPDATE contas_pagar SET valor_pago = 50, status = 'PAGO' WHERE numero_parcela = 1;");
+        var devolucaoId = await Devolver(compraId, itemId, 8); // abate 50 da parcela 2 e reembolsa 30
+        Assert.Equal(2m, await Escalar<decimal>($"SELECT estoque FROM skus WHERE sku = '{Sku}';"));
+
+        var r = await Estornar(devolucaoId);
+
+        Assert.True(r.Success, r.Errors?.FirstOrDefault()?.Message);
+        Assert.Equal(10m, await Escalar<decimal>($"SELECT estoque FROM skus WHERE sku = '{Sku}';"));
+        Assert.Equal(("PAGO", 50m, 50m, 0m), await Parcela(1));
+        Assert.Equal(("ABERTO", 50m, 0m, 0m), await Parcela(2));
+        Assert.Equal("CANCELADO", await Escalar<string>("SELECT status::text FROM contas_receber;"));
+        Assert.Equal(0, await Escalar<int>("SELECT COUNT(*) FROM devolucao_compra_abatimentos WHERE estornado_em IS NULL;"));
+        Assert.Equal("ESTORNADA", await Escalar<string>($"SELECT status FROM devolucoes_compra WHERE id = {devolucaoId};"));
+
+        // O saldo devolvível voltou: dá para devolver os 10 de novo.
+        await Devolver(compraId, itemId, 10);
+    }
+
+    [Fact]
+    public async Task Estorno_barrado_quando_o_reembolso_ja_tem_recebimento_e_nada_muda()
+    {
+        var (compraId, itemId, _) = await CompraDe2Parcelas();
+        await _db.Executar("UPDATE contas_pagar SET valor_pago = 50, status = 'PAGO' WHERE numero_parcela = 1;");
+        var devolucaoId = await Devolver(compraId, itemId, 8);
+        await _db.Executar("UPDATE contas_receber SET valor_pago = 10, status = 'PARCIAL';");
+
+        var r = await Estornar(devolucaoId);
+
+        Assert.False(r.Success);
+        Assert.Contains(r.Errors!, e => e.Code == "ESTORNO_REEMBOLSO_BAIXADO");
+        Assert.Equal("ATIVA", await Escalar<string>($"SELECT status FROM devolucoes_compra WHERE id = {devolucaoId};"));
+        Assert.Equal(2m, await Escalar<decimal>($"SELECT estoque FROM skus WHERE sku = '{Sku}';"));
+        Assert.Equal(("PAGO", 50m, 0m, 50m), await Parcela(2));
+        Assert.Equal("PARCIAL", await Escalar<string>("SELECT status::text FROM contas_receber;"));
+    }
+
+    [Fact]
+    public async Task Estornar_duas_vezes_e_motivo_invalido_falham()
+    {
+        var (compraId, itemId, _) = await CompraDe2Parcelas();
+        var devolucaoId = await Devolver(compraId, itemId, 2);
+
+        Assert.Contains((await Estornar(devolucaoId, "abc")).Errors!, e => e.Code == "MOTIVO_INVALIDO");
+        Assert.True((await Estornar(devolucaoId)).Success);
+        Assert.Contains((await Estornar(devolucaoId)).Errors!, e => e.Code == DevolucoesCompraService.DevolucaoJaEstornada);
+        Assert.Contains((await Estornar(999)).Errors!, e => e.Code == DevolucoesCompraService.DevolucaoInexistente);
+    }
 }
