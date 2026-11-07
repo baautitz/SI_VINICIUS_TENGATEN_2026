@@ -310,7 +310,7 @@ export function DataTable<TData, TValue>({
               </InputGroup>
             </div>
           )}
-          {focusedRowIndex !== null && rows.length > 0 && (
+          {focusedRowIndex !== null && rows[focusedRowIndex] && (
             <div
               data-testid="data-table-shortcuts"
               className="text-muted-foreground flex shrink-0 items-center gap-3 text-xs"
