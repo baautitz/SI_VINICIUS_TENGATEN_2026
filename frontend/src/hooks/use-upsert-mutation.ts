@@ -86,6 +86,26 @@ export function useUpsertMutation<TValue, TResponse = BackendResult>({
     [mutation, safeMutateAsync],
   );
 
+  // Erro vindo do servidor some assim que o usuário volta a editar o campo (o id do input é o nome do campo).
+  React.useEffect(() => {
+    const limparAoEditar = (event: Event) => {
+      const id = (event.target as HTMLElement | null)?.id?.toLowerCase();
+      if (!id) return;
+      setBackendFieldErrors((atuais) => {
+        if (!(id in atuais)) return atuais;
+        const resto = { ...atuais };
+        delete resto[id];
+        return resto;
+      });
+    };
+    document.addEventListener("input", limparAoEditar);
+    document.addEventListener("change", limparAoEditar);
+    return () => {
+      document.removeEventListener("input", limparAoEditar);
+      document.removeEventListener("change", limparAoEditar);
+    };
+  }, []);
+
   const resetErrors = () => {
     setBackendFieldErrors({});
     setGlobalError(null);
