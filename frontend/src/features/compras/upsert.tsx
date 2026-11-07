@@ -1387,7 +1387,7 @@ function CompraForm({
                     {despesaCampo("Frete de terceiro", freteTerceiro, setFreteTerceiro)}
                   </div>
                   {freteTerceiro > 0 && !readOnly && (
-                    <Field className="md:w-1/3">
+                    <Field className="w-64">
                       <FieldLabel>Vencimento do frete de terceiro</FieldLabel>
                       <DatePicker
                         value={vencFrete}
