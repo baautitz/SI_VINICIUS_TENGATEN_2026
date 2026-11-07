@@ -39,6 +39,11 @@ public class DevolucoesCompraRepository : IDevolucoesCompraRepository
         return devolucao;
     }
 
+    public async Task CriarAbatimento(DevolucaoCompraAbatimento a)
+        => await _session.Connection.ExecuteAsync(
+            "INSERT INTO devolucao_compra_abatimentos (devolucao_compra_id, conta_pagar_id, valor) VALUES (@DevolucaoCompraId, @ContaPagarId, @Valor);",
+            a, transaction: _session.Transaction);
+
     private async Task<List<DevolucaoRow>> Consultar(string filtro, object param)
         => (await _session.Connection.QueryAsync<DevolucaoRow>($"{SelecaoDevolucao} {filtro};", param, transaction: _session.Transaction)).ToList();
 

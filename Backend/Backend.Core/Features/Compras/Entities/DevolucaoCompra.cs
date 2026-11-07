@@ -79,3 +79,25 @@ public class DevolucaoCompraItens
         CustoUnitario = custoUnitario;
     }
 }
+
+// Quanto uma devolução de compra abateu de uma parcela a pagar; estornado marca o registro sem apagá-lo.
+public class DevolucaoCompraAbatimento
+{
+    public int Id { get; private set; }
+    public int DevolucaoCompraId { get; private set; }
+    public int ContaPagarId { get; private set; }
+    public decimal Valor { get; private set; }
+    public DateTime? EstornadoEm { get; private set; }
+
+    protected DevolucaoCompraAbatimento() { }
+
+    public DevolucaoCompraAbatimento(int devolucaoCompraId, int contaPagarId, decimal valor)
+    {
+        if (valor <= 0)
+            throw new DomainException("Valor do abatimento deve ser maior que zero.");
+
+        DevolucaoCompraId = devolucaoCompraId;
+        ContaPagarId = contaPagarId;
+        Valor = valor;
+    }
+}

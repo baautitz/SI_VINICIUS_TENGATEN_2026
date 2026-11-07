@@ -65,6 +65,7 @@ SET search_path TO projeto_sistemas, public;
 \ir financeiro/schema/contas_pagar.sql
 \ir financeiro/schema/contas_receber.sql
 \ir vendas/schema/devolucoes_abatimentos.sql
+\ir compras/schema/devolucao_compra_abatimentos.sql
 
 \ir auditoria/schema/auditorias.sql
 

@@ -8,4 +8,5 @@ public interface IDevolucoesCompraRepository
     public Task<DevolucaoCompra?> ObterDevolucaoPorId(int id);
     public Task<IReadOnlyList<DevolucaoCompra>> ObterDevolucoesPorCompra(int compraId);
     public Task<DevolucaoCompra> CriarDevolucao(DevolucaoCompra devolucao);
+    public Task CriarAbatimento(DevolucaoCompraAbatimento abatimento);
 }
