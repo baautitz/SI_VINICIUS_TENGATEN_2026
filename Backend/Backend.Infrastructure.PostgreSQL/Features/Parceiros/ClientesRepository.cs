@@ -12,18 +12,34 @@ namespace Backend.Infrastructure.PostgreSQL.Features.Parceiros;
 public class ClientesRepository : IClientesRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public ClientesRepository(DbSession session)
+    public ClientesRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
     {
         _session = session;
+        _ordenacao = ordenacao;
     }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> expressão SQL).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["id"] = "c.id",
+        ["tipoPessoa"] = "c.tipo_pessoa::text",
+        ["nomeRazaoSocial"] = "unaccent(lower(c.nome_razaosocial))",
+        ["cpfCnpj"] = "c.cpf_cnpj",
+        ["email"] = "lower(c.email)",
+        ["telefone"] = "c.telefone",
+        ["ativo"] = "c.ativo",
+    };
+
+    private string Ordem => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "c.id", "unaccent(lower(c.nome_razaosocial)), c.id");
 
     public async Task<ResultadoPaginado<Clientes>> ObterClientes(int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
         const string sqlCount = "SELECT COUNT(*) FROM clientes;";
-        const string sqlData = @"
+        var sqlData = $@"
             SELECT c.id AS Id, c.tipo_pessoa AS TipoPessoa, c.nome_razaosocial AS NomeRazaoSocial, c.cpf_cnpj AS CpfCnpj, c.rg_ie AS RgIe, c.apelido_nomefantasia AS ApelidoNomeFantasia,
                    c.logradouro AS Logradouro, c.numero AS Numero, c.sexo AS Sexo, c.data_nascimento AS DataNascimento, c.telefone AS Telefone, c.email AS Email, c.limite_credito AS LimiteCredito, c.ativo AS Ativo, c.criado_em AS CriadoEm,
                    c.observacao AS Observacao,
@@ -38,7 +54,7 @@ public class ClientesRepository : IClientesRepository
             LEFT JOIN cidades ci ON ci.id = b.cidade_id
             LEFT JOIN estados e ON e.id = ci.estado_id
             LEFT JOIN paises pe ON pe.id = e.pais_id
-            ORDER BY unaccent(lower(c.nome_razaosocial)), c.id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
@@ -204,7 +220,7 @@ public class ClientesRepository : IClientesRepository
             WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(cpf_cnpj::text) ILIKE unaccent(@Termo::text)
                OR unaccent(apelido_nomefantasia::text) ILIKE unaccent(@Termo::text) OR unaccent(email::text) ILIKE unaccent(@Termo::text);";
 
-        const string sqlData = @"
+        var sqlData = $@"
             SELECT c.id AS Id, c.tipo_pessoa AS TipoPessoa, c.nome_razaosocial AS NomeRazaoSocial, c.cpf_cnpj AS CpfCnpj, c.rg_ie AS RgIe, c.apelido_nomefantasia AS ApelidoNomeFantasia,
                    c.logradouro AS Logradouro, c.numero AS Numero, c.sexo AS Sexo, c.data_nascimento AS DataNascimento, c.telefone AS Telefone, c.email AS Email, c.limite_credito AS LimiteCredito, c.ativo AS Ativo, c.criado_em AS CriadoEm,
                    c.observacao AS Observacao,
@@ -221,7 +237,7 @@ public class ClientesRepository : IClientesRepository
             LEFT JOIN paises pe ON pe.id = e.pais_id
             WHERE unaccent(c.id::text) ILIKE unaccent(@Termo::text) OR unaccent(c.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(c.cpf_cnpj::text) ILIKE unaccent(@Termo::text)
                OR unaccent(c.apelido_nomefantasia::text) ILIKE unaccent(@Termo::text) OR unaccent(c.email::text) ILIKE unaccent(@Termo::text)
-            ORDER BY unaccent(lower(c.nome_razaosocial)), c.id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);

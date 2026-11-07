@@ -10,21 +10,36 @@ namespace Backend.Infrastructure.PostgreSQL.Features.Localizacao;
 public class BairrosRepository : IBairrosRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public BairrosRepository(DbSession session) => _session = session;
+    public BairrosRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
+    {
+        _session = session;
+        _ordenacao = ordenacao;
+    }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> expressão SQL).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["id"] = "b.id",
+        ["bairro"] = "lower(unaccent(b.bairro))",
+        ["cidade"] = "lower(unaccent(ci.cidade))",
+    };
+
+    private string Ordem => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "b.id", "lower(unaccent(b.bairro)), b.id");
 
     public async Task<ResultadoPaginado<Bairros>> ObterBairros(int pagina = 1, int tamanhoDaPagina = 20, int? cidadeId = null)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
         const string sqlCount = "SELECT COUNT(*) FROM bairros WHERE (@CidadeId::int IS NULL OR cidade_id = @CidadeId);";
-        const string sqlData = @"
+        var sqlData = $@"
             SELECT b.id, b.bairro, ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM bairros b
             INNER JOIN cidades ci ON ci.id = b.cidade_id
             INNER JOIN estados st ON st.id = ci.estado_id
             INNER JOIN paises p ON p.id = st.pais_id
             WHERE (@CidadeId::int IS NULL OR b.cidade_id = @CidadeId)
-            ORDER BY lower(unaccent(b.bairro)), b.id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { CidadeId = cidadeId }, transaction: _session.Transaction);
@@ -82,14 +97,14 @@ public class BairrosRepository : IBairrosRepository
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
         const string sqlCount = "SELECT COUNT(*) FROM bairros WHERE (unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(bairro::text) ILIKE unaccent(@Termo::text)) AND (@CidadeId::int IS NULL OR cidade_id = @CidadeId);";
-        const string sqlData = @"
+        var sqlData = $@"
             SELECT b.id, b.bairro, ci.id AS CidadeId, ci.id AS Id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM bairros b
             INNER JOIN cidades ci ON ci.id = b.cidade_id
             INNER JOIN estados st ON st.id = ci.estado_id
             INNER JOIN paises p ON p.id = st.pais_id
             WHERE (unaccent(b.id::text) ILIKE unaccent(@Termo::text) OR unaccent(b.bairro::text) ILIKE unaccent(@Termo::text)) AND (@CidadeId::int IS NULL OR b.cidade_id = @CidadeId)
-            ORDER BY lower(unaccent(b.bairro)), b.id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%", CidadeId = cidadeId }, transaction: _session.Transaction);

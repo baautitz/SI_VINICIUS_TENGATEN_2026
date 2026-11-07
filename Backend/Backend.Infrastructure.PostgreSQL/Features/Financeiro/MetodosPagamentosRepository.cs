@@ -14,21 +14,33 @@ namespace Backend.Infrastructure.PostgreSQL.Features.Financeiro;
 public class MetodosPagamentosRepository : IMetodosPagamentosRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public MetodosPagamentosRepository(DbSession session)
+    public MetodosPagamentosRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
     {
         _session = session;
+        _ordenacao = ordenacao;
     }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> expressão SQL).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["codigo"] = "codigo",
+        ["descricao"] = "lower(unaccent(descricao))",
+        ["ativo"] = "ativo",
+    };
+
+    private string Ordem => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "codigo", "codigo DESC");
 
     public async Task<ResultadoPaginado<MetodosPagamentos>> ObterMetodosPagamentos(int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
         const string sqlCount = "SELECT COUNT(*) FROM metodos_pagamento;";
-        const string sqlData = @"
+        var sqlData = $@"
             SELECT codigo, descricao, ativo, permite_troco AS PermiteTroco
             FROM metodos_pagamento
-            ORDER BY codigo DESC
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
@@ -111,11 +123,11 @@ public class MetodosPagamentosRepository : IMetodosPagamentosRepository
         var queryTermo = $"%{termo}%";
 
         const string sqlCount = "SELECT COUNT(*) FROM metodos_pagamento WHERE unaccent(codigo::text) ILIKE unaccent(@Termo::text) OR unaccent(descricao::text) ILIKE unaccent(@Termo::text);";
-        const string sqlData = @"
+        var sqlData = $@"
             SELECT codigo, descricao, ativo, permite_troco AS PermiteTroco
             FROM metodos_pagamento
             WHERE unaccent(codigo::text) ILIKE unaccent(@Termo::text) OR unaccent(descricao::text) ILIKE unaccent(@Termo::text)
-            ORDER BY codigo DESC
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = queryTermo }, transaction: _session.Transaction);

@@ -14,21 +14,32 @@ namespace Backend.Infrastructure.PostgreSQL.Features.Catalogo;
 public class SkuAtributosChavesRepository : ISkuAtributosChavesRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public SkuAtributosChavesRepository(DbSession session)
+    public SkuAtributosChavesRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
     {
         _session = session;
+        _ordenacao = ordenacao;
     }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> expressão SQL).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["id"] = "id",
+        ["chave"] = "unaccent(lower(chave))",
+    };
+
+    private string Ordem => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "id", "unaccent(lower(chave)), id");
 
     public async Task<ResultadoPaginado<SkuAtributosChaves>> ObterAtributos(int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
-        const string sql = @"
+        var sql = $@"
             SELECT COUNT(*) FROM sku_atributos_chaves;
 
             SELECT id, chave FROM sku_atributos_chaves
-            ORDER BY unaccent(lower(chave)), id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(
@@ -217,14 +228,14 @@ public class SkuAtributosChavesRepository : ISkuAtributosChavesRepository
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
-        const string sql = @"
+        var sql = $@"
             SELECT COUNT(*)
             FROM sku_atributos_chaves
             WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(chave::text) ILIKE unaccent(@Termo::text);
 
             SELECT id, chave FROM sku_atributos_chaves
             WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(chave::text) ILIKE unaccent(@Termo::text)
-            ORDER BY unaccent(lower(chave)), id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(

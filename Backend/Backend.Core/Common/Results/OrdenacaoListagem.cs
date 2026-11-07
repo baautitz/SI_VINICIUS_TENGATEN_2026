@@ -26,4 +26,11 @@ public static class OrdenacaoListagem
 
         return $"{coluna} {sentido}, {desempate} {sentido}";
     }
+
+    /// <summary>
+    /// ORDER BY da listagem: a escolha do usuário na requisição (se houver) ou a ordenação padrão.
+    /// </summary>
+    public static string Resolver(
+        IOrdenacaoSolicitada? solicitada, IReadOnlyDictionary<string, string> listaBranca, string desempate, string padrao)
+        => MontarOrderBy(solicitada?.OrdenarPor, solicitada?.Direcao, listaBranca, desempate) ?? padrao;
 }

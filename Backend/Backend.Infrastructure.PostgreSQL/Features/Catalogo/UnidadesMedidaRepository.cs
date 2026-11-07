@@ -11,21 +11,36 @@ namespace Backend.Infrastructure.PostgreSQL.Features.Catalogo;
 public class UnidadesMedidaRepository : IUnidadesMedidaRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public UnidadesMedidaRepository(DbSession session)
+    public UnidadesMedidaRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
     {
         _session = session;
+        _ordenacao = ordenacao;
     }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> expressão SQL).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["id"] = "id",
+        ["sigla"] = "unaccent(lower(sigla))",
+        ["descricao"] = "unaccent(lower(descricao))",
+        ["categoria"] = "categoria::text",
+        ["permiteDecimais"] = "permite_decimais",
+        ["ativo"] = "ativo",
+    };
+
+    private string Ordem => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "id", "unaccent(lower(descricao)), id");
 
     public async Task<ResultadoPaginado<UnidadesMedida>> ObterUnidadesMedida(int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
-        const string sql = @"
+        var sql = $@"
             SELECT COUNT(*) FROM unidades_medida;
             SELECT id, sigla, descricao, categoria, permite_decimais AS PermiteDecimais, ativo
             FROM unidades_medida
-            ORDER BY unaccent(lower(descricao)), id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(sql, new { TamanhoDaPagina = tamanhoDaPagina, Offset = offset }, transaction: _session.Transaction);
@@ -119,7 +134,7 @@ public class UnidadesMedidaRepository : IUnidadesMedidaRepository
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
-        const string sql = @"
+        var sql = $@"
             SELECT COUNT(*) FROM unidades_medida
             WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(sigla::text) ILIKE unaccent(@Termo::text)
                OR unaccent(descricao::text) ILIKE unaccent(@Termo::text)
@@ -130,7 +145,7 @@ public class UnidadesMedidaRepository : IUnidadesMedidaRepository
             WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(sigla::text) ILIKE unaccent(@Termo::text)
                OR unaccent(descricao::text) ILIKE unaccent(@Termo::text)
                OR unaccent(categoria::text) ILIKE unaccent(@Termo::text)
-            ORDER BY unaccent(lower(descricao)), id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(

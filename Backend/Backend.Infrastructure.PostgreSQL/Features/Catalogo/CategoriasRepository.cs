@@ -11,22 +11,35 @@ namespace Backend.Infrastructure.PostgreSQL.Features.Catalogo;
 public class CategoriasRepository : ICategoriasRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public CategoriasRepository(DbSession session)
+    public CategoriasRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
     {
         _session = session;
+        _ordenacao = ordenacao;
     }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> expressão SQL).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["id"] = "id",
+        ["categoria"] = "unaccent(lower(categoria))",
+        ["descricao"] = "unaccent(lower(descricao))",
+        ["ativo"] = "ativo",
+    };
+
+    private string Ordem => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "id", "unaccent(lower(categoria)), id");
 
     public async Task<ResultadoPaginado<Categorias>> ObterCategorias(int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
-        const string sql = @"
+        var sql = $@"
             SELECT COUNT(*) FROM categorias;
 
             SELECT id, categoria, descricao, ativo
             FROM categorias
-            ORDER BY unaccent(lower(categoria)), id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(
@@ -124,7 +137,7 @@ public class CategoriasRepository : ICategoriasRepository
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
-        const string sql = @"
+        var sql = $@"
             SELECT COUNT(*)
             FROM categorias
             WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(categoria::text) ILIKE unaccent(@Termo::text) 
@@ -134,7 +147,7 @@ public class CategoriasRepository : ICategoriasRepository
             FROM categorias
             WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(categoria::text) ILIKE unaccent(@Termo::text) 
                OR unaccent(descricao::text) ILIKE unaccent(@Termo::text)
-            ORDER BY unaccent(lower(categoria)), id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(

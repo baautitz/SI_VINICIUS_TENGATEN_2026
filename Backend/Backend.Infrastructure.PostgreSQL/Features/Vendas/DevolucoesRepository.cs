@@ -11,11 +11,27 @@ namespace Backend.Infrastructure.PostgreSQL.Features.Vendas;
 public class DevolucoesRepository : IDevolucoesRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public DevolucoesRepository(DbSession session)
+    public DevolucoesRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
     {
         _session = session;
+        _ordenacao = ordenacao;
     }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> expressão SQL).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["id"] = "d.id",
+        ["status"] = "d.status::text",
+        ["dataDevolucao"] = "d.data_devolucao",
+        ["vendaId"] = "d.venda_id",
+        ["clienteNome"] = "unaccent(lower(c.nome_razaosocial))",
+        ["valorTotal"] = "d.valor_total",
+        ["motivo"] = "unaccent(lower(d.motivo))",
+    };
+
+    private string Ordem => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "d.id", "d.data_devolucao DESC, d.id DESC");
 
     private const string SelecaoDevolucao = "SELECT id, venda_id AS VendaId, data_devolucao AS DataDevolucao, motivo AS Motivo, valor_total AS ValorTotal, status AS Status, estornado_em AS EstornadoEm, motivo_estorno AS MotivoEstorno FROM devolucoes";
 
@@ -43,7 +59,7 @@ public class DevolucoesRepository : IDevolucoesRepository
             $@"SELECT d.id AS Id, d.venda_id AS VendaId, c.nome_razaosocial AS ClienteNome, d.data_devolucao AS DataDevolucao,
                       d.valor_total AS ValorTotal, d.motivo AS Motivo, d.status AS Status
                {from}
-               ORDER BY d.data_devolucao DESC, d.id DESC
+               ORDER BY {Ordem}
                LIMIT @TamanhoDaPagina OFFSET @Offset;",
             param, transaction: _session.Transaction)).ToList();
 

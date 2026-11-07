@@ -11,18 +11,34 @@ namespace Backend.Infrastructure.PostgreSQL.Features.Parceiros;
 public class EmitentesRepository : IEmitentesRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public EmitentesRepository(DbSession session)
+    public EmitentesRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
     {
         _session = session;
+        _ordenacao = ordenacao;
     }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> expressão SQL).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["id"] = "e.id",
+        ["tipoPessoa"] = "e.tipo_pessoa::text",
+        ["nomeRazaoSocial"] = "unaccent(lower(e.nome_razaosocial))",
+        ["cpfCnpj"] = "e.cpf_cnpj",
+        ["email"] = "lower(e.email)",
+        ["telefone"] = "e.telefone",
+        ["ativo"] = "e.ativo",
+    };
+
+    private string Ordem => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "e.id", "unaccent(lower(e.nome_razaosocial)), e.id");
 
     public async Task<ResultadoPaginado<Emitentes>> ObterEmitentes(int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
         const string sqlCount = "SELECT COUNT(*) FROM emitentes;";
-        const string sqlData = @"
+        var sqlData = $@"
             SELECT e.id AS Id, e.tipo_pessoa AS TipoPessoa, e.nome_razaosocial AS NomeRazaoSocial, e.cpf_cnpj AS CpfCnpj, e.apelido_nomefantasia AS ApelidoNomeFantasia, e.logradouro AS Logradouro, e.numero AS Numero, e.sexo AS Sexo, e.data_nascimento AS DataNascimento,
                    e.telefone AS Telefone, e.email AS Email, e.rg_ie AS RgIe, e.inscricao_municipal AS InscricaoMunicipal, e.regime_tributario AS RegimeTributario,
                    e.ativo AS Ativo, e.padrao AS Padrao, e.criado_em AS CriadoEm, e.observacao AS Observacao,
@@ -37,7 +53,7 @@ public class EmitentesRepository : IEmitentesRepository
             LEFT JOIN cidades c ON c.id = b.cidade_id
             LEFT JOIN estados st ON st.id = c.estado_id
             LEFT JOIN paises pe ON pe.id = st.pais_id
-            ORDER BY unaccent(lower(e.nome_razaosocial)), e.id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
@@ -226,7 +242,7 @@ public class EmitentesRepository : IEmitentesRepository
             WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(cpf_cnpj::text) ILIKE unaccent(@Termo::text)
                OR unaccent(apelido_nomefantasia::text) ILIKE unaccent(@Termo::text) OR unaccent(email::text) ILIKE unaccent(@Termo::text);";
 
-        const string sqlData = @"
+        var sqlData = $@"
             SELECT e.id AS Id, e.tipo_pessoa AS TipoPessoa, e.nome_razaosocial AS NomeRazaoSocial, e.cpf_cnpj AS CpfCnpj, e.apelido_nomefantasia AS ApelidoNomeFantasia, e.logradouro AS Logradouro, e.numero AS Numero, e.sexo AS Sexo, e.data_nascimento AS DataNascimento,
                    e.telefone AS Telefone, e.email AS Email, e.rg_ie AS RgIe, e.inscricao_municipal AS InscricaoMunicipal, e.regime_tributario AS RegimeTributario,
                    e.ativo AS Ativo, e.padrao AS Padrao, e.criado_em AS CriadoEm, e.observacao AS Observacao,
@@ -243,7 +259,7 @@ public class EmitentesRepository : IEmitentesRepository
             LEFT JOIN paises pe ON pe.id = st.pais_id
             WHERE unaccent(e.id::text) ILIKE unaccent(@Termo::text) OR unaccent(e.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(e.cpf_cnpj::text) ILIKE unaccent(@Termo::text)
                OR unaccent(e.apelido_nomefantasia::text) ILIKE unaccent(@Termo::text) OR unaccent(e.email::text) ILIKE unaccent(@Termo::text)
-            ORDER BY unaccent(lower(e.nome_razaosocial)), e.id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);

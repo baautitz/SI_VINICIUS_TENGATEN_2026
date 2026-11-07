@@ -11,11 +11,26 @@ namespace Backend.Infrastructure.PostgreSQL.Features.Vendas;
 public class VendasRepository : IVendasRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public VendasRepository(DbSession session)
+    public VendasRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
     {
         _session = session;
+        _ordenacao = ordenacao;
     }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> expressão SQL).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["id"] = "v.id",
+        ["dataVenda"] = "v.data_venda",
+        ["cliente"] = "unaccent(lower(c.nome_razaosocial))",
+        ["emitente"] = "unaccent(lower(e.nome_razaosocial))",
+        ["quantidadeItens"] = "(SELECT COUNT(*) FROM vendas_itens WHERE venda_id = v.id)",
+        ["valorTotal"] = "v.valor_total",
+    };
+
+    private string Ordem => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "v.id", "v.data_venda DESC, v.id DESC");
 
     public async Task<ResultadoPaginado<Venda>> ObterVendas(int pagina = 1, int tamanhoDaPagina = 20, int? clienteId = null)
     {
@@ -23,7 +38,7 @@ public class VendasRepository : IVendasRepository
 
         const string countSql = "SELECT COUNT(*) FROM vendas v WHERE (@ClienteId::int IS NULL OR v.cliente_id = @ClienteId::int);";
 
-        const string querySql = @"
+        var querySql = $@"
             SELECT v.id AS Id, v.data_venda, v.valor_total, v.observacao,
                    e.id AS Id, e.nome_razaosocial, e.cpf_cnpj, e.ativo,
                    c.id AS Id, c.nome_razaosocial, c.cpf_cnpj, c.ativo
@@ -31,7 +46,7 @@ public class VendasRepository : IVendasRepository
             JOIN emitentes e ON e.id = v.emitente_id
             JOIN clientes c ON c.id = v.cliente_id
             WHERE (@ClienteId::int IS NULL OR v.cliente_id = @ClienteId::int)
-            ORDER BY v.data_venda DESC, v.id DESC
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(
@@ -223,7 +238,7 @@ public class VendasRepository : IVendasRepository
             WHERE (unaccent(v.id::text) ILIKE unaccent(@Termo::text) OR unaccent(c.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(v.observacao::text) ILIKE unaccent(@Termo::text) OR unaccent(e.nome_razaosocial::text) ILIKE unaccent(@Termo::text))
               AND (@ClienteId::int IS NULL OR v.cliente_id = @ClienteId::int);";
 
-        const string querySql = @"
+        var querySql = $@"
             SELECT v.id AS Id, v.data_venda, v.valor_total, v.observacao,
                    e.id AS Id, e.nome_razaosocial, e.cpf_cnpj, e.ativo,
                    c.id AS Id, c.nome_razaosocial, c.cpf_cnpj, c.ativo
@@ -232,7 +247,7 @@ public class VendasRepository : IVendasRepository
             JOIN clientes c ON c.id = v.cliente_id
             WHERE (unaccent(v.id::text) ILIKE unaccent(@Termo::text) OR unaccent(c.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(v.observacao::text) ILIKE unaccent(@Termo::text) OR unaccent(e.nome_razaosocial::text) ILIKE unaccent(@Termo::text))
               AND (@ClienteId::int IS NULL OR v.cliente_id = @ClienteId::int)
-            ORDER BY v.data_venda DESC, v.id DESC
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(

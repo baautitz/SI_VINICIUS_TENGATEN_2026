@@ -16,11 +16,27 @@ namespace Backend.Infrastructure.PostgreSQL.Features.Financeiro;
 public class ContasPagarRepository : IContasPagarRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public ContasPagarRepository(DbSession session)
+    public ContasPagarRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
     {
         _session = session;
+        _ordenacao = ordenacao;
     }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> expressão SQL).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["documento"] = "cp.numero_documento",
+        ["parcela"] = "cp.numero_parcela",
+        ["descricao"] = "unaccent(lower(cp.descricao))",
+        ["fornecedor"] = "unaccent(lower(COALESCE(f.nome_razaosocial, cli.nome_razaosocial, tr.nome_razaosocial)))",
+        ["vencimento"] = "cp.data_vencimento",
+        ["valor"] = "cp.valor",
+        ["valorPago"] = "cp.valor_pago",
+        ["valorSaldo"] = "(cp.valor - cp.valor_pago)",
+        ["status"] = "cp.status",
+    };
 
     private const string SelectSql = @"
         SELECT cp.id AS Id, cp.descricao AS Descricao, cp.data_emissao AS DataEmissao, cp.data_vencimento AS DataVencimento,
@@ -72,6 +88,13 @@ public class ContasPagarRepository : IContasPagarRepository
     public async Task<ContasPagar?> ObterContaPagarPorIdParaAtualizar(int id)
         => (await Consultar(" WHERE cp.id = @Id FOR UPDATE OF cp;", new { Id = id })).SingleOrDefault();
 
+    public async Task<IReadOnlyList<ContasPagar>> ObterParcelasManuaisDoDocumentoParaAtualizar(int id)
+        => (await Consultar(@"
+            WHERE cp.origem_tipo::text = 'MANUAL'
+              AND cp.numero_documento = (SELECT numero_documento FROM contas_pagar WHERE id = @Id)
+              AND cp.fornecedor_id IS NOT DISTINCT FROM (SELECT fornecedor_id FROM contas_pagar WHERE id = @Id)
+            ORDER BY cp.numero_parcela FOR UPDATE OF cp;", new { Id = id })).ToList();
+
     public async Task<ContasPagar> CriarContaPagar(ContasPagar conta)
     {
         const string sql = @"
@@ -88,13 +111,6 @@ public class ContasPagarRepository : IContasPagarRepository
         return new ContasPagar(id, conta.Descricao, conta.Valor, conta.Fornecedor, conta.DataVencimento, conta.NumeroDocumento,
             conta.NumeroParcela, conta.TotalParcelas, conta.DataEmissao, conta.CondicaoPagamento, conta.OrigemTipo, conta.OrigemId,
             conta.Observacao, conta.CriadoEm, conta.ValorPago, conta.Status, conta.ClienteId, conta.ClienteNome, conta.TransportadoraId, conta.TransportadoraNome);
-    public async Task<IReadOnlyList<ContasPagar>> ObterParcelasManuaisDoDocumentoParaAtualizar(int id)
-        => (await Consultar(@"
-            WHERE cp.origem_tipo::text = 'MANUAL'
-              AND cp.numero_documento = (SELECT numero_documento FROM contas_pagar WHERE id = @Id)
-              AND cp.fornecedor_id IS NOT DISTINCT FROM (SELECT fornecedor_id FROM contas_pagar WHERE id = @Id)
-            ORDER BY cp.numero_parcela FOR UPDATE OF cp;", new { Id = id })).ToList();
-
     }
 
     public async Task<ContasPagar> AtualizarContaPagar(int id, ContasPagar conta)
@@ -140,9 +156,12 @@ public class ContasPagarRepository : IContasPagarRepository
             LEFT JOIN transportadoras tr ON tr.id = cp.transportadora_id" + where + ";",
             param, transaction: _session.Transaction);
 
+        // Escolha do usuário no cabeçalho; sem ela vale a relevância da pesquisa e depois o que exige ação.
+        var escolhida = OrdenacaoListagem.MontarOrderBy(_ordenacao?.OrdenarPor, _ordenacao?.Direcao, CamposOrdenaveis, "cp.id");
         var contas = (await Consultar(where + @"
-            ORDER BY " + PesquisaTitulos.Relevancia("cp.texto_pesquisa", "cp.numero_documento", "cp.descricao") + @",
-                     CASE WHEN cp.status::text IN ('PAGO', 'CANCELADO') THEN 1 ELSE 0 END, cp.data_vencimento, cp.numero_documento, cp.numero_parcela, cp.id
+            ORDER BY " + (escolhida ?? PesquisaTitulos.Relevancia("cp.texto_pesquisa", "cp.numero_documento", "cp.descricao") + @",
+                     CASE WHEN cp.status::text IN ('PAGO', 'CANCELADO') THEN 1 ELSE 0 END, cp.data_vencimento, cp.numero_documento, cp.numero_parcela, cp.id")
+            + @"
             LIMIT @TamanhoDaPagina OFFSET @Offset;", param)).ToList();
 
         return new ResultadoPaginado<ContasPagar>(contas, total, pagina, tamanhoDaPagina);

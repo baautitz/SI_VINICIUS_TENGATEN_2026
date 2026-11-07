@@ -13,11 +13,28 @@ namespace Backend.Infrastructure.PostgreSQL.Features.Financeiro;
 public class ContasReceberRepository : IContasReceberRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public ContasReceberRepository(DbSession session)
+    public ContasReceberRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
     {
         _session = session;
+        _ordenacao = ordenacao;
     }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> expressão SQL).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["documento"] = "cr.numero_documento",
+        ["parcela"] = "cr.numero_parcela",
+        ["descricao"] = "unaccent(lower(cr.descricao))",
+        ["cliente"] = "unaccent(lower(c.nome_razaosocial))",
+        ["vencimento"] = "cr.data_vencimento",
+        ["valor"] = "cr.valor",
+        ["valorPago"] = "cr.valor_pago",
+        ["valorAbatido"] = "cr.valor_abatido",
+        ["valorSaldo"] = "(cr.valor - cr.valor_pago - cr.valor_abatido)",
+        ["status"] = "cr.status",
+    };
 
     private const string SelectSql = @"
         SELECT cr.id AS Id, cr.descricao AS Descricao, cr.data_emissao AS DataEmissao, cr.data_vencimento AS DataVencimento,
@@ -68,6 +85,13 @@ public class ContasReceberRepository : IContasReceberRepository
     public async Task<ContasReceber?> ObterContaReceberPorIdParaAtualizar(int id)
         => (await Consultar(" WHERE cr.id = @Id FOR UPDATE OF cr;", new { Id = id })).SingleOrDefault();
 
+    public async Task<IReadOnlyList<ContasReceber>> ObterParcelasManuaisDoDocumentoParaAtualizar(int id)
+        => (await Consultar(@"
+            WHERE cr.origem_tipo::text = 'MANUAL'
+              AND cr.numero_documento = (SELECT numero_documento FROM contas_receber WHERE id = @Id)
+              AND cr.cliente_id = (SELECT cliente_id FROM contas_receber WHERE id = @Id)
+            ORDER BY cr.numero_parcela FOR UPDATE OF cr;", new { Id = id })).ToList();
+
     public async Task<ContasReceber> CriarContaReceber(ContasReceber conta)
     {
         const string sql = @"
@@ -85,13 +109,6 @@ public class ContasReceberRepository : IContasReceberRepository
             conta.NumeroParcela, conta.TotalParcelas, conta.DataEmissao, conta.CondicaoPagamento, conta.OrigemTipo, conta.OrigemId,
             conta.Observacao, conta.CriadoEm, conta.ValorPago, conta.Status, conta.ValorAbatido);
     }
-    public async Task<IReadOnlyList<ContasReceber>> ObterParcelasManuaisDoDocumentoParaAtualizar(int id)
-        => (await Consultar(@"
-            WHERE cr.origem_tipo::text = 'MANUAL'
-              AND cr.numero_documento = (SELECT numero_documento FROM contas_receber WHERE id = @Id)
-              AND cr.cliente_id = (SELECT cliente_id FROM contas_receber WHERE id = @Id)
-            ORDER BY cr.numero_parcela FOR UPDATE OF cr;", new { Id = id })).ToList();
-
 
     public async Task<ContasReceber> AtualizarContaReceber(int id, ContasReceber conta)
     {
@@ -129,9 +146,12 @@ public class ContasReceberRepository : IContasReceberRepository
             JOIN clientes c ON c.id = cr.cliente_id" + where + ";",
             param, transaction: _session.Transaction);
 
+        // Escolha do usuário no cabeçalho; sem ela vale a relevância da pesquisa e depois o que exige ação.
+        var escolhida = OrdenacaoListagem.MontarOrderBy(_ordenacao?.OrdenarPor, _ordenacao?.Direcao, CamposOrdenaveis, "cr.id");
         var contas = (await Consultar(where + @"
-            ORDER BY " + PesquisaTitulos.Relevancia("cr.texto_pesquisa", "cr.numero_documento", "cr.descricao") + @",
-                     CASE WHEN cr.status::text IN ('PAGO', 'CANCELADO') THEN 1 ELSE 0 END, cr.data_vencimento, cr.numero_documento, cr.numero_parcela, cr.id
+            ORDER BY " + (escolhida ?? PesquisaTitulos.Relevancia("cr.texto_pesquisa", "cr.numero_documento", "cr.descricao") + @",
+                     CASE WHEN cr.status::text IN ('PAGO', 'CANCELADO') THEN 1 ELSE 0 END, cr.data_vencimento, cr.numero_documento, cr.numero_parcela, cr.id")
+            + @"
             LIMIT @TamanhoDaPagina OFFSET @Offset;", param)).ToList();
 
         return new ResultadoPaginado<ContasReceber>(contas, total, pagina, tamanhoDaPagina);

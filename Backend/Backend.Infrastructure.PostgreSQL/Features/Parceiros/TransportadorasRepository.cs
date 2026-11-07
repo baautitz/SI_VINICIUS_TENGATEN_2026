@@ -10,18 +10,34 @@ namespace Backend.Infrastructure.PostgreSQL.Features.Parceiros;
 public class TransportadorasRepository : ITransportadorasRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public TransportadorasRepository(DbSession session)
+    public TransportadorasRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
     {
         _session = session;
+        _ordenacao = ordenacao;
     }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> expressão SQL).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["id"] = "t.id",
+        ["tipoPessoa"] = "t.tipo_pessoa::text",
+        ["nomeRazaosocial"] = "unaccent(lower(t.nome_razaosocial))",
+        ["cpfCnpj"] = "t.cpf_cnpj",
+        ["email"] = "lower(t.email)",
+        ["telefone"] = "t.telefone",
+        ["ativo"] = "t.ativo",
+    };
+
+    private string Ordem => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "t.id", "unaccent(lower(t.nome_razaosocial)), t.id");
 
     public async Task<ResultadoPaginado<Transportadoras>> ObterTransportadoras(int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
         const string sqlCount = "SELECT COUNT(*) FROM transportadoras;";
-        const string sqlData = @"
+        var sqlData = $@"
             SELECT t.id AS Id, t.tipo_pessoa AS TipoPessoa, t.nome_razaosocial AS NomeRazaoSocial, t.cpf_cnpj AS CpfCnpj, t.rg_ie AS RgIe, t.apelido_nomefantasia AS ApelidoNomefantasia,
                    t.logradouro AS Logradouro, t.numero AS Numero, t.sexo AS Sexo, t.data_nascimento AS DataNascimento, t.telefone AS Telefone, t.email AS Email, t.rntrc AS Rntrc, t.ativo AS Ativo, t.criado_em AS CriadoEm,
                    t.observacao AS Observacao,
@@ -36,7 +52,7 @@ public class TransportadorasRepository : ITransportadorasRepository
             LEFT JOIN cidades ci ON ci.id = b.cidade_id
             LEFT JOIN estados e ON e.id = ci.estado_id
             LEFT JOIN paises pe ON pe.id = e.pais_id
-            ORDER BY unaccent(lower(t.nome_razaosocial)), t.id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
@@ -232,7 +248,7 @@ public class TransportadorasRepository : ITransportadorasRepository
             WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(cpf_cnpj::text) ILIKE unaccent(@Termo::text)
                OR unaccent(apelido_nomefantasia::text) ILIKE unaccent(@Termo::text) OR unaccent(email::text) ILIKE unaccent(@Termo::text);";
 
-        const string sqlData = @"
+        var sqlData = $@"
             SELECT t.id AS Id, t.tipo_pessoa AS TipoPessoa, t.nome_razaosocial AS NomeRazaoSocial, t.cpf_cnpj AS CpfCnpj, t.rg_ie AS RgIe, t.apelido_nomefantasia AS ApelidoNomefantasia,
                    t.logradouro AS Logradouro, t.numero AS Numero, t.sexo AS Sexo, t.data_nascimento AS DataNascimento, t.telefone AS Telefone, t.email AS Email, t.rntrc AS Rntrc, t.ativo AS Ativo, t.criado_em AS CriadoEm,
                    t.observacao AS Observacao,
@@ -249,7 +265,7 @@ public class TransportadorasRepository : ITransportadorasRepository
             LEFT JOIN paises pe ON pe.id = e.pais_id
             WHERE unaccent(t.id::text) ILIKE unaccent(@Termo::text) OR unaccent(t.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(t.cpf_cnpj::text) ILIKE unaccent(@Termo::text)
                OR unaccent(t.apelido_nomefantasia::text) ILIKE unaccent(@Termo::text) OR unaccent(t.email::text) ILIKE unaccent(@Termo::text)
-            ORDER BY unaccent(lower(t.nome_razaosocial)), t.id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(

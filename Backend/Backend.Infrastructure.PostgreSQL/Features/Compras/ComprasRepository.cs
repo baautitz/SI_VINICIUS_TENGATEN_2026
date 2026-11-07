@@ -11,11 +11,27 @@ namespace Backend.Infrastructure.PostgreSQL.Features.Compras;
 public class ComprasRepository : IComprasRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public ComprasRepository(DbSession session)
+    public ComprasRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
     {
         _session = session;
+        _ordenacao = ordenacao;
     }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> expressão SQL).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["id"] = "c.id",
+        ["status"] = "(c.estornada_em IS NOT NULL)",
+        ["dataCompra"] = "c.data_compra",
+        ["fornecedor"] = "unaccent(lower(f.nome_razaosocial))",
+        ["emitente"] = "unaccent(lower(e.nome_razaosocial))",
+        ["itens"] = "(SELECT COUNT(*) FROM compras_itens WHERE compra_id = c.id)",
+        ["valorTotal"] = "c.valor_total",
+    };
+
+    private string Ordem => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "c.id", "c.data_compra DESC, c.id DESC");
 
     private const string CompraColunas = @"
         c.id AS Id, c.data_compra, c.valor_nota, c.valor_frete, c.valor_seguro, c.valor_outras_despesas,
@@ -41,7 +57,7 @@ public class ComprasRepository : IComprasRepository
             "SELECT COUNT(*) " + CompraFrom + where, p, transaction: _session.Transaction);
 
         var compras = (await _session.Connection.QueryAsync<Compra, Emitentes, Fornecedores, Compra>(
-            "SELECT " + CompraColunas + CompraFrom + where + " ORDER BY c.data_compra DESC, c.id DESC LIMIT @TamanhoDaPagina OFFSET @Offset;",
+            "SELECT " + CompraColunas + CompraFrom + where + $" ORDER BY {Ordem} LIMIT @TamanhoDaPagina OFFSET @Offset;",
             Mapear, p, transaction: _session.Transaction, splitOn: "Id,Id")).ToList();
 
         if (compras.Count > 0)

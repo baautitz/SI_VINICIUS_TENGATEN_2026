@@ -12,18 +12,34 @@ namespace Backend.Infrastructure.PostgreSQL.Features.Parceiros;
 public class FornecedoresRepository : IFornecedoresRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public FornecedoresRepository(DbSession session)
+    public FornecedoresRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
     {
         _session = session;
+        _ordenacao = ordenacao;
     }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> expressão SQL).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["id"] = "f.id",
+        ["tipoPessoa"] = "f.tipo_pessoa::text",
+        ["nomeRazaosocial"] = "unaccent(lower(f.nome_razaosocial))",
+        ["cpfCnpj"] = "f.cpf_cnpj",
+        ["email"] = "lower(f.email)",
+        ["telefone"] = "f.telefone",
+        ["ativo"] = "f.ativo",
+    };
+
+    private string Ordem => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "f.id", "unaccent(lower(f.nome_razaosocial)), f.id");
 
     public async Task<ResultadoPaginado<Fornecedores>> ObterFornecedores(int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
         const string sqlCount = "SELECT COUNT(*) FROM fornecedores;";
-        const string sqlData = @"
+        var sqlData = $@"
             SELECT f.id AS Id, f.tipo_pessoa AS TipoPessoa, f.nome_razaosocial AS NomeRazaosocial, f.cpf_cnpj AS CpfCnpj, f.rg_ie AS RgIe, f.apelido_nomefantasia AS ApelidoNomefantasia,
                    f.logradouro AS Logradouro, f.numero AS Numero, f.sexo AS Sexo, f.data_nascimento AS DataNascimento, f.telefone AS Telefone, f.email AS Email, f.ativo AS Ativo, f.criado_em AS CriadoEm,
                    f.observacao AS Observacao,
@@ -40,7 +56,7 @@ public class FornecedoresRepository : IFornecedoresRepository
             LEFT JOIN estados e ON e.id = ci.estado_id
             LEFT JOIN paises pe ON pe.id = e.pais_id
             LEFT JOIN condicoes_pagamentos cp ON cp.id = f.condicao_pagamento_id
-            ORDER BY unaccent(lower(f.nome_razaosocial)), f.id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
@@ -210,7 +226,7 @@ public class FornecedoresRepository : IFornecedoresRepository
             WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(cpf_cnpj::text) ILIKE unaccent(@Termo::text)
                OR unaccent(apelido_nomefantasia::text) ILIKE unaccent(@Termo::text) OR unaccent(email::text) ILIKE unaccent(@Termo::text);";
 
-        const string sqlData = @"
+        var sqlData = $@"
             SELECT f.id AS Id, f.tipo_pessoa AS TipoPessoa, f.nome_razaosocial AS NomeRazaosocial, f.cpf_cnpj AS CpfCnpj, f.rg_ie AS RgIe, f.apelido_nomefantasia AS ApelidoNomefantasia,
                    f.logradouro AS Logradouro, f.numero AS Numero, f.sexo AS Sexo, f.data_nascimento AS DataNascimento, f.telefone AS Telefone, f.email AS Email, f.ativo AS Ativo, f.criado_em AS CriadoEm,
                    f.observacao AS Observacao,
@@ -229,7 +245,7 @@ public class FornecedoresRepository : IFornecedoresRepository
             LEFT JOIN condicoes_pagamentos cp ON cp.id = f.condicao_pagamento_id
             WHERE unaccent(f.id::text) ILIKE unaccent(@Termo::text) OR unaccent(f.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(f.cpf_cnpj::text) ILIKE unaccent(@Termo::text)
                OR unaccent(f.apelido_nomefantasia::text) ILIKE unaccent(@Termo::text) OR unaccent(f.email::text) ILIKE unaccent(@Termo::text)
-            ORDER BY unaccent(lower(f.nome_razaosocial)), f.id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);

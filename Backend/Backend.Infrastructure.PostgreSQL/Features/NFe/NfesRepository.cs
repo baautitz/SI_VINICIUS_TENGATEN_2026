@@ -14,11 +14,26 @@ namespace Backend.Infrastructure.PostgreSQL.Features.NFe;
 public class NfesRepository : INfesRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public NfesRepository(DbSession session)
+    public NfesRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
     {
         _session = session;
+        _ordenacao = ordenacao;
     }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> coluna).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["numero"] = "numero",
+        ["tipo"] = "tipo_operacao::text",
+        ["emissao"] = "data_emissao",
+        ["chave"] = "chave_acesso",
+        ["total"] = "valor_total",
+        ["status"] = "status_nfe::text",
+    };
+
+    private string Ordem => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "id", "data_emissao DESC, id DESC");
 
     public async Task<ResultadoPaginado<Nfes>> ObterNfes(int pagina = 1, int tamanhoDaPagina = 20)
     {
@@ -407,7 +422,7 @@ public class NfesRepository : INfesRepository
 
             SELECT id, chave_acesso, tipo_operacao, numero, serie, data_emissao, valor_total, status_nfe
             FROM nfes {where}
-            ORDER BY data_emissao DESC, id DESC
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         using var multi = await _session.Connection.QueryMultipleAsync(

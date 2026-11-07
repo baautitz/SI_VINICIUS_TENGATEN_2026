@@ -14,17 +14,34 @@ namespace Backend.Infrastructure.PostgreSQL.Features.Catalogo;
 public class SkusRepository : ISkusRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public SkusRepository(DbSession session)
+    public SkusRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
     {
         _session = session;
+        _ordenacao = ordenacao;
     }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> expressão SQL).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["sku"] = "s.sku",
+        ["produto"] = "unaccent(lower(p.produto))",
+        ["preco"] = "s.preco",
+        ["estoque"] = "s.estoque",
+        ["ativo"] = "s.ativo",
+    };
+
+    // Com pesquisa, a escolha do usuário vale; sem ela, o código ou GTIN exato vem primeiro.
+    private string OrdemPesquisa => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "s.sku", "COALESCE(s.sku = @Raw OR s.gtin_ean = @Raw, FALSE) DESC, s.sku");
+
+    private string Ordem => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "s.sku", "s.sku");
 
     public async Task<ResultadoPaginado<Skus>> ObterSkus(int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
         const string sqlCount = "SELECT COUNT(*) FROM skus;";
-        const string sqlData = @"
+        var sqlData = $@"
             SELECT 
                 s.sku, s.gtin_ean AS GtinEan, s.preco AS Preco, s.estoque AS Estoque, s.ativo AS Ativo, s.custo_medio AS CustoMedio, s.custo_ultima_compra AS CustoUltimaCompra,
                 p.id AS ProdutoId, p.produto AS ProdutoNome, p.descricao AS ProdutoDescricao, p.ativo AS ProdutoAtivo,
@@ -36,7 +53,7 @@ public class SkusRepository : ISkusRepository
             JOIN categorias c ON c.id = p.categoria_id
             JOIN marcas m ON m.id = p.marca_id
             JOIN unidades_medida u ON u.id = p.unidade_medida_id
-            ORDER BY s.sku
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
@@ -317,15 +334,15 @@ public class SkusRepository : ISkusRepository
 
         const string sqlCount = "SELECT COUNT(*) " + PesquisaSkuJoins + ";";
 
-        const string sqlData = @"
+        var sqlData = @"
             SELECT 
                 s.sku, s.gtin_ean AS GtinEan, s.preco AS Preco, s.estoque AS Estoque, s.ativo AS Ativo, s.custo_medio AS CustoMedio, s.custo_ultima_compra AS CustoUltimaCompra,
                 p.id AS ProdutoId, p.produto AS ProdutoNome, p.descricao AS ProdutoDescricao, p.ativo AS ProdutoAtivo,
                 c.id AS CategoriaId, c.categoria AS CategoriaNome, c.descricao AS CategoriaDescricao, c.ativo AS CategoriaAtivo,
                 m.id AS MarcaId, m.marca AS MarcaNome, m.descricao AS MarcaDescricao, m.ativo AS MarcaAtivo,
                 u.id AS UnidadeMedidaId, u.sigla AS UnidadeMedidaSigla, u.descricao AS UnidadeMedidaDescricao, u.categoria AS UnidadeMedidaCategoria, u.permite_decimais AS PermiteDecimais, u.ativo AS UnidadeMedidaAtivo
-            " + PesquisaSkuJoins + @"
-            ORDER BY COALESCE(s.sku = @Raw OR s.gtin_ean = @Raw, FALSE) DESC, s.sku
+            " + PesquisaSkuJoins + $@"
+            ORDER BY {OrdemPesquisa}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Tokens = tokens }, transaction: _session.Transaction);

@@ -10,20 +10,35 @@ namespace Backend.Infrastructure.PostgreSQL.Features.Localizacao;
 public class PaisesRepository : IPaisesRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public PaisesRepository(DbSession session)
+    public PaisesRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
     {
         _session = session;
+        _ordenacao = ordenacao;
     }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> expressão SQL).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["id"] = "id",
+        ["pais"] = "lower(unaccent(pais))",
+        ["codigoIsoPais"] = "codigo_iso_pais",
+        ["ddi"] = "ddi",
+        ["codigoIsoMoeda"] = "codigo_iso_moeda",
+        ["simboloMoeda"] = "simbolo_moeda",
+    };
+
+    private string Ordem => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "id", "lower(unaccent(pais)), id");
 
     public async Task<ResultadoPaginado<Paises>> ObterPaises(int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
         const string sqlCount = "SELECT COUNT(*) FROM paises;";
-        const string sqlData = @"
+        var sqlData = $@"
             SELECT id, pais, codigo_iso_pais AS CodigoIsoPais, ddi, codigo_iso_moeda AS CodigoIsoMoeda, simbolo_moeda AS SimboloMoeda
             FROM paises
-            ORDER BY lower(unaccent(pais)), id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
@@ -65,11 +80,11 @@ public class PaisesRepository : IPaisesRepository
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
         const string sqlCount = "SELECT COUNT(*) FROM paises WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(pais::text) ILIKE unaccent(@Termo::text) OR unaccent(codigo_iso_pais::text) ILIKE unaccent(@Termo::text);";
-        const string sqlData = @"
+        var sqlData = $@"
             SELECT id, pais, codigo_iso_pais AS CodigoIsoPais, ddi, codigo_iso_moeda AS CodigoIsoMoeda, simbolo_moeda AS SimboloMoeda
             FROM paises
             WHERE unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(pais::text) ILIKE unaccent(@Termo::text) OR unaccent(codigo_iso_pais::text) ILIKE unaccent(@Termo::text)
-            ORDER BY lower(unaccent(pais)), id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%" }, transaction: _session.Transaction);

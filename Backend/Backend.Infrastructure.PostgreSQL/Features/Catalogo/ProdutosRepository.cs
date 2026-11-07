@@ -11,11 +11,26 @@ namespace Backend.Infrastructure.PostgreSQL.Features.Catalogo;
 public class ProdutosRepository : IProdutosRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public ProdutosRepository(DbSession session)
+    public ProdutosRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
     {
         _session = session;
+        _ordenacao = ordenacao;
     }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> expressão SQL).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["id"] = "p.id",
+        ["produto"] = "unaccent(lower(p.produto))",
+        ["categoria"] = "unaccent(lower(c.categoria))",
+        ["marca"] = "unaccent(lower(m.marca))",
+        ["estoqueTotal"] = "(SELECT COALESCE(SUM(estoque), 0) FROM skus WHERE produto_id = p.id)",
+        ["ativo"] = "p.ativo",
+    };
+
+    private string Ordem => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "p.id", "unaccent(lower(p.produto)), p.id");
 
     public async Task<ResultadoPaginado<Produtos>> ObterProdutos(int pagina = 1, int tamanhoDaPagina = 20, int? categoriaId = null, int? marcaId = null, int? unidadeMedidaId = null)
     {
@@ -23,7 +38,7 @@ public class ProdutosRepository : IProdutosRepository
 
         const string countSql = "SELECT COUNT(*) FROM produtos WHERE TRUE AND (@CategoriaId::int IS NULL OR categoria_id = @CategoriaId) AND (@MarcaId::int IS NULL OR marca_id = @MarcaId) AND (@UnidadeMedidaId::int IS NULL OR unidade_medida_id = @UnidadeMedidaId);";
 
-        const string querySql = @"
+        var querySql = $@"
             SELECT p.id AS Id, p.produto AS Produto, p.descricao AS Descricao, p.ativo AS Ativo,
                    c.id AS CategoriaId, c.categoria AS CategoriaNome, c.descricao AS CategoriaDescricao, c.ativo AS CategoriaAtivo,
                    m.id AS MarcaId, m.marca AS MarcaNome, m.descricao AS MarcaDescricao, m.ativo AS MarcaAtivo,
@@ -33,7 +48,7 @@ public class ProdutosRepository : IProdutosRepository
             JOIN marcas m ON m.id = p.marca_id
             JOIN unidades_medida u ON u.id = p.unidade_medida_id
             WHERE TRUE AND (@CategoriaId::int IS NULL OR p.categoria_id = @CategoriaId) AND (@MarcaId::int IS NULL OR p.marca_id = @MarcaId) AND (@UnidadeMedidaId::int IS NULL OR p.unidade_medida_id = @UnidadeMedidaId)
-            ORDER BY unaccent(lower(p.produto)), p.id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(
@@ -277,7 +292,7 @@ public class ProdutosRepository : IProdutosRepository
             FROM produtos
             WHERE (unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(produto::text) ILIKE unaccent(@Termo::text) OR unaccent(descricao::text) ILIKE unaccent(@Termo::text)) AND (@CategoriaId::int IS NULL OR categoria_id = @CategoriaId) AND (@MarcaId::int IS NULL OR marca_id = @MarcaId) AND (@UnidadeMedidaId::int IS NULL OR unidade_medida_id = @UnidadeMedidaId);";
 
-        const string querySql = @"
+        var querySql = $@"
             SELECT p.id AS Id, p.produto AS Produto, p.descricao AS Descricao, p.ativo AS Ativo,
                    c.id AS CategoriaId, c.categoria AS CategoriaNome, c.descricao AS CategoriaDescricao, c.ativo AS CategoriaAtivo,
                    m.id AS MarcaId, m.marca AS MarcaNome, m.descricao AS MarcaDescricao, m.ativo AS MarcaAtivo,
@@ -287,7 +302,7 @@ public class ProdutosRepository : IProdutosRepository
             JOIN marcas m ON m.id = p.marca_id
             JOIN unidades_medida u ON u.id = p.unidade_medida_id
             WHERE (unaccent(p.id::text) ILIKE unaccent(@Termo::text) OR unaccent(p.produto::text) ILIKE unaccent(@Termo::text) OR unaccent(p.descricao::text) ILIKE unaccent(@Termo::text)) AND (@CategoriaId::int IS NULL OR p.categoria_id = @CategoriaId) AND (@MarcaId::int IS NULL OR p.marca_id = @MarcaId) AND (@UnidadeMedidaId::int IS NULL OR p.unidade_medida_id = @UnidadeMedidaId)
-            ORDER BY unaccent(lower(p.produto)), p.id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(

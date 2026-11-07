@@ -10,19 +10,35 @@ namespace Backend.Infrastructure.PostgreSQL.Features.Localizacao;
 public class EstadosRepository : IEstadosRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public EstadosRepository(DbSession session) => _session = session;
+    public EstadosRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
+    {
+        _session = session;
+        _ordenacao = ordenacao;
+    }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> expressão SQL).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["id"] = "e.id",
+        ["estado"] = "lower(unaccent(e.estado))",
+        ["uf"] = "e.uf",
+        ["pais"] = "lower(unaccent(p.pais))",
+    };
+
+    private string Ordem => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "e.id", "lower(unaccent(e.estado)), e.id");
 
     public async Task<ResultadoPaginado<Estados>> ObterEstados(int pagina = 1, int tamanhoDaPagina = 20, int? paisId = null)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
         const string sqlCount = "SELECT COUNT(*) FROM estados WHERE (@PaisId::int IS NULL OR pais_id = @PaisId);";
-        const string sqlData = @"
+        var sqlData = $@"
             SELECT e.id, e.estado, e.uf, p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM estados e
             INNER JOIN paises p ON p.id = e.pais_id
             WHERE (@PaisId::int IS NULL OR e.pais_id = @PaisId)
-            ORDER BY lower(unaccent(e.estado)), e.id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { PaisId = paisId }, transaction: _session.Transaction);
@@ -78,12 +94,12 @@ public class EstadosRepository : IEstadosRepository
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
         const string sqlCount = "SELECT COUNT(*) FROM estados WHERE (unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(estado::text) ILIKE unaccent(@Termo::text) OR unaccent(uf::text) ILIKE unaccent(@Termo::text)) AND (@PaisId::int IS NULL OR pais_id = @PaisId);";
-        const string sqlData = @"
+        var sqlData = $@"
             SELECT e.id, e.estado, e.uf, p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM estados e
             INNER JOIN paises p ON p.id = e.pais_id
             WHERE (unaccent(e.id::text) ILIKE unaccent(@Termo::text) OR unaccent(e.estado::text) ILIKE unaccent(@Termo::text) OR unaccent(e.uf::text) ILIKE unaccent(@Termo::text)) AND (@PaisId::int IS NULL OR e.pais_id = @PaisId)
-            ORDER BY lower(unaccent(e.estado)), e.id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%", PaisId = paisId }, transaction: _session.Transaction);

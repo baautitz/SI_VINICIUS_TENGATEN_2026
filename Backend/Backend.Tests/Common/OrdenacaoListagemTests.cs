@@ -33,4 +33,27 @@ public class OrdenacaoListagemTests
     [Fact]
     public void Direcao_invalida_e_recusada()
         => Assert.Throws<DomainException>(() => OrdenacaoListagem.MontarOrderBy("status", "sideways", ListaBranca, "b.id"));
+
+    private sealed class Pedido(string? ordenarPor, string? direcao) : IOrdenacaoSolicitada
+    {
+        public string? OrdenarPor { get; } = ordenarPor;
+        public string? Direcao { get; } = direcao;
+    }
+
+    [Fact]
+    public void Resolver_sem_pedido_devolve_o_padrao()
+    {
+        Assert.Equal("b.id DESC", OrdenacaoListagem.Resolver(null, ListaBranca, "b.id", "b.id DESC"));
+        Assert.Equal("b.id DESC", OrdenacaoListagem.Resolver(new Pedido(null, null), ListaBranca, "b.id", "b.id DESC"));
+    }
+
+    [Fact]
+    public void Resolver_com_pedido_usa_a_lista_branca()
+        => Assert.Equal("b.status DESC, b.id DESC",
+            OrdenacaoListagem.Resolver(new Pedido("status", "desc"), ListaBranca, "b.id", "b.id DESC"));
+
+    [Fact]
+    public void Resolver_recusa_campo_fora_da_lista_branca()
+        => Assert.Throws<DomainException>(() =>
+            OrdenacaoListagem.Resolver(new Pedido("senha", "asc"), ListaBranca, "b.id", "b.id DESC"));
 }

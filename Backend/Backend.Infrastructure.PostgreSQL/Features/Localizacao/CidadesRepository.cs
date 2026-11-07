@@ -10,20 +10,36 @@ namespace Backend.Infrastructure.PostgreSQL.Features.Localizacao;
 public class CidadesRepository : ICidadesRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public CidadesRepository(DbSession session) => _session = session;
+    public CidadesRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
+    {
+        _session = session;
+        _ordenacao = ordenacao;
+    }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> expressão SQL).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["id"] = "ci.id",
+        ["cidade"] = "lower(unaccent(ci.cidade))",
+        ["ddd"] = "ci.ddd",
+        ["estado"] = "lower(unaccent(st.estado))",
+    };
+
+    private string Ordem => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "ci.id", "lower(unaccent(ci.cidade)), ci.id");
 
     public async Task<ResultadoPaginado<Cidades>> ObterCidades(int pagina = 1, int tamanhoDaPagina = 20, int? estadoId = null)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
         const string sqlCount = "SELECT COUNT(*) FROM cidades WHERE (@EstadoId::int IS NULL OR estado_id = @EstadoId);";
-        const string sqlData = @"
+        var sqlData = $@"
             SELECT ci.id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM cidades ci
             INNER JOIN estados st ON st.id = ci.estado_id
             INNER JOIN paises p ON p.id = st.pais_id
             WHERE (@EstadoId::int IS NULL OR ci.estado_id = @EstadoId)
-            ORDER BY lower(unaccent(ci.cidade)), ci.id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { EstadoId = estadoId }, transaction: _session.Transaction);
@@ -80,13 +96,13 @@ public class CidadesRepository : ICidadesRepository
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
         const string sqlCount = "SELECT COUNT(*) FROM cidades WHERE (unaccent(id::text) ILIKE unaccent(@Termo::text) OR unaccent(cidade::text) ILIKE unaccent(@Termo::text) OR unaccent(ddd::text) ILIKE unaccent(@Termo::text)) AND (@EstadoId::int IS NULL OR estado_id = @EstadoId);";
-        const string sqlData = @"
+        var sqlData = $@"
             SELECT ci.id, ci.cidade, ci.ddd, st.id AS EstadoId, st.id AS Id, st.estado, st.uf, p.id AS PaisId, p.id AS Id, p.pais, p.codigo_iso_pais, p.ddi, p.codigo_iso_moeda, p.simbolo_moeda
             FROM cidades ci
             INNER JOIN estados st ON st.id = ci.estado_id
             INNER JOIN paises p ON p.id = st.pais_id
             WHERE (unaccent(ci.id::text) ILIKE unaccent(@Termo::text) OR unaccent(ci.cidade::text) ILIKE unaccent(@Termo::text) OR unaccent(ci.ddd::text) ILIKE unaccent(@Termo::text)) AND (@EstadoId::int IS NULL OR ci.estado_id = @EstadoId)
-            ORDER BY lower(unaccent(ci.cidade)), ci.id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = $"%{termo}%", EstadoId = estadoId }, transaction: _session.Transaction);

@@ -10,18 +10,31 @@ namespace Backend.Infrastructure.PostgreSQL.Features.Parceiros;
 public class VeiculosRepository : IVeiculosRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public VeiculosRepository(DbSession session)
+    public VeiculosRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
     {
         _session = session;
+        _ordenacao = ordenacao;
     }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> expressão SQL).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["id"] = "v.id",
+        ["placa"] = "lower(v.placa)",
+        ["transportadora"] = "unaccent(lower(t.nome_razaosocial))",
+        ["ativo"] = "v.ativo",
+    };
+
+    private string Ordem => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "v.id", "lower(v.placa), v.id");
 
     public async Task<ResultadoPaginado<Veiculos>> ObterVeiculos(int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
         const string sqlCount = "SELECT COUNT(*) FROM veiculos;";
-        const string sqlData = @"
+        var sqlData = $@"
             SELECT v.id AS Id, v.placa AS Placa, v.rntrc AS Rntrc, v.renavam AS Renavam,
                    v.tipo_veiculo AS TipoVeiculo, v.marca_modelo AS MarcaModelo, v.ativo AS Ativo, v.criado_em AS CriadoEm,
                    v.observacao AS Observacao,
@@ -32,7 +45,7 @@ public class VeiculosRepository : IVeiculosRepository
             LEFT JOIN transportadoras t ON t.id = v.transportadora_id
             LEFT JOIN estados e ON e.id = v.estado_id
             LEFT JOIN paises p ON p.id = e.pais_id
-            ORDER BY lower(v.placa), v.id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
@@ -188,7 +201,7 @@ public class VeiculosRepository : IVeiculosRepository
             LEFT JOIN estados e ON e.id = v.estado_id
             WHERE unaccent(v.id::text) ILIKE unaccent(@Termo::text) OR unaccent(v.placa::text) ILIKE unaccent(@Termo::text) OR unaccent(v.marca_modelo::text) ILIKE unaccent(@Termo::text) OR unaccent(t.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(e.uf::text) ILIKE unaccent(@Termo::text);";
 
-        const string sqlData = @"
+        var sqlData = $@"
             SELECT v.id AS Id, v.placa AS Placa, v.rntrc AS Rntrc, v.renavam AS Renavam,
                    v.tipo_veiculo AS TipoVeiculo, v.marca_modelo AS MarcaModelo, v.ativo AS Ativo, v.criado_em AS CriadoEm,
                    v.observacao AS Observacao,
@@ -200,7 +213,7 @@ public class VeiculosRepository : IVeiculosRepository
             LEFT JOIN estados e ON e.id = v.estado_id
             LEFT JOIN paises p ON p.id = e.pais_id
             WHERE unaccent(v.id::text) ILIKE unaccent(@Termo::text) OR unaccent(v.placa::text) ILIKE unaccent(@Termo::text) OR unaccent(v.marca_modelo::text) ILIKE unaccent(@Termo::text) OR unaccent(t.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(e.uf::text) ILIKE unaccent(@Termo::text)
-            ORDER BY lower(v.placa), v.id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(

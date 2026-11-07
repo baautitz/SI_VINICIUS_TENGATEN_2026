@@ -71,6 +71,8 @@ public class Program
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("A Connection String 'DefaultConnection' não foi encontrada no appsettings.json.");
 
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddScoped<Backend.Core.Common.Results.IOrdenacaoSolicitada, Backend.Web.Middlewares.OrdenacaoDaRequisicao>();
         builder.Services.AddPostgreSQLInfrastructure(connectionString);
 
         var app = builder.Build();

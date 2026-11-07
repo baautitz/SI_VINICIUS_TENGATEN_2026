@@ -14,11 +14,26 @@ namespace Backend.Infrastructure.PostgreSQL.Features.Estoque;
 public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public MovimentacoesEstoquesRepository(DbSession session)
+    public MovimentacoesEstoquesRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
     {
         _session = session;
+        _ordenacao = ordenacao;
     }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> expressão SQL).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["id"] = "me.id",
+        ["dataMovimentacao"] = "me.data_movimentacao",
+        ["tipoMovimentacao"] = "me.tipo_movimentacao::text",
+        ["origem"] = "me.origem_tipo::text",
+        ["motivo"] = "unaccent(lower(me.motivo))",
+        ["valorTotal"] = "(SELECT COALESCE(SUM(i.quantidade * i.custo_unitario), 0) FROM movimentacoes_estoque_itens i WHERE i.movimentacao_estoque_id = me.id)",
+    };
+
+    private string Ordem => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "me.id", "me.data_movimentacao DESC, me.id DESC");
 
     private const string SelecaoMovimentacao = @"
         SELECT me.id, me.data_movimentacao, me.tipo_movimentacao, me.origem_tipo, me.origem_id, me.motivo, me.observacao,
@@ -114,7 +129,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
             $"SELECT COUNT(*) FROM movimentacoes_estoque me WHERE {where};", parametros, transaction: _session.Transaction);
 
         var rows = (await _session.Connection.QueryAsync<MovimentacaoDbRow>(
-            $"{SelecaoMovimentacao} WHERE {where} ORDER BY me.data_movimentacao DESC, me.id DESC LIMIT @TamanhoDaPagina OFFSET @Offset;",
+            $"{SelecaoMovimentacao} WHERE {where} ORDER BY {Ordem} LIMIT @TamanhoDaPagina OFFSET @Offset;",
             parametros, transaction: _session.Transaction)).ToList();
 
         return new ResultadoPaginado<MovimentacoesEstoques>(await Montar(rows), total, pagina, tamanhoDaPagina);

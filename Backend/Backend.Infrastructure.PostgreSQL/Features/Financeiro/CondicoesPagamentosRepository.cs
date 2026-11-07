@@ -14,25 +14,41 @@ namespace Backend.Infrastructure.PostgreSQL.Features.Financeiro;
 public class CondicoesPagamentosRepository : ICondicoesPagamentosRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public CondicoesPagamentosRepository(DbSession session)
+    public CondicoesPagamentosRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
     {
         _session = session;
+        _ordenacao = ordenacao;
     }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> expressão SQL).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["id"] = "cp.id",
+        ["descricao"] = "lower(unaccent(cp.descricao))",
+        ["metodoPagamento"] = "lower(unaccent(mp.descricao))",
+        ["entradaMinimaPercentual"] = "cp.entrada_minima_percentual",
+        ["descontoPercentual"] = "cp.desconto_percentual",
+        ["taxaJurosPercentual"] = "cp.taxa_juros_percentual",
+        ["ativo"] = "cp.ativo",
+    };
+
+    private string Ordem => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "cp.id", "lower(unaccent(cp.descricao)), cp.id");
 
     public async Task<ResultadoPaginado<CondicoesPagamentos>> ObterCondicoesPagamentos(int pagina = 1, int tamanhoDaPagina = 20)
     {
         var offset = (pagina - 1) * tamanhoDaPagina;
 
         const string sqlCount = "SELECT COUNT(*) FROM condicoes_pagamentos;";
-        const string sqlData = @"
+        var sqlData = $@"
             SELECT cp.id AS Id, cp.descricao AS Descricao, cp.entrada_minima_percentual AS EntradaMinimaPercentual,
                    cp.desconto_percentual AS DescontoPercentual, cp.acrescimo_percentual AS AcrescimoPercentual,
                    cp.multa_percentual AS MultaPercentual, cp.taxa_juros_percentual AS TaxaJurosPercentual, cp.ativo AS Ativo,
                    mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo, mp.permite_troco AS PermiteTroco
             FROM condicoes_pagamentos cp
             INNER JOIN metodos_pagamento mp ON mp.codigo = cp.metodo_pagamento_codigo
-            ORDER BY lower(unaccent(cp.descricao)), cp.id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, transaction: _session.Transaction);
@@ -249,7 +265,7 @@ public class CondicoesPagamentosRepository : ICondicoesPagamentosRepository
             INNER JOIN metodos_pagamento mp ON mp.codigo = cp.metodo_pagamento_codigo
             WHERE unaccent(cp.id::text) ILIKE unaccent(@Termo::text) OR unaccent(cp.descricao::text) ILIKE unaccent(@Termo::text) OR unaccent(mp.descricao::text) ILIKE unaccent(@Termo::text);";
 
-        const string sqlData = @"
+        var sqlData = $@"
             SELECT cp.id AS Id, cp.descricao AS Descricao, cp.entrada_minima_percentual AS EntradaMinimaPercentual,
                    cp.desconto_percentual AS DescontoPercentual, cp.acrescimo_percentual AS AcrescimoPercentual,
                    cp.multa_percentual AS MultaPercentual, cp.taxa_juros_percentual AS TaxaJurosPercentual, cp.ativo AS Ativo,
@@ -257,7 +273,7 @@ public class CondicoesPagamentosRepository : ICondicoesPagamentosRepository
             FROM condicoes_pagamentos cp
             INNER JOIN metodos_pagamento mp ON mp.codigo = cp.metodo_pagamento_codigo
             WHERE unaccent(cp.id::text) ILIKE unaccent(@Termo::text) OR unaccent(cp.descricao::text) ILIKE unaccent(@Termo::text) OR unaccent(mp.descricao::text) ILIKE unaccent(@Termo::text)
-            ORDER BY lower(unaccent(cp.descricao)), cp.id
+            ORDER BY {Ordem}
             LIMIT @TamanhoDaPagina OFFSET @Offset;";
 
         var total = await _session.Connection.ExecuteScalarAsync<int>(sqlCount, new { Termo = queryTermo }, transaction: _session.Transaction);
