@@ -66,6 +66,10 @@ _Avoid_: Devolução (sem qualificar), Estorno de compra (é o desfazer da Compr
 
 **Abatimento**:
 Baixa não monetária de uma parcela a receber causada por uma Devolução de venda. Reduz o saldo em aberto sem alterar o valor original da parcela nem o valor recebido, e cada Devolução registra quais parcelas abateu e quanto.
+
+**Ordem do Abatimento**:
+Ordem em que uma Devolução consome o saldo em aberto das parcelas, igual para venda (a receber) e compra (a pagar): primeiro as parcelas vencidas, da mais antiga para a mais recente; depois as a vencer, da última para a primeira. Parcela que vence hoje ainda não está vencida.
+_Avoid_: Prioridade de abatimento
 _Avoid_: Desconto, redução do valor da parcela
 
 **Reembolso**:
