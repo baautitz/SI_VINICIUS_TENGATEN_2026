@@ -62,7 +62,7 @@ Após a inicialização:
 
 Os scripts SQL de `infrastructure/database` são executados automaticamente na primeira inicialização de um volume PostgreSQL vazio.
 
-Bancos já criados (sem migrations) devem aplicar `psql -d <banco> -f infrastructure/database/migracoes/texto_pesquisa_contas.sql` (idempotente: coluna `texto_pesquisa`, backfill e índices de contas a pagar/receber).
+O projeto não tem migrations: para pegar mudanças no schema, recrie o volume (`docker compose -f infrastructure/docker-compose.dev.yaml down -v` e depois `up`).
 
 ## Desenvolvimento local
 
