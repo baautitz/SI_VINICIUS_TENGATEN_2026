@@ -1,4 +1,5 @@
 using Backend.Core.Common;
+using Backend.Core.Common.Exceptions;
 using Backend.Core.Common.Interfaces;
 using Backend.Core.Common.Results;
 using Backend.Core.Features.Catalogo.Repositories;
@@ -14,6 +15,9 @@ using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.Financeiro.Policies;
 using Backend.Core.Features.Financeiro.Repositories;
+using Backend.Core.Features.NFe.Entities.Enums;
+using Backend.Core.Features.NFe.Repositories;
+using Backend.Core.Features.NFe.Services;
 
 namespace Backend.Core.Features.Compras.Services;
 
@@ -29,6 +33,8 @@ public sealed class DevolucoesCompraService : BaseService
     private readonly MovimentacoesEstoquesService _estoqueService;
     private readonly IContasPagarRepository _contasPagarRepository;
     private readonly IContasReceberRepository _contasReceberRepository;
+    private readonly INfesRepository _nfesRepository;
+    private readonly NfesDevolucaoService _nfesDevolucaoService;
     private readonly IUnitOfWork _unitOfWork;
 
     public DevolucoesCompraService(
@@ -38,6 +44,8 @@ public sealed class DevolucoesCompraService : BaseService
         MovimentacoesEstoquesService estoqueService,
         IContasPagarRepository contasPagarRepository,
         IContasReceberRepository contasReceberRepository,
+        INfesRepository nfesRepository,
+        NfesDevolucaoService nfesDevolucaoService,
         IUnitOfWork unitOfWork)
     {
         _comprasRepository = comprasRepository;
@@ -46,17 +54,26 @@ public sealed class DevolucoesCompraService : BaseService
         _estoqueService = estoqueService;
         _contasPagarRepository = contasPagarRepository;
         _contasReceberRepository = contasReceberRepository;
+        _nfesRepository = nfesRepository;
+        _nfesDevolucaoService = nfesDevolucaoService;
         _unitOfWork = unitOfWork;
     }
 
-    public Task<DevolucaoCompra?> ObterDevolucaoPorId(int id) => _devolucoesRepository.ObterDevolucaoPorId(id);
+    public async Task<DevolucaoCompra?> ObterDevolucaoPorId(int id)
+    {
+        var devolucao = await _devolucoesRepository.ObterDevolucaoPorId(id);
+        if (devolucao is null) return null;
+        devolucao.NfeDevolucao = await _nfesRepository.ObterNfeDaDevolucao(null, id, FinalidadeNfe.DEVOLUCAO);
+        devolucao.NfeEstorno = await _nfesRepository.ObterNfeDaDevolucao(null, id, FinalidadeNfe.ESTORNO_DEVOLUCAO);
+        return devolucao;
+    }
 
     public Task<IReadOnlyList<DevolucaoCompra>> ObterDevolucoesPorCompra(int compraId)
         => _devolucoesRepository.ObterDevolucoesPorCompra(compraId);
 
     // Saída de estoque pelo custo da compra, que também sai do custo médio; o valor abate o saldo em aberto das
     // parcelas a pagar (na ordem de OrdemAbatimento, registrando quanto saiu de cada uma) e o excedente (já pago)
-    // vira conta a receber do fornecedor. Tudo numa transação: com qualquer
+    // vira conta a receber do fornecedor. Se a compra tem NF-e ativa, emite a NF-e de devolução. Tudo numa transação: com qualquer
     // recusa nada é gravado. Os SKUs são travados antes de conferir saldo e estoque, então devoluções
     // e vendas concorrentes esperam.
     public async Task<Resultado<DevolucaoCompra>> CriarDevolucao(int compraId, CriarDevolucaoCompraCommand command)
@@ -156,12 +173,13 @@ public sealed class DevolucoesCompraService : BaseService
             return Resultado<DevolucaoCompra>.Falha(estoque.Errors!);
 
         await AbaterParcelasEReembolsar(compra, criada);
+        criada.NfeDevolucao = await _nfesDevolucaoService.EmitirDevolucaoDeCompra(compra, criada);
 
         return Resultado<DevolucaoCompra>.Sucesso(criada);
     }
 
     // Desfaz a devolução na mesma transação: os itens voltam ao estoque, os abatimentos voltam às parcelas a pagar
-    // e o reembolso do fornecedor (conta a receber) é cancelado, barrado se já tiver recebimento.
+    // e o reembolso do fornecedor (conta a receber) é cancelado, barrado se já tiver recebimento. Se a devolução emitiu NF-e, emite a NF-e de estorno.
     public async Task<Resultado<DevolucaoCompra>> EstornarDevolucao(int id, EstornarDevolucaoCompraCommand command)
     {
         var motivo = command?.Motivo?.Trim() ?? "";
@@ -227,6 +245,11 @@ public sealed class DevolucoesCompraService : BaseService
             reembolso.Cancelar();
             await _contasReceberRepository.AtualizarContaReceber(reembolso.Id, reembolso);
         }
+
+        var compra = await _comprasRepository.ObterCompraPorId(devolucao.CompraId)
+            ?? throw new DomainException("Compra da devolução não encontrada.");
+        devolucao.NfeDevolucao = await _nfesRepository.ObterNfeDaDevolucao(null, devolucao.Id, FinalidadeNfe.DEVOLUCAO);
+        devolucao.NfeEstorno = await _nfesDevolucaoService.EmitirEstornoDeDevolucaoDeCompra(compra, devolucao);
 
         return Resultado<DevolucaoCompra>.Sucesso(devolucao);
     }

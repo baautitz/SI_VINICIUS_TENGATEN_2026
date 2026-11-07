@@ -13,7 +13,10 @@ using Backend.Core.Features.Financeiro.DTOs;
 using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.Financeiro.Repositories;
+using Backend.Core.Features.NFe.Repositories;
+using Backend.Core.Features.NFe.Services;
 using Backend.Core.Features.Parceiros.Entities;
+using Backend.Core.Features.Parceiros.Repositories;
 using Backend.Tests.Common;
 using static Backend.Tests.Common.Fakes;
 
@@ -54,6 +57,7 @@ public class DevolucaoCompraTests
             var movs = Criar<IMovimentacoesEstoquesRepository>(h =>
                 h["CriarMovimentacao"] = a => { Movimentacoes.Add((MovimentacoesEstoques)a![0]!); return a[0]; });
 
+            var nfes = Criar<INfesRepository>(); // compra sem NF-e ativa: nada a emitir
             Service = new DevolucoesCompraService(
                 Criar<IComprasRepository>(h => h["ObterCompraPorId"] = a => (int)a![0]! == 7 ? Compra : null),
                 Criar<IDevolucoesCompraRepository>(h =>
@@ -75,6 +79,8 @@ public class DevolucaoCompraTests
                     h["AtualizarContaPagar"] = a => (ContasPagar)a![1]!;
                 }),
                 Criar<IContasReceberRepository>(h => h["CriarContaReceber"] = a => { Reembolsos.Add((ContasReceber)a![0]!); return a[0]; }),
+                nfes,
+                new NfesDevolucaoService(nfes, Criar<IEmitentesRepository>(), Criar<IClientesRepository>(), Criar<IFornecedoresRepository>()),
                 Uow);
         }
 

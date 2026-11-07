@@ -16,6 +16,9 @@ public class DevolucaoCompra
     public StatusDevolucaoCompra Status { get; private set; } = StatusDevolucaoCompra.ATIVA;
     public DateTime? EstornadoEm { get; private set; }
     public string? MotivoEstorno { get; private set; }
+    // NF-e de devolução emitida com a Devolução e NF-e de estorno emitida no estorno; vazias se a compra não tinha NF-e ativa (não persistido aqui).
+    public Backend.Core.Features.NFe.DTOs.NfeAtiva? NfeDevolucao { get; set; }
+    public Backend.Core.Features.NFe.DTOs.NfeAtiva? NfeEstorno { get; set; }
     public IReadOnlyCollection<DevolucaoCompraItens> Itens => _itens.AsReadOnly();
 
     protected DevolucaoCompra() { }
