@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronsUpDown } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { Ordenacao } from "@/lib/ordenacao";
@@ -94,7 +94,7 @@ export function OrdenarMenu({
           >
             <span className="truncate">{coluna.rotulo}</span>
             <span className="text-muted-foreground flex shrink-0 items-center gap-1 text-xs">
-              {modo === "asc" ? <ArrowUp className="size-3" /> : modo === "desc" ? <ArrowDown className="size-3" /> : <ArrowUpDown className="size-3 opacity-40" />}
+              {modo === "asc" ? <ArrowUpNarrowWide className="size-4" /> : modo === "desc" ? <ArrowDownWideNarrow className="size-4" /> : <ChevronsUpDown className="size-4 opacity-40" />}
               {ROTULO_MODO[modo]}
             </span>
           </div>

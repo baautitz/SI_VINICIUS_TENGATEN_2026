@@ -17,9 +17,9 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  ArrowUp,
-  ArrowDown,
-  ArrowUpDown,
+  ArrowUpNarrowWide,
+  ArrowDownWideNarrow,
+  ChevronsUpDown,
 } from "lucide-react";
 
 import {
@@ -392,7 +392,7 @@ export function DataTable<TData, TValue>({
           )}
           {colunasOrdenaveis.length > 0 && (
             <Button type="button" variant="outline" onClick={() => setMenuOrdenarAberto(true)}>
-              <ArrowUpDown /> Ordenar <HotkeyKbd hotkey={combinacaoDe("ordenar")} />
+              <ChevronsUpDown /> Ordenar <HotkeyKbd hotkey={combinacaoDe("ordenar")} />
             </Button>
           )}
           {actions}
@@ -446,11 +446,11 @@ export function DataTable<TData, TValue>({
                         >
                           {flexRender(header.column.columnDef.header, header.getContext())}
                           {ordenacao?.campo !== campo ? (
-                            <ArrowUpDown className="size-3 opacity-40" />
+                            <ChevronsUpDown className="size-4 opacity-40" />
                           ) : ordenacao.direcao === "asc" ? (
-                            <ArrowUp className="size-3" />
+                            <ArrowUpNarrowWide className="size-4" />
                           ) : (
-                            <ArrowDown className="size-3" />
+                            <ArrowDownWideNarrow className="size-4" />
                           )}
                         </button>
                       ) : (
