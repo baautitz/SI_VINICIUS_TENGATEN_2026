@@ -131,6 +131,10 @@ export function ContasPagarUpsertForm({ editingItem, readOnly = false }: ContasP
     if (!r.success) r.error.errors.forEach((e) => (map[e.path.join(".")] = e.message));
     else if (!isEditMode && Math.abs(somaParcelas - valorTotal) > 0.01)
       map.parcelas = `A soma das parcelas (R$ ${somaParcelas.toFixed(2)}) deve ser igual ao valor total (R$ ${valorTotal.toFixed(2)}).`;
+    else if (!isEditMode && dataEmissao > todayLocalISODate())
+      map.dataEmissao = "A data de emissão não pode ser futura.";
+    else if (!isEditMode && parcelas.some((p) => p.dataVencimento < dataEmissao))
+      map.parcelas = "O vencimento das parcelas não pode ser anterior à emissão.";
     setErros(map);
     if (Object.keys(map).length > 0) return;
     await mutation.mutateAsync().catch(() => undefined);
@@ -243,6 +247,7 @@ export function ContasPagarUpsertForm({ editingItem, readOnly = false }: ContasP
               {campo("dataEmissao", "Data Emissão",
                 <DatePicker
                   value={dataEmissao}
+                  max={todayLocalISODate()}
                   onChange={(v) => {
                     if (!v || v === dataEmissao) return;
                     setDataEmissao(v);
@@ -339,7 +344,7 @@ export function ContasPagarUpsertForm({ editingItem, readOnly = false }: ContasP
                     <TableRow key={i} className="hover:bg-transparent">
                       <TableCell className="font-semibold">{i + 1}/{parcelas.length}</TableCell>
                       <TableCell>
-                        <DatePicker value={p.dataVencimento} onChange={(v) => updParcela(i, { dataVencimento: v ?? "" })} className="h-8 text-sm" />
+                        <DatePicker value={p.dataVencimento} min={dataEmissao} onChange={(v) => updParcela(i, { dataVencimento: v ?? "" })} className="h-8 text-sm" />
                       </TableCell>
                       <TableCell>
                         <NumberInput

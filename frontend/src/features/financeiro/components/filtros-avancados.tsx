@@ -125,6 +125,8 @@ export function FiltrosAvancadosPopover({ valor, onChange }: {
                         placeholder={c.rotulo}
                         value={rascunho[c.chave] || null}
                         onChange={(v) => alterar({ ...rascunho, [c.chave]: v ?? "" })}
+                        min={c.chave.endsWith("Ate") ? rascunho[c.chave.replace(/Ate$/, "De") as keyof typeof rascunho] || null : null}
+                        max={c.chave.endsWith("De") ? rascunho[c.chave.replace(/De$/, "Ate") as keyof typeof rascunho] || null : null}
                       />
                     );
                   if (c.type === "number")

@@ -569,8 +569,12 @@ function CompraForm({
       !(modoXml && cadastrarTransportadora)
     )
       return "Informe a transportadora para usar frete de terceiro.";
+    if (freteTerceiro > 0 && vencFrete < dataCompra)
+      return "O vencimento do frete não pode ser anterior à data da compra.";
     if (parcelas.length === 0)
       return "Adicione pelo menos uma parcela.";
+    if (parcelas.some((p) => p.dataVencimento < dataCompra))
+      return "O vencimento das parcelas não pode ser anterior à data da compra.";
     if (parcelas.some((p) => !(p.valorParcela > 0)))
       return "O valor de cada parcela deve ser maior que zero.";
     return null;
@@ -1391,6 +1395,7 @@ function CompraForm({
                       <FieldLabel>Vencimento do frete de terceiro</FieldLabel>
                       <DatePicker
                         value={vencFrete}
+                        min={dataCompra}
                         onChange={(v) => setVencFrete(v || todayLocalISODate())}
                       />
                     </Field>
@@ -1457,6 +1462,7 @@ function CompraForm({
                                 >
                                   <DatePicker
                                     value={p.dataVencimento}
+                                    min={dataCompra}
                                     className="h-8"
                                     onChange={(v) =>
                                       setParcelas((a) =>

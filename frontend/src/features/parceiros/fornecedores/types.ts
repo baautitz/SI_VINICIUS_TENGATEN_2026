@@ -1,3 +1,4 @@
+import { todayBrasiliaISODate } from "@/utils/date-utils";
 import { z } from "zod"
 import type { Bairro } from "@/features/localizacao/bairros/types"
 import type { Pais } from "@/features/localizacao/paises/types"
@@ -33,7 +34,7 @@ export const fornecedorSchema = z.object({
   logradouro: z.string().min(1, "Logradouro é obrigatório."),
   numero: z.string().min(1, "Número é obrigatório."),
   sexo: z.string().optional(),
-  dataNascimento: z.string().min(1, "Data de nascimento/fundação é obrigatória."),
+  dataNascimento: z.string().min(1, "Data de nascimento/fundação é obrigatória.").refine((v) => v <= todayBrasiliaISODate(), "A data de nascimento/fundação não pode ser futura."),
   bairroId: z.number({ required_error: "Bairro é obrigatório.", invalid_type_error: "Bairro é obrigatório." }).min(1, "Bairro é obrigatório."),
   nacionalidadeId: z.number({ required_error: "Nacionalidade é obrigatória." }).min(1, "Nacionalidade é obrigatória."),
   telefone: z.string().min(1, "Telefone é obrigatório."),

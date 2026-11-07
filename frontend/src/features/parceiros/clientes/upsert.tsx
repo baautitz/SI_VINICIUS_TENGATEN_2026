@@ -1,4 +1,5 @@
 "use client";
+import { todayBrasiliaISODate } from "@/utils/date-utils";
 import { combinacaoDe } from "@/lib/atalhos";
 import { ContasPagarUpsertForm } from "@/features/financeiro/contas-pagar/upsert";
 import { ContasReceberUpsertForm } from "@/features/financeiro/contas-receber/upsert";
@@ -438,6 +439,7 @@ function ClientesUpsertForm({
                         value={field.state.value}
                         onChange={(val) => field.handleChange(val || "")}
                         readOnly={readOnly}
+                        max={todayBrasiliaISODate()}
                         className={cn("h-8", error && "border-destructive")}
                       />
                       {error && <FieldError>{error}</FieldError>}

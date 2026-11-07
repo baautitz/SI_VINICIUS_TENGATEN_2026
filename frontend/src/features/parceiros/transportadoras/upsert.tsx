@@ -1,5 +1,6 @@
 "use client";
 
+import { todayBrasiliaISODate } from "@/utils/date-utils";
 import { HotkeyKbd } from "@/ui/primitives";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import React, { useState } from "react";
@@ -472,6 +473,7 @@ function TransportadorasUpsertForm({
                         value={field.state.value}
                         onChange={(val) => field.handleChange(val || "")}
                         readOnly={readOnly}
+                        max={todayBrasiliaISODate()}
                         className={cn("h-8", error && "border-destructive")}
                       />
                       {error && <FieldError>{error}</FieldError>}

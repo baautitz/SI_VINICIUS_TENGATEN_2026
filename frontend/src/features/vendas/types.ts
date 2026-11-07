@@ -1,3 +1,4 @@
+import { todayBrasiliaISODate } from "@/utils/date-utils";
 import { z } from "zod";
 import type { Cliente } from "@/features/parceiros/clientes/types";
 import type { Emitente } from "@/features/parceiros/emitentes/types";
@@ -105,7 +106,7 @@ export const vendaParcelaSchema = z.object({
 });
 
 export const vendaBaseSchema = z.object({
-  dataVenda: z.string().min(1, "Data da venda é obrigatória."),
+  dataVenda: z.string().min(1, "Data da venda é obrigatória.").refine((v) => v <= todayBrasiliaISODate(), "A data da venda não pode ser futura."),
   clienteId: z
     .number({ required_error: "Cliente é obrigatório." })
     .min(1, "Cliente é obrigatório."),

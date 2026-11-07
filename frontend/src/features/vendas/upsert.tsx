@@ -60,7 +60,7 @@ import { MovimentacoesUpsert } from "@/features/estoque/movimentacoes/upsert";
 import { useWindow, useWindowCommands, useUi, WindowCancelButton } from "@/ui/imperative";
 import { Spinner } from "@/ui/primitives";
 import { navigationCell } from "@/ui/keyboard-navigation";
-import { toLocalISODate, todayLocalISODate } from "@/utils/date-utils";
+import { toLocalISODate, todayBrasiliaISODate, todayLocalISODate } from "@/utils/date-utils";
 
 export interface VendasUpsertProps {
   editingItem: Venda | null;
@@ -930,6 +930,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                         field.handleChange(newVal);
                       }}
                       readOnly={readOnly}
+                      max={todayBrasiliaISODate()}
                     />
                     {getFieldError(field.name, field.state.meta.errors) && (
                       <FieldError>
