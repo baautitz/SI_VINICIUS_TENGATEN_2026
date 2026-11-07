@@ -557,7 +557,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
       component: TextoWindow,
       props: { label: title, value },
       title,
-      size: "large",
+      size: "medium",
     });
   const openObservacao = () => openTexto("Observação da Venda", editingItem!.observacao ?? "");
   const openDevolucoes = async () => {

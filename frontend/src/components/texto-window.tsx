@@ -49,8 +49,8 @@ export function TextoWindow({ label, value, readOnly = true }: TextoWindowProps)
           ref={ref}
           defaultValue={value}
           disabled={readOnly}
-          rows={14}
           maxLength={500}
+          className="min-h-64"
         />
       </Field>
       <WindowActions>

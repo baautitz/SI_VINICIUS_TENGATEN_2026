@@ -301,7 +301,7 @@ export function ContasPagarUpsertForm({ editingItem, readOnly = false }: ContasP
                 component: TextoWindow,
                 props: { label: "Observações", value: observacao, readOnly: somenteLeitura },
                 title: "Observações",
-                size: "large",
+                size: "medium",
               });
               if (r.status === "confirmed") setObservacao(r.value);
             }}

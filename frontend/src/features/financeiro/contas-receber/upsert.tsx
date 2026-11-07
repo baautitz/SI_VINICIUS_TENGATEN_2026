@@ -303,7 +303,7 @@ export function ContasReceberUpsertForm({ editingItem, readOnly = false }: Conta
                 component: TextoWindow,
                 props: { label: "Observações", value: observacao, readOnly: somenteLeitura },
                 title: "Observações",
-                size: "large",
+                size: "medium",
               });
               if (r.status === "confirmed") setObservacao(r.value);
             }}
