@@ -9,6 +9,8 @@ public interface IContasPagarRepository
     public Task<ContasPagar?> ObterContaPagarPorId(int id);
     // SELECT ... FOR UPDATE: exige transação aberta; serializa pagamentos/estornos concorrentes da mesma conta.
     public Task<ContasPagar?> ObterContaPagarPorIdParaAtualizar(int id);
+    // Todas as parcelas manuais do mesmo documento da conta informada (FOR UPDATE; exige transação aberta).
+    public Task<IReadOnlyList<ContasPagar>> ObterParcelasManuaisDoDocumentoParaAtualizar(int id);
     public Task<ContasPagar> CriarContaPagar(ContasPagar conta);
     public Task<ContasPagar> AtualizarContaPagar(int id, ContasPagar conta);
     public Task<bool> DeletarContaPagar(int id);

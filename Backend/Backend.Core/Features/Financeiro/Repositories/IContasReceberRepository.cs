@@ -9,6 +9,8 @@ public interface IContasReceberRepository
     public Task<ContasReceber?> ObterContaReceberPorId(int id);
     // SELECT ... FOR UPDATE: exige transação aberta; serializa recebimentos/estornos concorrentes da mesma conta.
     public Task<ContasReceber?> ObterContaReceberPorIdParaAtualizar(int id);
+    // Todas as parcelas manuais do mesmo documento da conta informada (FOR UPDATE; exige transação aberta).
+    public Task<IReadOnlyList<ContasReceber>> ObterParcelasManuaisDoDocumentoParaAtualizar(int id);
     public Task<ContasReceber> CriarContaReceber(ContasReceber conta);
     public Task<ContasReceber> AtualizarContaReceber(int id, ContasReceber conta);
     public Task<bool> DeletarContaReceber(int id);

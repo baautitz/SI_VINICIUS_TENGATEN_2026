@@ -85,6 +85,13 @@ public class ContasReceberRepository : IContasReceberRepository
             conta.NumeroParcela, conta.TotalParcelas, conta.DataEmissao, conta.CondicaoPagamento, conta.OrigemTipo, conta.OrigemId,
             conta.Observacao, conta.CriadoEm, conta.ValorPago, conta.Status, conta.ValorAbatido);
     }
+    public async Task<IReadOnlyList<ContasReceber>> ObterParcelasManuaisDoDocumentoParaAtualizar(int id)
+        => (await Consultar(@"
+            WHERE cr.origem_tipo::text = 'MANUAL'
+              AND cr.numero_documento = (SELECT numero_documento FROM contas_receber WHERE id = @Id)
+              AND cr.cliente_id = (SELECT cliente_id FROM contas_receber WHERE id = @Id)
+            ORDER BY cr.numero_parcela FOR UPDATE OF cr;", new { Id = id })).ToList();
+
 
     public async Task<ContasReceber> AtualizarContaReceber(int id, ContasReceber conta)
     {

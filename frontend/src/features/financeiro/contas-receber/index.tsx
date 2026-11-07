@@ -99,7 +99,9 @@ export function ContasReceberFeature({ vendaId }: ContasReceberFeatureProps = {}
     }
     const result = await ui.windows.confirm({
       title: "Excluir Conta a Receber",
-      description: `Deseja realmente excluir a parcela ${item.numeroParcela}/${item.totalParcelas} do documento ${item.numeroDocumento} - ${item.descricao}? Esta ação não poderá ser desfeita.`,
+      description: item.totalParcelas > 1
+        ? `Excluir o documento ${item.numeroDocumento} - ${item.descricao}? As ${item.totalParcelas} parcelas serão excluídas. Não dá para desfazer.`
+        : `Excluir o documento ${item.numeroDocumento} - ${item.descricao}? Não dá para desfazer.`,
       confirmLabel: "Excluir",
       confirmVariant: "destructive",
     });
@@ -109,7 +111,7 @@ export function ContasReceberFeature({ vendaId }: ContasReceberFeatureProps = {}
       await invalidate();
       ui.feedback.notify({
         type: "success",
-        title: "Conta excluída com sucesso.",
+        title: item.totalParcelas > 1 ? "Contas excluídas com sucesso." : "Conta excluída com sucesso.",
       });
     } catch (error) {
       ui.feedback.notifyError(error, {

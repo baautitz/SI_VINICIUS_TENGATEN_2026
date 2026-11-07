@@ -137,12 +137,16 @@ public sealed class ContasPagarService : BaseService
             if (existente.OrigemTipo != OrigemTituloFinanceiro.MANUAL)
                 throw new Common.Exceptions.DomainException($"Conta gerada por {existente.OrigemTipo.Nome()} #{existente.OrigemId}. Para cancelá-la, cancele o documento de origem.");
 
-            if (existente.PossuiBaixa || existente.Status != StatusTituloFinanceiro.ABERTO)
-                throw new Common.Exceptions.DomainException("Não é possível excluir uma conta a pagar que já possui pagamento ou não está aberta.");
+            // Documento manual sai inteiro: todas as parcelas ou nenhuma.
+            var parcelas = await _contasRepository.ObterParcelasManuaisDoDocumentoParaAtualizar(id);
+            var bloqueada = parcelas.FirstOrDefault(p => p.PossuiBaixa || p.Status != StatusTituloFinanceiro.ABERTO);
+            if (bloqueada is not null)
+                throw new Common.Exceptions.DomainException($"Não é possível excluir: a parcela {bloqueada.NumeroParcela}/{bloqueada.TotalParcelas} já tem pagamento ou não está aberta.");
 
-            var deletada = await _contasRepository.DeletarContaPagar(id);
+            foreach (var parcela in parcelas)
+                await _contasRepository.DeletarContaPagar(parcela.Id);
             _unitOfWork.Commit();
-            return deletada;
+            return true;
         }
         catch
         {

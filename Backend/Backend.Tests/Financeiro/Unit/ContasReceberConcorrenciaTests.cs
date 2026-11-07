@@ -33,13 +33,14 @@ public class ContasReceberConcorrenciaTests
         Assert.Equal(30m, gravada!.ValorPago);
     }
 
-    private static (ContasReceberService Service, Func<int> Deletadas) ServicoCom(ContasReceber conta)
+    private static (ContasReceberService Service, Func<int> Deletadas) ServicoCom(ContasReceber conta, params ContasReceber[] irmas)
     {
         var deletadas = 0;
         var service = new ContasReceberService(
             Criar<IContasReceberRepository>(h =>
             {
                 h["ObterContaReceberPorIdParaAtualizar"] = _ => conta;
+                h["ObterParcelasManuaisDoDocumentoParaAtualizar"] = _ => (IReadOnlyList<ContasReceber>)new[] { conta }.Concat(irmas).ToList();
                 h["DeletarContaReceber"] = _ => { deletadas++; return true; };
             }),
             Criar<IClientesRepository>(), Criar<ICondicoesPagamentosRepository>(), new UowFake());
@@ -89,5 +90,25 @@ public class ContasReceberConcorrenciaTests
 
         Assert.True(await service.DeletarContaReceber(1));
         Assert.Equal(1, deletadas());
+    }
+
+    [Fact]
+    public async Task Excluir_documento_manual_com_parcelas_apaga_todas()
+    {
+        var (service, deletadas) = ServicoCom(NovaConta(), NovaConta(), NovaConta());
+
+        Assert.True(await service.DeletarContaReceber(1));
+        Assert.Equal(3, deletadas());
+    }
+
+    [Fact]
+    public async Task Excluir_documento_com_uma_parcela_recebida_nao_apaga_nenhuma()
+    {
+        var paga = NovaConta();
+        paga.RegistrarRecebimento(40m);
+        var (service, deletadas) = ServicoCom(NovaConta(), NovaConta(), paga);
+
+        await Assert.ThrowsAsync<Backend.Core.Common.Exceptions.DomainException>(() => service.DeletarContaReceber(1));
+        Assert.Equal(0, deletadas());
     }
 }

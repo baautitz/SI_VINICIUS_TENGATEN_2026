@@ -88,6 +88,13 @@ public class ContasPagarRepository : IContasPagarRepository
         return new ContasPagar(id, conta.Descricao, conta.Valor, conta.Fornecedor, conta.DataVencimento, conta.NumeroDocumento,
             conta.NumeroParcela, conta.TotalParcelas, conta.DataEmissao, conta.CondicaoPagamento, conta.OrigemTipo, conta.OrigemId,
             conta.Observacao, conta.CriadoEm, conta.ValorPago, conta.Status, conta.ClienteId, conta.ClienteNome, conta.TransportadoraId, conta.TransportadoraNome);
+    public async Task<IReadOnlyList<ContasPagar>> ObterParcelasManuaisDoDocumentoParaAtualizar(int id)
+        => (await Consultar(@"
+            WHERE cp.origem_tipo::text = 'MANUAL'
+              AND cp.numero_documento = (SELECT numero_documento FROM contas_pagar WHERE id = @Id)
+              AND cp.fornecedor_id IS NOT DISTINCT FROM (SELECT fornecedor_id FROM contas_pagar WHERE id = @Id)
+            ORDER BY cp.numero_parcela FOR UPDATE OF cp;", new { Id = id })).ToList();
+
     }
 
     public async Task<ContasPagar> AtualizarContaPagar(int id, ContasPagar conta)
