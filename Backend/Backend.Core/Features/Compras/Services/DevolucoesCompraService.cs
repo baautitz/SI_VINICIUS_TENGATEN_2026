@@ -8,10 +8,14 @@ using Backend.Core.Features.Compras.Repositories;
 using Backend.Core.Features.Estoque.Entities;
 using Backend.Core.Features.Estoque.Entities.Enums;
 using Backend.Core.Features.Estoque.Services;
+using Backend.Core.Features.Financeiro.DTOs;
+using Backend.Core.Features.Financeiro.Entities;
+using Backend.Core.Features.Financeiro.Entities.Enums;
+using Backend.Core.Features.Financeiro.Policies;
+using Backend.Core.Features.Financeiro.Repositories;
 
 namespace Backend.Core.Features.Compras.Services;
 
-// Fluxo financeiro (crédito/abatimento no que se deve ao fornecedor) fica fora desta etapa.
 public sealed class DevolucoesCompraService : BaseService
 {
     public const string CompraInexistente = "COMPRA_INEXISTENTE";
@@ -21,6 +25,8 @@ public sealed class DevolucoesCompraService : BaseService
     private readonly IDevolucoesCompraRepository _devolucoesRepository;
     private readonly ISkusRepository _skusRepository;
     private readonly MovimentacoesEstoquesService _estoqueService;
+    private readonly IContasPagarRepository _contasPagarRepository;
+    private readonly IContasReceberRepository _contasReceberRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public DevolucoesCompraService(
@@ -28,12 +34,16 @@ public sealed class DevolucoesCompraService : BaseService
         IDevolucoesCompraRepository devolucoesRepository,
         ISkusRepository skusRepository,
         MovimentacoesEstoquesService estoqueService,
+        IContasPagarRepository contasPagarRepository,
+        IContasReceberRepository contasReceberRepository,
         IUnitOfWork unitOfWork)
     {
         _comprasRepository = comprasRepository;
         _devolucoesRepository = devolucoesRepository;
         _skusRepository = skusRepository;
         _estoqueService = estoqueService;
+        _contasPagarRepository = contasPagarRepository;
+        _contasReceberRepository = contasReceberRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -42,7 +52,9 @@ public sealed class DevolucoesCompraService : BaseService
     public Task<IReadOnlyList<DevolucaoCompra>> ObterDevolucoesPorCompra(int compraId)
         => _devolucoesRepository.ObterDevolucoesPorCompra(compraId);
 
-    // Saída de estoque pelo custo da compra, que também sai do custo médio. Tudo numa transação: com qualquer
+    // Saída de estoque pelo custo da compra, que também sai do custo médio; o valor abate o saldo em aberto das
+    // parcelas a pagar (na ordem de OrdemAbatimento, registrando quanto saiu de cada uma) e o excedente (já pago)
+    // vira conta a receber do fornecedor. Tudo numa transação: com qualquer
     // recusa nada é gravado. Os SKUs são travados antes de conferir saldo e estoque, então devoluções
     // e vendas concorrentes esperam.
     public async Task<Resultado<DevolucaoCompra>> CriarDevolucao(int compraId, CriarDevolucaoCompraCommand command)
@@ -141,6 +153,53 @@ public sealed class DevolucoesCompraService : BaseService
         if (!estoque.Success)
             return Resultado<DevolucaoCompra>.Falha(estoque.Errors!);
 
+        await AbaterParcelasEReembolsar(compra, criada);
+
         return Resultado<DevolucaoCompra>.Sucesso(criada);
+    }
+
+    // O valor pago nunca é consumido: o que não couber no saldo em aberto vira Reembolso (título único, vence na data da devolução).
+    private async Task AbaterParcelasEReembolsar(Compra compra, DevolucaoCompra devolucao)
+    {
+        var restante = devolucao.ValorTotal;
+        var contas = OrdemAbatimento.Ordenar(await ObterContasDaCompra(compra.Id), c => c.DataVencimento, c => c.NumeroParcela, DateTime.Today);
+        foreach (var conta in contas)
+        {
+            if (restante <= 0) break;
+            var abatido = conta.Abater(restante);
+            if (abatido <= 0) continue;
+            await _contasPagarRepository.AtualizarContaPagar(conta.Id, conta);
+            await _devolucoesRepository.CriarAbatimento(new DevolucaoCompraAbatimento(devolucao.Id, conta.Id, abatido));
+            restante -= abatido;
+        }
+
+        if (restante <= 0) return;
+
+        var data = devolucao.DataDevolucao.Date;
+        await _contasReceberRepository.CriarContaReceber(new ContasReceber(
+            descricao: $"Reembolso da devolução nº {devolucao.Id} (compra nº {compra.Id})",
+            valor: restante,
+            cliente: null,
+            dataVencimento: data,
+            numeroDocumento: $"DEVC-{devolucao.Id}",
+            dataEmissao: data,
+            origemTipo: OrigemTituloFinanceiro.DEVOLUCAO_COMPRA,
+            origemId: devolucao.Id,
+            fornecedorId: compra.Fornecedor.Id,
+            fornecedorNome: compra.Fornecedor.NomeRazaosocial));
+    }
+
+    // Só as parcelas da própria compra (o frete de terceiro é outro título e não é abatido).
+    private async Task<IReadOnlyList<ContasPagar>> ObterContasDaCompra(int compraId)
+    {
+        var todas = new List<ContasPagar>();
+        for (var pagina = 1; ; pagina++)
+        {
+            var r = await _contasPagarRepository.PesquisarContasPagar("", pagina, 100, new FiltroContasPagar(OrigemTipo: OrigemTituloFinanceiro.COMPRA, OrigemId: compraId));
+            var antes = todas.Count;
+            todas.AddRange(r.Itens);
+            if (todas.Count == antes || todas.Count >= r.TotalDeItens) break;
+        }
+        return todas.Where(c => c.Status != StatusTituloFinanceiro.CANCELADO).ToList();
     }
 }

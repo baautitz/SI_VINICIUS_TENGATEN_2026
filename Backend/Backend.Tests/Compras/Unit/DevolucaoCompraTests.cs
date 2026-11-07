@@ -9,6 +9,10 @@ using Backend.Core.Features.Estoque.Entities;
 using Backend.Core.Features.Estoque.Entities.Enums;
 using Backend.Core.Features.Estoque.Repositories;
 using Backend.Core.Features.Estoque.Services;
+using Backend.Core.Features.Financeiro.DTOs;
+using Backend.Core.Features.Financeiro.Entities;
+using Backend.Core.Features.Financeiro.Entities.Enums;
+using Backend.Core.Features.Financeiro.Repositories;
 using Backend.Core.Features.Parceiros.Entities;
 using Backend.Tests.Common;
 using static Backend.Tests.Common.Fakes;
@@ -24,6 +28,9 @@ public class DevolucaoCompraTests
         public Compra Compra;
         public List<DevolucaoCompra> Criadas = new();
         public List<MovimentacoesEstoques> Movimentacoes = new();
+        public List<ContasPagar> Parcelas = new();
+        public List<ContasReceber> Reembolsos = new();
+        public List<DevolucaoCompraAbatimento> Abatimentos = new();
         public UowFake Uow = new();
         public DevolucoesCompraService Service;
 
@@ -49,15 +56,25 @@ public class DevolucaoCompraTests
 
             Service = new DevolucoesCompraService(
                 Criar<IComprasRepository>(h => h["ObterCompraPorId"] = a => (int)a![0]! == 7 ? Compra : null),
-                Criar<IDevolucoesCompraRepository>(h => h["CriarDevolucao"] = a =>
+                Criar<IDevolucoesCompraRepository>(h =>
                 {
-                    var d = (DevolucaoCompra)a![0]!;
-                    d.Id = 3;
-                    Criadas.Add(d);
-                    return d;
+                    h["CriarDevolucao"] = a =>
+                    {
+                        var d = (DevolucaoCompra)a![0]!;
+                        d.Id = 3;
+                        Criadas.Add(d);
+                        return d;
+                    };
+                    h["CriarAbatimento"] = a => { Abatimentos.Add((DevolucaoCompraAbatimento)a![0]!); return null; };
                 }),
                 skus,
                 new MovimentacoesEstoquesService(movs, skus, Criar<IUsuariosRepository>(), Uow),
+                Criar<IContasPagarRepository>(h =>
+                {
+                    h["PesquisarContasPagar"] = _ => new Backend.Core.Common.Results.ResultadoPaginado<ContasPagar>(Parcelas, Parcelas.Count, 1, 100);
+                    h["AtualizarContaPagar"] = a => (ContasPagar)a![1]!;
+                }),
+                Criar<IContasReceberRepository>(h => h["CriarContaReceber"] = a => { Reembolsos.Add((ContasReceber)a![0]!); return a[0]; }),
                 Uow);
         }
 
@@ -87,6 +104,64 @@ public class DevolucaoCompraTests
         Assert.Equal(TipoMovimentacaoEstoque.SAIDA, saida.TipoMovimentacao);
         Assert.Equal(OrigemMovimentacaoEstoque.DEVOLUCAO_COMPRA, saida.OrigemTipo);
         Assert.Equal(3, saida.OrigemId);
+    }
+
+    private static ContasPagar ParcelaPagar(int numero, decimal valor, int diasParaVencer, decimal pago = 0)
+    {
+        var f = Instancia<Fornecedores>();
+        var conta = new ContasPagar("Compra nº 7", valor, f, DateTime.Today.AddDays(diasParaVencer), "COMPRA-7", numero, 2, origemTipo: OrigemTituloFinanceiro.COMPRA, origemId: 7);
+        if (pago > 0) conta.RegistrarPagamento(pago);
+        return conta;
+    }
+
+    [Fact]
+    public async Task Devolucao_abate_o_aberto_da_parcela_vencida_primeiro_sem_gerar_reembolso()
+    {
+        var c = new Cenario();
+        c.Parcelas.AddRange(new[] { ParcelaPagar(1, 30m, -5), ParcelaPagar(2, 30m, 30) });
+
+        var r = await c.Devolver(4); // R$ 20
+
+        Assert.True(r.Success);
+        Assert.Equal(20m, c.Parcelas[0].ValorAbatido);
+        Assert.Equal(0m, c.Parcelas[1].ValorAbatido);
+        var ab = Assert.Single(c.Abatimentos);
+        Assert.Equal((3, 20m), (ab.DevolucaoCompraId, ab.Valor));
+        Assert.Empty(c.Reembolsos);
+    }
+
+    [Fact]
+    public async Task Excedente_do_aberto_vira_reembolso_e_o_valor_pago_nunca_e_consumido()
+    {
+        var c = new Cenario();
+        c.Parcelas.AddRange(new[] { ParcelaPagar(1, 30m, 10, pago: 25m), ParcelaPagar(2, 10m, 40) });
+
+        var r = await c.Devolver(10); // R$ 50: abate 5 + 10, reembolsa 35
+
+        Assert.True(r.Success);
+        Assert.Equal(25m, c.Parcelas[0].ValorPago);
+        Assert.Equal(5m, c.Parcelas[0].ValorAbatido);
+        Assert.Equal(10m, c.Parcelas[1].ValorAbatido);
+        Assert.Equal(15m, c.Abatimentos.Sum(a => a.Valor));
+        var reembolso = Assert.Single(c.Reembolsos);
+        Assert.Equal(35m, reembolso.Valor);
+        Assert.Equal(OrigemTituloFinanceiro.DEVOLUCAO_COMPRA, reembolso.OrigemTipo);
+        Assert.Equal(3, reembolso.OrigemId);
+        Assert.Null(reembolso.Cliente);
+        Assert.Equal(DateTime.UtcNow.Date, reembolso.DataVencimento.Date);
+    }
+
+    [Fact]
+    public async Task Compra_toda_paga_vira_so_reembolso()
+    {
+        var c = new Cenario();
+        c.Parcelas.Add(ParcelaPagar(1, 50m, -1, pago: 50m));
+
+        var r = await c.Devolver(4);
+
+        Assert.True(r.Success);
+        Assert.Empty(c.Abatimentos);
+        Assert.Equal(20m, Assert.Single(c.Reembolsos).Valor);
     }
 
     [Fact]
