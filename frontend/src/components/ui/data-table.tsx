@@ -390,23 +390,23 @@ export function DataTable<TData, TValue>({
               )}
             </div>
           )}
-          {colunasOrdenaveis.length > 0 && (
-            <Button type="button" variant="outline" onClick={() => setMenuOrdenarAberto(true)}>
-              <ChevronsUpDown /> Ordenar <HotkeyKbd hotkey={combinacaoDe("ordenar")} />
-            </Button>
+          {colunasOrdenaveis.length > 0 && onOrdenacaoChange && (
+            <div className="relative">
+              <Button type="button" variant="outline" onClick={() => setMenuOrdenarAberto(true)}>
+                <ChevronsUpDown /> Ordenar <HotkeyKbd hotkey={combinacaoDe("ordenar")} />
+              </Button>
+              {menuOrdenarAberto && (
+                <OrdenarMenu
+                  colunas={colunasOrdenaveis}
+                  ordenacao={ordenacao}
+                  onChange={onOrdenacaoChange}
+                  onClose={() => setMenuOrdenarAberto(false)}
+                />
+              )}
+            </div>
           )}
           {actions}
         </div>
-        {menuOrdenarAberto && colunasOrdenaveis.length > 0 && onOrdenacaoChange && (
-          <div className="relative">
-            <OrdenarMenu
-              colunas={colunasOrdenaveis}
-              ordenacao={ordenacao}
-              onChange={onOrdenacaoChange}
-              onClose={() => setMenuOrdenarAberto(false)}
-            />
-          </div>
-        )}
       </div>
 
       <div className="bg-card relative flex max-h-full flex-1 flex-col overflow-hidden rounded-xl border">
