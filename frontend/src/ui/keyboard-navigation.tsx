@@ -508,6 +508,11 @@ function findDestination(
       )
       .sort((a, b) => a.rect.top - b.rect.top || a.rect.left - b.rect.left)[0]
     if (first) return first.element
+    // Páginas sem campo (como o Início, só com cartões de atalho): entra no primeiro controle do conteúdo.
+    const firstControl = candidates
+      .filter((candidate) => !sidebar.contains(candidate.element))
+      .sort((a, b) => a.rect.top - b.rect.top || a.rect.left - b.rect.left)[0]
+    if (firstControl) return firstControl.element
   }
 
   const listSearch = source.matches("[data-navigation-list-search='true']")
