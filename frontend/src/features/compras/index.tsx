@@ -18,6 +18,7 @@ import {
 import { compraSemSaldoDevolvivel, type Compra, type CriarDevolucaoCompraValues } from "./types";
 import { useFeatureList } from "@/hooks/use-feature-list";
 import { comprasApi } from "@/api/compras";
+import { abrirNfe } from "@/features/nfes";
 import { useUi } from "@/ui/imperative";
 
 export * from "./types";
@@ -109,13 +110,23 @@ export function ComprasFeature() {
     if (result.status !== "confirmed") return;
 
     try {
-      await comprasApi.createDevolucao(c.id, result.value);
+      const res = await comprasApi.createDevolucao(c.id, result.value);
       await Promise.all(
-        ["compras", "skus", "produtos", "movimentacoes"].map((k) =>
+        ["compras", "skus", "produtos", "movimentacoes", "contas-pagar", "nfes"].map((k) =>
           queryClient.invalidateQueries({ queryKey: [k] }),
         ),
       );
       ui.feedback.notify({ type: "success", title: "Devolução de compra registrada com sucesso." });
+      const nfe = res?.data?.nfeDevolucao;
+      if (nfe) {
+        // A nota original continua ativa; a devolução emite a sua própria NF-e.
+        const abrirNota = await ui.windows.confirm({
+          title: "NF-e de devolução emitida",
+          description: `A devolução emitiu a NF-e de devolução (chave ${nfe.chaveAcesso}). Deseja abrir a NF-e?`,
+          confirmLabel: "Abrir NF-e",
+        });
+        if (abrirNota) await abrirNfe(ui, nfe.nfeId);
+      }
     } catch (error) {
       ui.feedback.notifyError(error, {
         fallbackTitle: "Não foi possível registrar a devolução.",

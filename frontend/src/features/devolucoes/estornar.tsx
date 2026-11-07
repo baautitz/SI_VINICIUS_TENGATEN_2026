@@ -17,7 +17,7 @@ export interface EstornarDevolucaoWindowProps {
 
 /** Pede o motivo, exige confirmação explícita e faz o POST; as travas do backend aparecem em lista e a janela segue aberta. */
 export function EstornarDevolucaoWindow({ devolucaoId }: EstornarDevolucaoWindowProps) {
-  const activeWindow = useWindow<{ nfeAtiva?: Devolucao["nfeAtiva"] }>();
+  const activeWindow = useWindow<{ nfeEstorno?: Devolucao["nfeEstorno"] }>();
   const [motivo, setMotivo] = React.useState("");
   const [confirmado, setConfirmado] = React.useState(false);
   const [enviando, setEnviando] = React.useState(false);
@@ -32,7 +32,7 @@ export function EstornarDevolucaoWindow({ devolucaoId }: EstornarDevolucaoWindow
     setErros([]);
     try {
       const res = await vendasApi.estornarDevolucao(devolucaoId, motivo.trim());
-      activeWindow.resolve({ nfeAtiva: res?.data?.nfeAtiva });
+      activeWindow.resolve({ nfeEstorno: res?.data?.nfeEstorno });
     } catch (e) {
       const { errors } = extractApiErrors(e);
       setErros(errors.length ? errors : [{ code: "ERRO_API", message: getApiErrorMessage(e, "Não foi possível estornar a devolução."), field: null }]);
@@ -107,7 +107,7 @@ export function useEstornarDevolucao() {
   const queryClient = useQueryClient();
 
   return async (devolucaoId: number): Promise<boolean> => {
-    const r = await ui.windows.open<{ nfeAtiva?: Devolucao["nfeAtiva"] }, EstornarDevolucaoWindowProps>({
+    const r = await ui.windows.open<{ nfeEstorno?: Devolucao["nfeEstorno"] }, EstornarDevolucaoWindowProps>({
       component: EstornarDevolucaoWindow,
       props: { devolucaoId },
       title: `Estornar Devolução de venda #${devolucaoId}`,
@@ -115,17 +115,17 @@ export function useEstornarDevolucao() {
     });
     if (r.status !== "confirmed") return false;
     await Promise.all(
-      ["devolucoes", "vendas", "contas-receber", "contas-pagar", "movimentacoes", "skus", "produtos"].map((k) =>
+      ["devolucoes", "vendas", "contas-receber", "contas-pagar", "movimentacoes", "skus", "produtos", "nfes"].map((k) =>
         queryClient.invalidateQueries({ queryKey: [k] }),
       ),
     );
     ui.feedback.notify({ type: "success", title: `Devolução de venda #${devolucaoId} estornada.` });
-    const nfe = r.value?.nfeAtiva;
+    const nfe = r.value?.nfeEstorno;
     if (nfe) {
-      // O estorno não altera a NF-e: só avisa.
+      // A NF-e de devolução não se cancela: o estorno emite a NF-e de estorno da devolução.
       const abrir = await ui.windows.confirm({
-        title: "Esta venda possui NF-e ativa",
-        description: `O estorno da devolução não altera a NF-e (chave ${nfe.chaveAcesso}). Se necessário, cancele-a manualmente. Deseja abrir a NF-e?`,
+        title: "NF-e de estorno da devolução emitida",
+        description: `O estorno emitiu a NF-e de estorno da devolução (chave ${nfe.chaveAcesso}). Deseja abrir a NF-e?`,
         confirmLabel: "Abrir NF-e",
       });
       if (abrir) await abrirNfe(ui, nfe.nfeId);

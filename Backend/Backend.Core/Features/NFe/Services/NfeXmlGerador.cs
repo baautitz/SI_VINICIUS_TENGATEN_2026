@@ -15,10 +15,14 @@ public static partial class NfeXmlGerador
         var chave = nfe.ChaveAcesso ?? throw new InvalidOperationException("NF-e sem chave de acesso.");
         var parceiroDoc = nfe.ClienteCpfCnpj.Valor;
 
+        var (natOp, cfop) = NaturezaECfop(nfe);
+        var saida = nfe.TipoOperacao == Entities.Enums.TipoOperacao.SAIDA;
+        var devolucao = nfe.Finalidade == Entities.Enums.FinalidadeNfe.DEVOLUCAO;
+
         var det = nfe.NfesItens.OrderBy(i => i.NumeroItem).Select(i => E("det", new XAttribute("nItem", i.NumeroItem),
             E("prod",
                 E("cProd", i.Sku.Sku), E("cEAN", string.IsNullOrWhiteSpace(i.Sku.GtinEan) ? "SEM GTIN" : i.Sku.GtinEan),
-                E("xProd", i.DescricaoItem), E("NCM", "00000000"), E("CFOP", "5102"),
+                E("xProd", i.DescricaoItem), E("NCM", "00000000"), E("CFOP", cfop),
                 E("uCom", i.UnidadeMedida.Sigla), E("qCom", N(i.Quantidade, 4)), E("vUnCom", N(i.ValorUnitario, 4)),
                 E("vProd", N(i.Quantidade * i.ValorUnitario, 2)),
                 E("cEANTrib", "SEM GTIN"), E("uTrib", i.UnidadeMedida.Sigla), E("qTrib", N(i.Quantidade, 4)), E("vUnTrib", N(i.ValorUnitario, 4)),
@@ -29,13 +33,23 @@ public static partial class NfeXmlGerador
                 E("PIS", E("PISNT", E("CST", "07"))),
                 E("COFINS", E("COFINSNT", E("CST", "07"))))));
 
+        // Devolução/estorno não têm pagamento: tPag 90 (sem pagamento).
+        var pagamentos = nfe.NfesPagamentos.Count == 0
+            ? new[] { E("detPag", E("tPag", "90"), E("vPag", "0.00")) }
+            : nfe.NfesPagamentos.Select(p => E("detPag",
+                E("indPag", p.IndicadorPagamento == Entities.Enums.IndicadorPagamento.A_VISTA ? "0" : "1"),
+                E("tPag", DoisDigitos().IsMatch(p.MetodosPagamento.Codigo) ? p.MetodosPagamento.Codigo : "99"),
+                DoisDigitos().IsMatch(p.MetodosPagamento.Codigo) ? null : E("xPag", p.MetodosPagamento.Descricao),
+                E("vPag", N(p.ValorPagamento, 2)))).ToArray();
+
         var infNFe = E("infNFe", new XAttribute("Id", "NFe" + chave), new XAttribute("versao", "4.00"),
             E("ide",
-                E("cUF", chave[..2]), E("cNF", chave.Substring(35, 8)), E("natOp", "VENDA"), E("mod", "55"),
+                E("cUF", chave[..2]), E("cNF", chave.Substring(35, 8)), E("natOp", natOp), E("mod", "55"),
                 E("serie", nfe.Serie.ToString(CultureInfo.InvariantCulture)), E("nNF", nfe.Numero.ToString(CultureInfo.InvariantCulture)),
                 E("dhEmi", new DateTimeOffset(nfe.DataEmissao.ToUniversalTime()).ToOffset(NfeChaveAcesso.FusoBrasilia).ToString("yyyy-MM-dd'T'HH:mm:sszzz", CultureInfo.InvariantCulture)),
-                E("tpNF", "1"), E("idDest", "1"), E("tpImp", "1"), E("tpEmis", "1"), E("cDV", chave[43].ToString()),
-                E("tpAmb", "2"), E("finNFe", "1"), E("indFinal", "1"), E("indPres", "1"), E("procEmi", "0"), E("verProc", "TCC-1.0")),
+                E("tpNF", saida ? "1" : "0"), E("idDest", "1"), E("tpImp", "1"), E("tpEmis", "1"), E("cDV", chave[43].ToString()),
+                E("tpAmb", "2"), E("finNFe", devolucao ? "4" : "1"), E("indFinal", "1"), E("indPres", "1"), E("procEmi", "0"), E("verProc", "TCC-1.0"),
+                nfe.ChaveReferenciada is null ? null : E("NFref", E("refNFe", nfe.ChaveReferenciada))),
             E("emit",
                 Doc(nfe.EmitenteCpfCnpj.Valor), E("xNome", nfe.EmitenteNomeRazaosocial), E("xFant", nfe.EmitenteApelidoNomefantasia),
                 E("enderEmit", E("xLgr", nfe.EmitenteEndereco), E("xBairro", nfe.EmitenteBairro), E("fone", Digitos(nfe.EmitenteTelefone))),
@@ -52,14 +66,21 @@ public static partial class NfeXmlGerador
                 E("vDesc", N(nfe.ValorDesconto, 2)), E("vII", "0.00"), E("vIPI", "0.00"), E("vIPIDevol", "0.00"),
                 E("vPIS", "0.00"), E("vCOFINS", "0.00"), E("vOutro", N(nfe.ValorOutrasDespesas, 2)), E("vNF", N(nfe.ValorTotal, 2)))),
             E("transp", E("modFrete", "9")),
-            E("pag", nfe.NfesPagamentos.Select(p => E("detPag",
-                E("indPag", p.IndicadorPagamento == Entities.Enums.IndicadorPagamento.A_VISTA ? "0" : "1"),
-                E("tPag", DoisDigitos().IsMatch(p.MetodosPagamento.Codigo) ? p.MetodosPagamento.Codigo : "99"),
-                DoisDigitos().IsMatch(p.MetodosPagamento.Codigo) ? null : E("xPag", p.MetodosPagamento.Descricao),
-                E("vPag", N(p.ValorPagamento, 2))))));
+            E("pag", pagamentos));
 
         var doc = new XDocument(new XDeclaration("1.0", "UTF-8", null), E("NFe", infNFe));
         return doc.Declaration + Environment.NewLine + doc.Root!.ToString(SaveOptions.DisableFormatting);
+    }
+
+    private static (string NatOp, string Cfop) NaturezaECfop(Nfes nfe)
+    {
+        var saida = nfe.TipoOperacao == Entities.Enums.TipoOperacao.SAIDA;
+        return nfe.Finalidade switch
+        {
+            Entities.Enums.FinalidadeNfe.DEVOLUCAO => saida ? ("DEVOLUCAO DE COMPRA", "5202") : ("DEVOLUCAO DE VENDA", "1202"),
+            Entities.Enums.FinalidadeNfe.ESTORNO_DEVOLUCAO => saida ? ("ESTORNO DE DEVOLUCAO DE VENDA", "5949") : ("ESTORNO DE DEVOLUCAO DE COMPRA", "1949"),
+            _ => ("VENDA", "5102"),
+        };
     }
 
     // Elemento no namespace da NF-e; filhos nulos (e elementos de texto vazio) somem.

@@ -36,6 +36,13 @@ _Avoid_: Favorito, principal
 Documento fiscal (NF-e) emitido por uma Venda ou recebido numa Compra. Distinta da Compra e da Venda, que são as operações do sistema.
 _Avoid_: Nota (ambíguo)
 
+**NF-e de devolução**:
+Nota Fiscal emitida pela loja ao registrar uma Devolução (de venda ou de compra) cuja Nota Fiscal original está ativa. Referencia a chave da nota original e leva só os Itens devolvidos. Na Devolução de venda é uma nota de entrada; na de compra, de saída. A nota original não é cancelada, e a NF-e de devolução não se cancela: o Estorno de devolução emite a NF-e de estorno da devolução.
+_Avoid_: Nota de crédito, cancelamento da nota
+
+**NF-e de estorno da devolução**:
+Nota Fiscal emitida no Estorno de devolução, no sentido oposto ao da NF-e de devolução e referenciando-a. Só existe se a Devolução emitiu NF-e de devolução.
+
 **Item**:
 Linha de uma Compra, Venda, Movimentação ou Balanço, que refere um SKU e uma quantidade.
 _Avoid_: Linha, produto da nota

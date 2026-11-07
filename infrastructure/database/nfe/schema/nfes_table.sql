@@ -32,6 +32,11 @@ CREATE TABLE IF NOT EXISTS nfes (
   transportadora_id INTEGER,
   venda_id INTEGER,
   compra_id INTEGER,
+  -- NF-e de devolução (e de estorno da devolução): emitida pela loja a partir de uma Devolução, referenciando a nota anterior.
+  finalidade finalidade_nfe_enum NOT NULL DEFAULT 'NORMAL',
+  nfe_referenciada_id INTEGER,
+  devolucao_id INTEGER,
+  devolucao_compra_id INTEGER,
   justificativa_cancelamento VARCHAR(255),
   data_cancelamento TIMESTAMP WITH TIME ZONE,
   -- XML original da NF-e de entrada importada, guardado sem alteração.
@@ -62,11 +67,9 @@ CREATE TABLE IF NOT EXISTS nfes (
   CONSTRAINT nfes_valor_total_ck CHECK (valor_total >= 0),
   CONSTRAINT nfes_venda_fk FOREIGN KEY (venda_id) REFERENCES vendas (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT nfes_compra_fk FOREIGN KEY (compra_id) REFERENCES compras (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  -- SAIDA antiga pode não ter venda_id (legado): venda_id é opcional na SAIDA.
-  CONSTRAINT nfes_origem_ck CHECK (
-    (tipo_operacao = 'SAIDA' AND compra_id IS NULL AND cliente_id IS NOT NULL AND fornecedor_id IS NULL)
-    OR (tipo_operacao = 'ENTRADA' AND compra_id IS NOT NULL AND venda_id IS NULL AND fornecedor_id IS NOT NULL AND cliente_id IS NULL)
-  )
+  CONSTRAINT nfes_nfe_referenciada_fk FOREIGN KEY (nfe_referenciada_id) REFERENCES nfes (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT nfes_devolucao_fk FOREIGN KEY (devolucao_id) REFERENCES devolucoes (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT nfes_devolucao_compra_fk FOREIGN KEY (devolucao_compra_id) REFERENCES devolucoes_compra (id) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
 -- Migração de bancos já criados (CREATE TABLE IF NOT EXISTS não altera tabela existente).
@@ -75,6 +78,10 @@ ALTER TABLE nfes ADD COLUMN IF NOT EXISTS compra_id INTEGER;
 ALTER TABLE nfes ADD COLUMN IF NOT EXISTS justificativa_cancelamento VARCHAR(255);
 ALTER TABLE nfes ADD COLUMN IF NOT EXISTS data_cancelamento TIMESTAMP WITH TIME ZONE;
 ALTER TABLE nfes ADD COLUMN IF NOT EXISTS xml_documento TEXT;
+ALTER TABLE nfes ADD COLUMN IF NOT EXISTS finalidade finalidade_nfe_enum NOT NULL DEFAULT 'NORMAL';
+ALTER TABLE nfes ADD COLUMN IF NOT EXISTS nfe_referenciada_id INTEGER;
+ALTER TABLE nfes ADD COLUMN IF NOT EXISTS devolucao_id INTEGER;
+ALTER TABLE nfes ADD COLUMN IF NOT EXISTS devolucao_compra_id INTEGER;
 ALTER TABLE nfes ALTER COLUMN cliente_id DROP NOT NULL;
 ALTER TABLE nfes DROP CONSTRAINT IF EXISTS nfes_emitente_serie_numero_unique;
 DO $$
@@ -85,13 +92,35 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'nfes_compra_fk') THEN
     ALTER TABLE nfes ADD CONSTRAINT nfes_compra_fk FOREIGN KEY (compra_id) REFERENCES compras (id);
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'nfes_nfe_referenciada_fk') THEN
+    ALTER TABLE nfes ADD CONSTRAINT nfes_nfe_referenciada_fk FOREIGN KEY (nfe_referenciada_id) REFERENCES nfes (id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'nfes_devolucao_fk') THEN
+    ALTER TABLE nfes ADD CONSTRAINT nfes_devolucao_fk FOREIGN KEY (devolucao_id) REFERENCES devolucoes (id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'nfes_devolucao_compra_fk') THEN
+    ALTER TABLE nfes ADD CONSTRAINT nfes_devolucao_compra_fk FOREIGN KEY (devolucao_compra_id) REFERENCES devolucoes_compra (id);
+  END IF;
 END $$;
 
 -- Recriado a cada carga: o CHECK antigo exigia venda_id na SAIDA (e era NOT VALID, reavaliado no UPDATE de cancelar).
 ALTER TABLE nfes DROP CONSTRAINT IF EXISTS nfes_origem_ck;
 ALTER TABLE nfes ADD CONSTRAINT nfes_origem_ck CHECK (
-  (tipo_operacao = 'SAIDA' AND compra_id IS NULL AND cliente_id IS NOT NULL AND fornecedor_id IS NULL)
-  OR (tipo_operacao = 'ENTRADA' AND compra_id IS NOT NULL AND venda_id IS NULL AND fornecedor_id IS NOT NULL AND cliente_id IS NULL)
+  (
+    finalidade = 'NORMAL' AND nfe_referenciada_id IS NULL AND devolucao_id IS NULL AND devolucao_compra_id IS NULL
+    AND (
+      (tipo_operacao = 'SAIDA' AND compra_id IS NULL AND cliente_id IS NOT NULL AND fornecedor_id IS NULL)
+      OR (tipo_operacao = 'ENTRADA' AND compra_id IS NOT NULL AND venda_id IS NULL AND fornecedor_id IS NOT NULL AND cliente_id IS NULL)
+    )
+  )
+  OR (
+    -- Devolução de venda tem o cliente como contraparte; devolução de compra, o fornecedor. Nunca ligada a venda/compra.
+    finalidade <> 'NORMAL' AND nfe_referenciada_id IS NOT NULL AND venda_id IS NULL AND compra_id IS NULL
+    AND (
+      (cliente_id IS NOT NULL AND fornecedor_id IS NULL AND devolucao_id IS NOT NULL AND devolucao_compra_id IS NULL)
+      OR (fornecedor_id IS NOT NULL AND cliente_id IS NULL AND devolucao_compra_id IS NOT NULL AND devolucao_id IS NULL)
+    )
+  )
 );
 
 -- Numeração é nossa só na SAIDA; na ENTRADA vale a chave de acesso original, única entre as notas não canceladas
@@ -99,8 +128,14 @@ ALTER TABLE nfes ADD CONSTRAINT nfes_origem_ck CHECK (
 ALTER TABLE nfes DROP CONSTRAINT IF EXISTS nfes_chave_acesso_key;
 CREATE UNIQUE INDEX IF NOT EXISTS nfes_chave_acesso_ativa_uq
   ON nfes (chave_acesso) WHERE status_nfe <> 'CANCELADA';
+-- A numeração também vale para as notas de devolução/estorno, que a loja emite mesmo no sentido de entrada.
+DROP INDEX IF EXISTS nfes_saida_emitente_serie_numero_uq;
 CREATE UNIQUE INDEX IF NOT EXISTS nfes_saida_emitente_serie_numero_uq
-  ON nfes (emitente_id, serie, numero) WHERE tipo_operacao = 'SAIDA';
+  ON nfes (emitente_id, serie, numero) WHERE tipo_operacao = 'SAIDA' OR finalidade <> 'NORMAL';
+CREATE UNIQUE INDEX IF NOT EXISTS nfes_devolucao_finalidade_uq
+  ON nfes (devolucao_id, finalidade) WHERE devolucao_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS nfes_devolucao_compra_finalidade_uq
+  ON nfes (devolucao_compra_id, finalidade) WHERE devolucao_compra_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS nfes_venda_emitida_uq
   ON nfes (venda_id) WHERE status_nfe = 'EMITIDA';
 CREATE UNIQUE INDEX IF NOT EXISTS nfes_compra_uq

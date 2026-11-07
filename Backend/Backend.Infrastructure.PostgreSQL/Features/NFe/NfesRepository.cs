@@ -3,6 +3,7 @@ using Backend.Core.Common.Results;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.NFe.DTOs;
 using Backend.Core.Features.NFe.Entities;
+using Backend.Core.Features.NFe.Entities.Enums;
 using Backend.Core.Features.NFe.Repositories;
 using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Parceiros.Entities;
@@ -53,6 +54,7 @@ public class NfesRepository : INfesRepository
                    n.valor_produtos, n.valor_desconto, n.valor_frete, n.valor_seguro,
                    n.valor_outras_despesas, n.valor_total, n.venda_id, n.compra_id,
                    n.justificativa_cancelamento, n.data_cancelamento,
+                   n.finalidade, n.nfe_referenciada_id, n.devolucao_id, n.devolucao_compra_id,
                    e.id AS EmitenteId, e.id AS Id, e.nome_razaosocial, e.cpf_cnpj, e.ativo,
                    c.id AS ClienteId, c.id AS Id, c.nome_razaosocial, c.cpf_cnpj, c.ativo,
                    f.id AS FornecedorId, f.id AS Id, f.nome_razaosocial, f.cpf_cnpj, f.ativo
@@ -154,6 +156,7 @@ public class NfesRepository : INfesRepository
                    n.valor_produtos, n.valor_desconto, n.valor_frete, n.valor_seguro,
                    n.valor_outras_despesas, n.valor_total, n.venda_id, n.compra_id,
                    n.justificativa_cancelamento, n.data_cancelamento,
+                   n.finalidade, n.nfe_referenciada_id, n.devolucao_id, n.devolucao_compra_id,
                     e.id AS EmitenteId, e.id AS Id, e.nome_razaosocial, e.cpf_cnpj, e.apelido_nomefantasia, e.logradouro, e.numero,
                     e.telefone, e.email, e.rg_ie, e.inscricao_municipal, e.regime_tributario,
                     e.ativo, e.criado_em, e.observacao,
@@ -259,7 +262,8 @@ public class NfesRepository : INfesRepository
                 tipo_operacao, status_nfe,
                 valor_produtos, valor_desconto, valor_frete, valor_seguro,
                 valor_outras_despesas, valor_total,
-                emitente_id, cliente_id, fornecedor_id, venda_id, compra_id, xml_documento)
+                emitente_id, cliente_id, fornecedor_id, venda_id, compra_id, xml_documento,
+                finalidade, nfe_referenciada_id, devolucao_id, devolucao_compra_id)
             VALUES (
                 @ChaveAcesso, @Numero, @Serie, @DataEmissao, @DataSaida,
                 @EmitenteNomeRazaosocial, @EmitenteCpfCnpj, @EmitenteRgIe,
@@ -271,7 +275,8 @@ public class NfesRepository : INfesRepository
                 @TipoOperacao::tipo_operacao_enum, @StatusNfe::status_nfe_enum,
                 @ValorProdutos, @ValorDesconto, @ValorFrete, @ValorSeguro,
                 @ValorOutrasDespesas, @ValorTotal,
-                @EmitenteId, @ClienteId, @FornecedorId, @VendaId, @CompraId, @XmlDocumento)
+                @EmitenteId, @ClienteId, @FornecedorId, @VendaId, @CompraId, @XmlDocumento,
+                @Finalidade::finalidade_nfe_enum, @NfeReferenciadaId, @DevolucaoId, @DevolucaoCompraId)
             RETURNING id;";
 
         int idGerado;
@@ -315,7 +320,11 @@ public class NfesRepository : INfesRepository
                 FornecedorId = nfe.Fornecedor?.Id,
                 nfe.VendaId,
                 nfe.CompraId,
-                nfe.XmlDocumento
+                nfe.XmlDocumento,
+                Finalidade = nfe.Finalidade.ToString(),
+                nfe.NfeReferenciadaId,
+                nfe.DevolucaoId,
+                nfe.DevolucaoCompraId
             },
             transaction: _session.Transaction);
         }
@@ -471,13 +480,25 @@ public class NfesRepository : INfesRepository
             "SELECT id AS NfeId, chave_acesso AS ChaveAcesso FROM nfes WHERE venda_id = @VendaId AND status_nfe = 'EMITIDA';",
             new { VendaId = vendaId }, transaction: _session.Transaction);
 
+    public Task<NfeAtiva?> ObterNfeEmitidaDaCompra(int compraId)
+        => _session.Connection.QuerySingleOrDefaultAsync<NfeAtiva?>(
+            "SELECT id AS NfeId, chave_acesso AS ChaveAcesso FROM nfes WHERE compra_id = @CompraId AND status_nfe = 'EMITIDA';",
+            new { CompraId = compraId }, transaction: _session.Transaction);
+
+    public Task<NfeAtiva?> ObterNfeDaDevolucao(int? devolucaoId, int? devolucaoCompraId, FinalidadeNfe finalidade)
+        => _session.Connection.QuerySingleOrDefaultAsync<NfeAtiva?>(
+            @"SELECT id AS NfeId, chave_acesso AS ChaveAcesso FROM nfes
+              WHERE finalidade = @Finalidade::finalidade_nfe_enum AND status_nfe = 'EMITIDA'
+                AND devolucao_id IS NOT DISTINCT FROM @DevolucaoId AND devolucao_compra_id IS NOT DISTINCT FROM @DevolucaoCompraId;",
+            new { Finalidade = finalidade.ToString(), DevolucaoId = devolucaoId, DevolucaoCompraId = devolucaoCompraId }, transaction: _session.Transaction);
+
     public async Task<int> ProximoNumeroSaida(int emitenteId, short serie)
     {
         await _session.Connection.ExecuteAsync(
             "SELECT pg_advisory_xact_lock(@EmitenteId, @Serie);",
             new { EmitenteId = emitenteId, Serie = (int)serie }, transaction: _session.Transaction);
         return await _session.Connection.ExecuteScalarAsync<int>(
-            "SELECT COALESCE(MAX(numero), 0) + 1 FROM nfes WHERE emitente_id = @EmitenteId AND serie = @Serie AND tipo_operacao = 'SAIDA';",
+            "SELECT COALESCE(MAX(numero), 0) + 1 FROM nfes WHERE emitente_id = @EmitenteId AND serie = @Serie AND (tipo_operacao = 'SAIDA' OR finalidade <> 'NORMAL');",
             new { EmitenteId = emitenteId, Serie = (int)serie }, transaction: _session.Transaction);
     }
 

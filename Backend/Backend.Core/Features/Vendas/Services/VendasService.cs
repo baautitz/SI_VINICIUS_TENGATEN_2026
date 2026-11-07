@@ -20,7 +20,9 @@ using Backend.Core.Features.Financeiro.Repositories;
 using Backend.Core.Features.Financeiro.Entities;
 using Backend.Core.Features.Financeiro.Policies;
 using Backend.Core.Features.Financeiro.Entities.Enums;
+using Backend.Core.Features.NFe.Entities.Enums;
 using Backend.Core.Features.NFe.Repositories;
+using Backend.Core.Features.NFe.Services;
 using Backend.Core.Features.Vendas.Repositories;
 using Backend.Core.Features.Vendas.Entities;
 using Backend.Core.Features.Vendas.Entities.Enums;
@@ -42,6 +44,7 @@ public sealed class VendasService : BaseService
     private readonly IDevolucoesRepository _devolucoesRepository;
     private readonly IMovimentacoesEstoquesRepository _movimentacoesRepository;
     private readonly INfesRepository _nfesRepository;
+    private readonly NfesDevolucaoService _nfesDevolucaoService;
     private readonly IUnitOfWork _unitOfWork;
 
     public VendasService(
@@ -56,6 +59,7 @@ public sealed class VendasService : BaseService
         IDevolucoesRepository devolucoesRepository,
         IMovimentacoesEstoquesRepository movimentacoesRepository,
         INfesRepository nfesRepository,
+        NfesDevolucaoService nfesDevolucaoService,
         IUnitOfWork unitOfWork)
     {
         _vendasRepository = vendasRepository;
@@ -69,6 +73,7 @@ public sealed class VendasService : BaseService
         _devolucoesRepository = devolucoesRepository;
         _movimentacoesRepository = movimentacoesRepository;
         _nfesRepository = nfesRepository;
+        _nfesDevolucaoService = nfesDevolucaoService;
         _unitOfWork = unitOfWork;
     }
 
@@ -217,8 +222,14 @@ public sealed class VendasService : BaseService
         return todas.OrderBy(c => c.NumeroParcela).ToList();
     }
 
-    public Task<Devolucao?> ObterDevolucaoPorId(int id)
-        => _devolucoesRepository.ObterDevolucaoPorId(id);
+    public async Task<Devolucao?> ObterDevolucaoPorId(int id)
+    {
+        var devolucao = await _devolucoesRepository.ObterDevolucaoPorId(id);
+        if (devolucao is null) return null;
+        devolucao.NfeDevolucao = await _nfesRepository.ObterNfeDaDevolucao(id, null, FinalidadeNfe.DEVOLUCAO);
+        devolucao.NfeEstorno = await _nfesRepository.ObterNfeDaDevolucao(id, null, FinalidadeNfe.ESTORNO_DEVOLUCAO);
+        return devolucao;
+    }
 
     public Task<ResultadoPaginado<DevolucaoResumo>> PesquisarDevolucoes(string termo, int pagina = 1, int tamanhoDaPagina = 20, int? vendaId = null)
         => _devolucoesRepository.PesquisarDevolucoes(termo, pagina, tamanhoDaPagina, vendaId);
@@ -227,7 +238,8 @@ public sealed class VendasService : BaseService
         => _devolucoesRepository.ObterDevolucoesPorVenda(vendaId);
 
     // Devolução por item: estoque volta ao custo original da saída; o valor abate o saldo em aberto das parcelas a receber
-    // (registrando quanto saiu de cada uma) e o excedente (já recebido) vira conta a pagar ao cliente. Tudo na mesma transação.
+    // (registrando quanto saiu de cada uma) e o excedente (já recebido) vira conta a pagar ao cliente. Se a venda tem NF-e ativa,
+    // emite a NF-e de devolução. Tudo na mesma transação.
     public async Task<Resultado<Devolucao>> CriarDevolucao(int vendaId, CriarDevolucaoCommand command)
     {
         var validation = await new CriarDevolucaoCommandValidator().ValidateAsync(command);
@@ -292,9 +304,9 @@ public sealed class VendasService : BaseService
                 if (restante > 0)
                     await CriarReembolso(venda, criada, restante);
 
+                criada.NfeDevolucao = await _nfesDevolucaoService.EmitirDevolucaoDeVenda(venda, criada);
+
                 _unitOfWork.Commit();
-                // Só avisa: o cancelamento da NF-e é decisão fiscal separada.
-                criada.NfeAtiva = await _nfesRepository.ObterNfeEmitidaDaVenda(vendaId);
                 return Resultado<Devolucao>.Sucesso(criada);
             }
             catch (Exception)
@@ -309,7 +321,7 @@ public sealed class VendasService : BaseService
     public const string DevolucaoJaEstornada = "DEVOLUCAO_JA_ESTORNADA";
 
     // Desfaz a devolução na mesma transação: itens saem de novo do estoque, os abatimentos voltam às parcelas a receber
-    // e o reembolso ao cliente (conta a pagar) é cancelado, barrado se já tiver pagamento. Não mexe na NF-e: só avisa em NfeAtiva.
+    // e o reembolso ao cliente (conta a pagar) é cancelado, barrado se já tiver pagamento. Se a devolução emitiu NF-e, emite a NF-e de estorno.
     public async Task<Resultado<Devolucao>> EstornarDevolucao(int id, EstornarDevolucaoCommand command)
     {
         var motivo = command?.Motivo?.Trim() ?? "";
@@ -379,8 +391,10 @@ public sealed class VendasService : BaseService
             await _contasPagarRepository.AtualizarContaPagar(reembolso.Id, reembolso);
         }
 
-        // Só avisa: a NF-e (cancelamento ou nota complementar) é decisão fiscal separada.
-        devolucao.NfeAtiva = await _nfesRepository.ObterNfeEmitidaDaVenda(devolucao.VendaId);
+        var venda = await _vendasRepository.ObterVendaPorId(devolucao.VendaId)
+            ?? throw new DomainException("Venda da devolução não encontrada.");
+        devolucao.NfeDevolucao = await _nfesRepository.ObterNfeDaDevolucao(devolucao.Id, null, FinalidadeNfe.DEVOLUCAO);
+        devolucao.NfeEstorno = await _nfesDevolucaoService.EmitirEstornoDeDevolucaoDeVenda(venda, devolucao);
         return Resultado<Devolucao>.Sucesso(devolucao);
     }
 

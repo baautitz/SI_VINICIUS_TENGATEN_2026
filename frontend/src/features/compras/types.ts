@@ -42,6 +42,9 @@ export interface DevolucaoCompra {
   dataDevolucao: string;
   motivo: string;
   valorTotal: number;
+  /** NF-e de devolução emitida com a devolução e NF-e de estorno emitida no estorno; vazias se a compra não tinha NF-e ativa. */
+  nfeDevolucao?: { nfeId: number; chaveAcesso: string } | null;
+  nfeEstorno?: { nfeId: number; chaveAcesso: string } | null;
   itens: Array<{
     id: number;
     compraItemId: number;

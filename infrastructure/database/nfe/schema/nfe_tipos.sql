@@ -34,3 +34,10 @@ BEGIN
 EXCEPTION
   WHEN duplicate_object THEN NULL;
 END $$;
+
+DO $$
+BEGIN
+  CREATE TYPE projeto_sistemas.finalidade_nfe_enum AS ENUM ('NORMAL', 'DEVOLUCAO', 'ESTORNO_DEVOLUCAO');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
