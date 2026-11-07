@@ -4,7 +4,8 @@ import { ContasPagarUpsertForm } from "@/features/financeiro/contas-pagar/upsert
 import { contasPagarApi } from "@/api/financeiro";
 import { useRelated, mapItens } from "@/hooks/use-related";
 import { RelatedActions } from "@/components/related-actions";
-import { Receipt } from "lucide-react";
+import { FileText, Receipt } from "lucide-react";
+import { TextoWindow, type TextoWindowProps } from "@/components/texto-window";
 
 import { HotkeyKbd } from "@/ui/primitives";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
@@ -27,7 +28,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fornecedoresApi } from "@/api/parceiros";
 import { TipoPessoa } from "@/api/types";
 import { Pais } from "@/features/localizacao/paises";
-import { useWindow, useWindowCommands } from "@/ui/imperative";
+import { useUi, useWindow, useWindowCommands } from "@/ui/imperative";
 import { Spinner } from "@/ui/primitives";
 
 export interface FornecedoresUpsertProps {
@@ -73,6 +74,7 @@ export function FornecedoresUpsert(props: FornecedoresUpsertProps) {
 function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, valoresIniciais, itensIniciais, onItens }: FornecedoresUpsertProps) {
   const itens = React.useRef<ItensSelecionados>(itensIniciais ?? {});
   const activeWindow = useWindow<true | FornecedorFormValues>();
+  const ui = useUi();
   const [selectedPais, setSelectedPais] = useState<Pais | null>(
     editingItem?.nacionalidade ?? null,
   );
@@ -532,13 +534,26 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
           validators={{ onChange: fornecedorSchema.shape.observacao }}
         >
           {(field) => (
-            <FormFieldUI
-              field={field}
-              label="Observação"
-              getFieldError={getFieldError}
-              inputSize="full"
-              readOnly={readOnly}
-            />
+            <div className="flex flex-col gap-2">
+              <FieldLabel>Observações</FieldLabel>
+              <Button
+                type="button"
+                variant="outline"
+                className="justify-start font-normal"
+                onClick={async () => {
+                  const r = await ui.windows.open<string, TextoWindowProps>({
+                    component: TextoWindow,
+                    props: { label: "Observações", value: field.state.value ?? "", readOnly },
+                    title: "Observações",
+                    size: "medium",
+                  });
+                  if (r.status === "confirmed") field.handleChange(r.value);
+                }}
+              >
+                <FileText />
+                <span className="truncate">{field.state.value || (readOnly ? "Sem observações" : "Adicionar observações")}</span>
+              </Button>
+            </div>
           )}
         </form.Field>
 
