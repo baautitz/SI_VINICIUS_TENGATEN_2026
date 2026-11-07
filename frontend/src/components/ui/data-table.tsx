@@ -390,7 +390,7 @@ export function DataTable<TData, TValue>({
                         <button
                           type="button"
                           className={cn(
-                            "hover:text-foreground inline-flex items-center gap-1 uppercase",
+                            "hover:text-foreground inline-flex items-center gap-1 uppercase outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4",
                             cabecalhoAlinhadoADireita(header.column.columnDef.header, header.getContext()) && "w-full justify-end",
                           )}
                           aria-label={`Ordenar por ${campo}`}
