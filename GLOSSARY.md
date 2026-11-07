@@ -61,11 +61,11 @@ Retorno de Itens de uma Venda pelo cliente, com motivo, que devolve os Itens ao 
 _Avoid_: Devolução (sem qualificar), Estorno (é o desfazer de uma baixa ou compra), cancelamento
 
 **Devolução de compra**:
-Retorno de Itens de uma Compra ao fornecedor, com motivo, total ou parcial, limitada ao saldo em estoque dos Itens. É o espelho da Devolução de venda no lado da compra.
+Retorno de Itens de uma Compra ao fornecedor, com motivo, total ou parcial, limitada ao saldo em estoque dos Itens. É o espelho da Devolução de venda no lado da compra: dá Abatimento nas parcelas a pagar da Compra e o que passar do saldo em aberto vira Reembolso do fornecedor.
 _Avoid_: Devolução (sem qualificar), Estorno de compra (é o desfazer da Compra), cancelamento
 
 **Abatimento**:
-Baixa não monetária de uma parcela a receber causada por uma Devolução de venda. Reduz o saldo em aberto sem alterar o valor original da parcela nem o valor recebido, e cada Devolução registra quais parcelas abateu e quanto.
+Baixa não monetária de uma parcela a receber (Devolução de venda) ou a pagar (Devolução de compra). Reduz o saldo em aberto sem alterar o valor original da parcela nem o valor recebido, e cada Devolução registra quais parcelas abateu e quanto.
 
 **Ordem do Abatimento**:
 Ordem em que uma Devolução consome o saldo em aberto das parcelas, igual para venda (a receber) e compra (a pagar): primeiro as parcelas vencidas, da mais antiga para a mais recente; depois as a vencer, da última para a primeira. Parcela que vence hoje ainda não está vencida.
@@ -73,7 +73,7 @@ _Avoid_: Prioridade de abatimento
 _Avoid_: Desconto, redução do valor da parcela
 
 **Reembolso**:
-Conta a pagar ao cliente gerada por uma Devolução de venda quando o valor devolvido passa do saldo em aberto da Venda, de modo que parte já recebida precisa ser devolvida. É um título único, vencendo na data da Devolução.
+Conta a pagar ao cliente gerada por uma Devolução de venda, ou conta a receber do fornecedor gerada por uma Devolução de compra, quando o valor devolvido passa do saldo em aberto da Venda, de modo que parte já recebida (ou paga, na compra) precisa ser devolvida. É um título único, vencendo na data da Devolução.
 _Avoid_: Estorno, crédito do cliente
 
 **Devolução parcial**:
@@ -85,7 +85,7 @@ Devolução de venda de todo o saldo devolvível de todos os Itens da Venda, ou 
 _Avoid_: Devolução completa
 
 **Parcela baixada**:
-Parcela de conta a pagar ou a receber com algum valor pago ou recebido, ou com Abatimento por Devolução de venda. Nenhum fluxo pode alterá-la, excluí-la ou cancelá-la, nem o documento de origem pode ser estornado, até a baixa ser estornada. A Devolução de venda é a única exceção, e só consome saldo em aberto, nunca o valor já recebido.
+Parcela de conta a pagar ou a receber com algum valor pago ou recebido, ou com Abatimento por Devolução. Nenhum fluxo pode alterá-la, excluí-la ou cancelá-la, nem o documento de origem pode ser estornado, até a baixa ser estornada. A Devolução (de venda ou de compra) é a única exceção, e só consome saldo em aberto, nunca o valor já recebido ou pago.
 _Avoid_: Parcela paga (deixa de fora a parcial e o abatimento)
 
 **Estorno de devolução**:
