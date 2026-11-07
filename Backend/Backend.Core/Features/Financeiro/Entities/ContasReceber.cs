@@ -15,7 +15,10 @@ public class ContasReceber
     public int NumeroParcela { get; private set; }
     public int TotalParcelas { get; private set; }
     public string Descricao { get; private set; }
-    public Clientes Cliente { get; private set; }
+    // Contraparte: cliente (manual/venda) ou fornecedor (reembolso de devolução de compra); exatamente um.
+    public Clientes? Cliente { get; private set; }
+    public int? FornecedorId { get; private set; }
+    public string? FornecedorNome { get; private set; }
     public DateTime? DataEmissao { get; private set; }
     public DateTime DataVencimento { get; private set; }
     public decimal Valor { get; private set; }
@@ -34,10 +37,9 @@ public class ContasReceber
     {
         Descricao = string.Empty;
         NumeroDocumento = string.Empty;
-        Cliente = null!;
     }
 
-    public ContasReceber(string descricao, decimal valor, Clientes cliente, DateTime dataVencimento, string numeroDocumento, int numeroParcela = 1, int totalParcelas = 1, DateTime? dataEmissao = null, CondicoesPagamentos? condicaoPagamento = null, OrigemTituloFinanceiro origemTipo = OrigemTituloFinanceiro.MANUAL, int? origemId = null, string? observacao = null)
+    public ContasReceber(string descricao, decimal valor, Clientes? cliente, DateTime dataVencimento, string numeroDocumento, int numeroParcela = 1, int totalParcelas = 1, DateTime? dataEmissao = null, CondicoesPagamentos? condicaoPagamento = null, OrigemTituloFinanceiro origemTipo = OrigemTituloFinanceiro.MANUAL, int? origemId = null, string? observacao = null, int? fornecedorId = null, string? fornecedorNome = null)
     {
         descricao = TextNormalization.Normalize(descricao);
         observacao = TextNormalization.NormalizeOrNull(observacao);
@@ -59,12 +61,23 @@ public class ContasReceber
             throw new DomainException("Número da parcela inválido.");
 
         if (origemTipo is OrigemTituloFinanceiro.COMPRA or OrigemTituloFinanceiro.DEVOLUCAO_VENDA or OrigemTituloFinanceiro.FRETE_COMPRA)
-            throw new DomainException("Conta a receber não pode ter origem em compra ou devolução.");
+            throw new DomainException("Conta a receber não pode ter origem em compra ou devolução de venda.");
 
         if (origemTipo != OrigemTituloFinanceiro.MANUAL && origemId is null)
             throw new DomainException("O documento de origem é obrigatório.");
 
-        Cliente = cliente ?? throw new DomainException("Cliente é obrigatório para contas a receber.");
+        if ((cliente is null ? 0 : 1) + (fornecedorId is null ? 0 : 1) != 1)
+            throw new DomainException("A conta a receber deve ter exatamente um cliente ou fornecedor.");
+
+        if (origemTipo == OrigemTituloFinanceiro.DEVOLUCAO_COMPRA && fornecedorId is null)
+            throw new DomainException("Reembolso de devolução de compra exige fornecedor.");
+
+        if (origemTipo != OrigemTituloFinanceiro.DEVOLUCAO_COMPRA && cliente is null)
+            throw new DomainException("Cliente é obrigatório para contas a receber.");
+
+        Cliente = cliente;
+        FornecedorId = fornecedorId;
+        FornecedorNome = fornecedorNome;
         Descricao = descricao;
         NumeroDocumento = numeroDocumento;
         NumeroParcela = numeroParcela;
@@ -82,8 +95,8 @@ public class ContasReceber
     }
 
     // Reidratação a partir do banco.
-    public ContasReceber(int id, string descricao, decimal valor, Clientes cliente, DateTime dataVencimento, string numeroDocumento, int numeroParcela, int totalParcelas, DateTime? dataEmissao, CondicoesPagamentos? condicaoPagamento, OrigemTituloFinanceiro origemTipo, int? origemId, string? observacao, DateTime criadoEm, decimal valorPago, StatusTituloFinanceiro status, decimal valorAbatido = 0)
-        : this(descricao, valor, cliente, dataVencimento, numeroDocumento, numeroParcela, totalParcelas, dataEmissao, condicaoPagamento, origemTipo, origemId, observacao)
+    public ContasReceber(int id, string descricao, decimal valor, Clientes? cliente, DateTime dataVencimento, string numeroDocumento, int numeroParcela, int totalParcelas, DateTime? dataEmissao, CondicoesPagamentos? condicaoPagamento, OrigemTituloFinanceiro origemTipo, int? origemId, string? observacao, DateTime criadoEm, decimal valorPago, StatusTituloFinanceiro status, decimal valorAbatido = 0, int? fornecedorId = null, string? fornecedorNome = null)
+        : this(descricao, valor, cliente, dataVencimento, numeroDocumento, numeroParcela, totalParcelas, dataEmissao, condicaoPagamento, origemTipo, origemId, observacao, fornecedorId, fornecedorNome)
     {
         Id = id;
         CriadoEm = criadoEm;

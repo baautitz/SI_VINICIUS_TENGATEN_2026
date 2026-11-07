@@ -13,6 +13,25 @@ public class ContasReceberTests
     private static readonly Clientes Cliente = (Clientes)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(Clientes));
 
     [Fact]
+    public void Reembolso_de_devolucao_de_compra_tem_fornecedor_e_nao_cliente()
+    {
+        var c = new ContasReceber("Reembolso", 50m, null, DateTime.Today, "DEVC-1", origemTipo: OrigemTituloFinanceiro.DEVOLUCAO_COMPRA, origemId: 7, fornecedorId: 3, fornecedorNome: "Fornecedor X");
+
+        Assert.Null(c.Cliente);
+        Assert.Equal(3, c.FornecedorId);
+        Assert.Equal(OrigemTituloFinanceiro.DEVOLUCAO_COMPRA, c.OrigemTipo);
+    }
+
+    [Fact]
+    public void Contraparte_deve_ser_exatamente_uma_e_coerente_com_a_origem()
+    {
+        Assert.Throws<DomainException>(() => new ContasReceber("Reembolso", 50m, null, DateTime.Today, "D", origemTipo: OrigemTituloFinanceiro.DEVOLUCAO_COMPRA, origemId: 7));
+        Assert.Throws<DomainException>(() => new ContasReceber("Reembolso", 50m, Cliente, DateTime.Today, "D", origemTipo: OrigemTituloFinanceiro.DEVOLUCAO_COMPRA, origemId: 7, fornecedorId: 3));
+        Assert.Throws<DomainException>(() => new ContasReceber("Manual", 50m, null, DateTime.Today, "D", fornecedorId: 3));
+        Assert.Throws<DomainException>(() => new ContasReceber("Manual", 50m, null, DateTime.Today, "D"));
+    }
+
+    [Fact]
     public void Parcelas_do_documento_recebem_parcial_e_cancelam_por_documento()
     {
         var parcelas = Enumerable.Range(1, 3)

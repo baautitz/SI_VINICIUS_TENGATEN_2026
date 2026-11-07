@@ -84,7 +84,7 @@ BEGIN
     to_char(NEW.data_vencimento, 'DD/MM/YYYY'), to_char(NEW.data_emissao, 'DD/MM/YYYY'),
     CASE NEW.status WHEN 'ABERTO' THEN 'aberto' WHEN 'PARCIAL' THEN 'parcial' WHEN 'PAGO' THEN 'pago' WHEN 'CANCELADO' THEN 'cancelado' END,
     CASE NEW.origem_tipo WHEN 'MANUAL' THEN 'manual' WHEN 'VENDA' THEN 'venda' WHEN 'COMPRA' THEN 'compra'
-      WHEN 'FRETE_COMPRA' THEN 'frete compra' WHEN 'DEVOLUCAO_VENDA' THEN 'devolucao venda' END)));
+      WHEN 'FRETE_COMPRA' THEN 'frete compra' WHEN 'DEVOLUCAO_VENDA' THEN 'devolucao venda' WHEN 'DEVOLUCAO_COMPRA' THEN 'devolucao compra' END)));
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

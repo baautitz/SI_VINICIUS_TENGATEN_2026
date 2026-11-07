@@ -19,7 +19,8 @@ BEGIN
     'VENDA',
     'COMPRA',
     'FRETE_COMPRA',
-    'DEVOLUCAO_VENDA'
+    'DEVOLUCAO_VENDA',
+    'DEVOLUCAO_COMPRA'
   );
 EXCEPTION
   WHEN duplicate_object THEN NULL;

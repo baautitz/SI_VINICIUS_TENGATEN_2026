@@ -27,7 +27,7 @@ public class ContasReceberRepository : IContasReceberRepository
         ["documento"] = "cr.numero_documento",
         ["parcela"] = "cr.numero_parcela",
         ["descricao"] = "unaccent(lower(cr.descricao))",
-        ["cliente"] = "unaccent(lower(c.nome_razaosocial))",
+        ["cliente"] = "unaccent(lower(COALESCE(c.nome_razaosocial, f.nome_razaosocial)))",
         ["vencimento"] = "cr.data_vencimento",
         ["valor"] = "cr.valor",
         ["valorPago"] = "cr.valor_pago",
@@ -41,6 +41,7 @@ public class ContasReceberRepository : IContasReceberRepository
                cr.valor AS Valor, cr.valor_pago AS ValorPago, cr.valor_abatido AS ValorAbatido, cr.status AS Status, cr.observacao AS Observacao, cr.criado_em AS CriadoEm,
                cr.origem_tipo::text AS OrigemTipo, cr.origem_id AS OrigemId, cr.numero_documento AS NumeroDocumento,
                cr.numero_parcela AS NumeroParcela, cr.total_parcelas AS TotalParcelas,
+               cr.fornecedor_id AS FornecedorId, f.nome_razaosocial AS FornecedorNome,
                c.id AS Id, c.tipo_pessoa AS TipoPessoa, c.nome_razaosocial AS NomeRazaoSocial, c.cpf_cnpj AS CpfCnpj,
                c.rg_ie AS RgIe, c.apelido_nomefantasia AS ApelidoNomeFantasia, c.logradouro AS Logradouro, c.numero AS Numero,
                c.telefone AS Telefone, c.email AS Email, c.limite_credito AS LimiteCredito,
@@ -51,8 +52,9 @@ public class ContasReceberRepository : IContasReceberRepository
                con.multa_percentual AS MultaPercentual, con.taxa_juros_percentual AS TaxaJurosPercentual, con.ativo AS Ativo,
                mp.codigo AS Codigo, mp.descricao AS Descricao, mp.ativo AS Ativo
         FROM contas_receber cr
-        JOIN clientes c ON c.id = cr.cliente_id
-        JOIN paises p ON p.id = c.nacionalidade_id
+        LEFT JOIN clientes c ON c.id = cr.cliente_id
+        LEFT JOIN fornecedores f ON f.id = cr.fornecedor_id
+        LEFT JOIN paises p ON p.id = c.nacionalidade_id
         LEFT JOIN condicoes_pagamentos con ON con.id = cr.condicao_pagamento_id
         LEFT JOIN metodos_pagamento mp ON mp.codigo = con.metodo_pagamento_codigo";
 
@@ -61,7 +63,7 @@ public class ContasReceberRepository : IContasReceberRepository
             SelectSql + sqlComWhereEOrder,
             (conta, cliente, pais, condicao, metodo) =>
             {
-                var cl = new Clientes(
+                var cl = cliente is null ? null : new Clientes(
                     cliente.Id, cliente.TipoPessoa, cliente.NomeRazaoSocial, cliente.CpfCnpj, pais,
                     cliente.RgIe, cliente.ApelidoNomeFantasia, cliente.Logradouro, cliente.Numero, null,
                     cliente.Telefone, cliente.Email, cliente.LimiteCredito, cliente.Observacao, cliente.Ativo,
@@ -73,7 +75,7 @@ public class ContasReceberRepository : IContasReceberRepository
                 return new ContasReceber(
                     conta.Id, conta.Descricao, conta.Valor, cl, conta.DataVencimento, conta.NumeroDocumento,
                     conta.NumeroParcela, conta.TotalParcelas, conta.DataEmissao, condicao, conta.OrigemTipo, conta.OrigemId,
-                    conta.Observacao, conta.CriadoEm, conta.ValorPago, conta.Status, conta.ValorAbatido);
+                    conta.Observacao, conta.CriadoEm, conta.ValorPago, conta.Status, conta.ValorAbatido, conta.FornecedorId, conta.FornecedorNome);
             },
             param,
             transaction: _session.Transaction,
@@ -96,10 +98,10 @@ public class ContasReceberRepository : IContasReceberRepository
     {
         const string sql = @"
             INSERT INTO contas_receber (origem_tipo, origem_id, numero_documento, numero_parcela, total_parcelas,
-                                        cliente_id, descricao, data_emissao, data_vencimento,
+                                        cliente_id, fornecedor_id, descricao, data_emissao, data_vencimento,
                                         valor, valor_pago, valor_abatido, status, condicao_pagamento_id, observacao, criado_em, atualizado_em)
             VALUES (@OrigemTipo::origem_titulo_financeiro_enum, @OrigemId, @NumeroDocumento, @NumeroParcela, @TotalParcelas,
-                    @ClienteId, @Descricao, @DataEmissao, @DataVencimento,
+                    @ClienteId, @FornecedorId, @Descricao, @DataEmissao, @DataVencimento,
                     @Valor, @ValorPago, @ValorAbatido, @Status::status_titulo_financeiro_enum, @CondicaoPagamentoId, @Observacao, @CriadoEm, @CriadoEm)
             RETURNING id;";
 
@@ -107,7 +109,7 @@ public class ContasReceberRepository : IContasReceberRepository
 
         return new ContasReceber(id, conta.Descricao, conta.Valor, conta.Cliente, conta.DataVencimento, conta.NumeroDocumento,
             conta.NumeroParcela, conta.TotalParcelas, conta.DataEmissao, conta.CondicaoPagamento, conta.OrigemTipo, conta.OrigemId,
-            conta.Observacao, conta.CriadoEm, conta.ValorPago, conta.Status, conta.ValorAbatido);
+            conta.Observacao, conta.CriadoEm, conta.ValorPago, conta.Status, conta.ValorAbatido, conta.FornecedorId, conta.FornecedorNome);
     }
 
     public async Task<ContasReceber> AtualizarContaReceber(int id, ContasReceber conta)
@@ -137,13 +139,14 @@ public class ContasReceberRepository : IContasReceberRepository
 
         var where = PesquisaTitulos.Where("cr.texto_pesquisa", PesquisaTitulos.Analisar(termo)) + @"
               " + PesquisaTitulos.FiltroComum("cr") + @"
-              AND (@CpfCnpj::text IS NULL OR regexp_replace(c.cpf_cnpj, '\D', '', 'g') = @CpfCnpj)";
+              AND (@CpfCnpj::text IS NULL OR @CpfCnpj IN (regexp_replace(COALESCE(c.cpf_cnpj, ''), '\D', '', 'g'), regexp_replace(COALESCE(f.cpf_cnpj, ''), '\D', '', 'g')))";
 
         await PesquisaTitulos.AjustarLimiar(_session.Connection, _session.Transaction);
         var total = await _session.Connection.ExecuteScalarAsync<int>(@"
             SELECT COUNT(*)
             FROM contas_receber cr
-            JOIN clientes c ON c.id = cr.cliente_id" + where + ";",
+            LEFT JOIN clientes c ON c.id = cr.cliente_id
+            LEFT JOIN fornecedores f ON f.id = cr.fornecedor_id" + where + ";",
             param, transaction: _session.Transaction);
 
         // Escolha do usuário no cabeçalho; sem ela vale a relevância da pesquisa e depois o que exige ação.
@@ -165,7 +168,8 @@ public class ContasReceberRepository : IContasReceberRepository
         c.NumeroDocumento,
         c.NumeroParcela,
         c.TotalParcelas,
-        ClienteId = c.Cliente.Id,
+        ClienteId = c.Cliente?.Id,
+        c.FornecedorId,
         c.Descricao,
         c.DataEmissao,
         c.DataVencimento,
