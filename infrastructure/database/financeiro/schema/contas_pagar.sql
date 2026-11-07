@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS contas_pagar (
   data_vencimento DATE NOT NULL,
   valor NUMERIC(14, 2) NOT NULL,
   valor_pago NUMERIC(14, 2) NOT NULL DEFAULT 0,
+  -- Baixa não monetária por devolução de compra; valor original nunca muda.
+  valor_abatido NUMERIC(14, 2) NOT NULL DEFAULT 0,
   status status_titulo_financeiro_enum NOT NULL DEFAULT 'ABERTO',
   condicao_pagamento_id INTEGER,
   observacao TEXT,
@@ -56,7 +58,7 @@ CREATE TABLE IF NOT EXISTS contas_pagar (
   CONSTRAINT contas_pagar_valor_ck
     CHECK (valor >= 0),
   CONSTRAINT contas_pagar_valor_pago_ck
-    CHECK (valor_pago >= 0 AND valor_pago <= valor)
+    CHECK (valor_pago >= 0 AND valor_abatido >= 0 AND valor_pago + valor_abatido <= valor)
 );
 
 -- Equivalente a UNIQUE NULLS NOT DISTINCT (que exige PG15+).

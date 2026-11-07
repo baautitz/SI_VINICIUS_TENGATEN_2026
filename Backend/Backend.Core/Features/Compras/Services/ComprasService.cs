@@ -179,7 +179,9 @@ public sealed class ComprasService : BaseService
         var erros = new List<ResultadoErro>();
         foreach (var conta in contas.Where(c => c.PossuiBaixa))
             erros.Add(new ResultadoErro("ESTORNO_PARCELA_PAGA",
-                $"A parcela {conta.NumeroParcela} da conta '{conta.Descricao}' já tem R$ {conta.ValorPago:0.00} pago. Estorne o pagamento primeiro.", "ContasPagar"));
+                conta.ValorPago > 0
+                    ? $"A parcela {conta.NumeroParcela} da conta '{conta.Descricao}' já tem R$ {conta.ValorPago:0.00} pago. Estorne o pagamento primeiro."
+                    : $"A parcela {conta.NumeroParcela} da conta '{conta.Descricao}' tem R$ {conta.ValorAbatido:0.00} abatido por devolução. Estorne a devolução primeiro.", "ContasPagar"));
         erros.AddRange(await _estoqueService.ObterBloqueiosDeEstornoDeEntrada(OrigemMovimentacaoEstoque.COMPRA, compra.Id));
         if (erros.Count > 0)
             return Resultado<Compra>.Falha(erros);

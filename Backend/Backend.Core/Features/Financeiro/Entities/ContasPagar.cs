@@ -27,9 +27,11 @@ public class ContasPagar
     public DateTime DataVencimento { get; private set; }
     public decimal Valor { get; private set; }
     public decimal ValorPago { get; private set; }
-    public decimal ValorSaldo => Valor - ValorPago;
-    // Parcela com algum valor pago (quitada ou parcial): nenhum fluxo pode alterá-la ou cancelá-la até o pagamento ser estornado.
-    public bool PossuiBaixa => ValorPago > 0;
+    // Baixa não monetária por devolução de compra: abate o saldo sem alterar o Valor original nem o que foi pago.
+    public decimal ValorAbatido { get; private set; }
+    public decimal ValorSaldo => Valor - ValorPago - ValorAbatido;
+    // Parcela com valor pago ou abatido por devolução: nenhum fluxo pode alterá-la ou cancelá-la até a baixa ser estornada.
+    public bool PossuiBaixa => ValorPago > 0 || ValorAbatido > 0;
     public StatusTituloFinanceiro Status { get; private set; }
     public CondicoesPagamentos? CondicaoPagamento { get; private set; }
     public string? Observacao { get; private set; }
@@ -102,7 +104,7 @@ public class ContasPagar
     }
 
     // Reidratação a partir do banco: confia nas regras do schema (uma contraparte entre fornecedor, cliente e transportadora).
-    public ContasPagar(int id, string descricao, decimal valor, Fornecedores? fornecedor, DateTime dataVencimento, string numeroDocumento, int numeroParcela, int totalParcelas, DateTime? dataEmissao, CondicoesPagamentos? condicaoPagamento, OrigemTituloFinanceiro origemTipo, int? origemId, string? observacao, DateTime criadoEm, decimal valorPago, StatusTituloFinanceiro status, int? clienteId, string? clienteNome, int? transportadoraId, string? transportadoraNome = null)
+    public ContasPagar(int id, string descricao, decimal valor, Fornecedores? fornecedor, DateTime dataVencimento, string numeroDocumento, int numeroParcela, int totalParcelas, DateTime? dataEmissao, CondicoesPagamentos? condicaoPagamento, OrigemTituloFinanceiro origemTipo, int? origemId, string? observacao, DateTime criadoEm, decimal valorPago, StatusTituloFinanceiro status, int? clienteId, string? clienteNome, int? transportadoraId, string? transportadoraNome = null, decimal valorAbatido = 0)
     {
         Id = id;
         Fornecedor = fornecedor;
@@ -116,6 +118,7 @@ public class ContasPagar
         TotalParcelas = totalParcelas;
         Valor = valor;
         ValorPago = valorPago;
+        ValorAbatido = valorAbatido;
         DataEmissao = dataEmissao;
         DataVencimento = dataVencimento;
         CondicaoPagamento = condicaoPagamento;
@@ -143,7 +146,7 @@ public class ContasPagar
             throw new DomainException($"O valor informado (R$ {valor:F2}) excede o saldo restante da parcela (R$ {ValorSaldo:F2}).");
 
         ValorPago += valor;
-        Status = ValorPago >= Valor ? StatusTituloFinanceiro.PAGO : StatusTituloFinanceiro.PARCIAL;
+        RecalcularStatus();
     }
 
     public void EstornarPagamento(decimal valor)
@@ -160,8 +163,40 @@ public class ContasPagar
             throw new DomainException($"O valor do estorno (R$ {valor:F2}) não pode ser maior do que o valor já pago (R$ {ValorPago:F2}).");
 
         ValorPago -= valor;
-        Status = ValorPago == 0 ? StatusTituloFinanceiro.ABERTO : StatusTituloFinanceiro.PARCIAL;
+        RecalcularStatus();
     }
+
+    // Abate (devolução de compra) até o saldo em aberto e devolve quanto foi abatido. O Valor original e o
+    // ValorPago nunca mudam; parcela quitada só por abatimento fica PAGO.
+    public decimal Abater(decimal valor)
+    {
+        if (Status == StatusTituloFinanceiro.CANCELADO) return 0;
+
+        var abatido = Math.Min(Math.Round(valor, 2, MidpointRounding.AwayFromZero), ValorSaldo);
+        if (abatido <= 0) return 0;
+
+        ValorAbatido += abatido;
+        RecalcularStatus();
+        return abatido;
+    }
+
+    // Inverso de Abater (estorno da devolução): devolve até o que foi abatido; não mexe em ValorPago.
+    public decimal Restituir(decimal valor)
+    {
+        if (Status == StatusTituloFinanceiro.CANCELADO) return 0;
+
+        var restituido = Math.Min(Math.Round(valor, 2, MidpointRounding.AwayFromZero), ValorAbatido);
+        if (restituido <= 0) return 0;
+
+        ValorAbatido -= restituido;
+        RecalcularStatus();
+        return restituido;
+    }
+
+    private void RecalcularStatus()
+        => Status = ValorSaldo <= 0 ? StatusTituloFinanceiro.PAGO
+            : ValorPago + ValorAbatido > 0 ? StatusTituloFinanceiro.PARCIAL
+            : StatusTituloFinanceiro.ABERTO;
 
     // Cancela a parcela (ex.: estorno da compra de origem); exige que nada tenha sido pago.
     public void Cancelar()

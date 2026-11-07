@@ -34,13 +34,14 @@ public class ContasPagarRepository : IContasPagarRepository
         ["vencimento"] = "cp.data_vencimento",
         ["valor"] = "cp.valor",
         ["valorPago"] = "cp.valor_pago",
-        ["valorSaldo"] = "(cp.valor - cp.valor_pago)",
+        ["valorAbatido"] = "cp.valor_abatido",
+        ["valorSaldo"] = "(cp.valor - cp.valor_pago - cp.valor_abatido)",
         ["status"] = "cp.status",
     };
 
     private const string SelectSql = @"
         SELECT cp.id AS Id, cp.descricao AS Descricao, cp.data_emissao AS DataEmissao, cp.data_vencimento AS DataVencimento,
-               cp.valor AS Valor, cp.valor_pago AS ValorPago, cp.status AS Status, cp.observacao AS Observacao, cp.criado_em AS CriadoEm,
+               cp.valor AS Valor, cp.valor_pago AS ValorPago, cp.valor_abatido AS ValorAbatido, cp.status AS Status, cp.observacao AS Observacao, cp.criado_em AS CriadoEm,
                cp.origem_tipo::text AS OrigemTipo, cp.origem_id AS OrigemId, cp.numero_documento AS NumeroDocumento,
                cp.numero_parcela AS NumeroParcela, cp.total_parcelas AS TotalParcelas,
                cp.cliente_id AS ClienteId, cp.transportadora_id AS TransportadoraId, cli.nome_razaosocial AS ClienteNome, tr.nome_razaosocial AS TransportadoraNome,
@@ -76,7 +77,7 @@ public class ContasPagarRepository : IContasPagarRepository
                 return new ContasPagar(
                     conta.Id, conta.Descricao, conta.Valor, f, conta.DataVencimento, conta.NumeroDocumento,
                     conta.NumeroParcela, conta.TotalParcelas, conta.DataEmissao, condicao, conta.OrigemTipo, conta.OrigemId,
-                    conta.Observacao, conta.CriadoEm, conta.ValorPago, conta.Status, conta.ClienteId, conta.ClienteNome, conta.TransportadoraId, conta.TransportadoraNome);
+                    conta.Observacao, conta.CriadoEm, conta.ValorPago, conta.Status, conta.ClienteId, conta.ClienteNome, conta.TransportadoraId, conta.TransportadoraNome, conta.ValorAbatido);
             },
             param,
             transaction: _session.Transaction,
@@ -100,24 +101,24 @@ public class ContasPagarRepository : IContasPagarRepository
         const string sql = @"
             INSERT INTO contas_pagar (origem_tipo, origem_id, numero_documento, numero_parcela, total_parcelas,
                                       fornecedor_id, cliente_id, transportadora_id, descricao, data_emissao, data_vencimento,
-                                      valor, valor_pago, status, condicao_pagamento_id, observacao, criado_em, atualizado_em)
+                                      valor, valor_pago, valor_abatido, status, condicao_pagamento_id, observacao, criado_em, atualizado_em)
             VALUES (@OrigemTipo::origem_titulo_financeiro_enum, @OrigemId, @NumeroDocumento, @NumeroParcela, @TotalParcelas,
                     @FornecedorId, @ClienteId, @TransportadoraId, @Descricao, @DataEmissao, @DataVencimento,
-                    @Valor, @ValorPago, @Status::status_titulo_financeiro_enum, @CondicaoPagamentoId, @Observacao, @CriadoEm, @CriadoEm)
+                    @Valor, @ValorPago, @ValorAbatido, @Status::status_titulo_financeiro_enum, @CondicaoPagamentoId, @Observacao, @CriadoEm, @CriadoEm)
             RETURNING id;";
 
         var id = await _session.Connection.ExecuteScalarAsync<int>(sql, Parametros(0, conta), transaction: _session.Transaction);
 
         return new ContasPagar(id, conta.Descricao, conta.Valor, conta.Fornecedor, conta.DataVencimento, conta.NumeroDocumento,
             conta.NumeroParcela, conta.TotalParcelas, conta.DataEmissao, conta.CondicaoPagamento, conta.OrigemTipo, conta.OrigemId,
-            conta.Observacao, conta.CriadoEm, conta.ValorPago, conta.Status, conta.ClienteId, conta.ClienteNome, conta.TransportadoraId, conta.TransportadoraNome);
+            conta.Observacao, conta.CriadoEm, conta.ValorPago, conta.Status, conta.ClienteId, conta.ClienteNome, conta.TransportadoraId, conta.TransportadoraNome, conta.ValorAbatido);
     }
 
     public async Task<ContasPagar> AtualizarContaPagar(int id, ContasPagar conta)
     {
         const string sql = @"
             UPDATE contas_pagar
-            SET descricao = @Descricao, data_vencimento = @DataVencimento, valor = @Valor, valor_pago = @ValorPago,
+            SET descricao = @Descricao, data_vencimento = @DataVencimento, valor = @Valor, valor_pago = @ValorPago, valor_abatido = @ValorAbatido,
                 status = @Status::status_titulo_financeiro_enum, observacao = @Observacao, atualizado_em = NOW()
             WHERE id = @Id;";
 
@@ -183,6 +184,7 @@ public class ContasPagarRepository : IContasPagarRepository
         c.DataVencimento,
         c.Valor,
         c.ValorPago,
+        c.ValorAbatido,
         Status = c.Status.ToString(),
         CondicaoPagamentoId = c.CondicaoPagamento?.Id,
         c.Observacao,
