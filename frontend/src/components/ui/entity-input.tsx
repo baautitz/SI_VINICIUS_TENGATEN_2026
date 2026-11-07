@@ -297,11 +297,15 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
                 // Enter repetido (tecla segurada após Alt+Enter avançar de etapa) não abre a listagem.
                 if (e.repeat) return e.preventDefault();
                 e.preventDefault();
-                // Enter is the keyboard command for opening the entity
-                // browser. Do not block the dialog on the optional inline
-                // lookup request; that request remains useful on blur, while
-                // the selector can query the current text immediately.
-                void openSelection();
+                // Texto novo digitado: resolve como no blur (id ou resultado único
+                // preenche direto); sem correspondência única, abre a seleção.
+                // Campo vazio ou intacto: Enter abre a seleção.
+                const digitado = inputRef.current?.value ?? searchText;
+                if (digitado.trim() && digitado !== selectedLabel) {
+                  void handleSearch(digitado, false);
+                } else {
+                  void openSelection();
+                }
               }
               if (e.altKey && (e.key === "q" || e.key === "Q")) {
                 e.preventDefault();
