@@ -2,6 +2,7 @@ using Backend.Core.Common.Results;
 using Backend.Core.Features.NFe.DTOs;
 
 using Backend.Core.Features.NFe.Entities;
+using Backend.Core.Features.NFe.Entities.Enums;
 
 namespace Backend.Core.Features.NFe.Repositories;
 
@@ -12,6 +13,9 @@ public interface INfesRepository
     public Task<Nfes?> ObterNfeDaCompra(int compraId);
     public Task<string?> ObterXmlDocumento(int id);
     public Task<NfeAtiva?> ObterNfeEmitidaDaVenda(int vendaId);
+    public Task<NfeAtiva?> ObterNfeEmitidaDaCompra(int compraId);
+    // NF-e de devolução (ou de estorno) emitida para a Devolução de venda ou de compra informada.
+    public Task<NfeAtiva?> ObterNfeDaDevolucao(int? devolucaoId, int? devolucaoCompraId, FinalidadeNfe finalidade);
     // Próximo número da série para o emitente; exige transação aberta (advisory lock até o commit).
     public Task<int> ProximoNumeroSaida(int emitenteId, short serie);
     // false = nada atualizado (a NF-e deixou de estar EMITIDA entre a leitura e o UPDATE).

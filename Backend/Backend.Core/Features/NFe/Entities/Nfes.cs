@@ -3,6 +3,7 @@ using Backend.Core.Common.Helpers;
 using Backend.Core.Common.ValueObjects;
 using Backend.Core.Features.Localizacao.Entities;
 using Backend.Core.Features.NFe.Entities.Enums;
+using Backend.Core.Features.NFe.Services;
 using Backend.Core.Features.Parceiros.Entities;
 
 namespace Backend.Core.Features.NFe.Entities;
@@ -42,6 +43,13 @@ public class Nfes
     public Fornecedores? Fornecedor { get; private set; }
     public int? VendaId { get; private set; }
     public int? CompraId { get; private set; }
+    public FinalidadeNfe Finalidade { get; private set; }
+    public int? NfeReferenciadaId { get; private set; }
+    public int? DevolucaoId { get; private set; }
+    public int? DevolucaoCompraId { get; private set; }
+    // Só na geração do XML (refNFe): a chave da nota referenciada não é coluna, vem de nfe_referenciada_id.
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string? ChaveReferenciada { get; private set; }
     // Só preenchido na criação; as consultas não carregam a coluna (use ObterXmlDocumento).
     [System.Text.Json.Serialization.JsonIgnore]
     public string? XmlDocumento { get; private set; }
@@ -207,6 +215,85 @@ public class Nfes
         return nfe;
     }
 
+    // NF-e emitida pela loja a partir de uma Devolução (de venda ou de compra) ou do seu estorno, referenciando a nota anterior.
+    // Venda: cliente + devolucaoId; compra: fornecedor + devolucaoCompraId. Sem pagamentos nem impostos; já nasce EMITIDA.
+    public static Nfes CriarDevolucao(
+        FinalidadeNfe finalidade, TipoOperacao tipoOperacao, int numero, short serie, DateTime dataEmissao, string chaveAcesso,
+        Emitentes emitente, Clientes? cliente, Fornecedores? fornecedor, IEnumerable<NfesItens> itens,
+        int nfeReferenciadaId, string chaveReferenciada, int? devolucaoId, int? devolucaoCompraId)
+    {
+        if (finalidade == FinalidadeNfe.NORMAL)
+            throw new DomainException("A finalidade da NF-e de devolução não pode ser normal.");
+        if (chaveAcesso is not { Length: 44 })
+            throw new DomainException("Chave de acesso deve ter 44 dígitos.");
+        if (chaveReferenciada is not { Length: 44 })
+            throw new DomainException("A chave da NF-e referenciada deve ter 44 dígitos.");
+        if (numero <= 0)
+            throw new DomainException("Número da nota fiscal é obrigatório.");
+        if ((cliente is null) == (fornecedor is null))
+            throw new DomainException("Informe o cliente ou o fornecedor da NF-e de devolução.");
+        if ((devolucaoId is null) == (devolucaoCompraId is null))
+            throw new DomainException("Informe a devolução de venda ou a de compra da NF-e.");
+        var lista = itens?.ToList() ?? new List<NfesItens>();
+        if (lista.Count == 0)
+            throw new DomainException("A nota fiscal deve conter ao menos um item.");
+
+        var nfe = new Nfes
+        {
+            TipoOperacao = tipoOperacao,
+            StatusNfe = StatusNfe.EMITIDA,
+            Finalidade = finalidade,
+            ChaveAcesso = chaveAcesso,
+            ChaveReferenciada = chaveReferenciada,
+            NfeReferenciadaId = nfeReferenciadaId,
+            DevolucaoId = devolucaoId,
+            DevolucaoCompraId = devolucaoCompraId,
+            Numero = numero,
+            Serie = serie,
+            DataEmissao = dataEmissao,
+            Emitente = emitente ?? throw new DomainException("Emitente é obrigatório."),
+            Cliente = cliente,
+            Fornecedor = fornecedor,
+            EmitenteNomeRazaosocial = TextNormalization.Truncate(TextNormalization.Normalize(emitente.NomeRazaoSocial), 150)!,
+            EmitenteCpfCnpj = emitente.CpfCnpj,
+            EmitenteRgIe = emitente.RgIe,
+            EmitenteApelidoNomefantasia = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(emitente.ApelidoNomeFantasia), 100),
+            EmitenteEndereco = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(emitente.Logradouro + (string.IsNullOrWhiteSpace(emitente.Numero) ? "" : $", {emitente.Numero}")), 150),
+            EmitenteBairro = TextNormalization.Truncate(emitente.Bairro?.Bairro, 100),
+            EmitenteTelefone = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(emitente.Telefone), 20),
+            EmitenteEmail = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(emitente.Email), 254),
+        };
+
+        if (cliente is not null)
+        {
+            nfe.ClienteNomeRazaosocial = TextNormalization.Truncate(TextNormalization.Normalize(cliente.NomeRazaoSocial), 150)!;
+            nfe.ClienteCpfCnpj = cliente.CpfCnpj;
+            nfe.ClienteRgIe = cliente.RgIe;
+            nfe.ClienteApelidoNomefantasia = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(cliente.ApelidoNomeFantasia), 100);
+            nfe.ClienteEndereco = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(cliente.Logradouro + (string.IsNullOrWhiteSpace(cliente.Numero) ? "" : $", {cliente.Numero}")), 150);
+            nfe.ClienteBairro = TextNormalization.Truncate(cliente.Bairro?.Bairro, 100);
+            nfe.ClienteTelefone = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(cliente.Telefone), 20);
+            nfe.ClienteEmail = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(cliente.Email), 254);
+        }
+        else
+        {
+            nfe.ClienteNomeRazaosocial = TextNormalization.Truncate(TextNormalization.Normalize(fornecedor!.NomeRazaosocial), 150)!;
+            nfe.ClienteCpfCnpj = fornecedor.CpfCnpj;
+            nfe.ClienteRgIe = fornecedor.RgIe;
+            nfe.ClienteApelidoNomefantasia = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(fornecedor.ApelidoNomefantasia), 100);
+            nfe.ClienteEndereco = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(fornecedor.Logradouro + (string.IsNullOrWhiteSpace(fornecedor.Numero) ? "" : $", {fornecedor.Numero}")), 150);
+            nfe.ClienteBairro = TextNormalization.Truncate(fornecedor.Bairro?.Bairro, 100);
+            nfe.ClienteTelefone = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(fornecedor.Telefone), 20);
+            nfe.ClienteEmail = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(fornecedor.Email), 254);
+        }
+
+        nfe._itens.AddRange(lista);
+        nfe.ValorProdutos = lista.Sum(i => Math.Round(i.Quantidade * i.ValorUnitario, 2, MidpointRounding.AwayFromZero));
+        nfe.ValorTotal = nfe.ValorProdutos;
+        nfe.XmlDocumento = NfeXmlGerador.Gerar(nfe);
+        return nfe;
+    }
+
     // Saída: RASCUNHO com chave -> EMITIDA, guardando o XML gerado na emissão.
     public void Emitir(string xmlDocumento)
     {
@@ -228,6 +315,8 @@ public class Nfes
     // Cancelamento fiscal: não desfaz a venda, o estoque nem o financeiro.
     public void Cancelar(string justificativa, DateTime? quando = null)
     {
+        if (Finalidade != FinalidadeNfe.NORMAL)
+            throw new DomainException("NF-e de devolução não pode ser cancelada: o estorno da devolução emite a nota de estorno.");
         if (TipoOperacao != TipoOperacao.SAIDA)
             throw new DomainException("NF-e de entrada não pode ser cancelada.");
         if (StatusNfe != StatusNfe.EMITIDA)
