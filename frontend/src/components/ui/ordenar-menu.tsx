@@ -89,11 +89,11 @@ export function OrdenarMenu({
             aria-selected={i === indice}
             className={cn(
               "flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm",
-              i === indice && "bg-primary/10 font-medium",
+              i === indice && "bg-primary/10",
             )}
           >
             <span className="whitespace-nowrap">{coluna.rotulo}</span>
-            <span className="text-muted-foreground flex shrink-0 items-center gap-1 text-xs">
+            <span className="text-muted-foreground flex w-28 shrink-0 items-center justify-end gap-1 text-xs">
               {modo === "asc" ? <ArrowUpNarrowWide className="size-4" /> : modo === "desc" ? <ArrowDownWideNarrow className="size-4" /> : <ChevronsUpDown className="size-4 opacity-40" />}
               {ROTULO_MODO[modo]}
             </span>
