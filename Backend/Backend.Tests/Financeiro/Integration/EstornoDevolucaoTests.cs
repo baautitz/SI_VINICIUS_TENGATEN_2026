@@ -174,6 +174,23 @@ public class EstornoDevolucaoTests
     }
 
     [Fact]
+    public async Task Devolucao_abate_primeiro_a_parcela_vencida_e_o_estorno_restitui_exatamente()
+    {
+        var (vendaId, itemId) = await VendaDe2Parcelas();
+        await _db.Executar("UPDATE contas_receber SET data_vencimento = CURRENT_DATE - 10 WHERE numero_parcela = 1;");
+
+        var devolucaoId = await Devolver(vendaId, itemId);
+
+        Assert.Equal(("PAGO", 50m, 0m, 50m), await Parcela(1));
+        Assert.Equal(("PARCIAL", 50m, 0m, 10m), await Parcela(2));
+
+        var estorno = await Servico(v => v.EstornarDevolucao(devolucaoId, new EstornarDevolucaoCommand("Cliente desistiu da devolucao")));
+        Assert.True(estorno.Success, estorno.Errors?.FirstOrDefault()?.Message);
+        Assert.Equal(("ABERTO", 50m, 0m, 0m), await Parcela(1));
+        Assert.Equal(("ABERTO", 50m, 0m, 0m), await Parcela(2));
+    }
+
+    [Fact]
     public async Task Devolucao_menor_que_o_aberto_nao_gera_reembolso()
     {
         var (vendaId, itemId, _) = await VendaDe5ParcelasDe100();

@@ -18,6 +18,7 @@ using Backend.Core.Features.Parceiros.Entities;
 using Backend.Core.Features.Financeiro.DTOs;
 using Backend.Core.Features.Financeiro.Repositories;
 using Backend.Core.Features.Financeiro.Entities;
+using Backend.Core.Features.Financeiro.Policies;
 using Backend.Core.Features.Financeiro.Entities.Enums;
 using Backend.Core.Features.NFe.Repositories;
 using Backend.Core.Features.Vendas.Repositories;
@@ -274,10 +275,11 @@ public sealed class VendasService : BaseService
                 if (!resultadoEstoque.Success)
                     throw new DomainException(resultadoEstoque.Errors!.First().Message);
 
-                // Abate o saldo em aberto da última parcela para a primeira (preserva os vencimentos mais próximos);
-                // o Valor original das parcelas não muda. O que não couber no aberto (já recebido) vira reembolso.
+                // Abate o saldo em aberto na ordem de OrdemAbatimento (vencidas primeiro); o Valor original das
+                // parcelas não muda. O que não couber no aberto (já recebido) vira reembolso.
                 var restante = criada.ValorTotal;
-                foreach (var conta in (await ObterContasDaVenda(vendaId)).OrderByDescending(c => c.NumeroParcela))
+                var contas = OrdemAbatimento.Ordenar(await ObterContasDaVenda(vendaId), c => c.DataVencimento, c => c.NumeroParcela, DateTime.Today);
+                foreach (var conta in contas)
                 {
                     if (restante <= 0) break;
                     var abatido = conta.Abater(restante);
