@@ -32,10 +32,12 @@ export function ContasReceberFeature({ vendaId }: ContasReceberFeatureProps = {}
   const { status, origem, documento, avancados } = filtros;
   const { setPage } = list;
   const { data, isLoading } = useQuery({
-    queryKey: ["contas-receber", list.deferredSearch, status, origem, documento, avancados, vendaId, list.page],
+    queryKey: ["contas-receber", list.deferredSearch, status, origem, documento, avancados, vendaId, list.page, list.ordenacao],
     queryFn: async () => {
       const res = await contasReceberApi.list({
         search: list.deferredSearch.trim() || undefined,
+        ordenarPor: list.ordenacao?.campo,
+        direcao: list.ordenacao?.direcao,
         status: status === TODOS ? undefined : status,
         origemTipo: vendaId !== undefined ? "VENDA" : (documento?.origemTipo ?? (origem === TODOS ? undefined : origem)),
         origemId: vendaId ?? documento?.origemId ?? undefined,
@@ -155,6 +157,8 @@ export function ContasReceberFeature({ vendaId }: ContasReceberFeatureProps = {}
       onView={(item) => openEditor(item, true)}
       onDelete={openDelete}
       onPageChange={list.setPage}
+        ordenacao={list.ordenacao}
+        onOrdenacaoChange={list.alterarOrdenacao}
       rowSelection={list.rowSelection}
       onRowSelectionChange={list.setRowSelection}
       selectAllAcrossPages={list.selectAllAcrossPages}

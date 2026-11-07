@@ -28,7 +28,7 @@ export function NfesFeature() {
   const [tipo, setTipo] = React.useState<string>(TODOS);
   const [status, setStatus] = React.useState<string>(TODOS);
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["nfes", "lista", list.deferredSearch, tipo, status, list.page],
+    queryKey: ["nfes", "lista", list.deferredSearch, tipo, status, list.page, list.ordenacao],
     queryFn: async () => {
       const res = await nfesApi.list({
         search: list.deferredSearch.trim() || undefined,
@@ -36,6 +36,7 @@ export function NfesFeature() {
         status: status === TODOS ? undefined : (status as StatusNfe),
         page: list.page,
         pageSize: 50,
+        ordenacao: list.ordenacao,
       });
       return {
         itens: res?.itens ?? [],
@@ -65,6 +66,8 @@ export function NfesFeature() {
       onStatusChange={filtro(setStatus)}
       onSearchChange={list.handleSearchChange}
       onPageChange={list.setPage}
+        ordenacao={list.ordenacao}
+        onOrdenacaoChange={list.alterarOrdenacao}
       onView={async (n) => {
         await abrirNfe(ui, n.id, n.numero);
         await queryClient.invalidateQueries({ queryKey: ["nfes"] });

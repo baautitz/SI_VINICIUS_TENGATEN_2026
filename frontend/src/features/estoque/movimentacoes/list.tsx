@@ -35,10 +35,12 @@ export function MovimentacoesList({
   onView,
   onEstornar,
   onPageChange,
+  ordenacao,
+  onOrdenacaoChange,
 }: MovimentacoesListProps) {
   const columns: ColumnDef<MovimentacaoEstoque>[] = [
     {
-      accessorKey: "id",
+      accessorKey: "id", meta: { campoOrdenacao: "id" },
       header: "Código",
       size: 80,
       cell: ({ row }) => (
@@ -46,14 +48,14 @@ export function MovimentacoesList({
       ),
     },
     {
-      accessorKey: "dataMovimentacao",
+      accessorKey: "dataMovimentacao", meta: { campoOrdenacao: "dataMovimentacao" },
       header: "Data/Hora",
       cell: ({ row }) => (
         <span>{formatToLocal(row.getValue("dataMovimentacao"))}</span>
       ),
     },
     {
-      accessorKey: "tipoMovimentacao",
+      accessorKey: "tipoMovimentacao", meta: { campoOrdenacao: "tipoMovimentacao" },
       header: "Tipo",
       cell: ({ row }) => {
         const tipo = row.getValue("tipoMovimentacao") as string;
@@ -65,7 +67,7 @@ export function MovimentacoesList({
       },
     },
     {
-      id: "origem",
+      id: "origem", meta: { campoOrdenacao: "origem" },
       header: "Origem",
       cell: ({ row }) => {
         const item = row.original;
@@ -81,7 +83,7 @@ export function MovimentacoesList({
       },
     },
     {
-      accessorKey: "motivo",
+      accessorKey: "motivo", meta: { campoOrdenacao: "motivo" },
       header: "Motivo / Observação",
       cell: ({ row }) => (
         <span className="text-muted-foreground block max-w-xs truncate">
@@ -90,7 +92,7 @@ export function MovimentacoesList({
       ),
     },
     {
-      id: "valorTotal",
+      id: "valorTotal", meta: { campoOrdenacao: "valorTotal" },
       header: () => <div className="text-right">Valor Total</div>,
       cell: ({ row }) => {
         const item = row.original;
@@ -137,6 +139,8 @@ export function MovimentacoesList({
           pageCount={totalPages}
           pageIndex={page}
           onPageChange={onPageChange}
+          ordenacao={ordenacao}
+          onOrdenacaoChange={onOrdenacaoChange}
           totalItems={totalItems}
           globalFilter={searchTerm}
           onGlobalFilterChange={onSearchChange}

@@ -24,12 +24,13 @@ export function FornecedoresFeature({
   const queryClient = useQueryClient();
   const list = useFeatureList<Fornecedor>({ initialSearchTerm });
   const { data, isLoading } = useQuery({
-    queryKey: ["fornecedores", list.deferredSearch, list.page],
+    queryKey: ["fornecedores", list.deferredSearch, list.page, list.ordenacao],
     queryFn: async () => {
       const res = await fornecedoresApi.list(
         list.deferredSearch.trim() || undefined,
         list.page,
         50,
+        list.ordenacao,
       );
       return {
         itens: res?.itens ?? [],
@@ -114,6 +115,8 @@ export function FornecedoresFeature({
       onView={openView}
       onDelete={deleteFornecedor}
       onPageChange={list.setPage}
+        ordenacao={list.ordenacao}
+        onOrdenacaoChange={list.alterarOrdenacao}
       rowSelection={list.rowSelection}
       onRowSelectionChange={list.setRowSelection}
       selectAllAcrossPages={list.selectAllAcrossPages}

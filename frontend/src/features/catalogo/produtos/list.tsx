@@ -26,6 +26,8 @@ export function ProdutosList({
   onDelete,
   onSelect,
   onPageChange,
+  ordenacao,
+  onOrdenacaoChange,
   rowSelection,
   onRowSelectionChange,
   selectAllAcrossPages,
@@ -33,7 +35,7 @@ export function ProdutosList({
 }: FeatureListProps<Produto>) {
   const columns: ColumnDef<Produto>[] = [
     {
-      accessorKey: "id",
+      accessorKey: "id", meta: { campoOrdenacao: "id" },
       header: "ID",
       size: 80,
       cell: ({ row }) => (
@@ -41,19 +43,19 @@ export function ProdutosList({
       ),
     },
     {
-      accessorKey: "produto",
+      accessorKey: "produto", meta: { campoOrdenacao: "produto" },
       header: "Produto",
     },
     {
-      accessorKey: "categoria.categoria",
+      accessorKey: "categoria.categoria", meta: { campoOrdenacao: "categoria" },
       header: "Categoria",
     },
     {
-      accessorKey: "marca.marca",
+      accessorKey: "marca.marca", meta: { campoOrdenacao: "marca" },
       header: "Marca",
     },
     {
-      accessorKey: "estoqueTotal",
+      accessorKey: "estoqueTotal", meta: { campoOrdenacao: "estoqueTotal" },
       header: () => <div className="text-right">Estoque</div>,
       cell: ({ row }) => {
         const value = row.getValue("estoqueTotal");
@@ -65,7 +67,7 @@ export function ProdutosList({
       },
     },
     {
-      accessorKey: "ativo",
+      accessorKey: "ativo", meta: { campoOrdenacao: "ativo" },
       header: "Status",
       size: 100,
       cell: ({ row }) => {
@@ -101,6 +103,8 @@ export function ProdutosList({
           pageCount={totalPages}
           pageIndex={page}
           onPageChange={onPageChange}
+          ordenacao={ordenacao}
+          onOrdenacaoChange={onOrdenacaoChange}
           totalItems={totalItems}
           globalFilter={searchTerm}
           onGlobalFilterChange={onSearchChange}

@@ -27,12 +27,13 @@ export function ProdutosFeature({
   const queryClient = useQueryClient();
   const list = useFeatureList<Produto>({ initialSearchTerm });
   const { data, isLoading } = useQuery({
-    queryKey: ["produtos", list.deferredSearch, list.page],
+    queryKey: ["produtos", list.deferredSearch, list.page, list.ordenacao],
     queryFn: async () => {
       const res = await produtosApi.list(
         list.deferredSearch.trim() || undefined,
         list.page,
         50,
+        list.ordenacao,
       );
       return {
         itens: res?.itens ?? [],
@@ -118,6 +119,8 @@ export function ProdutosFeature({
         onView={openView}
         onDelete={deleteProduto}
         onPageChange={list.setPage}
+        ordenacao={list.ordenacao}
+        onOrdenacaoChange={list.alterarOrdenacao}
         rowSelection={list.rowSelection}
         onRowSelectionChange={list.setRowSelection}
         selectAllAcrossPages={list.selectAllAcrossPages}

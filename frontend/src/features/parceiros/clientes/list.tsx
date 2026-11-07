@@ -32,6 +32,8 @@ export function ClientesList({
   onDelete,
   onSelect,
   onPageChange,
+  ordenacao,
+  onOrdenacaoChange,
   rowSelection,
   onRowSelectionChange,
   selectAllAcrossPages,
@@ -39,7 +41,7 @@ export function ClientesList({
 }: FeatureListProps<Cliente>) {
   const columns: ColumnDef<Cliente>[] = [
     {
-      accessorKey: "id",
+      accessorKey: "id", meta: { campoOrdenacao: "id" },
       header: "ID",
       size: 80,
       cell: ({ row }) => (
@@ -47,7 +49,7 @@ export function ClientesList({
       ),
     },
     {
-      accessorKey: "tipoPessoa",
+      accessorKey: "tipoPessoa", meta: { campoOrdenacao: "tipoPessoa" },
       header: "Tipo",
       size: 100,
       cell: ({ row }) => {
@@ -58,7 +60,7 @@ export function ClientesList({
       },
     },
     {
-      accessorKey: "nomeRazaoSocial",
+      accessorKey: "nomeRazaoSocial", meta: { campoOrdenacao: "nomeRazaoSocial" },
       header: "Nome / Razão Social",
       cell: ({ row }) => {
         const item = row.original;
@@ -75,19 +77,19 @@ export function ClientesList({
       },
     },
     {
-      accessorKey: "cpfCnpj",
+      accessorKey: "cpfCnpj", meta: { campoOrdenacao: "cpfCnpj" },
       header: "CPF / CNPJ",
       cell: ({ row }) => (
         <span className="text-muted-foreground">{row.getValue("cpfCnpj")}</span>
       ),
     },
     {
-      accessorKey: "email",
+      accessorKey: "email", meta: { campoOrdenacao: "email" },
       header: "E-mail",
       cell: ({ row }) => row.getValue("email") || "-",
     },
     {
-        accessorKey: "telefone",
+        accessorKey: "telefone", meta: { campoOrdenacao: "telefone" },
         header: "Telefone",
         cell: ({ row }) => row.getValue("telefone") || "-",
     },
@@ -111,6 +113,8 @@ export function ClientesList({
           pageCount={totalPages}
           pageIndex={page}
           onPageChange={onPageChange}
+          ordenacao={ordenacao}
+          onOrdenacaoChange={onOrdenacaoChange}
           totalItems={totalItems}
           globalFilter={searchTerm}
           onGlobalFilterChange={onSearchChange}

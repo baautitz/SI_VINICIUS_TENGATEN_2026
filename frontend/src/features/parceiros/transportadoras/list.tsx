@@ -32,6 +32,8 @@ export function TransportadorasList({
   onDelete,
   onSelect,
   onPageChange,
+  ordenacao,
+  onOrdenacaoChange,
   rowSelection,
   onRowSelectionChange,
   selectAllAcrossPages,
@@ -39,7 +41,7 @@ export function TransportadorasList({
 }: FeatureListProps<Transportadora>) {
   const columns: ColumnDef<Transportadora>[] = [
     {
-      accessorKey: "id",
+      accessorKey: "id", meta: { campoOrdenacao: "id" },
       header: "ID",
       size: 80,
       cell: ({ row }) => (
@@ -47,7 +49,7 @@ export function TransportadorasList({
       ),
     },
     {
-      accessorKey: "tipoPessoa",
+      accessorKey: "tipoPessoa", meta: { campoOrdenacao: "tipoPessoa" },
       header: "Tipo",
       size: 100,
       cell: ({ row }) => {
@@ -58,7 +60,7 @@ export function TransportadorasList({
       },
     },
     {
-      accessorKey: "nomeRazaosocial",
+      accessorKey: "nomeRazaosocial", meta: { campoOrdenacao: "nomeRazaosocial" },
       header: "Nome / Razão Social",
       cell: ({ row }) => {
         const item = row.original;
@@ -70,14 +72,14 @@ export function TransportadorasList({
       },
     },
     {
-      accessorKey: "cpfCnpj",
+      accessorKey: "cpfCnpj", meta: { campoOrdenacao: "cpfCnpj" },
       header: "CPF / CNPJ",
       cell: ({ row }) => (
         <span className="text-muted-foreground">{row.getValue("cpfCnpj")}</span>
       ),
     },
     {
-      accessorKey: "ativo",
+      accessorKey: "ativo", meta: { campoOrdenacao: "ativo" },
       header: "Status",
       cell: ({ row }) => <StatusBadge ativo={row.getValue("ativo") as boolean} />,
     },
@@ -107,6 +109,8 @@ export function TransportadorasList({
         pageCount={totalPages}
         pageIndex={page}
         onPageChange={onPageChange}
+          ordenacao={ordenacao}
+          onOrdenacaoChange={onOrdenacaoChange}
         totalItems={totalItems}
         globalFilter={searchTerm}
         onGlobalFilterChange={onSearchChange}

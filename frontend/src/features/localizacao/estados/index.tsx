@@ -26,9 +26,9 @@ export function EstadosFeature({
   const queryClient = useQueryClient();
   const list = useFeatureList<Estado>({ initialSearchTerm });
   const { data, isLoading } = useQuery({
-    queryKey: ["estados", list.deferredSearch, list.page],
+    queryKey: ["estados", list.deferredSearch, list.page, list.ordenacao],
     queryFn: async () => {
-      const res = await estadosApi.list(list.deferredSearch.trim() || undefined, list.page, 50);
+      const res = await estadosApi.list(list.deferredSearch.trim() || undefined, list.page, 50, list.ordenacao);
       return { itens: res?.itens ?? [], totalPages: res?.totalDePaginas ?? 1, totalItems: res?.totalDeItens ?? 0 };
     },
   });
@@ -79,6 +79,8 @@ export function EstadosFeature({
         onView={(item) => openUpsert(item, true)}
         onDelete={deleteEstado}
         onPageChange={list.setPage}
+        ordenacao={list.ordenacao}
+        onOrdenacaoChange={list.alterarOrdenacao}
         rowSelection={list.rowSelection}
         onRowSelectionChange={list.setRowSelection}
         selectAllAcrossPages={list.selectAllAcrossPages}

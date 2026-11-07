@@ -1,3 +1,4 @@
+import { paramsDeOrdenacao, type Ordenacao } from "@/lib/ordenacao";
 import { http } from "./http";
 import type { PaginatedResult, Resultado } from "./types";
 import type { Pais, PaisFormValues } from "@/features/localizacao/paises/types";
@@ -6,8 +7,8 @@ import type { Cidade, CidadeFormValues } from "@/features/localizacao/cidades/ty
 import type { Bairro, BairroFormValues } from "@/features/localizacao/bairros/types";
 
 export const paisesApi = {
-  list: (search?: string, page = 1, pageSize = 20) =>
-    http.get<PaginatedResult<Pais>>(`/api/localizacao/paises?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`),
+  list: (search?: string, page = 1, pageSize = 20, ordenacao: Ordenacao | null = null) =>
+    http.get<PaginatedResult<Pais>>(`/api/localizacao/paises?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}${paramsDeOrdenacao(ordenacao)}`),
   getById: (id: number) => http.get<Pais>(`/api/localizacao/paises/${id}`),
   create: (data: PaisFormValues) => http.post<Resultado<Pais>>("/api/localizacao/paises", data),
   update: (id: number, data: PaisFormValues) => http.put<Resultado<Pais>>(`/api/localizacao/paises/${id}`, data),
@@ -15,8 +16,8 @@ export const paisesApi = {
 };
 
 export const estadosApi = {
-  list: (search?: string, page = 1, pageSize = 20) =>
-    http.get<PaginatedResult<Estado>>(`/api/localizacao/estados?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`),
+  list: (search?: string, page = 1, pageSize = 20, ordenacao: Ordenacao | null = null) =>
+    http.get<PaginatedResult<Estado>>(`/api/localizacao/estados?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}${paramsDeOrdenacao(ordenacao)}`),
   listByPais: (paisId: number, search?: string, page = 1, pageSize = 100) =>
     http.get<PaginatedResult<Estado>>(`/api/localizacao/estados?paisId=${paisId}&search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`),
   getById: (id: number) => http.get<Estado>(`/api/localizacao/estados/${id}`),
@@ -26,8 +27,8 @@ export const estadosApi = {
 };
 
 export const cidadesApi = {
-  list: (search?: string, page = 1, pageSize = 20) =>
-    http.get<PaginatedResult<Cidade>>(`/api/localizacao/cidades?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`),
+  list: (search?: string, page = 1, pageSize = 20, ordenacao: Ordenacao | null = null) =>
+    http.get<PaginatedResult<Cidade>>(`/api/localizacao/cidades?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}${paramsDeOrdenacao(ordenacao)}`),
   listByEstado: (estadoId: number, search?: string, page = 1, pageSize = 100) =>
     http.get<PaginatedResult<Cidade>>(`/api/localizacao/cidades?estadoId=${estadoId}&search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`),
   getById: (id: number) => http.get<Cidade>(`/api/localizacao/cidades/${id}`),
@@ -37,8 +38,8 @@ export const cidadesApi = {
 };
 
 export const bairrosApi = {
-  list: (search?: string, page = 1, pageSize = 20) =>
-    http.get<PaginatedResult<Bairro>>(`/api/localizacao/bairros?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`),
+  list: (search?: string, page = 1, pageSize = 20, ordenacao: Ordenacao | null = null) =>
+    http.get<PaginatedResult<Bairro>>(`/api/localizacao/bairros?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}${paramsDeOrdenacao(ordenacao)}`),
   listByCidade: (cidadeId: number, search?: string, page = 1, pageSize = 100) =>
     http.get<PaginatedResult<Bairro>>(`/api/localizacao/bairros?cidadeId=${cidadeId}&search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`),
   getById: (id: number) => http.get<Bairro>(`/api/localizacao/bairros/${id}`),

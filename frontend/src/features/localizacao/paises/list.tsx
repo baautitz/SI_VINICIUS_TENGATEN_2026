@@ -27,6 +27,8 @@ export function PaisesList({
   onDelete,
   onSelect,
   onPageChange,
+  ordenacao,
+  onOrdenacaoChange,
   rowSelection,
   onRowSelectionChange,
   selectAllAcrossPages,
@@ -34,7 +36,7 @@ export function PaisesList({
 }: FeatureListProps<Pais>) {
   const columns: ColumnDef<Pais>[] = [
     {
-      accessorKey: "id",
+      accessorKey: "id", meta: { campoOrdenacao: "id" },
       header: "ID",
       size: 80,
       cell: ({ row }) => (
@@ -42,26 +44,26 @@ export function PaisesList({
       ),
     },
     {
-      accessorKey: "pais",
+      accessorKey: "pais", meta: { campoOrdenacao: "pais" },
       header: "País",
       cell: ({ row }) => (
         <span className="font-medium">{row.getValue("pais")}</span>
       ),
     },
     {
-      accessorKey: "codigoIsoPais",
+      accessorKey: "codigoIsoPais", meta: { campoOrdenacao: "codigoIsoPais" },
       header: "Código ISO do país",
     },
     {
-      accessorKey: "ddi",
+      accessorKey: "ddi", meta: { campoOrdenacao: "ddi" },
       header: "DDI",
     },
     {
-      accessorKey: "codigoIsoMoeda",
+      accessorKey: "codigoIsoMoeda", meta: { campoOrdenacao: "codigoIsoMoeda" },
       header: "Código ISO da moeda",
     },
     {
-      accessorKey: "simboloMoeda",
+      accessorKey: "simboloMoeda", meta: { campoOrdenacao: "simboloMoeda" },
       header: "Símbolo",
     },
     getActionsColumn<Pais>({ onEdit, onView, onDelete, selectionMode, onSelect }),
@@ -84,6 +86,8 @@ export function PaisesList({
         pageCount={totalPages}
         pageIndex={page}
         onPageChange={onPageChange}
+          ordenacao={ordenacao}
+          onOrdenacaoChange={onOrdenacaoChange}
         totalItems={totalItems}
         globalFilter={searchTerm}
         onGlobalFilterChange={onSearchChange}

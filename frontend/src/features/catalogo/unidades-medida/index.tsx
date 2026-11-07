@@ -26,12 +26,13 @@ export function UnidadesMedidaFeature({
   const queryClient = useQueryClient();
   const list = useFeatureList<UnidadeMedida>({ initialSearchTerm });
   const { data, isLoading } = useQuery({
-    queryKey: ["unidadesMedida", list.deferredSearch, list.page],
+    queryKey: ["unidadesMedida", list.deferredSearch, list.page, list.ordenacao],
     queryFn: async () => {
       const res = await unidadesMedidaApi.list(
         list.deferredSearch.trim() || undefined,
         list.page,
         50,
+        list.ordenacao,
       );
       return {
         itens: res?.itens ?? [],
@@ -117,6 +118,8 @@ export function UnidadesMedidaFeature({
         onView={openEdit}
         onDelete={deleteUnidade}
         onPageChange={list.setPage}
+        ordenacao={list.ordenacao}
+        onOrdenacaoChange={list.alterarOrdenacao}
         rowSelection={list.rowSelection}
         onRowSelectionChange={list.setRowSelection}
         selectAllAcrossPages={list.selectAllAcrossPages}

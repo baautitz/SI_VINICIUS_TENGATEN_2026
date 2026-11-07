@@ -27,12 +27,13 @@ export function ComprasFeature() {
   const queryClient = useQueryClient();
   const list = useFeatureList<Compra>();
   const { data, isLoading } = useQuery({
-    queryKey: ["compras", list.deferredSearch, list.page],
+    queryKey: ["compras", list.deferredSearch, list.page, list.ordenacao],
     queryFn: async () => {
       const res = await comprasApi.list(
         list.deferredSearch.trim() || undefined,
         list.page,
         50,
+        list.ordenacao,
       );
       return {
         itens: res?.itens ?? [],
@@ -152,6 +153,8 @@ export function ComprasFeature() {
       onImport={importar}
       onReturn={devolver}
       onPageChange={list.setPage}
+        ordenacao={list.ordenacao}
+        onOrdenacaoChange={list.alterarOrdenacao}
       rowSelection={list.rowSelection}
       onRowSelectionChange={list.setRowSelection}
       selectAllAcrossPages={list.selectAllAcrossPages}

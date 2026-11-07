@@ -1,13 +1,18 @@
 import { http, API_URL } from "./http";
+import type { Ordenacao } from "@/lib/ordenacao";
 import type { PaginatedResult, Resultado } from "./types";
 import type { Nfe, NfeResumo, StatusNfe, TipoOperacaoNfe } from "@/features/nfes/types";
 
 export const nfesApi = {
-  list: (p: { search?: string; tipo?: TipoOperacaoNfe; status?: StatusNfe; page: number; pageSize: number }) => {
+  list: (p: { search?: string; tipo?: TipoOperacaoNfe; status?: StatusNfe; page: number; pageSize: number; ordenacao?: Ordenacao | null }) => {
     const q = new URLSearchParams({ page: String(p.page), pageSize: String(p.pageSize) });
     if (p.search) q.set("search", p.search);
     if (p.tipo) q.set("tipoOperacao", p.tipo);
     if (p.status) q.set("statusNfe", p.status);
+    if (p.ordenacao) {
+      q.set("ordenarPor", p.ordenacao.campo);
+      q.set("direcao", p.ordenacao.direcao);
+    }
     return http.get<PaginatedResult<NfeResumo>>(`/api/nfes?${q}`);
   },
   getById: (id: number) => http.get<Nfe>(`/api/nfes/${id}`),

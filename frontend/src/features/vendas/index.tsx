@@ -32,12 +32,13 @@ export function VendasFeature({
   const queryClient = useQueryClient();
   const list = useFeatureList<Venda>({ initialSearchTerm });
   const { data, isLoading } = useQuery({
-    queryKey: ["vendas", list.deferredSearch, list.page],
+    queryKey: ["vendas", list.deferredSearch, list.page, list.ordenacao],
     queryFn: async () => {
       const res = await vendasApi.list(
         list.deferredSearch.trim() || undefined,
         list.page,
         50,
+        list.ordenacao,
       );
       return {
         itens: res?.itens ?? [],
@@ -104,6 +105,8 @@ export function VendasFeature({
       onView={(item) => openVenda(item, true)}
       onDelete={returnVenda}
       onPageChange={list.setPage}
+        ordenacao={list.ordenacao}
+        onOrdenacaoChange={list.alterarOrdenacao}
       rowSelection={list.rowSelection}
       onRowSelectionChange={list.setRowSelection}
       selectAllAcrossPages={list.selectAllAcrossPages}

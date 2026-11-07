@@ -26,9 +26,9 @@ export function MarcasFeature({
   const queryClient = useQueryClient();
   const list = useFeatureList<Marca>({ initialSearchTerm });
   const { data, isLoading } = useQuery({
-    queryKey: ["marcas", list.deferredSearch, list.page],
+    queryKey: ["marcas", list.deferredSearch, list.page, list.ordenacao],
     queryFn: async () => {
-      const res = await marcasApi.list(list.deferredSearch.trim() || undefined, list.page, 50);
+      const res = await marcasApi.list(list.deferredSearch.trim() || undefined, list.page, 50, list.ordenacao);
       return {
         itens: res?.itens ?? [],
         totalPages: res?.totalDePaginas ?? 1,
@@ -104,6 +104,8 @@ export function MarcasFeature({
         onView={openEdit}
         onDelete={deleteMarca}
         onPageChange={list.setPage}
+        ordenacao={list.ordenacao}
+        onOrdenacaoChange={list.alterarOrdenacao}
         rowSelection={list.rowSelection}
         onRowSelectionChange={list.setRowSelection}
         selectAllAcrossPages={list.selectAllAcrossPages}

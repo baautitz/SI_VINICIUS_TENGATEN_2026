@@ -24,12 +24,13 @@ export function MetodosFeature({
   const queryClient = useQueryClient();
   const list = useFeatureList<MetodoPagamento>({ initialSearchTerm });
   const { data, isLoading } = useQuery({
-    queryKey: ["metodosPagamento", list.deferredSearch, list.page],
+    queryKey: ["metodosPagamento", list.deferredSearch, list.page, list.ordenacao],
     queryFn: async () => {
       const res = await metodosApi.list(
         list.deferredSearch.trim() || undefined,
         list.page,
         50,
+        list.ordenacao,
       );
       return {
         itens: res?.itens ?? [],
@@ -117,6 +118,8 @@ export function MetodosFeature({
         onView={openView}
         onDelete={deleteMetodo}
         onPageChange={list.setPage}
+        ordenacao={list.ordenacao}
+        onOrdenacaoChange={list.alterarOrdenacao}
         rowSelection={list.rowSelection}
         onRowSelectionChange={list.setRowSelection}
         selectAllAcrossPages={list.selectAllAcrossPages}

@@ -24,6 +24,8 @@ export function AtributosList({
   onDelete,
   onSelect,
   onPageChange,
+  ordenacao,
+  onOrdenacaoChange,
   rowSelection,
   onRowSelectionChange,
   selectAllAcrossPages,
@@ -31,14 +33,14 @@ export function AtributosList({
 }: FeatureListProps<SkuAtributoChave>) {
   const columns: ColumnDef<SkuAtributoChave>[] = [
     {
-      accessorKey: "id",
+      accessorKey: "id", meta: { campoOrdenacao: "id" },
       header: "ID",
       size: 80,
       cell: ({ row }) => (
         <span className="font-semibold">{row.getValue("id")}</span>
       ),
     },
-    { accessorKey: "chave", header: "Atributo" },
+    { accessorKey: "chave", meta: { campoOrdenacao: "chave" }, header: "Atributo" },
     {
       accessorKey: "skuAtributosValores",
       header: "Valores",
@@ -74,6 +76,8 @@ export function AtributosList({
           pageCount={totalPages}
           pageIndex={page}
           onPageChange={onPageChange}
+          ordenacao={ordenacao}
+          onOrdenacaoChange={onOrdenacaoChange}
           totalItems={totalItems}
           globalFilter={searchTerm}
           onGlobalFilterChange={onSearchChange}

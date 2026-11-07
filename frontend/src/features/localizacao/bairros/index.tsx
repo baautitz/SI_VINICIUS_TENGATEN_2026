@@ -25,9 +25,9 @@ export function BairrosFeature({
   const queryClient = useQueryClient();
   const list = useFeatureList<Bairro>({ initialSearchTerm });
   const { data, isLoading } = useQuery({
-    queryKey: ["bairros", list.deferredSearch, list.page],
+    queryKey: ["bairros", list.deferredSearch, list.page, list.ordenacao],
     queryFn: async () => {
-      const res = await bairrosApi.list(list.deferredSearch.trim() || undefined, list.page, 50);
+      const res = await bairrosApi.list(list.deferredSearch.trim() || undefined, list.page, 50, list.ordenacao);
       return { itens: res?.itens ?? [], totalPages: res?.totalDePaginas ?? 1, totalItems: res?.totalDeItens ?? 0 };
     },
   });
@@ -78,6 +78,8 @@ export function BairrosFeature({
         onView={(item) => openUpsert(item, true)}
         onDelete={deleteBairro}
         onPageChange={list.setPage}
+        ordenacao={list.ordenacao}
+        onOrdenacaoChange={list.alterarOrdenacao}
         rowSelection={list.rowSelection}
         onRowSelectionChange={list.setRowSelection}
         selectAllAcrossPages={list.selectAllAcrossPages}

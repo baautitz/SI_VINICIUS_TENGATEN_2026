@@ -26,12 +26,13 @@ export function TransportadorasFeature({
   const queryClient = useQueryClient();
   const list = useFeatureList<Transportadora>({ initialSearchTerm });
   const { data, isLoading } = useQuery({
-    queryKey: ["transportadoras", list.deferredSearch, list.page],
+    queryKey: ["transportadoras", list.deferredSearch, list.page, list.ordenacao],
     queryFn: async () => {
       const res = await transportadorasApi.list(
         list.deferredSearch.trim() || undefined,
         list.page,
         50,
+        list.ordenacao,
       );
       return {
         itens: res?.itens ?? [],
@@ -107,6 +108,8 @@ export function TransportadorasFeature({
       onView={openView}
       onDelete={deleteTransportadora}
       onPageChange={list.setPage}
+        ordenacao={list.ordenacao}
+        onOrdenacaoChange={list.alterarOrdenacao}
       rowSelection={list.rowSelection}
       onRowSelectionChange={list.setRowSelection}
       selectAllAcrossPages={list.selectAllAcrossPages}

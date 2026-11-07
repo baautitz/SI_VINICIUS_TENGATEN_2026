@@ -1,11 +1,12 @@
+import { paramsDeOrdenacao, type Ordenacao } from "@/lib/ordenacao";
 import { http } from "./http";
 import type { PaginatedResult, Resultado } from "./types";
 import type { CriarDevolucaoValues, Devolucao, DevolucaoResumo, Venda, VendaFormValues } from "@/features/vendas/types";
 
 export const vendasApi = {
-  list: (search?: string, page = 1, pageSize = 20) =>
+  list: (search?: string, page = 1, pageSize = 20, ordenacao: Ordenacao | null = null) =>
     http.get<PaginatedResult<Venda>>(
-      `/api/vendas?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`
+      `/api/vendas?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}${paramsDeOrdenacao(ordenacao)}`
     ),
   listByCliente: (clienteId: number, page = 1, pageSize = 20) =>
     http.get<PaginatedResult<Venda>>(
@@ -20,11 +21,12 @@ export const vendasApi = {
     vendaId,
     page = 1,
     pageSize = 50,
-  }: { search?: string; vendaId?: number; page?: number; pageSize?: number } = {}) =>
+    ordenacao = null,
+  }: { search?: string; vendaId?: number; page?: number; pageSize?: number; ordenacao?: Ordenacao | null } = {}) =>
     http.get<PaginatedResult<DevolucaoResumo>>(
       `/api/devolucoes?search=${encodeURIComponent(search ?? "")}${
         vendaId ? `&vendaId=${vendaId}` : ""
-      }&page=${page}&pageSize=${pageSize}`
+      }&page=${page}&pageSize=${pageSize}${paramsDeOrdenacao(ordenacao)}`
     ),
   listDevolucoes: (vendaId: number) =>
     http.get<Devolucao[]>(`/api/vendas/${vendaId}/devolucoes`),

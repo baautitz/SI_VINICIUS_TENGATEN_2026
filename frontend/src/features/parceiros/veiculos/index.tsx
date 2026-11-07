@@ -24,12 +24,13 @@ export function VeiculosFeature({
   const queryClient = useQueryClient();
   const list = useFeatureList<Veiculo>({ initialSearchTerm });
   const { data, isLoading } = useQuery({
-    queryKey: ["veiculos", list.deferredSearch, list.page],
+    queryKey: ["veiculos", list.deferredSearch, list.page, list.ordenacao],
     queryFn: async () => {
       const res = await veiculosApi.list(
         list.deferredSearch.trim() || undefined,
         list.page,
         50,
+        list.ordenacao,
       );
       return {
         itens: res?.itens ?? [],
@@ -102,6 +103,8 @@ export function VeiculosFeature({
         onView={(item) => openUpsert(item, true)}
         onDelete={deleteVeiculo}
         onPageChange={list.setPage}
+        ordenacao={list.ordenacao}
+        onOrdenacaoChange={list.alterarOrdenacao}
         rowSelection={list.rowSelection}
         onRowSelectionChange={list.setRowSelection}
         selectAllAcrossPages={list.selectAllAcrossPages}

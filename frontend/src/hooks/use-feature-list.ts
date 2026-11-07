@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { RowSelectionState } from "@tanstack/react-table";
 import { useDebounce } from "@/hooks/use-debounce";
+import type { Ordenacao } from "@/lib/ordenacao";
 
 const ATRASO_BUSCA_MS = 400;
 
@@ -27,6 +28,12 @@ export function useFeatureList<T>({
   const [deferredSearch, setDeferredSearch] = useState(initialSearchTerm ?? "");
   const debounceBusca = useDebounce(setDeferredSearch, ATRASO_BUSCA_MS);
   const [page, setPage] = useState(1);
+  // Escolha do usuário no cabeçalho da coluna; null mantém a ordenação padrão da listagem.
+  const [ordenacao, setOrdenacao] = useState<Ordenacao | null>(null);
+  const alterarOrdenacao = useCallback((proxima: Ordenacao | null) => {
+    setOrdenacao(proxima);
+    setPage(1);
+  }, []);
 
   const [rowSelection, setRowSelectionRaw] = useState<RowSelectionState>({});
   const [selectAllAcrossPages, setSelectAllAcrossPages] = useState(false);
@@ -72,6 +79,8 @@ export function useFeatureList<T>({
     deferredSearch,
     page,
     setPage,
+    ordenacao,
+    alterarOrdenacao,
     rowSelection,
     setRowSelection,
     selectAllAcrossPages,

@@ -30,17 +30,19 @@ export function DevolucoesList({
   onView,
   onEstornar,
   onPageChange,
+  ordenacao,
+  onOrdenacaoChange,
   icon,
 }: DevolucoesListProps) {
   const columns: ColumnDef<DevolucaoResumo>[] = [
     {
-      accessorKey: "id",
+      accessorKey: "id", meta: { campoOrdenacao: "id" },
       header: "Número",
       size: 80,
       cell: ({ row }) => <span className="font-semibold">#{row.original.id}</span>,
     },
     {
-      id: "status",
+      id: "status", meta: { campoOrdenacao: "status" },
       header: "Status",
       size: 110,
       cell: ({ row }) =>
@@ -51,29 +53,29 @@ export function DevolucoesList({
         ),
     },
     {
-      accessorKey: "dataDevolucao",
+      accessorKey: "dataDevolucao", meta: { campoOrdenacao: "dataDevolucao" },
       header: "Data",
       cell: ({ row }) => <span>{formatToLocal(row.original.dataDevolucao)}</span>,
     },
     {
-      accessorKey: "vendaId",
+      accessorKey: "vendaId", meta: { campoOrdenacao: "vendaId" },
       header: "Venda de origem",
       cell: ({ row }) => <span>#{row.original.vendaId}</span>,
     },
     {
-      accessorKey: "clienteNome",
+      accessorKey: "clienteNome", meta: { campoOrdenacao: "clienteNome" },
       header: "Cliente",
       cell: ({ row }) => <span className="font-medium">{row.original.clienteNome}</span>,
     },
     {
-      accessorKey: "valorTotal",
+      accessorKey: "valorTotal", meta: { campoOrdenacao: "valorTotal" },
       header: () => <div className="text-right">Valor Total</div>,
       cell: ({ row }) => (
         <div className="text-right font-semibold">{brl(Number(row.original.valorTotal))}</div>
       ),
     },
     {
-      accessorKey: "motivo",
+      accessorKey: "motivo", meta: { campoOrdenacao: "motivo" },
       header: "Motivo",
       cell: ({ row }) => (
         <span className="text-muted-foreground">{row.original.motivo}</span>
@@ -104,6 +106,8 @@ export function DevolucoesList({
           pageCount={totalPages}
           pageIndex={page}
           onPageChange={onPageChange}
+          ordenacao={ordenacao}
+          onOrdenacaoChange={onOrdenacaoChange}
           totalItems={totalItems}
           globalFilter={searchTerm}
           onGlobalFilterChange={onSearchChange}

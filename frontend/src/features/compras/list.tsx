@@ -34,6 +34,8 @@ export function ComprasList({
   onImport,
   onReturn,
   onPageChange,
+  ordenacao,
+  onOrdenacaoChange,
 }: ComprasListProps) {
   useWindowCommands([
     {
@@ -49,7 +51,7 @@ export function ComprasList({
 
   const columns: ColumnDef<Compra>[] = [
     {
-      accessorKey: "id",
+      accessorKey: "id", meta: { campoOrdenacao: "id" },
       header: "Código",
       size: 80,
       cell: ({ row }) => (
@@ -57,7 +59,7 @@ export function ComprasList({
       ),
     },
     {
-      id: "status",
+      id: "status", meta: { campoOrdenacao: "status" },
       header: "Situação",
       size: 110,
       cell: ({ row }) => {
@@ -70,12 +72,12 @@ export function ComprasList({
       },
     },
     {
-      accessorKey: "dataCompra",
+      accessorKey: "dataCompra", meta: { campoOrdenacao: "dataCompra" },
       header: "Data",
       cell: ({ row }) => formatDateToLocal(row.original.dataCompra),
     },
     {
-      id: "fornecedor",
+      id: "fornecedor", meta: { campoOrdenacao: "fornecedor" },
       header: "Fornecedor",
       cell: ({ row }) => (
         <span className="font-medium">
@@ -84,7 +86,7 @@ export function ComprasList({
       ),
     },
     {
-      id: "emitente",
+      id: "emitente", meta: { campoOrdenacao: "emitente" },
       header: "Emitente",
       cell: ({ row }) => (
         <span className="text-muted-foreground">
@@ -93,14 +95,14 @@ export function ComprasList({
       ),
     },
     {
-      id: "itens",
+      id: "itens", meta: { campoOrdenacao: "itens" },
       header: () => <div className="text-right">Itens</div>,
       cell: ({ row }) => (
         <div className="text-right">{row.original.itens?.length ?? 0}</div>
       ),
     },
     {
-      accessorKey: "valorTotal",
+      accessorKey: "valorTotal", meta: { campoOrdenacao: "valorTotal" },
       header: () => <div className="text-right">Custo Total</div>,
       cell: ({ row }) => (
         <div className="text-right font-semibold">
@@ -148,6 +150,8 @@ export function ComprasList({
           pageCount={totalPages}
           pageIndex={page}
           onPageChange={onPageChange}
+          ordenacao={ordenacao}
+          onOrdenacaoChange={onOrdenacaoChange}
           totalItems={totalItems}
           globalFilter={searchTerm}
           onGlobalFilterChange={onSearchChange}

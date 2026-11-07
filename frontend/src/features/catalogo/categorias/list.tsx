@@ -25,6 +25,8 @@ export function CategoriasList({
   onDelete,
   onSelect,
   onPageChange,
+  ordenacao,
+  onOrdenacaoChange,
   rowSelection,
   onRowSelectionChange,
   selectAllAcrossPages,
@@ -32,7 +34,7 @@ export function CategoriasList({
 }: FeatureListProps<Categoria>) {
   const columns: ColumnDef<Categoria>[] = [
     {
-      accessorKey: "id",
+      accessorKey: "id", meta: { campoOrdenacao: "id" },
       header: "ID",
       size: 80,
       cell: ({ row }) => (
@@ -40,16 +42,16 @@ export function CategoriasList({
       ),
     },
     {
-      accessorKey: "categoria",
+      accessorKey: "categoria", meta: { campoOrdenacao: "categoria" },
       header: "Categoria",
     },
     {
-      accessorKey: "descricao",
+      accessorKey: "descricao", meta: { campoOrdenacao: "descricao" },
       header: "Descrição",
       cell: ({ row }) => row.getValue("descricao") || "-",
     },
     {
-      accessorKey: "ativo",
+      accessorKey: "ativo", meta: { campoOrdenacao: "ativo" },
       header: "Status",
       size: 100,
       cell: ({ row }) => {
@@ -79,6 +81,8 @@ export function CategoriasList({
           pageCount={totalPages}
           pageIndex={page}
           onPageChange={onPageChange}
+          ordenacao={ordenacao}
+          onOrdenacaoChange={onOrdenacaoChange}
           totalItems={totalItems}
           globalFilter={searchTerm}
           onGlobalFilterChange={onSearchChange}

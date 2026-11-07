@@ -19,12 +19,13 @@ export function MovimentacoesFeature() {
   const queryClient = useQueryClient();
   const list = useFeatureList<MovimentacaoEstoque>();
   const { data, isLoading } = useQuery({
-    queryKey: ["movimentacoes", list.deferredSearch, list.page],
+    queryKey: ["movimentacoes", list.deferredSearch, list.page, list.ordenacao],
     queryFn: async () => {
       const res = await estoqueApi.list(
         list.deferredSearch.trim() || undefined,
         list.page,
         50,
+        list.ordenacao,
       );
       return {
         itens: res?.itens ?? [],
@@ -111,6 +112,8 @@ export function MovimentacoesFeature() {
       onView={openView}
       onEstornar={estornar}
       onPageChange={list.setPage}
+        ordenacao={list.ordenacao}
+        onOrdenacaoChange={list.alterarOrdenacao}
       rowSelection={list.rowSelection}
       onRowSelectionChange={list.setRowSelection}
       selectAllAcrossPages={list.selectAllAcrossPages}

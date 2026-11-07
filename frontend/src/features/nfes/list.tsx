@@ -1,5 +1,6 @@
 "use client";
 
+import type { Ordenacao } from "@/lib/ordenacao";
 import React from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { FileText } from "lucide-react";
@@ -30,6 +31,8 @@ interface Props {
   onStatusChange: (v: StatusNfe | typeof TODOS) => void;
   onSearchChange: (v: string) => void;
   onPageChange: (p: number) => void;
+  ordenacao: Ordenacao | null;
+  onOrdenacaoChange: (o: Ordenacao | null) => void;
   onView: (item: NfeResumo) => void;
 }
 
@@ -51,18 +54,18 @@ const Filtro = ({ valor, onChange, rotulo, opcoes }: {
 
 export function NfesList({
   items, loading, error, searchTerm, page, totalPages, totalItems, tipo, status,
-  onTipoChange, onStatusChange, onSearchChange, onPageChange, onView,
+  onTipoChange, onStatusChange, onSearchChange, onPageChange, onView, ordenacao, onOrdenacaoChange,
 }: Props) {
   const columns: ColumnDef<NfeResumo>[] = [
-    { id: "numero", header: "Número", size: 100, cell: ({ row }) => <span className="font-semibold">{row.original.numero}/{row.original.serie}</span> },
-    { id: "tipo", header: "Tipo", cell: ({ row }) => tipoLabels[row.original.tipoOperacao] },
-    { id: "emissao", header: "Emissão", cell: ({ row }) => formatToLocal(row.original.dataEmissao) },
+    { id: "numero", meta: { campoOrdenacao: "numero" }, header: "Número", size: 100, cell: ({ row }) => <span className="font-semibold">{row.original.numero}/{row.original.serie}</span> },
+    { id: "tipo", meta: { campoOrdenacao: "tipo" }, header: "Tipo", cell: ({ row }) => tipoLabels[row.original.tipoOperacao] },
+    { id: "emissao", meta: { campoOrdenacao: "emissao" }, header: "Emissão", cell: ({ row }) => formatToLocal(row.original.dataEmissao) },
     {
-      id: "chave", header: "Chave de acesso",
+      id: "chave", meta: { campoOrdenacao: "chave" }, header: "Chave de acesso",
       cell: ({ row }) => <span className="font-mono text-sm text-muted-foreground">{row.original.chaveAcesso ?? "—"}</span>,
     },
-    { id: "total", header: () => <div className="text-right">Total</div>, cell: ({ row }) => <div className="text-right font-semibold">{brl(row.original.valorTotal)}</div> },
-    { id: "status", header: "Status", cell: ({ row }) => <NfeStatusBadge status={row.original.statusNfe} /> },
+    { id: "total", meta: { campoOrdenacao: "total" }, header: () => <div className="text-right">Total</div>, cell: ({ row }) => <div className="text-right font-semibold">{brl(row.original.valorTotal)}</div> },
+    { id: "status", meta: { campoOrdenacao: "status" }, header: "Status", cell: ({ row }) => <NfeStatusBadge status={row.original.statusNfe} /> },
     getActionsColumn<NfeResumo>({ onView }),
   ];
 
@@ -85,6 +88,8 @@ export function NfesList({
           pageCount={totalPages}
           pageIndex={page}
           onPageChange={onPageChange}
+          ordenacao={ordenacao}
+          onOrdenacaoChange={onOrdenacaoChange}
           totalItems={totalItems}
           globalFilter={searchTerm}
           onGlobalFilterChange={onSearchChange}

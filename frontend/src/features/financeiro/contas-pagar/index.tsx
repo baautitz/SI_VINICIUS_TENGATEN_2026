@@ -32,10 +32,12 @@ export function ContasPagarFeature({ compraId }: ContasPagarFeatureProps = {}) {
   const { status, origem, documento, avancados } = filtros;
   const { setPage } = list;
   const { data, isLoading } = useQuery({
-    queryKey: ["contas-pagar", list.deferredSearch, status, origem, documento, avancados, compraId, list.page],
+    queryKey: ["contas-pagar", list.deferredSearch, status, origem, documento, avancados, compraId, list.page, list.ordenacao],
     queryFn: async () => {
       const res = await contasPagarApi.list({
         search: list.deferredSearch.trim() || undefined,
+        ordenarPor: list.ordenacao?.campo,
+        direcao: list.ordenacao?.direcao,
         status: status === TODOS ? undefined : status,
         origemTipo: documento?.origemTipo ?? (origem === TODOS ? undefined : origem),
         origemId: documento?.origemId ?? undefined,
@@ -156,6 +158,8 @@ export function ContasPagarFeature({ compraId }: ContasPagarFeatureProps = {}) {
       onView={(item) => openEditor(item, true)}
       onDelete={openDelete}
       onPageChange={list.setPage}
+        ordenacao={list.ordenacao}
+        onOrdenacaoChange={list.alterarOrdenacao}
       rowSelection={list.rowSelection}
       onRowSelectionChange={list.setRowSelection}
       selectAllAcrossPages={list.selectAllAcrossPages}

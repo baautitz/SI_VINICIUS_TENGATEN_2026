@@ -22,13 +22,14 @@ export function DevolucoesFeature({ vendaId }: DevolucoesFeatureProps = {}) {
   const estornarDevolucao = useEstornarDevolucao();
   const list = useFeatureList<DevolucaoResumo>();
   const { data, isLoading } = useQuery({
-    queryKey: ["devolucoes", list.deferredSearch, vendaId, list.page],
+    queryKey: ["devolucoes", list.deferredSearch, vendaId, list.page, list.ordenacao],
     queryFn: async () => {
       const res = await vendasApi.searchDevolucoes({
         search: list.deferredSearch.trim() || undefined,
         vendaId,
         page: list.page,
         pageSize: 50,
+        ordenacao: list.ordenacao,
       });
       return {
         itens: res?.itens ?? [],
@@ -78,6 +79,8 @@ export function DevolucoesFeature({ vendaId }: DevolucoesFeatureProps = {}) {
       onEstornar={(item) => void estornarDevolucao(item.id)}
       onDelete={() => {}}
       onPageChange={list.setPage}
+        ordenacao={list.ordenacao}
+        onOrdenacaoChange={list.alterarOrdenacao}
       rowSelection={list.rowSelection}
       onRowSelectionChange={list.setRowSelection}
       selectAllAcrossPages={list.selectAllAcrossPages}

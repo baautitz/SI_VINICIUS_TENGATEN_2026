@@ -27,6 +27,8 @@ export function BairrosList({
   onDelete,
   onSelect,
   onPageChange,
+  ordenacao,
+  onOrdenacaoChange,
   rowSelection,
   onRowSelectionChange,
   selectAllAcrossPages,
@@ -34,7 +36,7 @@ export function BairrosList({
 }: FeatureListProps<Bairro>) {
   const columns: ColumnDef<Bairro>[] = [
     {
-      accessorKey: "id",
+      accessorKey: "id", meta: { campoOrdenacao: "id" },
       header: "ID",
       size: 80,
       cell: ({ row }) => (
@@ -42,14 +44,14 @@ export function BairrosList({
       ),
     },
     {
-      accessorKey: "bairro",
+      accessorKey: "bairro", meta: { campoOrdenacao: "bairro" },
       header: "Bairro",
       cell: ({ row }) => (
         <span className="font-medium">{row.getValue("bairro")}</span>
       ),
     },
     {
-      accessorKey: "cidade",
+      accessorKey: "cidade", meta: { campoOrdenacao: "cidade" },
       header: "Cidade",
       cell: ({ row }) => {
         const item = row.original;
@@ -76,6 +78,8 @@ export function BairrosList({
         pageCount={totalPages}
         pageIndex={page}
         onPageChange={onPageChange}
+          ordenacao={ordenacao}
+          onOrdenacaoChange={onOrdenacaoChange}
         totalItems={totalItems}
         globalFilter={searchTerm}
         onGlobalFilterChange={onSearchChange}

@@ -31,6 +31,8 @@ export function EmitentesList({
   onDelete,
   onSelect,
   onPageChange,
+  ordenacao,
+  onOrdenacaoChange,
   rowSelection,
   onRowSelectionChange,
   selectAllAcrossPages,
@@ -38,7 +40,7 @@ export function EmitentesList({
 }: FeatureListProps<Emitente>) {
   const columns: ColumnDef<Emitente>[] = [
     {
-      accessorKey: "id",
+      accessorKey: "id", meta: { campoOrdenacao: "id" },
       header: "ID",
       size: 80,
       cell: ({ row }) => (
@@ -46,7 +48,7 @@ export function EmitentesList({
       ),
     },
     {
-      accessorKey: "tipoPessoa",
+      accessorKey: "tipoPessoa", meta: { campoOrdenacao: "tipoPessoa" },
       header: "Tipo",
       size: 100,
       cell: ({ row }) => {
@@ -57,7 +59,7 @@ export function EmitentesList({
       },
     },
     {
-      accessorKey: "nomeRazaoSocial",
+      accessorKey: "nomeRazaoSocial", meta: { campoOrdenacao: "nomeRazaoSocial" },
       header: "Nome / Razão Social",
       cell: ({ row }) => {
         const item = row.original;
@@ -77,7 +79,7 @@ export function EmitentesList({
       },
     },
     {
-      accessorKey: "cpfCnpj",
+      accessorKey: "cpfCnpj", meta: { campoOrdenacao: "cpfCnpj" },
       header: "CPF / CNPJ",
       cell: ({ row }) => (
         <span className="text-muted-foreground">{row.getValue("cpfCnpj")}</span>
@@ -103,6 +105,8 @@ export function EmitentesList({
           pageCount={totalPages}
           pageIndex={page}
           onPageChange={onPageChange}
+          ordenacao={ordenacao}
+          onOrdenacaoChange={onOrdenacaoChange}
           totalItems={totalItems}
           globalFilter={searchTerm}
           onGlobalFilterChange={onSearchChange}

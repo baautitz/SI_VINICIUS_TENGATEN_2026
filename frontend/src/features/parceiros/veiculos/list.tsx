@@ -30,6 +30,8 @@ export function VeiculosList({
   onDelete,
   onSelect,
   onPageChange,
+  ordenacao,
+  onOrdenacaoChange,
   rowSelection,
   onRowSelectionChange,
   selectAllAcrossPages,
@@ -37,7 +39,7 @@ export function VeiculosList({
 }: FeatureListProps<Veiculo>) {
   const columns: ColumnDef<Veiculo>[] = [
     {
-      accessorKey: "id",
+      accessorKey: "id", meta: { campoOrdenacao: "id" },
       header: "ID",
       size: 80,
       cell: ({ row }) => (
@@ -45,7 +47,7 @@ export function VeiculosList({
       ),
     },
     {
-      accessorKey: "placa",
+      accessorKey: "placa", meta: { campoOrdenacao: "placa" },
       header: "Placa",
       cell: ({ row }) => {
         const item = row.original;
@@ -64,7 +66,7 @@ export function VeiculosList({
       },
     },
     {
-      accessorKey: "transportadora",
+      accessorKey: "transportadora", meta: { campoOrdenacao: "transportadora" },
       header: "Transportadora",
       cell: ({ row }) => {
         const item = row.original;
@@ -76,7 +78,7 @@ export function VeiculosList({
       },
     },
     {
-      accessorKey: "ativo",
+      accessorKey: "ativo", meta: { campoOrdenacao: "ativo" },
       header: "Status",
       cell: ({ row }) => <StatusBadge ativo={row.getValue("ativo") as boolean} />,
     },
@@ -106,6 +108,8 @@ export function VeiculosList({
         pageCount={totalPages}
         pageIndex={page}
         onPageChange={onPageChange}
+          ordenacao={ordenacao}
+          onOrdenacaoChange={onOrdenacaoChange}
         totalItems={totalItems}
         globalFilter={searchTerm}
         onGlobalFilterChange={onSearchChange}

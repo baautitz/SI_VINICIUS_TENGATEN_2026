@@ -27,6 +27,8 @@ export function EstadosList({
   onDelete,
   onSelect,
   onPageChange,
+  ordenacao,
+  onOrdenacaoChange,
   rowSelection,
   onRowSelectionChange,
   selectAllAcrossPages,
@@ -34,7 +36,7 @@ export function EstadosList({
 }: FeatureListProps<Estado>) {
   const columns: ColumnDef<Estado>[] = [
     {
-      accessorKey: "id",
+      accessorKey: "id", meta: { campoOrdenacao: "id" },
       header: "ID",
       size: 80,
       cell: ({ row }) => (
@@ -42,18 +44,18 @@ export function EstadosList({
       ),
     },
     {
-      accessorKey: "estado",
+      accessorKey: "estado", meta: { campoOrdenacao: "estado" },
       header: "Estado",
       cell: ({ row }) => (
         <span className="font-medium">{row.getValue("estado")}</span>
       ),
     },
     {
-      accessorKey: "uf",
+      accessorKey: "uf", meta: { campoOrdenacao: "uf" },
       header: "UF",
     },
     {
-      accessorKey: "pais",
+      accessorKey: "pais", meta: { campoOrdenacao: "pais" },
       header: "País",
       cell: ({ row }) => row.original.pais.pais,
     },
@@ -77,6 +79,8 @@ export function EstadosList({
         pageCount={totalPages}
         pageIndex={page}
         onPageChange={onPageChange}
+          ordenacao={ordenacao}
+          onOrdenacaoChange={onOrdenacaoChange}
         totalItems={totalItems}
         globalFilter={searchTerm}
         onGlobalFilterChange={onSearchChange}

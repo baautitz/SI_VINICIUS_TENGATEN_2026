@@ -27,6 +27,8 @@ export function CidadesList({
   onDelete,
   onSelect,
   onPageChange,
+  ordenacao,
+  onOrdenacaoChange,
   rowSelection,
   onRowSelectionChange,
   selectAllAcrossPages,
@@ -34,7 +36,7 @@ export function CidadesList({
 }: FeatureListProps<Cidade>) {
   const columns: ColumnDef<Cidade>[] = [
     {
-      accessorKey: "id",
+      accessorKey: "id", meta: { campoOrdenacao: "id" },
       header: "ID",
       size: 80,
       cell: ({ row }) => (
@@ -42,18 +44,18 @@ export function CidadesList({
       ),
     },
     {
-      accessorKey: "cidade",
+      accessorKey: "cidade", meta: { campoOrdenacao: "cidade" },
       header: "Cidade",
       cell: ({ row }) => (
         <span className="font-medium">{row.getValue("cidade")}</span>
       ),
     },
     {
-      accessorKey: "ddd",
+      accessorKey: "ddd", meta: { campoOrdenacao: "ddd" },
       header: "DDD",
     },
     {
-      accessorKey: "estado",
+      accessorKey: "estado", meta: { campoOrdenacao: "estado" },
       header: "Estado",
       cell: ({ row }) => {
         const item = row.original;
@@ -80,6 +82,8 @@ export function CidadesList({
         pageCount={totalPages}
         pageIndex={page}
         onPageChange={onPageChange}
+          ordenacao={ordenacao}
+          onOrdenacaoChange={onOrdenacaoChange}
         totalItems={totalItems}
         globalFilter={searchTerm}
         onGlobalFilterChange={onSearchChange}

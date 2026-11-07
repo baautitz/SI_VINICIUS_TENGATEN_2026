@@ -9,6 +9,7 @@ import {
   useReactTable,
   RowSelectionState,
   OnChangeFn,
+  HeaderContext,
 } from "@tanstack/react-table";
 import {
   Search,
@@ -36,7 +37,7 @@ import { useWindowCommands } from "@/ui/imperative";
 import { useOptionalActiveWindow } from "@/ui/imperative";
 import { useNavigationScope } from "@/ui/keyboard-navigation";
 import { InputGroup, InputGroupInput, InputGroupAddon } from "./input-group";
-import { fireAndForget } from "@/lib/utils";
+import { cn, fireAndForget } from "@/lib/utils";
 import { combinacaoDe } from "@/lib/atalhos";
 import { proximaOrdenacao, type Ordenacao } from "@/lib/ordenacao";
 
@@ -89,6 +90,18 @@ interface DataTableProps<TData, TValue> {
 
   searchInputRef?: React.RefObject<HTMLInputElement | null>;
   hideSearchKbd?: boolean;
+}
+
+/** Cabeçalho de coluna numérica traz `text-right`: o botão de ordenar precisa acompanhar o alinhamento. */
+function cabecalhoAlinhadoADireita<TData, TValue>(
+  definicao: ColumnDef<TData, TValue>["header"],
+  contexto: HeaderContext<TData, TValue>,
+): boolean {
+  const conteudo = typeof definicao === "function" ? definicao(contexto) : definicao;
+  return (
+    React.isValidElement<{ className?: string }>(conteudo) &&
+    String(conteudo.props.className ?? "").includes("text-right")
+  );
 }
 
 export function DataTable<TData, TValue>({
@@ -376,7 +389,10 @@ export function DataTable<TData, TValue>({
                       {header.isPlaceholder ? null : campo && onOrdenacaoChange ? (
                         <button
                           type="button"
-                          className="hover:text-foreground inline-flex items-center gap-1 uppercase"
+                          className={cn(
+                            "hover:text-foreground inline-flex items-center gap-1 uppercase",
+                            cabecalhoAlinhadoADireita(header.column.columnDef.header, header.getContext()) && "w-full justify-end",
+                          )}
                           aria-label={`Ordenar por ${campo}`}
                           onClick={() => onOrdenacaoChange(proximaOrdenacao(ordenacao, campo))}
                         >

@@ -1,3 +1,4 @@
+import type { Ordenacao } from "@/lib/ordenacao";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useCallback } from "react";
 import { RowSelectionState, OnChangeFn } from "@tanstack/react-table";
@@ -20,6 +21,8 @@ export interface FeatureListProps<TDto> {
   onDelete: (item: TDto) => void | Promise<void>;
   onSelect?: (item: TDto) => void | Promise<void>;
   onPageChange: (page: number) => void;
+  ordenacao?: Ordenacao | null;
+  onOrdenacaoChange?: (ordenacao: Ordenacao | null) => void;
   rowSelection: RowSelectionState;
   onRowSelectionChange: OnChangeFn<RowSelectionState>;
   selectAllAcrossPages?: boolean;
@@ -57,7 +60,7 @@ export function useFeatureOrchestrator<TDto>({
   const list = useFeatureList<TDto>({ initialSearchTerm });
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
-    queryKey: [queryKey, list.deferredSearch, list.page],
+    queryKey: [queryKey, list.deferredSearch, list.page, list.ordenacao],
     queryFn: () => fetchPage(list.deferredSearch.trim(), list.page, 50),
   });
 
@@ -91,6 +94,8 @@ export function useFeatureOrchestrator<TDto>({
       onDelete: remove,
       onSelect: recipes.select ? select : undefined,
       onPageChange: list.setPage,
+      ordenacao: list.ordenacao,
+      onOrdenacaoChange: list.alterarOrdenacao,
       rowSelection: list.rowSelection,
       onRowSelectionChange: list.setRowSelection,
       selectAllAcrossPages: list.selectAllAcrossPages,

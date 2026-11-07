@@ -28,9 +28,9 @@ export function PaisesFeature({
   const queryClient = useQueryClient();
   const list = useFeatureList<Pais>({ initialSearchTerm });
   const { data, isLoading } = useQuery({
-    queryKey: ["paises", list.deferredSearch, list.page],
+    queryKey: ["paises", list.deferredSearch, list.page, list.ordenacao],
     queryFn: async () => {
-      const res = await paisesApi.list(list.deferredSearch.trim() || undefined, list.page, 50);
+      const res = await paisesApi.list(list.deferredSearch.trim() || undefined, list.page, 50, list.ordenacao);
       return { itens: res?.itens ?? [], totalPages: res?.totalDePaginas ?? 1, totalItems: res?.totalDeItens ?? 0 };
     },
   });
@@ -82,6 +82,8 @@ export function PaisesFeature({
         onView={(item) => openUpsert(item, true)}
         onDelete={deletePais}
         onPageChange={list.setPage}
+        ordenacao={list.ordenacao}
+        onOrdenacaoChange={list.alterarOrdenacao}
         rowSelection={list.rowSelection}
         onRowSelectionChange={list.setRowSelection}
         selectAllAcrossPages={list.selectAllAcrossPages}

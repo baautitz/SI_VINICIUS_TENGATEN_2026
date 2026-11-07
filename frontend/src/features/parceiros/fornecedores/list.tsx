@@ -29,6 +29,8 @@ export function FornecedoresList({
   onDelete,
   onSelect,
   onPageChange,
+  ordenacao,
+  onOrdenacaoChange,
   rowSelection,
   onRowSelectionChange,
   selectAllAcrossPages,
@@ -36,7 +38,7 @@ export function FornecedoresList({
 }: FeatureListProps<Fornecedor>) {
   const columns: ColumnDef<Fornecedor>[] = [
     {
-      accessorKey: "id",
+      accessorKey: "id", meta: { campoOrdenacao: "id" },
       header: "ID",
       size: 80,
       cell: ({ row }) => (
@@ -44,7 +46,7 @@ export function FornecedoresList({
       ),
     },
     {
-      accessorKey: "tipoPessoa",
+      accessorKey: "tipoPessoa", meta: { campoOrdenacao: "tipoPessoa" },
       header: "Tipo",
       size: 100,
       cell: ({ row }) => {
@@ -55,7 +57,7 @@ export function FornecedoresList({
       },
     },
     {
-      accessorKey: "nomeRazaosocial",
+      accessorKey: "nomeRazaosocial", meta: { campoOrdenacao: "nomeRazaosocial" },
       header: "Nome / Razão Social",
       cell: ({ row }) => {
         const item = row.original;
@@ -67,7 +69,7 @@ export function FornecedoresList({
       },
     },
     {
-      accessorKey: "cpfCnpj",
+      accessorKey: "cpfCnpj", meta: { campoOrdenacao: "cpfCnpj" },
       header: "CPF / CNPJ",
       cell: ({ row }) => (
         <span className="text-muted-foreground">{row.getValue("cpfCnpj")}</span>
@@ -93,6 +95,8 @@ export function FornecedoresList({
           pageCount={totalPages}
           pageIndex={page}
           onPageChange={onPageChange}
+          ordenacao={ordenacao}
+          onOrdenacaoChange={onOrdenacaoChange}
           totalItems={totalItems}
           globalFilter={searchTerm}
           onGlobalFilterChange={onSearchChange}

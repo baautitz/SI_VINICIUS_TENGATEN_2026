@@ -47,7 +47,7 @@ const Filtro = ({ valor, onChange, rotulo, opcoes }: {
 export function ContasReceberList({
   items: contas, loading, searchTerm, page, totalPages, totalItems,
   filtros, onFiltrosChange,
-  onSearchChange, onAdd, onEdit, onDelete, onView, onPageChange,
+  onSearchChange, onAdd, onEdit, onDelete, onView, onPageChange, ordenacao, onOrdenacaoChange,
   onBaixa, onEstorno,
 }: ContasReceberListProps) {
   const { status, origem, documento, avancados } = filtros;
@@ -70,7 +70,7 @@ export function ContasReceberList({
 
   const columns: ColumnDef<ContasReceber>[] = [
     {
-      id: "documento",
+      id: "documento", meta: { campoOrdenacao: "documento" },
       header: "Documento",
       cell: ({ row }) => {
         const i = row.original;
@@ -88,18 +88,18 @@ export function ContasReceberList({
       },
     },
     {
-      id: "parcela",
+      id: "parcela", meta: { campoOrdenacao: "parcela" },
       header: "Parcela",
       size: 80,
       cell: ({ row }) => <span>{row.original.numeroParcela}/{row.original.totalParcelas}</span>,
     },
     {
-      accessorKey: "descricao",
+      accessorKey: "descricao", meta: { campoOrdenacao: "descricao" },
       header: "Descrição",
       cell: ({ row }) => <span className="font-medium text-foreground truncate max-w-xs block">{row.original.descricao}</span>,
     },
     {
-      id: "cliente",
+      id: "cliente", meta: { campoOrdenacao: "cliente" },
       header: "Cliente",
       cell: ({ row }) => (
         <span className="text-muted-foreground truncate max-w-xs block">
@@ -108,7 +108,7 @@ export function ContasReceberList({
       ),
     },
     {
-      id: "vencimento",
+      id: "vencimento", meta: { campoOrdenacao: "vencimento" },
       header: "Vencimento",
       cell: ({ row }) => {
         const i = row.original;
@@ -117,27 +117,27 @@ export function ContasReceberList({
       },
     },
     {
-      accessorKey: "valor",
+      accessorKey: "valor", meta: { campoOrdenacao: "valor" },
       header: () => <div className="text-right font-semibold">Valor</div>,
       cell: ({ row }) => <div className="text-right font-semibold text-foreground">{brl(Number(row.original.valor))}</div>,
     },
     {
-      accessorKey: "valorPago",
+      accessorKey: "valorPago", meta: { campoOrdenacao: "valorPago" },
       header: () => <div className="text-right font-semibold">Recebido</div>,
       cell: ({ row }) => <div className="text-right text-foreground">{brl(Number(row.original.valorPago))}</div>,
     },
     {
-      accessorKey: "valorAbatido",
+      accessorKey: "valorAbatido", meta: { campoOrdenacao: "valorAbatido" },
       header: () => <div className="text-right font-semibold">Abatido</div>,
       cell: ({ row }) => <div className="text-right text-foreground">{brl(Number(row.original.valorAbatido ?? 0))}</div>,
     },
     {
-      accessorKey: "valorSaldo",
+      accessorKey: "valorSaldo", meta: { campoOrdenacao: "valorSaldo" },
       header: () => <div className="text-right font-semibold">Saldo</div>,
       cell: ({ row }) => <div className="text-right font-semibold text-foreground">{brl(Number(row.original.valorSaldo))}</div>,
     },
     {
-      accessorKey: "status",
+      accessorKey: "status", meta: { campoOrdenacao: "status" },
       header: "Status",
       cell: ({ row }) => <StatusTituloBadge status={row.original.status} />,
     },
@@ -165,6 +165,8 @@ export function ContasReceberList({
           pageCount={totalPages}
           pageIndex={page}
           onPageChange={onPageChange}
+          ordenacao={ordenacao}
+          onOrdenacaoChange={onOrdenacaoChange}
           totalItems={totalItems}
           globalFilter={searchTerm}
           onGlobalFilterChange={onSearchChange}

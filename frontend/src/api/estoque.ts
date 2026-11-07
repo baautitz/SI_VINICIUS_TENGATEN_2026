@@ -5,9 +5,9 @@ import type { MovimentacaoEstoque, MovimentacaoEstoqueFormValues } from "@/featu
 import type { Balanco } from "@/features/estoque/balancos/types";
 
 export const estoqueApi = {
-  list: (search?: string, page = 1, pageSize = 20) =>
+  list: (search?: string, page = 1, pageSize = 20, ordenacao: Ordenacao | null = null) =>
     http.get<PaginatedResult<MovimentacaoEstoque>>(
-      `/api/estoque/movimentacoes?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`
+      `/api/estoque/movimentacoes?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}${paramsDeOrdenacao(ordenacao)}`
     ),
   listByOrigem: (origemTipo: string, origemId: number) =>
     http.get<PaginatedResult<MovimentacaoEstoque>>(

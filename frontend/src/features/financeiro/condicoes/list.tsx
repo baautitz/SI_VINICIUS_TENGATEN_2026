@@ -24,6 +24,8 @@ export function CondicoesList({
   onDelete,
   onSelect,
   onPageChange,
+  ordenacao,
+  onOrdenacaoChange,
   rowSelection,
   onRowSelectionChange,
   selectAllAcrossPages,
@@ -31,7 +33,7 @@ export function CondicoesList({
 }: FeatureListProps<CondicaoPagamento>) {
   const columns: ColumnDef<CondicaoPagamento>[] = [
     {
-      accessorKey: "id",
+      accessorKey: "id", meta: { campoOrdenacao: "id" },
       header: "ID",
       size: 80,
       cell: ({ row }) => (
@@ -39,21 +41,21 @@ export function CondicoesList({
       ),
     },
     {
-      accessorKey: "descricao",
+      accessorKey: "descricao", meta: { campoOrdenacao: "descricao" },
       header: "Descrição",
       cell: ({ row }) => (
         <span className="font-medium">{row.getValue("descricao")}</span>
       ),
     },
     {
-      accessorKey: "metodoPagamento.descricao",
+      accessorKey: "metodoPagamento.descricao", meta: { campoOrdenacao: "metodoPagamento" },
       header: "Método de Pagamento",
       cell: ({ row }) => (
         <span>{row.original.metodoPagamento?.descricao ?? "-"}</span>
       ),
     },
     {
-      accessorKey: "entradaMinimaPercentual",
+      accessorKey: "entradaMinimaPercentual", meta: { campoOrdenacao: "entradaMinimaPercentual" },
       header: () => <div className="text-right">Entrada Mín.</div>,
       size: 110,
       cell: ({ row }) => {
@@ -62,7 +64,7 @@ export function CondicoesList({
       },
     },
     {
-      accessorKey: "descontoPercentual",
+      accessorKey: "descontoPercentual", meta: { campoOrdenacao: "descontoPercentual" },
       header: () => <div className="text-right">Desc. / Acrésc.</div>,
       size: 140,
       cell: ({ row }) => {
@@ -81,7 +83,7 @@ export function CondicoesList({
       },
     },
     {
-      accessorKey: "taxaJurosPercentual",
+      accessorKey: "taxaJurosPercentual", meta: { campoOrdenacao: "taxaJurosPercentual" },
       header: () => <div className="text-right">Juros / Multa</div>,
       size: 140,
       cell: ({ row }) => {
@@ -96,7 +98,7 @@ export function CondicoesList({
       },
     },
     {
-      accessorKey: "ativo",
+      accessorKey: "ativo", meta: { campoOrdenacao: "ativo" },
       header: "Status",
       size: 100,
       cell: ({ row }) => <StatusBadge ativo={row.getValue("ativo") as boolean} />,
@@ -127,6 +129,8 @@ export function CondicoesList({
           pageCount={totalPages}
           pageIndex={page}
           onPageChange={onPageChange}
+          ordenacao={ordenacao}
+          onOrdenacaoChange={onOrdenacaoChange}
           totalItems={totalItems}
           globalFilter={searchTerm}
           onGlobalFilterChange={onSearchChange}

@@ -32,12 +32,13 @@ export function SkusFeature({
   const queryClient = useQueryClient();
   const list = useFeatureList<Sku>({ initialSearchTerm });
   const { data, isLoading } = useQuery({
-    queryKey: ["skus", list.deferredSearch, list.page],
+    queryKey: ["skus", list.deferredSearch, list.page, list.ordenacao],
     queryFn: async () => {
       const result = await skusApi.list(
         list.deferredSearch.trim() || undefined,
         list.page,
         50,
+        list.ordenacao,
       );
       return {
         itens: result?.itens ?? [],
@@ -141,6 +142,8 @@ export function SkusFeature({
       onView={openView}
       onDelete={deleteSku}
       onPageChange={list.setPage}
+        ordenacao={list.ordenacao}
+        onOrdenacaoChange={list.alterarOrdenacao}
       rowSelection={list.rowSelection}
       onRowSelectionChange={list.setRowSelection}
       selectAllAcrossPages={list.selectAllAcrossPages}

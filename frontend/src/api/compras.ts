@@ -1,3 +1,4 @@
+import { paramsDeOrdenacao, type Ordenacao } from "@/lib/ordenacao";
 import { http } from "./http";
 import type { PaginatedResult, Resultado } from "./types";
 import type {
@@ -11,9 +12,9 @@ import type {
 } from "@/features/compras/types";
 
 export const comprasApi = {
-  list: (search?: string, page = 1, pageSize = 20) =>
+  list: (search?: string, page = 1, pageSize = 20, ordenacao: Ordenacao | null = null) =>
     http.get<PaginatedResult<Compra>>(
-      `/api/compras?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`,
+      `/api/compras?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}${paramsDeOrdenacao(ordenacao)}`,
     ),
   getById: (id: number) => http.get<Compra>(`/api/compras/${id}`),
   create: (data: CriarCompraPayload) =>

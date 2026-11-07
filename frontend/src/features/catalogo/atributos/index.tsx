@@ -27,12 +27,13 @@ export function AtributosFeature({
   const queryClient = useQueryClient();
   const list = useFeatureList<SkuAtributoChave>({ initialSearchTerm });
   const { data, isLoading } = useQuery({
-    queryKey: ["atributos", list.deferredSearch, list.page],
+    queryKey: ["atributos", list.deferredSearch, list.page, list.ordenacao],
     queryFn: async () => {
       const res = await atributosApi.list(
         list.deferredSearch.trim() || undefined,
         list.page,
         50,
+        list.ordenacao,
       );
       return {
         itens: res?.itens ?? [],
@@ -109,6 +110,8 @@ export function AtributosFeature({
       onDelete={deleteAtributo}
       onSelect={onSelect}
       onPageChange={list.setPage}
+        ordenacao={list.ordenacao}
+        onOrdenacaoChange={list.alterarOrdenacao}
       rowSelection={list.rowSelection}
       onRowSelectionChange={list.setRowSelection}
       selectAllAcrossPages={list.selectAllAcrossPages}

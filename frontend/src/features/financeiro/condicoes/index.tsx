@@ -24,12 +24,13 @@ export function CondicoesFeature({
   const queryClient = useQueryClient();
   const list = useFeatureList<CondicaoPagamento>({ initialSearchTerm });
   const { data, isLoading } = useQuery({
-    queryKey: ["condicoesPagamento", list.deferredSearch, list.page],
+    queryKey: ["condicoesPagamento", list.deferredSearch, list.page, list.ordenacao],
     queryFn: async () => {
       const res = await condicoesApi.list(
         list.deferredSearch.trim() || undefined,
         list.page,
         50,
+        list.ordenacao,
       );
       return {
         itens: res?.itens ?? [],
@@ -119,6 +120,8 @@ export function CondicoesFeature({
       onView={openView}
       onDelete={deleteCondicao}
       onPageChange={list.setPage}
+        ordenacao={list.ordenacao}
+        onOrdenacaoChange={list.alterarOrdenacao}
       rowSelection={list.rowSelection}
       onRowSelectionChange={list.setRowSelection}
       selectAllAcrossPages={list.selectAllAcrossPages}

@@ -26,12 +26,13 @@ export function CategoriasFeature({
   const queryClient = useQueryClient();
   const list = useFeatureList<Categoria>({ initialSearchTerm });
   const { data, isLoading } = useQuery({
-    queryKey: ["categorias", list.deferredSearch, list.page],
+    queryKey: ["categorias", list.deferredSearch, list.page, list.ordenacao],
     queryFn: async () => {
       const res = await categoriasApi.list(
         list.deferredSearch.trim() || undefined,
         list.page,
         50,
+        list.ordenacao,
       );
       return {
         itens: res?.itens ?? [],
@@ -108,6 +109,8 @@ export function CategoriasFeature({
         onView={openEdit}
         onDelete={deleteCategoria}
         onPageChange={list.setPage}
+        ordenacao={list.ordenacao}
+        onOrdenacaoChange={list.alterarOrdenacao}
         rowSelection={list.rowSelection}
         onRowSelectionChange={list.setRowSelection}
         selectAllAcrossPages={list.selectAllAcrossPages}

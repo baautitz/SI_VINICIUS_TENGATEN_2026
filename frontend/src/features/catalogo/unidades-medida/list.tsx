@@ -24,6 +24,8 @@ export function UnidadesMedidaList({
   onDelete,
   onSelect,
   onPageChange,
+  ordenacao,
+  onOrdenacaoChange,
   rowSelection,
   onRowSelectionChange,
   selectAllAcrossPages,
@@ -31,7 +33,7 @@ export function UnidadesMedidaList({
 }: FeatureListProps<UnidadeMedida>) {
   const columns: ColumnDef<UnidadeMedida>[] = [
     {
-      accessorKey: "id",
+      accessorKey: "id", meta: { campoOrdenacao: "id" },
       header: "ID",
       size: 80,
       cell: ({ row }) => (
@@ -39,24 +41,24 @@ export function UnidadesMedidaList({
       ),
     },
     {
-      accessorKey: "sigla",
+      accessorKey: "sigla", meta: { campoOrdenacao: "sigla" },
       header: "Sigla",
     },
     {
-      accessorKey: "descricao",
+      accessorKey: "descricao", meta: { campoOrdenacao: "descricao" },
       header: "Descrição",
     },
     {
-      accessorKey: "categoria",
+      accessorKey: "categoria", meta: { campoOrdenacao: "categoria" },
       header: "Categoria",
     },
     {
-      accessorKey: "permiteDecimais",
+      accessorKey: "permiteDecimais", meta: { campoOrdenacao: "permiteDecimais" },
       header: "Decimais",
       cell: ({ row }) => (row.getValue("permiteDecimais") ? "Sim" : "Não"),
     },
     {
-      accessorKey: "ativo",
+      accessorKey: "ativo", meta: { campoOrdenacao: "ativo" },
       header: "Status",
       size: 100,
       cell: ({ row }) => {
@@ -91,6 +93,8 @@ export function UnidadesMedidaList({
           pageCount={totalPages}
           pageIndex={page}
           onPageChange={onPageChange}
+          ordenacao={ordenacao}
+          onOrdenacaoChange={onOrdenacaoChange}
           totalItems={totalItems}
           globalFilter={searchTerm}
           onGlobalFilterChange={onSearchChange}

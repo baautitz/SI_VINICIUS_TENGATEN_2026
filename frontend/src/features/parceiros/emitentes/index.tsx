@@ -24,12 +24,13 @@ export function EmitentesFeature({
   const queryClient = useQueryClient();
   const list = useFeatureList<Emitente>({ initialSearchTerm });
   const { data, isLoading } = useQuery({
-    queryKey: ["emitentes", list.deferredSearch, list.page],
+    queryKey: ["emitentes", list.deferredSearch, list.page, list.ordenacao],
     queryFn: async () => {
       const res = await emitentesApi.list(
         list.deferredSearch.trim() || undefined,
         list.page,
         50,
+        list.ordenacao,
       );
       return {
         itens: res?.itens ?? [],
@@ -118,6 +119,8 @@ export function EmitentesFeature({
       onView={openView}
       onDelete={deleteEmitente}
       onPageChange={list.setPage}
+        ordenacao={list.ordenacao}
+        onOrdenacaoChange={list.alterarOrdenacao}
       rowSelection={list.rowSelection}
       onRowSelectionChange={list.setRowSelection}
       selectAllAcrossPages={list.selectAllAcrossPages}

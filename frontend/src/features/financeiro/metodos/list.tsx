@@ -25,6 +25,8 @@ export function MetodosList({
   onDelete,
   onSelect,
   onPageChange,
+  ordenacao,
+  onOrdenacaoChange,
   rowSelection,
   onRowSelectionChange,
   selectAllAcrossPages,
@@ -32,7 +34,7 @@ export function MetodosList({
 }: FeatureListProps<MetodoPagamento>) {
   const columns: ColumnDef<MetodoPagamento>[] = [
     {
-      accessorKey: "codigo",
+      accessorKey: "codigo", meta: { campoOrdenacao: "codigo" },
       header: "Código",
       size: 100,
       cell: ({ row }) => (
@@ -40,14 +42,14 @@ export function MetodosList({
       ),
     },
     {
-      accessorKey: "descricao",
+      accessorKey: "descricao", meta: { campoOrdenacao: "descricao" },
       header: "Descrição",
       cell: ({ row }) => (
         <span className="font-medium">{row.getValue("descricao")}</span>
       ),
     },
     {
-      accessorKey: "ativo",
+      accessorKey: "ativo", meta: { campoOrdenacao: "ativo" },
       header: "Status",
       size: 100,
       cell: ({ row }) => <StatusBadge ativo={row.getValue("ativo") as boolean} />,
@@ -72,6 +74,8 @@ export function MetodosList({
           pageCount={totalPages}
           pageIndex={page}
           onPageChange={onPageChange}
+          ordenacao={ordenacao}
+          onOrdenacaoChange={onOrdenacaoChange}
           totalItems={totalItems}
           globalFilter={searchTerm}
           onGlobalFilterChange={onSearchChange}

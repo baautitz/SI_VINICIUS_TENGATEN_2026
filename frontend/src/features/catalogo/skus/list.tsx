@@ -26,6 +26,8 @@ export function SkusList({
   onDelete,
   onSelect,
   onPageChange,
+  ordenacao,
+  onOrdenacaoChange,
   rowSelection,
   onRowSelectionChange,
   selectAllAcrossPages,
@@ -33,7 +35,7 @@ export function SkusList({
 }: FeatureListProps<Sku>) {
   const columns: ColumnDef<Sku>[] = [
     {
-      accessorKey: "sku",
+      accessorKey: "sku", meta: { campoOrdenacao: "sku" },
       header: "SKU",
       size: 160,
       cell: ({ row }) => (
@@ -41,7 +43,7 @@ export function SkusList({
       ),
     },
     {
-      id: "produto",
+      id: "produto", meta: { campoOrdenacao: "produto" },
       header: "Produto",
       cell: ({ row }) => {
         const sku = row.original;
@@ -59,7 +61,7 @@ export function SkusList({
       },
     },
     {
-      accessorKey: "preco",
+      accessorKey: "preco", meta: { campoOrdenacao: "preco" },
       size: 130,
       header: () => <div className="text-right">Preço</div>,
       cell: ({ row }) => (
@@ -72,7 +74,7 @@ export function SkusList({
       ),
     },
     {
-      accessorKey: "estoque",
+      accessorKey: "estoque", meta: { campoOrdenacao: "estoque" },
       size: 110,
       header: () => <div className="text-right">Estoque</div>,
       cell: ({ row }) => (
@@ -82,7 +84,7 @@ export function SkusList({
       ),
     },
     {
-      accessorKey: "ativo",
+      accessorKey: "ativo", meta: { campoOrdenacao: "ativo" },
       header: "Status",
       size: 110,
       cell: ({ row }) => {
@@ -121,6 +123,8 @@ export function SkusList({
           pageCount={totalPages}
           pageIndex={page}
           onPageChange={onPageChange}
+          ordenacao={ordenacao}
+          onOrdenacaoChange={onOrdenacaoChange}
           totalItems={totalItems}
           globalFilter={searchTerm}
           onGlobalFilterChange={onSearchChange}

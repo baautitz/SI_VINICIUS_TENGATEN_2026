@@ -26,9 +26,9 @@ export function CidadesFeature({
   const queryClient = useQueryClient();
   const list = useFeatureList<Cidade>({ initialSearchTerm });
   const { data, isLoading } = useQuery({
-    queryKey: ["cidades", list.deferredSearch, list.page],
+    queryKey: ["cidades", list.deferredSearch, list.page, list.ordenacao],
     queryFn: async () => {
-      const res = await cidadesApi.list(list.deferredSearch.trim() || undefined, list.page, 50);
+      const res = await cidadesApi.list(list.deferredSearch.trim() || undefined, list.page, 50, list.ordenacao);
       return { itens: res?.itens ?? [], totalPages: res?.totalDePaginas ?? 1, totalItems: res?.totalDeItens ?? 0 };
     },
   });
@@ -79,6 +79,8 @@ export function CidadesFeature({
         onView={(item) => openUpsert(item, true)}
         onDelete={deleteCidade}
         onPageChange={list.setPage}
+        ordenacao={list.ordenacao}
+        onOrdenacaoChange={list.alterarOrdenacao}
         rowSelection={list.rowSelection}
         onRowSelectionChange={list.setRowSelection}
         selectAllAcrossPages={list.selectAllAcrossPages}

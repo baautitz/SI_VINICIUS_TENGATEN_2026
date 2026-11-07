@@ -1,3 +1,4 @@
+import { paramsDeOrdenacao, type Ordenacao } from "@/lib/ordenacao";
 import { http } from "./http";
 import type { PaginatedResult, Resultado } from "./types";
 import type { UnidadeMedida, UnidadeMedidaFormValues } from "@/features/catalogo/unidades-medida/types";
@@ -8,9 +9,9 @@ import type { Produto, ProdutoFormValues } from "@/features/catalogo/produtos/ty
 import { Sku } from "@/features/catalogo/skus/types"; // Assuming Skus is the new entity
 
 export const unidadesMedidaApi = {
-  list: (search?: string, page = 1, pageSize = 20) =>
+  list: (search?: string, page = 1, pageSize = 20, ordenacao: Ordenacao | null = null) =>
     http.get<PaginatedResult<UnidadeMedida>>(
-      `/api/catalogo/unidades-medida?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`,
+      `/api/catalogo/unidades-medida?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}${paramsDeOrdenacao(ordenacao)}`,
     ),
   getById: (id: number) =>
     http.get<UnidadeMedida>(`/api/catalogo/unidades-medida/${id}`),
@@ -25,9 +26,9 @@ export const unidadesMedidaApi = {
 };
 
 export const marcasApi = {
-  list: (search?: string, page = 1, pageSize = 20) =>
+  list: (search?: string, page = 1, pageSize = 20, ordenacao: Ordenacao | null = null) =>
     http.get<PaginatedResult<Marca>>(
-      `/api/catalogo/marcas?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`,
+      `/api/catalogo/marcas?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}${paramsDeOrdenacao(ordenacao)}`,
     ),
   getById: (id: number) => http.get<Marca>(`/api/catalogo/marcas/${id}`),
   create: (data: MarcaFormValues) =>
@@ -38,9 +39,9 @@ export const marcasApi = {
 };
 
 export const categoriasApi = {
-  list: (search?: string, page = 1, pageSize = 20) =>
+  list: (search?: string, page = 1, pageSize = 20, ordenacao: Ordenacao | null = null) =>
     http.get<PaginatedResult<Categoria>>(
-      `/api/catalogo/categorias?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`,
+      `/api/catalogo/categorias?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}${paramsDeOrdenacao(ordenacao)}`,
     ),
   getById: (id: number) =>
     http.get<Categoria>(`/api/catalogo/categorias/${id}`),
@@ -52,9 +53,9 @@ export const categoriasApi = {
 };
 
 export const atributosApi = {
-  list: (search?: string, page = 1, pageSize = 20) =>
+  list: (search?: string, page = 1, pageSize = 20, ordenacao: Ordenacao | null = null) =>
     http.get<PaginatedResult<SkuAtributoChave>>(
-      `/api/catalogo/atributos?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`,
+      `/api/catalogo/atributos?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}${paramsDeOrdenacao(ordenacao)}`,
     ),
   getById: (id: number) =>
     http.get<SkuAtributoChave>(`/api/catalogo/atributos/${id}`),
@@ -69,9 +70,9 @@ export const atributosApi = {
 };
 
 export const produtosApi = {
-  list: (search?: string, page = 1, pageSize = 20) =>
+  list: (search?: string, page = 1, pageSize = 20, ordenacao: Ordenacao | null = null) =>
     http.get<PaginatedResult<Produto>>(
-      `/api/catalogo/produtos?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`,
+      `/api/catalogo/produtos?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}${paramsDeOrdenacao(ordenacao)}`,
     ),
   listByFiltro: (
     filtro: { categoriaId?: number; marcaId?: number; unidadeMedidaId?: number },
@@ -93,9 +94,9 @@ export const produtosApi = {
 };
 
 export const skusApi = {
-  list: (search?: string, page = 1, pageSize = 20) =>
+  list: (search?: string, page = 1, pageSize = 20, ordenacao: Ordenacao | null = null) =>
     http.get<PaginatedResult<Sku>>(
-      `/api/catalogo/skus?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}`,
+      `/api/catalogo/skus?search=${encodeURIComponent(search ?? "")}&page=${page}&pageSize=${pageSize}${paramsDeOrdenacao(ordenacao)}`,
     ),
   getBySku: (sku: string) =>
     http.getQuietly<Sku>(`/api/catalogo/skus/${encodeURIComponent(sku)}`),

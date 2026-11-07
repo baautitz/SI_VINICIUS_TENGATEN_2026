@@ -47,7 +47,7 @@ const Filtro = ({ valor, onChange, rotulo, opcoes, disabled }: {
 export function ContasPagarList({
   items: contas, loading, searchTerm, page, totalPages, totalItems,
   filtros, onFiltrosChange, compraId,
-  onSearchChange, onAdd, onEdit, onDelete, onView, onPageChange,
+  onSearchChange, onAdd, onEdit, onDelete, onView, onPageChange, ordenacao, onOrdenacaoChange,
   onBaixa, onEstorno,
 }: ContasPagarListProps) {
   const { status, origem, documento, avancados } = filtros;
@@ -72,7 +72,7 @@ export function ContasPagarList({
 
   const columns: ColumnDef<ContasPagar>[] = [
     {
-      id: "documento",
+      id: "documento", meta: { campoOrdenacao: "documento" },
       header: "Documento",
       cell: ({ row }) => {
         const i = row.original;
@@ -90,18 +90,18 @@ export function ContasPagarList({
       },
     },
     {
-      id: "parcela",
+      id: "parcela", meta: { campoOrdenacao: "parcela" },
       header: "Parcela",
       size: 80,
       cell: ({ row }) => <span>{row.original.numeroParcela}/{row.original.totalParcelas}</span>,
     },
     {
-      accessorKey: "descricao",
+      accessorKey: "descricao", meta: { campoOrdenacao: "descricao" },
       header: "Descrição",
       cell: ({ row }) => <span className="font-medium text-foreground truncate max-w-xs block">{row.original.descricao}</span>,
     },
     {
-      id: "fornecedor",
+      id: "fornecedor", meta: { campoOrdenacao: "fornecedor" },
       header: "Fornecedor / Cliente / Transportadora",
       cell: ({ row }) => (
         <span className="text-muted-foreground truncate max-w-xs block">
@@ -110,7 +110,7 @@ export function ContasPagarList({
       ),
     },
     {
-      id: "vencimento",
+      id: "vencimento", meta: { campoOrdenacao: "vencimento" },
       header: "Vencimento",
       cell: ({ row }) => {
         const i = row.original;
@@ -119,22 +119,22 @@ export function ContasPagarList({
       },
     },
     {
-      accessorKey: "valor",
+      accessorKey: "valor", meta: { campoOrdenacao: "valor" },
       header: () => <div className="text-right font-semibold">Valor</div>,
       cell: ({ row }) => <div className="text-right font-semibold text-foreground">{brl(Number(row.original.valor))}</div>,
     },
     {
-      accessorKey: "valorPago",
+      accessorKey: "valorPago", meta: { campoOrdenacao: "valorPago" },
       header: () => <div className="text-right font-semibold">Pago</div>,
       cell: ({ row }) => <div className="text-right text-foreground">{brl(Number(row.original.valorPago))}</div>,
     },
     {
-      accessorKey: "valorSaldo",
+      accessorKey: "valorSaldo", meta: { campoOrdenacao: "valorSaldo" },
       header: () => <div className="text-right font-semibold">Saldo</div>,
       cell: ({ row }) => <div className="text-right font-semibold text-foreground">{brl(Number(row.original.valorSaldo))}</div>,
     },
     {
-      accessorKey: "status",
+      accessorKey: "status", meta: { campoOrdenacao: "status" },
       header: "Status",
       cell: ({ row }) => <StatusTituloBadge status={row.original.status} />,
     },
@@ -162,6 +162,8 @@ export function ContasPagarList({
           pageCount={totalPages}
           pageIndex={page}
           onPageChange={onPageChange}
+          ordenacao={ordenacao}
+          onOrdenacaoChange={onOrdenacaoChange}
           totalItems={totalItems}
           globalFilter={searchTerm}
           onGlobalFilterChange={onSearchChange}
