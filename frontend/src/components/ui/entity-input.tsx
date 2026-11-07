@@ -72,7 +72,7 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
   hideLabel = false,
   placeholder = "Digite, ou Enter para buscar...",
   error,
-  initialItem = null,
+  initialItem: initialItemBruto = null,
   disabled = false,
   onSelectId,
   onSelectItem,
@@ -87,6 +87,8 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
   renderFeature,
 }: EntityInputProps<T, TResumo, TId>) {
   const ui = useUi();
+  // O backend devolve objeto vazio (id 0) quando o relacionamento opcional não existe: tratar como sem seleção.
+  const initialItem = initialItemBruto && (getId(initialItemBruto) as unknown) !== 0 ? initialItemBruto : null;
   const [selectedItem, setSelectedItem] = useState<TResumo | null>(
     (initialItem as TResumo | null) ?? null,
   );
