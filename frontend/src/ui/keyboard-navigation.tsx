@@ -586,6 +586,52 @@ function findDestination(
       ? null
       : candidates[Number(destinationId)]?.element ?? null
 
+  // Cartões de atalho (Início): ←/→ passam ao cartão vizinho mesmo sem controle na mesma linha
+  // (o vizinho pode ter menos itens), sempre a coluna adjacente — nunca pulando uma coluna por coincidir na linha.
+  // Só sem vizinho de verdade a seta esquerda volta à sidebar.
+  const cards = source.closest<HTMLElement>("[data-navigation-cards='true']")
+  if (!sidebar && cards && (direction === "left" || direction === "right")) {
+    const sourceRect = source.getBoundingClientRect()
+    const sourceMiddle = sourceRect.top + sourceRect.height / 2
+    const neighbor = candidates
+      .filter((candidate) => cards.contains(candidate.element))
+      .filter((candidate) =>
+        direction === "left"
+          ? candidate.rect.right <= sourceRect.left
+          : candidate.rect.left >= sourceRect.right,
+      )
+      .sort((a, b) => {
+        const gap = (rect: DOMRect) =>
+          direction === "left" ? sourceRect.left - rect.right : rect.left - sourceRect.right
+        const distance = (rect: DOMRect) =>
+          Math.abs(rect.top + rect.height / 2 - sourceMiddle)
+        // Primeiro a coluna vizinha (a mais próxima na horizontal), depois o item mais perto na vertical.
+        return gap(a.rect) - gap(b.rect) || distance(a.rect) - distance(b.rect)
+      })[0]
+    if (neighbor) return neighbor.element
+  }
+
+  // Cartões de atalho: ↑/↓ seguem a própria coluna (próximo item, depois o primeiro do cartão de baixo),
+  // sem saltar para um cartão de outra coluna só porque ele está geometricamente mais perto.
+  if (!sidebar && cards && (direction === "up" || direction === "down")) {
+    const sourceRect = source.getBoundingClientRect()
+    const naColuna = candidates
+      .filter((candidate) => cards.contains(candidate.element) && candidate.element !== source)
+      .filter(
+        (candidate) =>
+          candidate.rect.left < sourceRect.right && candidate.rect.right > sourceRect.left,
+      )
+      .filter((candidate) =>
+        direction === "down"
+          ? candidate.rect.top >= sourceRect.bottom - 1
+          : candidate.rect.bottom <= sourceRect.top + 1,
+      )
+      .sort((a, b) =>
+        direction === "down" ? a.rect.top - b.rect.top : b.rect.bottom - a.rect.bottom,
+      )[0]
+    if (naColuna) return naColuna.element
+  }
+
   // Returning from the content should restore the current route in the
   // sidebar, instead of landing on its unrelated collapse button or another
   // group trigger. Internal sidebar navigation keeps its normal geometry.
