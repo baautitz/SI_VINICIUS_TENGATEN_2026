@@ -390,6 +390,11 @@ export function DataTable<TData, TValue>({
               )}
             </div>
           )}
+          {colunasOrdenaveis.length > 0 && (
+            <Button type="button" variant="outline" onClick={() => setMenuOrdenarAberto(true)}>
+              <ArrowUpDown /> Ordenar <HotkeyKbd hotkey={combinacaoDe("ordenar")} />
+            </Button>
+          )}
           {actions}
         </div>
         {menuOrdenarAberto && colunasOrdenaveis.length > 0 && onOrdenacaoChange && (
