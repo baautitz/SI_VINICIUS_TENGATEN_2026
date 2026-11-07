@@ -77,7 +77,7 @@ export function OrdenarMenu({
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node)) onClose();
       }}
-      className="bg-popover absolute top-full right-0 z-50 mt-1 w-64 rounded-lg border p-1 shadow-md outline-none"
+      className="bg-popover absolute top-full right-0 z-50 mt-1 w-max min-w-64 max-w-[90vw] rounded-lg border p-1 shadow-md outline-none"
     >
       {colunas.map((coluna, i) => {
         const modo = modoDe(ordenacao, coluna.campo);
@@ -92,7 +92,7 @@ export function OrdenarMenu({
               i === indice && "bg-primary/10 font-medium",
             )}
           >
-            <span className="truncate">{coluna.rotulo}</span>
+            <span className="whitespace-nowrap">{coluna.rotulo}</span>
             <span className="text-muted-foreground flex shrink-0 items-center gap-1 text-xs">
               {modo === "asc" ? <ArrowUpNarrowWide className="size-4" /> : modo === "desc" ? <ArrowDownWideNarrow className="size-4" /> : <ChevronsUpDown className="size-4 opacity-40" />}
               {ROTULO_MODO[modo]}
