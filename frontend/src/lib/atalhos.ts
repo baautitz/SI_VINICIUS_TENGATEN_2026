@@ -34,7 +34,7 @@ export const ATALHOS = {
   movimentacaoOriginal: atalho("Alt+Shift+M", "Movimentacao original"),
   verEstorno: atalho("Alt+Shift+V", "Ver estorno"),
   origem: atalho("Alt+Shift+O", "Origem"),
-  adicionarOpcaoProduto: atalho("Alt+Shift+A", "Adicionar opcao de produto"),
+  adicionarOpcaoProduto: atalho("Alt+U", "Adicionar opcao de produto"),
   replicarPreco: atalho("Alt+Shift+C", "Replicar preco entre variacoes"),
   verProdutos: atalho("Alt+Shift+P", "Ver produtos"),
   confirmar: atalho("Alt+Enter", "Confirmar"),
