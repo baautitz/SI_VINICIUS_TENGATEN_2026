@@ -1527,7 +1527,6 @@ function CompraForm({
                         <Button
                           type="button"
                           variant="outline"
-                          size="sm"
                           onClick={adicionarParcela}
                         >
                           <Plus /> Parcela <HotkeyKbd hotkey={combinacaoDe("adicionarParcela")} />
@@ -1535,7 +1534,6 @@ function CompraForm({
                         <Button
                           type="button"
                           variant="outline"
-                          size="sm"
                           onClick={() => void redistribuirParcelas()}
                         >
                           Redistribuir <HotkeyKbd hotkey={combinacaoDe("distribuir")} />

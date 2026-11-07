@@ -57,7 +57,7 @@ export function CadastroSugeridoCard(props: {
           {existente ? "Já cadastrado" : "Será cadastrado ao confirmar"}
         </Badge>
         {editado && <Badge>Editado</Badge>}
-        <Button type="button" size="sm" variant="outline" className="ml-auto" onClick={onEditar}>
+        <Button type="button" variant="outline" className="ml-auto" onClick={onEditar}>
           <Pencil /> Editar
         </Button>
       </div>

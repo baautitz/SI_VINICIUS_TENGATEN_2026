@@ -272,7 +272,6 @@ function AtributosUpsertForm({
                   </div>
 
                   <Card
-                    size="sm"
                     className="bg-muted/10 mt-2 w-full border-dashed"
                   >
                     <CardContent className="flex min-h-20 flex-wrap gap-2 py-3">
