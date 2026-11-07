@@ -568,9 +568,9 @@ function CompraForm({
       !transportadoraId &&
       !(modoXml && cadastrarTransportadora)
     )
-      return "Frete de terceiro exige a transportadora (etapa Fornecedor e transporte).";
+      return "Informe a transportadora para usar frete de terceiro.";
     if (parcelas.length === 0)
-      return "Informe ao menos uma parcela (use Recalcular parcelas).";
+      return "Adicione pelo menos uma parcela.";
     if (parcelas.some((p) => !(p.valorParcela > 0)))
       return "O valor de cada parcela deve ser maior que zero.";
     return null;
@@ -586,7 +586,7 @@ function CompraForm({
     if (parcelasDivergem) {
       ui.feedback.notify({
         type: "error",
-        title: `Parcelas somam ${moeda(somaParcelas)} e a nota vale ${moeda(valorNota)}. Ajuste as parcelas.`,
+        title: `As parcelas dão ${moeda(somaParcelas)}, mas a nota é de ${moeda(valorNota)}.`,
       });
       return;
     }
@@ -1380,7 +1380,7 @@ function CompraForm({
                 <section className="flex flex-col gap-3 rounded-lg border p-4">
                   <h3 className="text-sm font-semibold">Despesas da nota</h3>
                   <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-                    {despesaCampo("Frete (na nota)", frete, setFrete, modoXml)}
+                    {despesaCampo("Frete", frete, setFrete, modoXml)}
                     {despesaCampo("Seguro", seguro, setSeguro, modoXml)}
                     {despesaCampo("Outras despesas", outras, setOutras, modoXml)}
                     {despesaCampo("Desconto geral", desconto, setDesconto, modoXml)}
@@ -1546,8 +1546,8 @@ function CompraForm({
                           )}
                         >
                           {parcelasDivergem
-                            ? `Parcelas ${moeda(somaParcelas)} · nota ${moeda(valorNota)} · diferença ${moeda(round2(valorNota - somaParcelas))}`
-                            : `Parcelas ${moeda(somaParcelas)} = valor da nota`}
+                            ? `Parcelas: ${moeda(somaParcelas)} de ${moeda(valorNota)} (${somaParcelas < valorNota ? "faltam" : "sobram"} ${moeda(Math.abs(round2(valorNota - somaParcelas)))})`
+                            : `Parcelas: ${moeda(somaParcelas)} de ${moeda(valorNota)}`}
                         </span>
                       </div>
                     </div>
@@ -1604,10 +1604,10 @@ function CompraForm({
 
                 <section className="grid grid-cols-2 gap-3 rounded-lg border p-4 md:grid-cols-4">
                   {[
-                    ["Produtos", produtos],
-                    ["Despesas líquidas (rateadas)", despesas],
-                    ["Valor da nota (fornecedor)", valorNota],
-                    ["Custo total (c/ frete de terceiro)", round2(valorNota + freteTerceiro)],
+                    ["Total dos produtos", produtos],
+                    ["Despesas rateadas", despesas],
+                    ["Valor da nota", valorNota],
+                    ["Custo total", round2(valorNota + freteTerceiro)],
                   ].map(([rotulo, v]) => (
                     <Field key={rotulo as string}>
                       <FieldLabel>{rotulo}</FieldLabel>
