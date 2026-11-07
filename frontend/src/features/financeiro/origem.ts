@@ -1,4 +1,4 @@
-export type OrigemTitulo = "MANUAL" | "VENDA" | "COMPRA" | "FRETE_COMPRA" | "DEVOLUCAO_VENDA";
+export type OrigemTitulo = "MANUAL" | "VENDA" | "COMPRA" | "FRETE_COMPRA" | "DEVOLUCAO_VENDA" | "DEVOLUCAO_COMPRA";
 
 export const origemTituloLabels: Record<OrigemTitulo, string> = {
   MANUAL: "Manual",
@@ -6,6 +6,7 @@ export const origemTituloLabels: Record<OrigemTitulo, string> = {
   COMPRA: "Compra",
   FRETE_COMPRA: "Frete da compra",
   DEVOLUCAO_VENDA: "Devolução de venda",
+  DEVOLUCAO_COMPRA: "Devolução de compra",
 };
 
 // Título gerado por um documento só se cancela cancelando o documento de origem.

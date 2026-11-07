@@ -129,6 +129,11 @@ export function ContasPagarList({
       cell: ({ row }) => <div className="text-right text-foreground">{brl(Number(row.original.valorPago))}</div>,
     },
     {
+      accessorKey: "valorAbatido", meta: { campoOrdenacao: "valorAbatido" },
+      header: () => <div className="text-right font-semibold">Abatido</div>,
+      cell: ({ row }) => <div className="text-right text-foreground">{brl(Number(row.original.valorAbatido ?? 0))}</div>,
+    },
+    {
       accessorKey: "valorSaldo", meta: { campoOrdenacao: "valorSaldo" },
       header: () => <div className="text-right font-semibold">Saldo</div>,
       cell: ({ row }) => <div className="text-right font-semibold text-foreground">{brl(Number(row.original.valorSaldo))}</div>,

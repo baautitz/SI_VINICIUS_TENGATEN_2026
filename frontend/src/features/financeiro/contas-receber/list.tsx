@@ -103,7 +103,7 @@ export function ContasReceberList({
       header: "Cliente",
       cell: ({ row }) => (
         <span className="text-muted-foreground truncate max-w-xs block">
-          {row.original.cliente?.nomeRazaoSocial || "-"}
+          {row.original.cliente?.nomeRazaoSocial || row.original.fornecedorNome || "-"}
         </span>
       ),
     },

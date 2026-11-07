@@ -212,7 +212,7 @@ export function ContasReceberUpsertForm({ editingItem, readOnly = false }: Conta
             {[
               ["Documento", `${origemTituloLabels[editingItem.origemTipo] ?? editingItem.origemTipo} ${editingItem.numeroDocumento}`],
               ["Parcela", `${editingItem.numeroParcela}/${editingItem.totalParcelas}`],
-              ["Cliente", editingItem.cliente?.nomeRazaoSocial || "-"],
+              ["Cliente", editingItem.cliente?.nomeRazaoSocial || editingItem.fornecedorNome || "-"],
               ["Status", statusTituloLabels[editingItem.status] ?? editingItem.status],
               ["Recebido", brl(editingItem.valorPago)],
               ["Abatido", brl(editingItem.valorAbatido ?? 0)],

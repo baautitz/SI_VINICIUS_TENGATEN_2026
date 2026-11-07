@@ -29,6 +29,7 @@ export interface ContasPagar {
   dataVencimento: string;
   valor: number;
   valorPago: number;
+  valorAbatido: number;
   valorSaldo: number;
   status: StatusTituloFinanceiro;
   condicaoPagamento?: CondicaoPagamento | null;

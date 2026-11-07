@@ -40,7 +40,7 @@ export interface ContaReceberCreateValues {
 
 export type ContaReceberUpdateValues = ContaPagarUpdateValues;
 
-export type OrigemTituloFinanceiro = "MANUAL" | "VENDA" | "COMPRA" | "FRETE_COMPRA" | "DEVOLUCAO_VENDA";
+export type OrigemTituloFinanceiro = "MANUAL" | "VENDA" | "COMPRA" | "FRETE_COMPRA" | "DEVOLUCAO_VENDA" | "DEVOLUCAO_COMPRA";
 
 // Parâmetros da listagem de títulos (contas a pagar/receber); filtro novo comum entra aqui.
 export interface ListagemTitulosParams {

@@ -13,6 +13,8 @@ export interface ContasReceber {
   totalParcelas: number;
   descricao: string;
   cliente?: Cliente | null;
+  fornecedorId?: number | null;
+  fornecedorNome?: string | null;
   dataEmissao?: string | null;
   dataVencimento: string;
   valor: number;

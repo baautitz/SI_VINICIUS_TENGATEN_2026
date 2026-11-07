@@ -214,6 +214,7 @@ export function ContasPagarUpsertForm({ editingItem, readOnly = false }: ContasP
               ["Fornecedor / Cliente", editingItem.fornecedor?.nomeRazaosocial || editingItem.clienteNome || "-"],
               ["Status", statusTituloLabels[editingItem.status] ?? editingItem.status],
               ["Pago", brl(editingItem.valorPago)],
+              ["Abatido", brl(editingItem.valorAbatido ?? 0)],
               ["Saldo", brl(editingItem.valorSaldo)],
             ].map(([r, v]) => (
               <div key={r} className="flex flex-col gap-1">
