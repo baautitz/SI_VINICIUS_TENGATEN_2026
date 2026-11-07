@@ -40,6 +40,7 @@ import { InputGroup, InputGroupInput, InputGroupAddon } from "./input-group";
 import { cn, fireAndForget } from "@/lib/utils";
 import { combinacaoDe } from "@/lib/atalhos";
 import { proximaOrdenacao, type Ordenacao } from "@/lib/ordenacao";
+import { OrdenarMenu, type ColunaOrdenavel } from "./ordenar-menu";
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -90,6 +91,14 @@ interface DataTableProps<TData, TValue> {
 
   searchInputRef?: React.RefObject<HTMLInputElement | null>;
   hideSearchKbd?: boolean;
+}
+
+/** Texto puro de um cabeçalho (string ou elemento React), para listar a coluna no menu de ordenação. */
+function textoDoNo(no: React.ReactNode): string {
+  if (typeof no === "string" || typeof no === "number") return String(no);
+  if (Array.isArray(no)) return no.map(textoDoNo).join("");
+  if (React.isValidElement<{ children?: React.ReactNode }>(no)) return textoDoNo(no.props.children);
+  return "";
 }
 
 /** Cabeçalho de coluna numérica traz `text-right`: o botão de ordenar precisa acompanhar o alinhamento. */
@@ -186,8 +195,32 @@ export function DataTable<TData, TValue>({
 
   const rows = table.getRowModel().rows;
 
+  const [menuOrdenarAberto, setMenuOrdenarAberto] = React.useState(false);
+  const colunasOrdenaveis: ColunaOrdenavel[] = onOrdenacaoChange
+    ? table.getAllLeafColumns().flatMap((coluna) => {
+        const campo = coluna.columnDef.meta?.campoOrdenacao;
+        if (!campo) return [];
+        const definicao = coluna.columnDef.header;
+        const conteudo = typeof definicao === "function" ? definicao({ column: coluna, header: undefined as never, table }) : definicao;
+        return [{ campo, rotulo: textoDoNo(conteudo as React.ReactNode) || campo }];
+      })
+    : [];
+
   const commands = React.useMemo(
     () => [
+      ...(colunasOrdenaveis.length > 0
+        ? [
+            {
+              id: "table.ordenar",
+              hotkey: combinacaoDe("ordenar"),
+              label: "Ordenar",
+              run: (event: KeyboardEvent) => {
+                event.preventDefault();
+                setMenuOrdenarAberto(true);
+              },
+            },
+          ]
+        : []),
       {
         id: "table.search",
         hotkey: combinacaoDe("busca"),
@@ -276,7 +309,7 @@ export function DataTable<TData, TValue>({
         },
       })),
     ],
-    [activeSearchInputRef, focusedRowIndex, onBaixarRow, onDeleteRow, onEditRow, onEstornarRow, onRowSelect, podeBaixarRow, podeEstornarRow, rows],
+    [activeSearchInputRef, colunasOrdenaveis.length, focusedRowIndex, onBaixarRow, onDeleteRow, onEditRow, onEstornarRow, onRowSelect, podeBaixarRow, podeEstornarRow, rows],
   );
 
   useWindowCommands(commands);
@@ -359,6 +392,16 @@ export function DataTable<TData, TValue>({
           )}
           {actions}
         </div>
+        {menuOrdenarAberto && colunasOrdenaveis.length > 0 && onOrdenacaoChange && (
+          <div className="relative">
+            <OrdenarMenu
+              colunas={colunasOrdenaveis}
+              ordenacao={ordenacao}
+              onChange={onOrdenacaoChange}
+              onClose={() => setMenuOrdenarAberto(false)}
+            />
+          </div>
+        )}
       </div>
 
       <div className="bg-card relative flex max-h-full flex-1 flex-col overflow-hidden rounded-xl border">
