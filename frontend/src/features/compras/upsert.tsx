@@ -733,7 +733,7 @@ function CompraForm({
     },
     {
       id: "compras.back",
-      hotkey: combinacaoDe("etapaAnterior"),
+      hotkey: combinacaoDe("anterior"),
       label: "Voltar etapa",
       enabled: etapa > 0 && !mutation.isPending,
       run: (e: KeyboardEvent) => {
@@ -743,7 +743,7 @@ function CompraForm({
     },
     {
       id: "compras.next",
-      hotkey: combinacaoDe("etapaSeguinte"),
+      hotkey: combinacaoDe("seguinte"),
       label: "Avançar etapa",
       enabled: etapa < 3 && !mutation.isPending,
       run: (e: KeyboardEvent) => {
@@ -885,13 +885,13 @@ function CompraForm({
             onClick={() => setEtapa(etapa - 1)}
           >
             Voltar{" "}
-            <HotkeyKbd hotkey={combinacaoDe("etapaAnterior")} />
+            <HotkeyKbd hotkey={combinacaoDe("anterior")} />
           </Button>
         )}
         {etapa < 3 ? (
           <Button type="button" onClick={avancar}>
             Avançar{" "}
-            <HotkeyKbd hotkey={combinacaoDe("etapaSeguinte")} />
+            <HotkeyKbd hotkey={combinacaoDe("seguinte")} />
           </Button>
         ) : (
           !readOnly && (
