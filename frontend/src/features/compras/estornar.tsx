@@ -61,7 +61,7 @@ export function EstornarCompraWindow({ compraId, temNfe }: EstornarCompraWindowP
         Esta ação não pode ser desfeita.
       </p>
       <Field>
-        <FieldLabel htmlFor="compra-motivo-estorno">Motivo do estorno</FieldLabel>
+        <FieldLabel htmlFor="compra-motivo-estorno" required>Motivo do estorno</FieldLabel>
         <Textarea
           id="compra-motivo-estorno"
           autoFocus
