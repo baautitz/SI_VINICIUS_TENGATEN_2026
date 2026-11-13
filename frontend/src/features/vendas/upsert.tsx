@@ -196,6 +196,7 @@ function VendasCheckout({
       <div className="w-full">
         <CondicaoPagamentoInput
           name="checkoutCondicaoId"
+          required
           label="Método de Pagamento"
           initialItem={condicao}
           onSelectItem={(item) => {
@@ -215,7 +216,7 @@ function VendasCheckout({
       {isDinheiro && (
         <Field data-invalid={recebidoInsuficiente}>
           <div className="flex items-center justify-between gap-4">
-            <FieldLabel htmlFor="venda-checkout-valor-recebido">
+            <FieldLabel htmlFor="venda-checkout-valor-recebido" required>
               Valor recebido (R$)
             </FieldLabel>
             <NumberInput
@@ -919,7 +920,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                       !!getFieldError(field.name, field.state.meta.errors)
                     }
                   >
-                    <FieldLabel htmlFor={field.name}>Data da Venda</FieldLabel>
+                    <FieldLabel htmlFor={field.name} required>Data da Venda</FieldLabel>
                     <DatePicker
                       id={field.name}
                       name={field.name}
@@ -945,6 +946,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
             <div className="w-[80%]">
               <EmitenteInput
                 name="emitenteId"
+                required
                 initialItem={emitente}
                 onSelectItem={(e) => {
                   setEmitente(e);
@@ -965,6 +967,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
           <div className="w-full">
             <ClienteInput
               name="clienteId"
+              required
               initialItem={cliente}
               onSelectItem={(c) => {
                 setCliente(c);
