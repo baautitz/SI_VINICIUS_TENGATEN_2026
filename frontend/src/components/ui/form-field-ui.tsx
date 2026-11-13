@@ -2,6 +2,8 @@ import React from "react"
 import { Field, FieldLabel, FieldError } from "@/ui/primitives"
 import { Input, type InputProps } from "@/ui/primitives"
 import { NumberInput } from "@/ui/composites"
+import { MaskedInput } from "@/components/ui/masked-input"
+import type { Mascara } from "@/lib/mascara"
 import { campoObrigatorio } from "@/utils/campo-obrigatorio"
 
 interface FormFieldUIProps {
@@ -13,6 +15,10 @@ interface FormFieldUIProps {
   type?: React.HTMLInputTypeAttribute
   decimals?: number
   required?: boolean
+  /** Com máscara, o campo guarda o valor limpo e exibe o formatado. */
+  mascara?: Mascara
+  /** A máscara vale só enquanto o texto cabe nela (ver MaskedInput). */
+  mascaraLivre?: boolean
 }
 
 export function FormFieldUI({
@@ -23,6 +29,8 @@ export function FormFieldUI({
   type = "text",
   decimals = 2,
   required,
+  mascara,
+  mascaraLivre,
   onChangeOverride,
   ...props
 }: FormFieldUIProps &
@@ -50,6 +58,18 @@ export function FormFieldUI({
             }
           }}
           onBlur={field.handleBlur}
+          aria-invalid={!!error}
+          {...props}
+        />
+      ) : mascara ? (
+        <MaskedInput
+          id={field.name}
+          mascara={mascara}
+          livre={mascaraLivre}
+          inputSize={inputSize}
+          value={field.state.value as string | null | undefined}
+          onBlur={field.handleBlur}
+          onValueChange={field.handleChange}
           aria-invalid={!!error}
           {...props}
         />
