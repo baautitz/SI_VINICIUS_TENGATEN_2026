@@ -339,6 +339,7 @@ function BalancoForm({
                 key={skuInputKey}
                 name="balanco-add-sku"
                 label="Itens do Balanço"
+                required
                 onSelectSku={handleSkuAdded}
               />
             </div>
