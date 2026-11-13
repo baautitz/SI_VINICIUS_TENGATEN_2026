@@ -164,7 +164,7 @@ public sealed class DevolucoesCompraService : BaseService
 
         var saida = new MovimentacoesEstoques(
             TipoMovimentacaoEstoque.SAIDA, OrigemMovimentacaoEstoque.DEVOLUCAO_COMPRA, criada.Id,
-            observacao: $"Devolução nº {criada.Id} da compra nº {compra.Id}");
+            motivo: $"Devolução nº {criada.Id} da compra nº {compra.Id}");
         foreach (var item in criada.Itens)
             saida.AdicionarItem(skus[item.Sku], item.Quantidade, item.CustoUnitario);
 

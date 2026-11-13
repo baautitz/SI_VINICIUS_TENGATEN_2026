@@ -36,7 +36,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
     private string Ordem => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "me.id", "me.data_movimentacao DESC, me.id DESC");
 
     private const string SelecaoMovimentacao = @"
-        SELECT me.id, me.data_movimentacao, me.tipo_movimentacao, me.origem_tipo, me.origem_id, me.motivo, me.observacao,
+        SELECT me.id, me.data_movimentacao, me.tipo_movimentacao, me.origem_tipo, me.origem_id, me.motivo,
                EXISTS (SELECT 1 FROM movimentacoes_estoque e WHERE e.origem_tipo = 'ESTORNO' AND e.origem_id = me.id) AS Estornada,
                u.id AS UsuarioId, u.nome AS UsuarioNome, u.cpf_cnpj AS UsuarioCpfCnpj, u.email AS UsuarioEmail,
                u.telefone AS UsuarioTelefone, u.usuario AS UsuarioUsuario, u.senha AS UsuarioSenha, u.ativo AS UsuarioAtivo
@@ -47,7 +47,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
         => Listar("TRUE", new { }, pagina, tamanhoDaPagina);
 
     public Task<ResultadoPaginado<MovimentacoesEstoques>> PesquisarMovimentacoes(string termo, int pagina = 1, int tamanhoDaPagina = 20)
-        => Listar(@"(unaccent(me.id::text) ILIKE unaccent(@Termo::text) OR unaccent(me.observacao::text) ILIKE unaccent(@Termo::text) OR unaccent(me.motivo::text) ILIKE unaccent(@Termo::text)
+        => Listar(@"(unaccent(me.id::text) ILIKE unaccent(@Termo::text) OR unaccent(me.motivo::text) ILIKE unaccent(@Termo::text)
                      OR unaccent(me.tipo_movimentacao::text) ILIKE unaccent(@Termo::text) OR unaccent(me.origem_tipo::text) ILIKE unaccent(@Termo::text)
                      OR me.id::text = @Exato
                      OR EXISTS (SELECT 1 FROM movimentacoes_estoque_itens i WHERE i.movimentacao_estoque_id = me.id AND unaccent(i.sku::text) ILIKE unaccent(@Termo::text)))",
@@ -78,8 +78,8 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
         try
         {
             const string sql = @"
-                INSERT INTO movimentacoes_estoque (data_movimentacao, tipo_movimentacao, origem_tipo, origem_id, motivo, observacao, usuario_id)
-                VALUES (@DataMovimentacao, @TipoMovimentacao::tipo_movimentacao_estoque_enum, @OrigemTipo::origem_movimentacao_estoque_enum, @OrigemId, @Motivo, @Observacao, @UsuarioId)
+                INSERT INTO movimentacoes_estoque (data_movimentacao, tipo_movimentacao, origem_tipo, origem_id, motivo, usuario_id)
+                VALUES (@DataMovimentacao, @TipoMovimentacao::tipo_movimentacao_estoque_enum, @OrigemTipo::origem_movimentacao_estoque_enum, @OrigemId, @Motivo, @UsuarioId)
                 RETURNING id;";
 
             var idGerado = await _session.Connection.ExecuteScalarAsync<int>(
@@ -91,14 +91,13 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
                     OrigemTipo = movimentacao.OrigemTipo.ToString(),
                     movimentacao.OrigemId,
                     movimentacao.Motivo,
-                    movimentacao.Observacao,
                     UsuarioId = movimentacao.Usuario?.Id
                 },
                 transaction: _session.Transaction);
 
             await InserirItens(idGerado, movimentacao.MovimentacoesEstoquesItens);
 
-            var persistida = new MovimentacoesEstoques(idGerado, movimentacao.DataMovimentacao, movimentacao.TipoMovimentacao, movimentacao.OrigemTipo, movimentacao.OrigemId, movimentacao.Motivo, movimentacao.Observacao, movimentacao.Usuario, false);
+            var persistida = new MovimentacoesEstoques(idGerado, movimentacao.DataMovimentacao, movimentacao.TipoMovimentacao, movimentacao.OrigemTipo, movimentacao.OrigemId, movimentacao.Motivo, movimentacao.Usuario, false);
             foreach (var item in movimentacao.MovimentacoesEstoquesItens)
             {
                 persistida.AdicionarItemExistente(new MovimentacoesEstoquesItens(item.Id, idGerado, item.Sku, item.Quantidade, item.CustoUnitario, item.QuantidadeAnterior, item.CustoMedioAnterior, item.ProdutoNome, item.UnidadeMedidaSigla, item.CustoUltimaCompraAnterior));
@@ -189,7 +188,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
             var usuario = row.UsuarioId.HasValue
                 ? new Usuarios(row.UsuarioId.Value, row.UsuarioNome ?? string.Empty, row.UsuarioCpfCnpj ?? string.Empty, row.UsuarioEmail ?? string.Empty, row.UsuarioUsuario ?? string.Empty, row.UsuarioSenha ?? string.Empty, row.UsuarioTelefone ?? string.Empty, row.UsuarioAtivo ?? false)
                 : null;
-            var movimentacao = new MovimentacoesEstoques(row.Id, row.DataMovimentacao, row.TipoMovimentacao, row.OrigemTipo, row.OrigemId, row.Motivo, row.Observacao, usuario, row.Estornada);
+            var movimentacao = new MovimentacoesEstoques(row.Id, row.DataMovimentacao, row.TipoMovimentacao, row.OrigemTipo, row.OrigemId, row.Motivo, usuario, row.Estornada);
 
             if (itensPorMovimentacao.TryGetValue(row.Id, out var itens))
             {
@@ -237,7 +236,7 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
         return new MovimentacoesEstoquesItens(row.Id, movimentacaoId, sku, row.Quantidade, row.CustoUnitario, row.QuantidadeAnterior, row.CustoMedioAnterior, sku.NomeExibicao, sku.Produto!.UnidadeMedida.Sigla, row.CustoUltimaCompraAnterior);
     }
 
-    private sealed record MovimentacaoDbRow(int Id, DateTime DataMovimentacao, TipoMovimentacaoEstoque TipoMovimentacao, OrigemMovimentacaoEstoque OrigemTipo, int? OrigemId, string? Motivo, string? Observacao, bool Estornada,
+    private sealed record MovimentacaoDbRow(int Id, DateTime DataMovimentacao, TipoMovimentacaoEstoque TipoMovimentacao, OrigemMovimentacaoEstoque OrigemTipo, int? OrigemId, string? Motivo, bool Estornada,
         int? UsuarioId, string? UsuarioNome, string? UsuarioCpfCnpj, string? UsuarioEmail, string? UsuarioTelefone,
         string? UsuarioUsuario, string? UsuarioSenha, bool? UsuarioAtivo);
 

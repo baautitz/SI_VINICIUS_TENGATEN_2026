@@ -7,7 +7,6 @@ public record CriarMovimentacaoCommand(
     string TipoMovimentacao,
     int? UsuarioId,
     string Motivo,
-    string? Observacao,
     List<MovimentacaoItemCommand> Itens
 );
 

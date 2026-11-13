@@ -263,7 +263,7 @@ public sealed class ComprasService : BaseService
         // Entrada de estoque ao custo rateado (todas as despesas); itens do mesmo SKU viram uma linha só.
         var entrada = new MovimentacoesEstoques(
             TipoMovimentacaoEstoque.ENTRADA, OrigemMovimentacaoEstoque.COMPRA, criada.Id,
-            observacao: $"Compra nº {criada.Id}");
+            motivo: $"Compra nº {criada.Id}");
 
         foreach (var g in criada.Itens.GroupBy(i => i.Sku.Sku))
         {

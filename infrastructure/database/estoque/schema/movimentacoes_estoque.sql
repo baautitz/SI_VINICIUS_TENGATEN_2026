@@ -12,7 +12,6 @@ CREATE TABLE IF NOT EXISTS movimentacoes_estoque (
   origem_id INTEGER,
   usuario_id INTEGER,
   motivo VARCHAR(500),
-  observacao TEXT,
   CONSTRAINT movimentacoes_estoque_usuario_fk
     FOREIGN KEY (usuario_id)
     REFERENCES usuarios (id)
