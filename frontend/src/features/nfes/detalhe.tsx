@@ -1,4 +1,5 @@
 "use client";
+import { formatarDocumento, formatarTelefone } from "@/lib/mascara";
 
 import { combinacaoDe } from "@/lib/atalhos";
 import React from "react";
@@ -115,11 +116,11 @@ const Parte = ({ nome, doc, ie, endereco, bairro, tel }: {
 }) => (
   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
     <Dado rotulo="Nome / Razão social" valor={nome} className="md:col-span-2" />
-    <Dado rotulo="CPF/CNPJ" valor={doc} />
+    <Dado rotulo="CPF/CNPJ" valor={formatarDocumento(doc)} />
     <Dado rotulo="IE" valor={ie} />
     <Dado rotulo="Endereço" valor={endereco} className="md:col-span-2" />
     <Dado rotulo="Bairro" valor={bairro} />
-    <Dado rotulo="Telefone" valor={tel} />
+    <Dado rotulo="Telefone" valor={formatarTelefone(tel)} />
   </div>
 );
 
@@ -393,7 +394,7 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
               <div className="grid grid-cols-2 gap-3">
                 <Dado className="col-span-2" rotulo="Modalidade do frete" valor={modalidadeFreteLabels[t.modalidadeFrete] ?? t.modalidadeFrete} />
                 {t.transportadoraNomeRazaosocial && <Dado rotulo="Transportadora" valor={t.transportadoraNomeRazaosocial} />}
-                {t.transportadoraCpfCnpj && <Dado rotulo="CPF/CNPJ" valor={t.transportadoraCpfCnpj} />}
+                {t.transportadoraCpfCnpj && <Dado rotulo="CPF/CNPJ" valor={formatarDocumento(t.transportadoraCpfCnpj)} />}
                 {t.veiculoPlaca && <Dado rotulo="Placa" valor={t.veiculoPlaca} />}
               </div>
             ) : (

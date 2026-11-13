@@ -1,4 +1,5 @@
 "use client";
+import { formatarDocumento } from "@/lib/mascara";
 
 import { combinacaoDe } from "@/lib/atalhos";
 import React from "react";
@@ -63,13 +64,13 @@ export function Danfe({ id }: { id: number }) {
           </div>
         )}
         <div className="grid grid-cols-3 gap-0">
-          <Campo rotulo="Emitente">{nfe.emitenteNomeRazaosocial}<br />CNPJ/CPF: {nfe.emitenteCpfCnpj}<br />{nfe.emitenteEndereco} {nfe.emitenteBairro}</Campo>
+          <Campo rotulo="Emitente">{nfe.emitenteNomeRazaosocial}<br />CNPJ/CPF: {formatarDocumento(nfe.emitenteCpfCnpj)}<br />{nfe.emitenteEndereco} {nfe.emitenteBairro}</Campo>
           <Campo rotulo="DANFE">NF-e Nº {nfe.numero} · Série {nfe.serie}<br />{nfe.tipoOperacao === "ENTRADA" ? "0 - Entrada" : "1 - Saída"}<br />{statusLabels[nfe.statusNfe]}</Campo>
           <Campo rotulo="Emissão">{formatToLocal(nfe.dataEmissao)}</Campo>
         </div>
         <Campo rotulo="Chave de acesso"><span className="font-mono">{chaveFormatada(nfe.chaveAcesso) || "—"}</span></Campo>
         <Campo rotulo={nfe.tipoOperacao === "ENTRADA" ? "Fornecedor" : "Destinatário"}>
-          {nfe.clienteNomeRazaosocial} · CNPJ/CPF: {nfe.clienteCpfCnpj}<br />{nfe.clienteEndereco} {nfe.clienteBairro}
+          {nfe.clienteNomeRazaosocial} · CNPJ/CPF: {formatarDocumento(nfe.clienteCpfCnpj)}<br />{nfe.clienteEndereco} {nfe.clienteBairro}
         </Campo>
         <table className="mt-2 w-full border-collapse text-[11px]">
           <thead>
