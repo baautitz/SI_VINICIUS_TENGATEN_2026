@@ -132,6 +132,15 @@ export function MovimentacoesUpsertForm({
     });
 
   const form = useForm({
+    listeners: {
+      onChange: ({ fieldApi }) =>
+        setValidationErrors((prev) => {
+          if (!(fieldApi.name in prev)) return prev;
+          const resto = { ...prev };
+          delete resto[fieldApi.name];
+          return resto;
+        }),
+    },
     defaultValues: {
       tipoMovimentacao: editingItem?.tipoMovimentacao ?? "ENTRADA",
       usuarioId: editingItem?.usuario?.id ?? null,

@@ -589,6 +589,15 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
   const totalNet = Math.max(0, subtotalGross - totalDiscount);
 
   const form = useForm({
+    listeners: {
+      onChange: ({ fieldApi }) =>
+        setLocalErrors((prev) => {
+          if (!(fieldApi.name in prev)) return prev;
+          const resto = { ...prev };
+          delete resto[fieldApi.name];
+          return resto;
+        }),
+    },
     defaultValues: {
       dataVenda: initialDataVenda,
       observacao: editingItem?.observacao ?? "",
