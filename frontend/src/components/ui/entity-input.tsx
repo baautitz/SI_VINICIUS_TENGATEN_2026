@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Search } from "lucide-react";
 import { Button } from "@/ui/primitives";
 import { Input } from "@/ui/primitives";
@@ -111,6 +111,10 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
   const [prevInitialItem, setPrevInitialItem] = useState(initialItem);
   const inputRef = useRef<HTMLInputElement>(null);
   const openingSelectorRef = useRef(false);
+  const selectedLabelRef = useRef(selectedLabel);
+  useEffect(() => {
+    selectedLabelRef.current = selectedLabel;
+  }, [selectedLabel]);
   const searchInFlightRef = useRef(false);
 
   // The value shown in the field is authoritative when the user has edited
@@ -174,6 +178,8 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
 
       if (result.status === "confirmed") {
         await applySelection(result.value);
+      } else {
+        setSearchText(selectedLabelRef.current);
       }
     } catch (error) {
       ui.feedback.notifyError(error, {
@@ -243,17 +249,9 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
           }
         }
 
-        if (isBlur) {
-          setSearchText(selectedLabel);
-        } else {
-          await openSelection();
-        }
+        await openSelection();
       } catch {
-        if (isBlur) {
-          setSearchText(selectedLabel);
-        } else {
-          await openSelection();
-        }
+        await openSelection();
       }
     } finally {
       searchInFlightRef.current = false;
