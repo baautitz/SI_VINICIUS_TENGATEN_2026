@@ -11,6 +11,7 @@ interface FornecedorInputProps {
   name: string;
   label?: string;
   error?: string;
+  required?: boolean;
   initialItem?: Fornecedor | null;
   onSelectId: (id: number | null) => void;
   onSelectItem?: (item: Fornecedor | null) => void;
@@ -21,6 +22,7 @@ export function FornecedorInput({
   name,
   label = "Fornecedor",
   error,
+  required,
   initialItem,
   onSelectId,
   onSelectItem,
@@ -32,6 +34,7 @@ export function FornecedorInput({
       name={name}
       label={label}
       error={error}
+      required={required}
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}

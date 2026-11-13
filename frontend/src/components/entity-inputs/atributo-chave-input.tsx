@@ -10,6 +10,7 @@ interface AtributoChaveInputProps {
   name: string
   label?: string
   error?: string
+  required?: boolean
   disabled?: boolean
   initialItem?: SkuAtributoChave | null
   onSelectId: (id: number | null) => void
@@ -20,6 +21,7 @@ export function AtributoChaveInput({
   name,
   label = "Atributo",
   error,
+  required,
   disabled = false,
   initialItem,
   onSelectId,
@@ -31,6 +33,7 @@ export function AtributoChaveInput({
       name={name}
       label={label}
       error={error}
+      required={required}
       disabled={disabled}
       initialItem={initialItem}
       onSelectId={onSelectId}

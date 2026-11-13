@@ -16,6 +16,7 @@ interface TipoPessoaSelectProps {
   name: string;
   label?: string;
   error?: string;
+  required?: boolean;
   value: TipoPessoa;
   onChange: (value: TipoPessoa) => void;
   inputSize?: "small" | "medium" | "large" | "full";
@@ -26,6 +27,7 @@ export function TipoPessoaSelect({
   name,
   label = "Tipo de Pessoa",
   error,
+  required,
   value,
   onChange,
   inputSize = "full",
@@ -33,7 +35,7 @@ export function TipoPessoaSelect({
 }: TipoPessoaSelectProps) {
   return (
     <Field data-invalid={!!error}>
-      <FieldLabel htmlFor={name}>{label}</FieldLabel>
+      <FieldLabel htmlFor={name} required={required}>{label}</FieldLabel>
       <Select
         value={value}
         onValueChange={(val) => onChange(val as TipoPessoa)}

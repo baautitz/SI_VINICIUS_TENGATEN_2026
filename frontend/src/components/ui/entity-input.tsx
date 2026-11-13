@@ -14,6 +14,7 @@ interface EntityInputProps<T, TResumo = T, TId extends string | number = number>
   hideLabel?: boolean;
   placeholder?: string;
   error?: string;
+  required?: boolean;
   initialItem?: T | TResumo | null;
   disabled?: boolean;
 
@@ -72,6 +73,7 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
   hideLabel = false,
   placeholder = "Digite, ou Enter para buscar...",
   error,
+  required,
   initialItem: initialItemBruto = null,
   disabled = false,
   onSelectId,
@@ -275,7 +277,7 @@ export function EntityInput<T, TResumo = T, TId extends string | number = number
   return (
     <>
       <Field data-invalid={!!error}>
-        <FieldLabel htmlFor={name} className={hideLabel ? "sr-only" : undefined}>{label}</FieldLabel>
+        <FieldLabel htmlFor={name} required={required} className={hideLabel ? "sr-only" : undefined}>{label}</FieldLabel>
         <div className={`relative w-full`}>
           <Input
             ref={inputRef}

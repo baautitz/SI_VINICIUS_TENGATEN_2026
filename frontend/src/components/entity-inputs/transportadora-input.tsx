@@ -10,6 +10,7 @@ interface TransportadoraInputProps {
   name: string;
   label?: string;
   error?: string;
+  required?: boolean;
   disabled?: boolean;
   initialItem?: Transportadora | null;
   onSelectId: (id: number | null) => void;
@@ -19,6 +20,7 @@ export function TransportadoraInput({
   name,
   label = "Transportadora",
   error,
+  required,
   disabled = false,
   initialItem,
   onSelectId,
@@ -29,6 +31,7 @@ export function TransportadoraInput({
       name={name}
       label={label}
       error={error}
+      required={required}
       disabled={disabled}
       initialItem={initialItem}
       onSelectId={onSelectId}

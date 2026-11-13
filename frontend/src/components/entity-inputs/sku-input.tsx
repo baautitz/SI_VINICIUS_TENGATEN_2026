@@ -17,6 +17,7 @@ interface SkuInputProps {
   name: string;
   label?: React.ReactNode;
   error?: string;
+  required?: boolean;
   initialSku?: string | null;
   onSelectSku: (sku: Sku | null, quantidade?: number) => void | Promise<void>;
   disabled?: boolean;
@@ -172,6 +173,7 @@ export const SkuInput = ({
   name,
   label = "Produto/SKU",
   error,
+  required,
   initialSku = null,
   onSelectSku,
   disabled = false,
@@ -472,7 +474,7 @@ export const SkuInput = ({
   return (
     <Field data-invalid={!!error}>
       {label && (
-        <FieldLabel htmlFor={name}>
+        <FieldLabel htmlFor={name} required={required}>
           <div className="flex items-center gap-2">
             {label}
             <HotkeyKbd hotkey={combinacaoDe("adicionarSku")} />

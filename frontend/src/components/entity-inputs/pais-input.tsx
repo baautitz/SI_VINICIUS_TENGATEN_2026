@@ -10,6 +10,7 @@ interface PaisInputProps {
   name: string
   label?: string
   error?: string
+  required?: boolean
   disabled?: boolean
   initialItem?: Pais | null
   onSelectId: (id: number | null) => void
@@ -20,6 +21,7 @@ export function PaisInput({
   name,
   label = "País",
   error,
+  required,
   disabled = false,
   initialItem,
   onSelectId,
@@ -31,6 +33,7 @@ export function PaisInput({
       name={name}
       label={label}
       error={error}
+      required={required}
       disabled={disabled}
       initialItem={initialItem}
       onSelectId={onSelectId}
