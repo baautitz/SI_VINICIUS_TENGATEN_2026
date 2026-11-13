@@ -57,7 +57,8 @@ export function NfesList({
   onTipoChange, onStatusChange, onSearchChange, onPageChange, onView, ordenacao, onOrdenacaoChange,
 }: Props) {
   const columns: ColumnDef<NfeResumo>[] = [
-    { id: "numero", meta: { campoOrdenacao: "numero" }, header: "Número", size: 100, cell: ({ row }) => <span className="font-semibold">{row.original.numero}/{row.original.serie}</span> },
+    { id: "numero", meta: { campoOrdenacao: "numero" }, header: "Número", size: 100, cell: ({ row }) => <span className="font-semibold">{row.original.numero}</span> },
+    { id: "serie", meta: { campoOrdenacao: "serie" }, header: "Série", size: 80, cell: ({ row }) => row.original.serie },
     { id: "tipo", meta: { campoOrdenacao: "tipo" }, header: "Tipo", cell: ({ row }) => tipoLabels[row.original.tipoOperacao] },
     { id: "emissao", meta: { campoOrdenacao: "emissao" }, header: "Emissão", cell: ({ row }) => formatToLocal(row.original.dataEmissao) },
     {
