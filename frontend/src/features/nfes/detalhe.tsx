@@ -3,21 +3,19 @@
 import { combinacaoDe } from "@/lib/atalhos";
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ban, Copy, Download, ExternalLink, FileCode, Printer } from "lucide-react";
+import { Ban, Copy, Download, ExternalLink, FileCode, Printer, ReceiptText, ShoppingBag } from "lucide-react";
 import { WindowActions } from "@/ui/imperative";
 import { nfesApi } from "@/api/nfes";
 import { contasPagarApi } from "@/api/financeiro";
-import { comprasApi } from "@/api/compras";
 import { vendasApi } from "@/api/vendas";
-import { VendaInput } from "@/components/entity-inputs/venda-input";
 import { SkuViewInput } from "@/components/entity-inputs/sku-view-input";
-import { CompraInput } from "@/components/entity-inputs/compra-input";
 import { TextoWindow, type TextoWindowProps } from "@/components/texto-window";
 import { Button, Field, FieldLabel, HotkeyKbd, Input, Kbd, Spinner, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Textarea } from "@/ui/primitives";
 import { navigationCell } from "@/ui/keyboard-navigation";
 import { useWindow, useWindowCommands, useUi, WindowCancelButton } from "@/ui/imperative";
 import { formatDateToLocal, formatToLocal } from "@/utils/date-utils";
 import { CompraWindow, type CompraWindowProps } from "@/features/compras/upsert";
+import { VendasUpsertForm, type VendasUpsertProps } from "@/features/vendas/upsert";
 import { ContasPagarUpsertForm, type ContasPagarUpsertProps } from "@/features/financeiro/contas-pagar/upsert";
 import { CancelarNfeWindow } from "./cancelar";
 import { Danfe } from "./danfe";
@@ -215,22 +213,23 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
     },
     enabled: entrada && !!nfe.compraId,
   });
-  const { data: compraDaNfe } = useQuery({
-    queryKey: ["compras", "detail", nfe.compraId],
-    queryFn: () => comprasApi.getById(nfe.compraId!),
-    enabled: !!nfe.compraId,
-  });
-  const { data: vendaDaNfe } = useQuery({
-    queryKey: ["vendas", "detail", nfe.vendaId],
-    queryFn: () => vendasApi.getById(nfe.vendaId!),
-    enabled: !!nfe.vendaId,
-  });
   const parcelasDaCompra = contasDaCompra?.itens ?? [];
   const abrirCompra = async () => {
     if (!nfe.compraId) return;
     await ui.windows.open<true, CompraWindowProps>({
       component: CompraWindow, props: { compraId: nfe.compraId }, title: `Compra #${nfe.compraId}`, size: "full",
     });
+  };
+  const abrirVenda = async () => {
+    if (!nfe.vendaId) return;
+    try {
+      const venda = await vendasApi.getById(nfe.vendaId);
+      await ui.windows.open<true, VendasUpsertProps>({
+        component: VendasUpsertForm, props: { editingItem: venda, readOnly: true }, title: "Detalhes da Venda", size: "full",
+      });
+    } catch (error) {
+      ui.feedback.notifyError(error, { fallbackTitle: "Não foi possível abrir a venda." });
+    }
   };
   const abrirConta = async (contaId: number) => {
     try {
@@ -266,12 +265,13 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
           <Button type="button" variant="outline" onClick={() => void acoes.verXml()}><FileCode /> Ver XML <HotkeyKbd hotkey={combinacaoDe("verXml")} /></Button>
           <Button type="button" variant="outline" onClick={() => void acoes.baixar()}><Download /> Baixar XML <HotkeyKbd hotkey={combinacaoDe("baixarXml")} /></Button>
           <Button type="button" variant="outline" onClick={() => void imprimir()}><Printer /> Imprimir DANFE <HotkeyKbd hotkey={combinacaoDe("imprimir")} /></Button>
-          {!podeCancelar && <span role="status" className="text-muted-foreground self-center text-sm">{motivo}</span>}
-          {!podeCancelar && entrada && nfe.compraId && (
-            <Button type="button" variant="link" className="self-center px-0 text-sm" onClick={() => void abrirCompra()}>
-              Abrir compra #{nfe.compraId}
-            </Button>
+          {nfe.vendaId && (
+            <Button type="button" variant="outline" onClick={() => void abrirVenda()}><ShoppingBag /> Venda #{nfe.vendaId}</Button>
           )}
+          {nfe.compraId && (
+            <Button type="button" variant="outline" onClick={() => void abrirCompra()}><ReceiptText /> Compra #{nfe.compraId}</Button>
+          )}
+          {!podeCancelar && <span role="status" className="text-muted-foreground self-center text-sm">{motivo}</span>}
         </div>
         <Button type="button" variant="destructive" disabled={!podeCancelar} title={podeCancelar ? undefined : motivo} onClick={() => void acoes.cancelar()}>
           <Ban /> Cancelar NF-e
@@ -284,22 +284,6 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
           <div className="grid grid-cols-2 items-end gap-3 md:grid-cols-4">
             <Dado rotulo="Situação" valor={statusLabels[nfe.statusNfe]} />
             <Dado rotulo="Emissão" valor={formatToLocal(nfe.dataEmissao)} />
-            {nfe.vendaId && (
-              <VendaInput
-                key={vendaDaNfe?.id ?? "carregando"}
-                name="nfe-venda"
-                disabled
-                initialItem={vendaDaNfe ?? null}
-                onSelectId={() => {}}
-              />
-            )}
-            {nfe.compraId && (
-              <CompraInput
-                key={compraDaNfe?.id ?? "carregando"}
-                name="nfe-compra"
-                initialItem={compraDaNfe ?? null}
-              />
-            )}
           </div>
           <Field className="mt-3">
             <FieldLabel>Chave de acesso</FieldLabel>
