@@ -1,4 +1,5 @@
 "use client";
+import { formatarDocumento } from "@/lib/mascara";
 
 import { Pencil } from "lucide-react";
 import { TipoPessoa } from "@/api/types";
@@ -50,7 +51,7 @@ export function CadastroSugeridoCard(props: {
         {titulo}
       </span>
       <span className="text-base font-semibold">{nome}</span>
-      <span>CNPJ/CPF: {documento}</span>
+      <span>CNPJ/CPF: {formatarDocumento(documento)}</span>
       {erro && <span className="text-destructive text-sm whitespace-pre-line">{erro}{"\n"}Clique em Editar para corrigir.</span>}
       <div className="flex items-center gap-2">
         <Badge variant={existente ? "outline" : "secondary"}>
