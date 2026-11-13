@@ -212,6 +212,7 @@ function CidadesUpsertForm({
                 <EstadoInput
                   name={field.name}
                   error={error}
+                  required
                   initialItem={editingItem?.estado}
                   disabled={readOnly}
                   onSelectId={(id) =>
