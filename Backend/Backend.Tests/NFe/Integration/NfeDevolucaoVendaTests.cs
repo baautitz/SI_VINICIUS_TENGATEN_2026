@@ -57,8 +57,8 @@ public class NfeDevolucaoVendaTests
         var condicao = await Escalar<int>("SELECT id FROM condicoes_pagamentos LIMIT 1;");
 
         var venda = await Usar<Backend.Core.Common.Results.Resultado<Backend.Core.Features.Vendas.Entities.Venda>, VendasService>(v => v.CriarVenda(new CriarVendaCommand(DateTime.UtcNow, emitente, cliente, null,
-            new[] { new CriarVendaItemCommand(Sku, 10, 10, 0) }, condicao,
-            new[] { new CriarParcelaReceberCommand(1, DateTime.UtcNow.AddDays(30), 50), new CriarParcelaReceberCommand(2, DateTime.UtcNow.AddDays(60), 50) })));
+            new[] { new CriarVendaItemCommand(Sku, 10, 10, 0) },
+            new[] { new CriarVendaPagamentoCommand(condicao, 100, new[] { new CriarParcelaReceberCommand(1, DateTime.UtcNow.AddDays(30), 50), new CriarParcelaReceberCommand(2, DateTime.UtcNow.AddDays(60), 50) }) })));
         Assert.True(venda.Success, venda.Errors?.FirstOrDefault()?.Message);
 
         if (comNfe)

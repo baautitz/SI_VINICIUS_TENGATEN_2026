@@ -106,13 +106,29 @@ public sealed class VendasService : BaseService
         if (emitente is null)
             return Resultado<Venda>.Falha(new ResultadoErro("EMITENTE_INEXISTENTE", "O emitente informado não existe.", "EmitenteId"));
 
-        CondicoesPagamentos? condicao = null;
-        if (command.CondicaoPagamentoId.HasValue)
+        var pagamentos = command.Pagamentos!.ToList();
+        var condicoes = new Dictionary<int, CondicoesPagamentos>();
+        foreach (var id in pagamentos.Select(p => p.CondicaoPagamentoId).Distinct())
         {
-            condicao = await _condicoesRepository.ObterCondicaoPagamentoPorId(command.CondicaoPagamentoId.Value);
+            var condicao = await _condicoesRepository.ObterCondicaoPagamentoPorId(id);
             if (condicao is null)
-                return Resultado<Venda>.Falha(new ResultadoErro("CONDICAO_PAGAMENTO_INEXISTENTE", "A condição de pagamento informada não existe.", "CondicaoPagamentoId"));
+                return Resultado<Venda>.Falha(new ResultadoErro("CONDICAO_PAGAMENTO_INEXISTENTE", "A condição de pagamento informada não existe.", "Pagamentos"));
+            if (!condicao.Ativo)
+                return Resultado<Venda>.Falha(new ResultadoErro("CONDICAO_PAGAMENTO_INATIVA", $"A condição de pagamento '{condicao.Descricao}' está inativa.", "Pagamentos"));
+            condicoes[id] = condicao;
         }
+
+        var totalVenda = command.Itens.Sum(i => i.Quantidade * i.ValorUnitario - i.ValorDesconto);
+        var entradaExigida = pagamentos
+            .Select(p => condicoes[p.CondicaoPagamentoId])
+            .Where(c => !EhAVista(c))
+            .Select(c => c.EntradaMinimaPercentual)
+            .DefaultIfEmpty(0m)
+            .Max();
+        var entradaAVista = pagamentos.Where(p => EhAVista(condicoes[p.CondicaoPagamentoId])).Sum(p => p.Valor);
+        if (entradaAVista + 0.01m < totalVenda * entradaExigida / 100m)
+            return Resultado<Venda>.Falha(new ResultadoErro("ENTRADA_MINIMA_NAO_ATINGIDA",
+                $"A entrada mínima é {entradaExigida:0.##}% do total (R$ {totalVenda * entradaExigida / 100m:0.00}) em pagamento à vista; informado R$ {entradaAVista:0.00}.", "Pagamentos"));
 
         // Verify stock levels before starting transaction
         foreach (var itemCommand in command.Itens)
@@ -167,10 +183,13 @@ public sealed class VendasService : BaseService
                 if (!baixa.Success)
                     throw new DomainException(baixa.Errors!.First().Message);
 
-                // Create Accounts Receivable (ContasReceber)
-                if (condicao != null && command.Parcelas != null && command.Parcelas.Any())
+                // Contas a receber: cada forma de pagamento gera as suas parcelas; a vista (entrada) nasce recebida.
+                for (var n = 0; n < pagamentos.Count; n++)
                 {
-                    var parcelas = command.Parcelas.ToList();
+                    var pagamento = pagamentos[n];
+                    var condicao = condicoes[pagamento.CondicaoPagamentoId];
+                    var parcelas = pagamento.Parcelas!.ToList();
+                    var numeroDocumento = pagamentos.Count == 1 ? $"VENDA-{criada.Id}" : $"VENDA-{criada.Id}-{n + 1}";
                     foreach (var p in parcelas)
                     {
                         var conta = new ContasReceber(
@@ -178,7 +197,7 @@ public sealed class VendasService : BaseService
                             valor: p.ValorParcela,
                             cliente: cliente,
                             dataVencimento: p.DataVencimento,
-                            numeroDocumento: $"VENDA-{criada.Id}",
+                            numeroDocumento: numeroDocumento,
                             numeroParcela: p.NumeroParcela,
                             totalParcelas: parcelas.Count,
                             dataEmissao: command.DataVenda,
@@ -187,7 +206,6 @@ public sealed class VendasService : BaseService
                             origemId: criada.Id,
                             observacao: command.Observacao
                         );
-                        // Condição à vista (entrada mínima de 100%): a parcela nasce recebida.
                         if (EhAVista(condicao))
                             conta.RegistrarRecebimento(p.ValorParcela);
                         await _contasRepository.CriarContaReceber(conta);
@@ -219,7 +237,7 @@ public sealed class VendasService : BaseService
             if (todas.Count == antes || todas.Count >= r.TotalDeItens) break;
         }
 
-        return todas.OrderBy(c => c.NumeroParcela).ToList();
+        return todas.OrderBy(c => c.NumeroDocumento, StringComparer.Ordinal).ThenBy(c => c.NumeroParcela).ToList();
     }
 
     public async Task<Devolucao?> ObterDevolucaoPorId(int id)

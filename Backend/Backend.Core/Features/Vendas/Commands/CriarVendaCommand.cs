@@ -11,12 +11,19 @@ public record CriarVendaItemCommand(
     decimal ValorDesconto
 );
 
+// Uma forma de pagamento da venda: a condicao, quanto do total ela cobre e as parcelas que gera.
+// Condicao a vista (entrada minima de 100%) nasce recebida.
+public record CriarVendaPagamentoCommand(
+    int CondicaoPagamentoId,
+    decimal Valor,
+    IEnumerable<CriarParcelaReceberCommand>? Parcelas
+);
+
 public record CriarVendaCommand(
     DateTime DataVenda,
     int EmitenteId,
     int ClienteId,
     string? Observacao,
     IEnumerable<CriarVendaItemCommand> Itens,
-    int? CondicaoPagamentoId,
-    IEnumerable<CriarParcelaReceberCommand>? Parcelas
+    IEnumerable<CriarVendaPagamentoCommand>? Pagamentos
 );

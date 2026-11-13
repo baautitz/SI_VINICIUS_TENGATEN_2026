@@ -37,27 +37,41 @@ public class CriarVendaCommandValidator : AbstractValidator<CriarVendaCommand>
                 .WithMessage("O desconto não pode ser maior que o valor total do item (Quantidade * Valor Unitário).");
         });
 
-        RuleFor(x => x.CondicaoPagamentoId)
-            .NotEmpty().WithMessage("Condição de Pagamento é obrigatória.");
+        RuleFor(x => x.Pagamentos)
+            .NotEmpty().WithMessage("Informe ao menos uma forma de pagamento.");
 
-        RuleFor(x => x.Parcelas)
-            .NotEmpty().WithMessage("As parcelas devem ser informadas para a condição de pagamento.");
-
-        RuleForEach(x => x.Parcelas).ChildRules(parcela =>
+        RuleForEach(x => x.Pagamentos).ChildRules(pagamento =>
         {
-            parcela.RuleFor(p => p.NumeroParcela)
-                .GreaterThan(0).WithMessage("Número da parcela deve ser maior que zero.");
+            pagamento.RuleFor(p => p.CondicaoPagamentoId)
+                .GreaterThan(0).WithMessage("Condição de Pagamento é obrigatória.");
 
-            parcela.RuleFor(p => p.DataVencimento)
-                .NotEmpty().WithMessage("Data de vencimento da parcela é obrigatória.");
+            pagamento.RuleFor(p => p.Valor)
+                .GreaterThan(0).WithMessage("O valor de cada forma de pagamento deve ser maior que zero.");
 
-            parcela.RuleFor(p => p.ValorParcela)
-                .GreaterThan(0).WithMessage("Valor da parcela deve ser maior que zero.");
-        }).When(x => x.Parcelas != null);
+            pagamento.RuleFor(p => p.Parcelas)
+                .NotEmpty().WithMessage("As parcelas devem ser informadas para a condição de pagamento.");
+
+            pagamento.RuleForEach(p => p.Parcelas).ChildRules(parcela =>
+            {
+                parcela.RuleFor(p => p.NumeroParcela)
+                    .GreaterThan(0).WithMessage("Número da parcela deve ser maior que zero.");
+
+                parcela.RuleFor(p => p.DataVencimento)
+                    .NotEmpty().WithMessage("Data de vencimento da parcela é obrigatória.");
+
+                parcela.RuleFor(p => p.ValorParcela)
+                    .GreaterThan(0).WithMessage("Valor da parcela deve ser maior que zero.");
+            }).When(p => p.Parcelas != null);
+
+            pagamento.RuleFor(p => p)
+                .Must(p => Math.Abs(p.Parcelas!.Sum(x => x.ValorParcela) - p.Valor) < 0.01m)
+                .WithMessage("A soma das parcelas de cada forma de pagamento deve ser igual ao valor dela.")
+                .When(p => p.Parcelas != null && p.Parcelas.Any());
+        }).When(x => x.Pagamentos != null);
 
         RuleFor(x => x)
-            .Must(x => x.Parcelas != null && Math.Abs(x.Parcelas.Sum(p => p.ValorParcela) - x.Itens.Sum(i => i.Quantidade * i.ValorUnitario - i.ValorDesconto)) < 0.01m)
-            .WithMessage("A soma dos valores das parcelas deve ser exatamente igual ao valor total da venda.")
-            .When(x => x.Itens != null && x.Itens.Any() && x.Parcelas != null);
+            .Must(x => Math.Abs(x.Pagamentos!.Sum(p => p.Valor) - x.Itens.Sum(i => i.Quantidade * i.ValorUnitario - i.ValorDesconto)) < 0.01m)
+            .WithMessage("A soma das formas de pagamento deve ser exatamente igual ao valor total da venda.")
+            .When(x => x.Itens != null && x.Itens.Any() && x.Pagamentos != null && x.Pagamentos.Any());
     }
 }
