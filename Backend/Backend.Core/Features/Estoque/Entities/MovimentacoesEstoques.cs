@@ -1,5 +1,4 @@
 using Backend.Core.Common.Exceptions;
-using Backend.Core.Common.Helpers;
 using Backend.Core.Features.Acesso.Entities;
 using Backend.Core.Features.Catalogo.Entities;
 using Backend.Core.Features.Estoque.Entities.Enums;
@@ -17,7 +16,6 @@ public class MovimentacoesEstoques
     public OrigemMovimentacaoEstoque OrigemTipo { get; private set; }
     public int? OrigemId { get; private set; }
     public string? Motivo { get; private set; }
-    public string? Observacao { get; private set; }
     public Usuarios? Usuario { get; private set; }
     public bool Estornada { get; private set; }
     public IReadOnlyCollection<MovimentacoesEstoquesItens> MovimentacoesEstoquesItens => _itens.AsReadOnly();
@@ -29,7 +27,6 @@ public class MovimentacoesEstoques
         OrigemMovimentacaoEstoque origemTipo,
         int? origemId = null,
         string? motivo = null,
-        string? observacao = null,
         Usuarios? usuario = null)
     {
         if (origemTipo != OrigemMovimentacaoEstoque.MANUAL && origemId is null)
@@ -44,7 +41,6 @@ public class MovimentacoesEstoques
         OrigemTipo = origemTipo;
         OrigemId = origemId;
         Motivo = motivo;
-        Observacao = TextNormalization.NormalizeOrNull(observacao);
         Usuario = usuario;
         DataMovimentacao = DateTime.UtcNow;
     }
@@ -56,10 +52,9 @@ public class MovimentacoesEstoques
         OrigemMovimentacaoEstoque origemTipo,
         int? origemId,
         string? motivo,
-        string? observacao,
         Usuarios? usuario,
         bool estornada)
-        : this(tipoMovimentacao, origemTipo, origemId, motivo, observacao, usuario)
+        : this(tipoMovimentacao, origemTipo, origemId, motivo, usuario)
     {
         Id = id;
         DataMovimentacao = dataMovimentacao;

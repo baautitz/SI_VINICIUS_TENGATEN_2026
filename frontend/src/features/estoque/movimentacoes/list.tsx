@@ -84,10 +84,10 @@ export function MovimentacoesList({
     },
     {
       accessorKey: "motivo", meta: { campoOrdenacao: "motivo" },
-      header: "Motivo / Observação",
+      header: "Motivo",
       cell: ({ row }) => (
         <span className="text-muted-foreground block max-w-xs truncate">
-          {row.original.motivo || row.original.observacao || "-"}
+          {row.original.motivo || "-"}
         </span>
       ),
     },

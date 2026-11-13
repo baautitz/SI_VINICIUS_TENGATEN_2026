@@ -171,7 +171,7 @@ public sealed class VendasService : BaseService
                     TipoMovimentacaoEstoque.SAIDA,
                     OrigemMovimentacaoEstoque.VENDA,
                     criada.Id,
-                    observacao: $"Venda nº {criada.Id}");
+                    motivo: $"Venda nº {criada.Id}");
 
                 foreach (var itemCommand in command.Itens)
                 {
@@ -296,7 +296,7 @@ public sealed class VendasService : BaseService
                     TipoMovimentacaoEstoque.ENTRADA,
                     OrigemMovimentacaoEstoque.DEVOLUCAO_VENDA,
                     criada.Id,
-                    observacao: $"Devolução nº {criada.Id} da venda nº {vendaId}");
+                    motivo: $"Devolução nº {criada.Id} da venda nº {vendaId}");
 
                 foreach (var item in criada.Itens)
                     entrada.AdicionarItem(venda.Itens.First(i => i.Id == item.VendaItemId).Sku, item.Quantidade, item.CustoUnitario);

@@ -63,7 +63,7 @@ public sealed class MovimentacoesEstoquesService : BaseService
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("USUARIO_INEXISTENTE", "O usuário informado não existe.", "UsuarioId"));
 
         Enum.TryParse<TipoMovimentacaoEstoque>(command.TipoMovimentacao, true, out var tipo);
-        var movimentacao = new MovimentacoesEstoques(tipo, OrigemMovimentacaoEstoque.MANUAL, null, command.Motivo, command.Observacao, usuario);
+        var movimentacao = new MovimentacoesEstoques(tipo, OrigemMovimentacaoEstoque.MANUAL, null, command.Motivo, usuario);
 
         foreach (var itemCommand in command.Itens)
         {
@@ -210,10 +210,10 @@ public sealed class MovimentacoesEstoquesService : BaseService
     private static (MovimentacoesEstoques Estorno, Dictionary<string, (decimal CustoMedio, decimal? CustoUltimaCompra)>? CustosARestaurar) MontarEstorno(MovimentacoesEstoques original, string motivo)
     {
         var inverso = original.TipoMovimentacao == TipoMovimentacaoEstoque.ENTRADA ? TipoMovimentacaoEstoque.SAIDA : TipoMovimentacaoEstoque.ENTRADA;
-        // Movimentações anteriores à migração não têm custo_ultima_compra_anterior: o custo da última compra fica inalterado e isso é registrado na observação.
+        // Movimentações anteriores à migração não têm custo_ultima_compra_anterior: o custo da última compra fica inalterado e isso é registrado no motivo.
         var semUltimaCompra = original.TipoMovimentacao == TipoMovimentacaoEstoque.ENTRADA && original.MovimentacoesEstoquesItens.Any(i => i.CustoUltimaCompraAnterior is null);
-        var estorno = new MovimentacoesEstoques(inverso, OrigemMovimentacaoEstoque.ESTORNO, original.Id, motivo,
-            $"Estorno da movimentação #{original.Id}" + (semUltimaCompra ? " (custo da última compra anterior não registrado: mantido inalterado)" : ""));
+        var estorno = new MovimentacoesEstoques(inverso, OrigemMovimentacaoEstoque.ESTORNO, original.Id,
+            motivo + (semUltimaCompra ? " (custo da última compra anterior não registrado: mantido inalterado)" : ""));
 
         foreach (var item in original.MovimentacoesEstoquesItens)
             estorno.AdicionarItem(item.Sku, item.Quantidade, item.CustoUnitario);

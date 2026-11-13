@@ -154,8 +154,8 @@ public sealed class BalancosService : BaseService
             {
                 _unitOfWork.BeginTransaction();
 
-                var entrada = new MovimentacoesEstoques(TipoMovimentacaoEstoque.ENTRADA, OrigemMovimentacaoEstoque.BALANCO, id, null, $"Sobra apurada no balanço #{id}", balanco.Usuario);
-                var saida = new MovimentacoesEstoques(TipoMovimentacaoEstoque.SAIDA, OrigemMovimentacaoEstoque.BALANCO, id, null, $"Falta apurada no balanço #{id}", balanco.Usuario);
+                var entrada = new MovimentacoesEstoques(TipoMovimentacaoEstoque.ENTRADA, OrigemMovimentacaoEstoque.BALANCO, id, $"Sobra apurada no balanço #{id}", balanco.Usuario);
+                var saida = new MovimentacoesEstoques(TipoMovimentacaoEstoque.SAIDA, OrigemMovimentacaoEstoque.BALANCO, id, $"Falta apurada no balanço #{id}", balanco.Usuario);
 
                 foreach (var item in balanco.Itens.Where(i => i.QuantidadeContada.HasValue))
                 {

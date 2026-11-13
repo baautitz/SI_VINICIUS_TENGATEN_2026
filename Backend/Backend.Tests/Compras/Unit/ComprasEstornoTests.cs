@@ -58,7 +58,7 @@ public class ComprasEstornoTests
             typeof(Nfes).GetProperty(nameof(Nfes.TipoOperacao))!.SetValue(Nfe, TipoOperacao.ENTRADA);
             typeof(Nfes).GetProperty(nameof(Nfes.StatusNfe))!.SetValue(Nfe, nfeEmitida ? StatusNfe.EMITIDA : StatusNfe.CANCELADA);
 
-            var entrada = new MovimentacoesEstoques(3, DateTime.UtcNow, TipoMovimentacaoEstoque.ENTRADA, OrigemMovimentacaoEstoque.COMPRA, 7, null, null, null, false);
+            var entrada = new MovimentacoesEstoques(3, DateTime.UtcNow, TipoMovimentacaoEstoque.ENTRADA, OrigemMovimentacaoEstoque.COMPRA, 7, null, null, false);
             entrada.AdicionarItemExistente(new MovimentacoesEstoquesItens(1, 3, Sku, 2, 5m, 0, 0, "p", "UN", semUltimaCompra ? null : 1.5m));
 
             var movs = Criar<IMovimentacoesEstoquesRepository>(h =>
@@ -128,7 +128,7 @@ public class ComprasEstornoTests
         Assert.Equal(0, c.Sku.Estoque);
         Assert.Equal(0m, c.Sku.CustoMedio);
         Assert.Equal(antes, c.Sku.CustoUltimaCompra); // inalterado
-        Assert.Contains("MANTIDO INALTERADO", Assert.Single(c.MovimentacoesCriadas).Observacao);
+        Assert.Contains("mantido inalterado", Assert.Single(c.MovimentacoesCriadas).Motivo);
     }
 
     [Fact]

@@ -23,9 +23,6 @@ public sealed class CriarMovimentacaoCommandValidator : AbstractValidator<CriarM
             .MaximumLength(500).WithMessage("Motivo deve ter no máximo 500 caracteres.")
             .WithErrorCode("MOTIVO_INVALIDO");
 
-        RuleFor(x => x.Observacao)
-            .MaximumLength(500).WithMessage("Observação deve ter no máximo 500 caracteres.")
-            .WithErrorCode("OBSERVACAO_EXCEDE_LIMITE");
 
         RuleFor(x => x.Itens)
             .NotEmpty().WithMessage("A movimentação deve conter pelo menos um item.")
