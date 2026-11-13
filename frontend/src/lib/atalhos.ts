@@ -48,6 +48,7 @@ export const ATALHOS = {
   excluirLinhaBackspace: atalho("Backspace", "Excluir linha (Backspace)", "global"),
   anterior: atalho("Alt+ArrowLeft", "Etapa ou pagina anterior", "global"),
   seguinte: atalho("Alt+ArrowRight", "Etapa ou proxima pagina", "global"),
+  adicionarPagamento: atalho("Alt+Y", "Adicionar forma de pagamento", "venda"),
   devolucaoParcial: atalho("Alt+1", "Devolucao parcial", ["venda-devolucao", "compra-devolucao"]),
   devolucaoTotal: atalho("Alt+2", "Devolucao total", ["venda-devolucao", "compra-devolucao"]),
 } as const;

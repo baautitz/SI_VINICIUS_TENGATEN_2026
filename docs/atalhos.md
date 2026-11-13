@@ -19,3 +19,7 @@ A fonte da verdade e `frontend/src/lib/atalhos.ts` (`ATALHOS`: id, combinacao, r
 ## Devolucao de venda
 
 - `devolucaoParcial` Alt+1 e `devolucaoTotal` Alt+2, na ordem dos botoes. Digitos evitam disputar letras ja usadas (Alt+P parcela, Alt+T titulos).
+
+## Venda
+
+- `adicionarPagamento` Alt+Y adiciona uma linha de forma de pagamento no checkout da venda (Alt+P ja e parcela).
