@@ -23,10 +23,10 @@ for (const [id, { combinacao, rotulo, contexto }] of entradas) {
 assert.ok(colidem("global", "venda") && colidem(["a", "b"], "b") && !colidem("a", ["b", "c"]));
 
 assert.equal(ATALHOS.novo.combinacao, "Alt+N");
-assert.equal(ATALHOS.baixarXml.combinacao, "Alt+Shift+D");
-assert.equal(ATALHOS.verProdutos.combinacao, "Alt+Shift+P");
+assert.equal(ATALHOS.baixarXml.combinacao, "Alt+D");
+assert.equal(ATALHOS.verProdutos.combinacao, "Alt+P");
 assert.equal(ATALHOS.importarXml.combinacao, "Alt+X");
-assert.equal(ATALHOS.verXml.combinacao, "Alt+Shift+X");
+assert.equal(ATALHOS.verXml.combinacao, "Alt+X");
 assert.equal(ATALHOS.imprimir.combinacao, "Alt+I");
 assert.equal(ATALHOS.confirmar.combinacao, "Alt+Enter");
 assert.equal(ATALHOS.editarLinha.combinacao, "Alt+E");
@@ -37,3 +37,4 @@ assert.equal(ATALHOS.anterior.combinacao, "Alt+ArrowLeft");
 assert.equal(ATALHOS.seguinte.combinacao, "Alt+ArrowRight");
 assert.equal(ATALHOS.devolucaoParcial.combinacao, "Alt+1");
 assert.equal(ATALHOS.devolucaoTotal.combinacao, "Alt+2");
+assert.equal(ATALHOS.reembolsos.combinacao, "Alt+Shift+B");
