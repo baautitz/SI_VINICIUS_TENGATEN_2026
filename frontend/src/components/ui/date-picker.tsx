@@ -6,6 +6,7 @@ import { ptBR } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { MASCARAS, editarMascara, limparMascara } from "@/lib/mascara";
 import { Button } from "@/ui/primitives";
 import { Calendar } from "@/ui/primitives";
 import { Input } from "@/ui/primitives";
@@ -154,17 +155,19 @@ export function DatePicker({
   );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawVal = e.target.value;
-    const clean = rawVal.replace(/\D/g, "");
-    let formatted = "";
-
-    if (clean.length <= 2) {
-      formatted = clean;
-    } else if (clean.length <= 4) {
-      formatted = `${clean.slice(0, 2)}/${clean.slice(2)}`;
-    } else {
-      formatted = `${clean.slice(0, 2)}/${clean.slice(2, 4)}/${clean.slice(4, 8)}`;
-    }
+    const el = e.currentTarget;
+    const edicao = editarMascara(
+      el.value,
+      el.selectionStart ?? el.value.length,
+      MASCARAS.data,
+      limparMascara(inputValue, MASCARAS.data),
+      (e.nativeEvent as InputEvent).inputType,
+    );
+    const clean = edicao.limpo;
+    const formatted = edicao.formatado;
+    // Corrige texto e cursor no próprio evento: editar no meio não joga o cursor para o fim.
+    el.value = formatted;
+    el.setSelectionRange(edicao.cursor, edicao.cursor);
 
     setInputValue(formatted);
 
@@ -222,7 +225,6 @@ export function DatePicker({
         disabled={disabled}
         readOnly={readOnly}
         aria-invalid={hasError || undefined}
-        maxLength={10}
         inputMode="numeric"
         className={cn(
           "flex-1",
