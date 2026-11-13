@@ -18,6 +18,8 @@ export const MASCARAS = {
   cep: "99999-999",
   data: "99/99/9999",
   placa: "*******",
+  // GTIN-8, 12, 13 ou 14: so digitos, sem separador.
+  ean: "99999999999999",
 } as const satisfies Record<string, Mascara>
 
 const padroesDe = (mascara: Mascara) => (typeof mascara === "string" ? [mascara] : mascara)

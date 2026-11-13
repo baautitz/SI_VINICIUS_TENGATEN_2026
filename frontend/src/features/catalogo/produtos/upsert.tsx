@@ -14,7 +14,8 @@ import {
   FieldError,
   FieldDescription,
 } from "@/ui/primitives";
-import { FormFieldUI } from "@/ui/composites";
+import { FormFieldUI, MaskedInput } from "@/ui/composites";
+import { MASCARAS } from "@/lib/mascara";
 import { Textarea } from "@/ui/primitives";
 import { useForm } from "@tanstack/react-form";
 import { useUpsertMutation } from "@/hooks/use-upsert-mutation";
@@ -723,7 +724,7 @@ function ProdutosUpsertForm({
                     inputSize="full"
                     getFieldError={getFieldError}
                     readOnly={readOnly}
-                    maxLength={14}
+                    mascara={MASCARAS.ean}
                     placeholder="EAN / GTIN"
                   />
                 )}
@@ -1055,22 +1056,20 @@ function ProdutosUpsertForm({
                                     );
                                     return (
                                       <div className="flex flex-col gap-1">
-                                        <Input
+                                        <MaskedInput
                                           {...navigationCell({
                                             grid: "produto-skus",
                                             row: index,
                                             column: 2,
                                           })}
                                           inputSize="full"
-                                          value={field.state.value || ""}
-                                          onChange={(e) =>
-                                            field.handleChange(e.target.value)
-                                          }
+                                          mascara={MASCARAS.ean}
+                                          value={field.state.value}
+                                          onValueChange={field.handleChange}
                                           onFocus={() =>
                                             setFocusedSkuIndex(index)
                                           }
                                           readOnly={readOnly}
-                                          maxLength={14}
                                           placeholder="EAN"
                                           className={cn(
                                             error &&

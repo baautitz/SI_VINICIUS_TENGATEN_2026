@@ -25,6 +25,7 @@ assert.equal(aplicarMascara("85851000", MASCARAS.cep), "85851-000");
 assert.equal(aplicarMascara("13112026", MASCARAS.data), "13/11/2026");
 assert.equal(aplicarMascara("abc-1d23", MASCARAS.placa), "ABC1D23");
 assert.equal(aplicarMascara(null, MASCARAS.cpf), "");
+assert.equal(aplicarMascara("789-1000315507x9", MASCARAS.ean), "78910003155079");
 
 // Limpeza: descarta o que nao cabe e corta o excesso (colar valor maior).
 assert.equal(limparMascara("529.982.247-25", MASCARAS.cpf), "52998224725");
