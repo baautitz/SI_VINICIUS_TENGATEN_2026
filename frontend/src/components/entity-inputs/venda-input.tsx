@@ -41,7 +41,7 @@ export function VendaInput({
       onSelectItem={onSelectItem}
       modalTitle="Selecionar Venda"
       icon={<ShoppingBag />}
-      getDisplayLabel={(item) => `#${item.id} - ${item.cliente?.nomeRazaoSocial ?? ""}`}
+      getDisplayLabel={(item) => item.cliente?.nomeRazaoSocial ?? ""}
       getSearchTerm={(item) => item.cliente?.nomeRazaoSocial ?? String(item.id)}
       getId={(item) => item.id}
       disabled={disabled}
