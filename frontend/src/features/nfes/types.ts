@@ -1,4 +1,5 @@
 export type TipoOperacaoNfe = "ENTRADA" | "SAIDA";
+export type FinalidadeNfe = "NORMAL" | "DEVOLUCAO" | "ESTORNO_DEVOLUCAO";
 export type StatusNfe = "RASCUNHO" | "EMITIDA" | "CANCELADA";
 
 export interface NfeResumo {
@@ -29,6 +30,7 @@ export interface Nfe extends Omit<NfeResumo, "chaveAcesso"> {
   clienteEndereco: string | null;
   clienteBairro: string | null;
   clienteTelefone: string | null;
+  finalidade: FinalidadeNfe;
   vendaId: number | null;
   compraId: number | null;
   justificativaCancelamento: string | null;
@@ -76,6 +78,12 @@ export const statusLabels: Record<StatusNfe, string> = {
 export const tipoLabels: Record<TipoOperacaoNfe, string> = {
   ENTRADA: "Entrada",
   SAIDA: "Saída",
+};
+
+export const finalidadeLabels: Record<FinalidadeNfe, string> = {
+  NORMAL: "",
+  DEVOLUCAO: "Devolução",
+  ESTORNO_DEVOLUCAO: "Estorno de devolução",
 };
 
 export const modalidadeFreteLabels: Record<string, string> = {

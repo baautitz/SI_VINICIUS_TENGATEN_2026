@@ -20,7 +20,7 @@ import { ContasPagarUpsertForm, type ContasPagarUpsertProps } from "@/features/f
 import { CancelarNfeWindow } from "./cancelar";
 import { formatarXml } from "@/utils/xml";
 import { Danfe } from "./danfe";
-import { brl, chaveFormatada, modalidadeFreteLabels, statusLabels, tipoLabels, type Nfe } from "./types";
+import { brl, chaveFormatada, finalidadeLabels, modalidadeFreteLabels, statusLabels, tipoLabels, type Nfe } from "./types";
 
 export function baixarXml(xml: string, nome: string) {
   const url = URL.createObjectURL(new Blob([xml], { type: "application/xml" }));
@@ -146,11 +146,8 @@ export function NfeDetalheWindow({ nfeId }: { nfeId: number }) {
       </div>
     );
 
-  const podeCancelar = nfe.tipoOperacao === "SAIDA" && nfe.statusNfe === "EMITIDA";
-  const motivoSemCancelar =
-    nfe.tipoOperacao === "ENTRADA"
-      ? nfe.statusNfe === "CANCELADA" ? "NF-e de entrada cancelada pelo estorno da compra." : "NF-e de entrada não é cancelada diretamente: estorne a compra."
-      : nfe.statusNfe === "CANCELADA" ? "A NF-e já está cancelada." : "Somente NF-e emitida pode ser cancelada.";
+  const podeCancelar = nfe.finalidade === "NORMAL" && nfe.tipoOperacao === "SAIDA" && nfe.statusNfe === "EMITIDA";
+  const motivoSemCancelar = motivoSemCancelarNfe(nfe);
 
   const copiarChave = async () => {
     await navigator.clipboard.writeText(nfe.chaveAcesso ?? "");
@@ -192,6 +189,14 @@ export function NfeDetalheWindow({ nfeId }: { nfeId: number }) {
   };
 
   return <Corpo nfe={nfe} alterada={alterada} acoes={{ copiarChave, verXml, baixar, cancelar }} podeCancelar={podeCancelar} motivo={motivoSemCancelar} />;
+}
+
+function motivoSemCancelarNfe(nfe: Nfe): string {
+  if (nfe.statusNfe === "CANCELADA") return "NF-e cancelada.";
+  if (nfe.statusNfe !== "EMITIDA") return "Somente NF-e emitida pode ser cancelada.";
+  if (nfe.finalidade === "DEVOLUCAO") return "NF-e de devolução não é cancelada: o estorno da devolução emite a nota de estorno.";
+  if (nfe.finalidade === "ESTORNO_DEVOLUCAO") return "NF-e de estorno de devolução não pode ser cancelada.";
+  return nfe.tipoOperacao === "ENTRADA" ? "NF-e de entrada não é cancelada diretamente: estorne a compra." : "Somente NF-e emitida pode ser cancelada.";
 }
 
 function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
@@ -284,7 +289,7 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
       </WindowActions>
 
       <div className="flex min-h-0 flex-1 flex-col gap-4 -mx-1 overflow-auto px-1">
-        <Bloco titulo={`NF-e nº ${nfe.numero} · Série ${nfe.serie} · ${tipoLabels[nfe.tipoOperacao]}`}>
+        <Bloco titulo={`NF-e nº ${nfe.numero} · Série ${nfe.serie} · ${tipoLabels[nfe.tipoOperacao]}${nfe.finalidade !== "NORMAL" ? ` · ${finalidadeLabels[nfe.finalidade]}` : ""}`}>
           <div className="grid grid-cols-2 items-end gap-3 md:grid-cols-4">
             <Dado rotulo="Situação" valor={statusLabels[nfe.statusNfe]} />
             <Dado rotulo="Emissão" valor={formatToLocal(nfe.dataEmissao)} />
