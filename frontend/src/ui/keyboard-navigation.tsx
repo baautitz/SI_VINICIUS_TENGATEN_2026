@@ -160,9 +160,6 @@ export function useNavigationScope(
 export function KeyboardNavigationProvider({ children }: { children: React.ReactNode }) {
   const scopesRef = React.useRef<NavigationScopeRegistration[]>([])
   const lastFocusedRef = React.useRef<FocusedNavigationSnapshot | null>(null)
-  // Goal column for consecutive ArrowUp/ArrowDown moves; only valid while
-  // focus is still on `element`, so any other move or click discards it.
-  const goalColumnRef = React.useRef<{ x: number; element: HTMLElement } | null>(null)
 
   const registerScope = React.useCallback((scope: NavigationScopeRegistration) => {
     scopesRef.current = scopesRef.current.filter((item) => item.id !== scope.id)
@@ -327,12 +324,14 @@ export function KeyboardNavigationProvider({ children }: { children: React.React
       const source = findNavigationElement(target)
       if (!source || !isEligible(source)) return
 
-      const vertical = direction === "up" || direction === "down"
-      const goalX =
-        goalColumnRef.current?.element === source
-          ? goalColumnRef.current.x
-          : source.getBoundingClientRect().left
-      const destination = findDestination(source, direction, scope.root, goalX)
+      // A seta vertical parte sempre da borda esquerda do campo atual: o destino
+      // depende só de onde o foco está, não do caminho feito até ali.
+      const destination = findDestination(
+        source,
+        direction,
+        scope.root,
+        source.getBoundingClientRect().left,
+      )
       if (!destination || destination === source) {
         if (direction === "forward" || direction === "backward") {
           event.preventDefault()
@@ -344,7 +343,6 @@ export function KeyboardNavigationProvider({ children }: { children: React.React
       event.stopPropagation()
       destination.scrollIntoView({ block: "nearest", inline: "nearest" })
       destination.focus({ preventScroll: true })
-      goalColumnRef.current = vertical ? { x: goalX, element: destination } : null
     }
 
     document.addEventListener("keydown", handleKeyDown, true)
