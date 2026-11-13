@@ -18,6 +18,7 @@ import { CompraWindow, type CompraWindowProps } from "@/features/compras/upsert"
 import { VendasUpsertForm, type VendasUpsertProps } from "@/features/vendas/upsert";
 import { ContasPagarUpsertForm, type ContasPagarUpsertProps } from "@/features/financeiro/contas-pagar/upsert";
 import { CancelarNfeWindow } from "./cancelar";
+import { formatarXml } from "@/utils/xml";
 import { Danfe } from "./danfe";
 import { brl, chaveFormatada, modalidadeFreteLabels, statusLabels, tipoLabels, type Nfe } from "./types";
 
@@ -167,7 +168,7 @@ export function NfeDetalheWindow({ nfeId }: { nfeId: number }) {
   const verXml = async () => {
     const xml = await buscarXml();
     if (xml) await ui.windows.open<string, TextoWindowProps>({
-      component: TextoWindow, props: { label: "XML da NF-e", value: xml }, title: `XML da NF-e ${nfe.numero}`, size: "large",
+      component: TextoWindow, props: { label: "XML da NF-e", value: formatarXml(xml) }, title: `XML da NF-e ${nfe.numero}`, size: "large",
     });
   };
   const baixar = async () => {
