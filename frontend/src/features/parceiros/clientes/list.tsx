@@ -1,4 +1,5 @@
 "use client";
+import { formatarDocumento, formatarTelefone } from "@/lib/mascara";
 
 import * as React from "react";
 
@@ -80,7 +81,7 @@ export function ClientesList({
       accessorKey: "cpfCnpj", meta: { campoOrdenacao: "cpfCnpj" },
       header: "CPF / CNPJ",
       cell: ({ row }) => (
-        <span className="text-muted-foreground">{row.getValue("cpfCnpj")}</span>
+        <span className="text-muted-foreground">{formatarDocumento(row.getValue("cpfCnpj"))}</span>
       ),
     },
     {
@@ -91,7 +92,7 @@ export function ClientesList({
     {
         accessorKey: "telefone", meta: { campoOrdenacao: "telefone" },
         header: "Telefone",
-        cell: ({ row }) => row.getValue("telefone") || "-",
+        cell: ({ row }) => formatarTelefone(row.getValue("telefone")) || "-",
     },
     getActionsColumn<Cliente>({ onEdit, onView, onDelete, selectionMode, onSelect }),
   ];

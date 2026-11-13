@@ -1,4 +1,5 @@
 "use client";
+import { formatarDocumento } from "@/lib/mascara";
 
 import * as React from "react";
 
@@ -75,7 +76,7 @@ export function TransportadorasList({
       accessorKey: "cpfCnpj", meta: { campoOrdenacao: "cpfCnpj" },
       header: "CPF / CNPJ",
       cell: ({ row }) => (
-        <span className="text-muted-foreground">{row.getValue("cpfCnpj")}</span>
+        <span className="text-muted-foreground">{formatarDocumento(row.getValue("cpfCnpj"))}</span>
       ),
     },
     {

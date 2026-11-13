@@ -1,4 +1,5 @@
 "use client";
+import { formatarDocumento } from "@/lib/mascara";
 
 import { getActionsColumn } from "@/utils/table-columns";
 import { FeatureHeader } from "@/ui/composites";
@@ -82,7 +83,7 @@ export function EmitentesList({
       accessorKey: "cpfCnpj", meta: { campoOrdenacao: "cpfCnpj" },
       header: "CPF / CNPJ",
       cell: ({ row }) => (
-        <span className="text-muted-foreground">{row.getValue("cpfCnpj")}</span>
+        <span className="text-muted-foreground">{formatarDocumento(row.getValue("cpfCnpj"))}</span>
       ),
     },
     getActionsColumn<Emitente>({ onEdit, onView, onDelete, selectionMode, onSelect }),
