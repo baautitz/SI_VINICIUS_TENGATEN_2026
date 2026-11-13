@@ -1,4 +1,5 @@
 "use client";
+import { ITENS_POR_PAGINA } from "@/config/paginacao";
 
 import { avisoTituloExterno } from "../origem";
 import React from "react";
@@ -45,7 +46,7 @@ export function ContasReceberFeature({ vendaId }: ContasReceberFeatureProps = {}
         ...contraparteParaApi(documento),
         ...filtrosAvancadosParaApi(avancados),
         page: list.page,
-        pageSize: 50,
+        pageSize: ITENS_POR_PAGINA,
       });
       return {
         itens: res?.itens ?? [],

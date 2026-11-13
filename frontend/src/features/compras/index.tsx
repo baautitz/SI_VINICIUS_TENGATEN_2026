@@ -1,4 +1,5 @@
 "use client";
+import { ITENS_POR_PAGINA } from "@/config/paginacao";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ComprasList } from "./list";
@@ -33,7 +34,7 @@ export function ComprasFeature() {
       const res = await comprasApi.list(
         list.deferredSearch.trim() || undefined,
         list.page,
-        50,
+        ITENS_POR_PAGINA,
         list.ordenacao,
       );
       return {

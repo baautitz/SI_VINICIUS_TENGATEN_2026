@@ -1,3 +1,4 @@
+import { ITENS_POR_PAGINA } from "@/config/paginacao";
 import type { Ordenacao } from "@/lib/ordenacao";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useCallback } from "react";
@@ -61,7 +62,7 @@ export function useFeatureOrchestrator<TDto>({
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: [queryKey, list.deferredSearch, list.page, list.ordenacao],
-    queryFn: () => fetchPage(list.deferredSearch.trim(), list.page, 50),
+    queryFn: () => fetchPage(list.deferredSearch.trim(), list.page, ITENS_POR_PAGINA),
   });
 
   const invalidate = useCallback(async () => {

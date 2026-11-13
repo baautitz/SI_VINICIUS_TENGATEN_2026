@@ -1,4 +1,5 @@
 "use client";
+import { ITENS_POR_PAGINA } from "@/config/paginacao";
 
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -31,7 +32,7 @@ export function TransportadorasFeature({
       const res = await transportadorasApi.list(
         list.deferredSearch.trim() || undefined,
         list.page,
-        50,
+        ITENS_POR_PAGINA,
         list.ordenacao,
       );
       return {

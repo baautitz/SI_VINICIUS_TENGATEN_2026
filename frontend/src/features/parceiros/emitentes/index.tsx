@@ -1,4 +1,5 @@
 "use client";
+import { ITENS_POR_PAGINA } from "@/config/paginacao";
 
 import React from "react";
 import { EmitentesList } from "./list";
@@ -29,7 +30,7 @@ export function EmitentesFeature({
       const res = await emitentesApi.list(
         list.deferredSearch.trim() || undefined,
         list.page,
-        50,
+        ITENS_POR_PAGINA,
         list.ordenacao,
       );
       return {

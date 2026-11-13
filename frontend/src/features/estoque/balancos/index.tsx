@@ -1,4 +1,5 @@
 "use client";
+import { ITENS_POR_PAGINA } from "@/config/paginacao";
 
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -26,7 +27,7 @@ export function BalancosFeature() {
   const { data, isLoading } = useQuery({
     queryKey: ["balancos", list.page, ordenacao],
     queryFn: async () => {
-      const res = await balancosApi.list(list.page, 50, ordenacao);
+      const res = await balancosApi.list(list.page, ITENS_POR_PAGINA, ordenacao);
       return {
         itens: res?.itens ?? [],
         totalPages: res?.totalDePaginas ?? 1,

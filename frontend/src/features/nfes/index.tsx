@@ -1,4 +1,5 @@
 "use client";
+import { ITENS_POR_PAGINA } from "@/config/paginacao";
 
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -35,7 +36,7 @@ export function NfesFeature() {
         tipo: tipo === TODOS ? undefined : (tipo as TipoOperacaoNfe),
         status: status === TODOS ? undefined : (status as StatusNfe),
         page: list.page,
-        pageSize: 50,
+        pageSize: ITENS_POR_PAGINA,
         ordenacao: list.ordenacao,
       });
       return {

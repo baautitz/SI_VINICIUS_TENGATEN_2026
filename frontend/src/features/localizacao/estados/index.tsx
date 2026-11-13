@@ -1,4 +1,5 @@
 "use client";
+import { ITENS_POR_PAGINA } from "@/config/paginacao";
 
 import React from "react";
 import { EstadosList } from "./list";
@@ -28,7 +29,7 @@ export function EstadosFeature({
   const { data, isLoading } = useQuery({
     queryKey: ["estados", list.deferredSearch, list.page, list.ordenacao],
     queryFn: async () => {
-      const res = await estadosApi.list(list.deferredSearch.trim() || undefined, list.page, 50, list.ordenacao);
+      const res = await estadosApi.list(list.deferredSearch.trim() || undefined, list.page, ITENS_POR_PAGINA, list.ordenacao);
       return { itens: res?.itens ?? [], totalPages: res?.totalDePaginas ?? 1, totalItems: res?.totalDeItens ?? 0 };
     },
   });

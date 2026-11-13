@@ -1,4 +1,5 @@
 "use client";
+import { ITENS_POR_PAGINA } from "@/config/paginacao";
 
 import React from "react";
 import { ClientesList } from "./list";
@@ -34,7 +35,7 @@ export function ClientesFeature({
       const res = await clientesApi.list(
         list.deferredSearch.trim() || undefined,
         list.page,
-        50,
+        ITENS_POR_PAGINA,
         list.ordenacao,
       );
       return {

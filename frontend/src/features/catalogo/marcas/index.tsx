@@ -1,4 +1,5 @@
 "use client";
+import { ITENS_POR_PAGINA } from "@/config/paginacao";
 
 import React from "react";
 import { MarcasList } from "./list";
@@ -28,7 +29,7 @@ export function MarcasFeature({
   const { data, isLoading } = useQuery({
     queryKey: ["marcas", list.deferredSearch, list.page, list.ordenacao],
     queryFn: async () => {
-      const res = await marcasApi.list(list.deferredSearch.trim() || undefined, list.page, 50, list.ordenacao);
+      const res = await marcasApi.list(list.deferredSearch.trim() || undefined, list.page, ITENS_POR_PAGINA, list.ordenacao);
       return {
         itens: res?.itens ?? [],
         totalPages: res?.totalDePaginas ?? 1,

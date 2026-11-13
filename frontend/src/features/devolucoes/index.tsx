@@ -1,4 +1,5 @@
 "use client";
+import { ITENS_POR_PAGINA } from "@/config/paginacao";
 
 import { useQuery } from "@tanstack/react-query";
 import { Undo2 } from "lucide-react";
@@ -28,7 +29,7 @@ export function DevolucoesFeature({ vendaId }: DevolucoesFeatureProps = {}) {
         search: list.deferredSearch.trim() || undefined,
         vendaId,
         page: list.page,
-        pageSize: 50,
+        pageSize: ITENS_POR_PAGINA,
         ordenacao: list.ordenacao,
       });
       return {

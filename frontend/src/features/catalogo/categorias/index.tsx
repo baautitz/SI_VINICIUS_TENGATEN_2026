@@ -1,4 +1,5 @@
 "use client";
+import { ITENS_POR_PAGINA } from "@/config/paginacao";
 
 import React from "react";
 import { CategoriasList } from "./list";
@@ -31,7 +32,7 @@ export function CategoriasFeature({
       const res = await categoriasApi.list(
         list.deferredSearch.trim() || undefined,
         list.page,
-        50,
+        ITENS_POR_PAGINA,
         list.ordenacao,
       );
       return {
