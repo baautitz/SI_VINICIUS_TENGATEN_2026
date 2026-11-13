@@ -95,6 +95,13 @@ _Avoid_: Devolução simples
 Devolução de venda de todo o saldo devolvível de todos os Itens da Venda, ou Devolução de compra de todo o saldo devolvível dos Itens da Compra. Após ela a Venda ou a Compra não aceita nova Devolução.
 _Avoid_: Devolução completa
 
+**Pagamento da venda**:
+Parte do total de uma Venda quitada por uma Condição de pagamento, com valor próprio. Uma Venda tem um ou mais Pagamentos, e a soma deles é exatamente o total da Venda. Cada Pagamento gera as suas próprias parcelas a receber, que guardam a condição usada.
+_Avoid_: Forma de pagamento da venda (ambíguo com o Método de pagamento)
+
+**Entrada**:
+Pagamento da venda feito à vista (condição de pagamento sem prazo), cuja conta a receber já nasce recebida. A entrada mínima percentual de uma condição com prazo vale sobre a soma dos Pagamentos à vista da Venda.
+
 **Parcela baixada**:
 Parcela de conta a pagar ou a receber com algum valor pago ou recebido, ou com Abatimento por Devolução. Nenhum fluxo pode alterá-la, excluí-la ou cancelá-la, nem o documento de origem pode ser estornado, até a baixa ser estornada. A Devolução (de venda ou de compra) é a única exceção, e só consome saldo em aberto, nunca o valor já recebido ou pago.
 _Avoid_: Parcela paga (deixa de fora a parcial e o abatimento)
