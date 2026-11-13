@@ -49,8 +49,8 @@ public class EstornoDevolucaoTests
         var condicao = await s.Connection.ExecuteScalarAsync<int>("SELECT id FROM condicoes_pagamentos LIMIT 1;");
 
         var venda = await Servico(v => v.CriarVenda(new CriarVendaCommand(DateTime.UtcNow, emitente, cliente, null,
-            new[] { new CriarVendaItemCommand(Sku, 10, 10, 0) }, condicao,
-            new[] { new CriarParcelaReceberCommand(1, DateTime.UtcNow.AddDays(30), 50), new CriarParcelaReceberCommand(2, DateTime.UtcNow.AddDays(60), 50) })));
+            new[] { new CriarVendaItemCommand(Sku, 10, 10, 0) },
+            new[] { new CriarVendaPagamentoCommand(condicao, 100, new[] { new CriarParcelaReceberCommand(1, DateTime.UtcNow.AddDays(30), 50), new CriarParcelaReceberCommand(2, DateTime.UtcNow.AddDays(60), 50) }) })));
         Assert.True(venda.Success, venda.Errors?.FirstOrDefault()?.Message);
 
         return (venda.Data!.Id, await Escalar<int>("SELECT id FROM vendas_itens LIMIT 1;"));
@@ -129,8 +129,8 @@ public class EstornoDevolucaoTests
         var condicao = await s.Connection.ExecuteScalarAsync<int>("SELECT id FROM condicoes_pagamentos LIMIT 1;");
 
         var venda = await Servico(v => v.CriarVenda(new CriarVendaCommand(DateTime.UtcNow, emitente, cliente, null,
-            new[] { new CriarVendaItemCommand(Sku, 5, 100, 0) }, condicao,
-            Enumerable.Range(1, 5).Select(i => new CriarParcelaReceberCommand(i, DateTime.UtcNow.AddDays(30 * i), 100)).ToArray())));
+            new[] { new CriarVendaItemCommand(Sku, 5, 100, 0) },
+            new[] { new CriarVendaPagamentoCommand(condicao, 500, Enumerable.Range(1, 5).Select(i => new CriarParcelaReceberCommand(i, DateTime.UtcNow.AddDays(30 * i), 100)).ToArray()) })));
         Assert.True(venda.Success, venda.Errors?.FirstOrDefault()?.Message);
         return (venda.Data!.Id, await Escalar<int>("SELECT id FROM vendas_itens LIMIT 1;"), cliente);
     }

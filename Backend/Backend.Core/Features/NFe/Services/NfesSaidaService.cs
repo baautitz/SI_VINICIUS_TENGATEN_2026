@@ -55,16 +55,13 @@ public sealed class NfesSaidaService : BaseService
             return Falha("EMITENTE_SEM_UF", "O emitente precisa de bairro/cidade/estado cadastrados para emitir NF-e.", "EmitenteId");
 
         var contas = await _vendasService.ObterContasDaVenda(vendaId);
-        var condicaoPagamento = contas.FirstOrDefault()?.CondicaoPagamento;
-        if (condicaoPagamento is null)
+        if (contas.Count == 0 || contas.Any(c => c.CondicaoPagamento is null))
             return Falha("VENDA_SEM_PAGAMENTO", "A venda não tem condição de pagamento/parcelas para compor os pagamentos da NF-e.", "VendaId");
-        var aVista = condicaoPagamento.EntradaMinimaPercentual >= 100;
-        var indicador = aVista ? IndicadorPagamento.A_VISTA : IndicadorPagamento.A_PRAZO;
-        var metodo = condicaoPagamento.MetodoPagamento;
-        // Parcelas abatidas por devolução deixam de somar o total da venda: nesse caso um único pagamento do total.
+        // Cada parcela leva o método e o indicador da sua própria condição (a venda pode ter várias formas de pagamento).
+        // Parcelas abatidas por devolução deixam de somar o total da venda: nesse caso um único pagamento do total, pela primeira condição.
         var pagamentos = contas.Sum(p => p.Valor) == venda.ValorTotal
-            ? contas.Select(p => new NfesPagamentos(indicador, p.Valor, metodo)).ToList()
-            : new List<NfesPagamentos> { new(indicador, venda.ValorTotal, metodo) };
+            ? contas.Select(p => new NfesPagamentos(IndicadorDe(p.CondicaoPagamento!), p.Valor, p.CondicaoPagamento!.MetodoPagamento)).ToList()
+            : new List<NfesPagamentos> { new(IndicadorDe(contas[0].CondicaoPagamento!), venda.ValorTotal, contas[0].CondicaoPagamento!.MetodoPagamento) };
 
         var itens = venda.Itens.Select((i, n) => new NfesItens(
             n + 1, TextNormalization.Truncate(i.Sku.NomeExibicao, 150)!, i.Quantidade, i.ValorUnitario, i.ValorDesconto, i.Sku, i.Sku.Produto!.UnidadeMedida)).ToList();
@@ -117,6 +114,9 @@ public sealed class NfesSaidaService : BaseService
             return Falha(NfeJaCancelada, "A NF-e já foi cancelada ou deixou de estar emitida.", "Id");
         return Resultado<Nfes>.Sucesso(nfe);
     }
+
+    private static IndicadorPagamento IndicadorDe(CondicoesPagamentos condicao)
+        => condicao.EntradaMinimaPercentual >= 100 ? IndicadorPagamento.A_VISTA : IndicadorPagamento.A_PRAZO;
 
     private static Resultado<Nfes> Falha(string code, string message, string? field = null)
         => Resultado<Nfes>.Falha(new ResultadoErro(code, message, field));
