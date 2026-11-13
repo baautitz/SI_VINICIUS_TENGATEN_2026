@@ -623,22 +623,22 @@ export function DataTable<TData, TValue>({
             </Button>
             <Button
               variant="outline"
-              size="icon-lg"
+              size="lg"
               onClick={() => onPageChange(pageIndex - 1)}
               disabled={pageIndex <= 1 || loading}
-              title={`Página anterior (${combinacaoDe("anterior")})`}
             >
               <span className="sr-only">Página anterior</span>
               <ChevronLeft />
+              <HotkeyKbd hotkey={combinacaoDe("anterior")} />
             </Button>
             <Button
               variant="outline"
-              size="icon-lg"
+              size="lg"
               onClick={() => onPageChange(pageIndex + 1)}
               disabled={pageIndex >= pageCount || loading}
-              title={`Próxima página (${combinacaoDe("seguinte")})`}
             >
               <span className="sr-only">Próxima página</span>
+              <HotkeyKbd hotkey={combinacaoDe("seguinte")} />
               <ChevronRight />
             </Button>
             <Button
