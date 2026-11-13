@@ -1,5 +1,7 @@
 # Uma letra, um sentido nos atalhos
 
+> Refinado pelo [ADR 0005](0005-uma-combinacao-um-sentido-por-contexto.md): a unicidade vale por contexto (tela), não no sistema inteiro.
+
 Cada `Alt+letra` tem um único significado em todo o sistema. Ações menos frequentes usam `Alt+Shift+letra`. A fonte da verdade é um registro tipado no código, e uma letra duplicada falha na compilação.
 
 ## Alternativa descartada

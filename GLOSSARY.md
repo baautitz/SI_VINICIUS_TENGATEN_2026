@@ -20,6 +20,10 @@ _Avoid_: Desabilitado (ambíguo)
 Combinação de teclas que aciona uma ação sem o mouse, como Alt+Enter para confirmar. Vale na janela ou tela em que está registrado.
 _Avoid_: Hotkey, tecla de atalho
 
+**Contexto de atalho**:
+Tela ou janela em que um Atalho vale, ou global quando vale em qualquer tela. Uma combinação tem um só sentido por contexto.
+_Avoid_: Escopo (ambíguo com o escopo da janela no código)
+
 **Dica de atalho**:
 Indicação visual do atalho exibida na tela, junto da ação que ele aciona.
 _Avoid_: Kbd, legenda de teclado

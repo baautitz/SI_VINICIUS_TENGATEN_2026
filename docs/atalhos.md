@@ -1,8 +1,8 @@
 # Atalhos
 
-A fonte da verdade e `frontend/src/lib/atalhos.ts` (`ATALHOS`: id, combinacao, rotulo). Regra: [ADR 0001](adr/0001-uma-letra-um-sentido-nos-atalhos.md).
+A fonte da verdade e `frontend/src/lib/atalhos.ts` (`ATALHOS`: id, combinacao, rotulo, contexto). Regra: [ADR 0001](adr/0001-uma-letra-um-sentido-nos-atalhos.md), por contexto conforme o [ADR 0005](adr/0005-uma-combinacao-um-sentido-por-contexto.md).
 
-- Novo atalho: adicionar no registro; `npm run test:atalhos` falha se a combinacao ja existir.
+- Novo atalho: adicionar no registro com `contexto` (tela, lista de telas ou `global`); `npm run test:atalhos` e a compilacao falham se a combinacao ja existir no mesmo contexto ou em `global`.
 - Telas e `HotkeyKbd` devem ler o registro, nao usar strings livres.
 - Vocabulario (atalho, dica de atalho): `GLOSSARY.md`.
 
@@ -13,7 +13,8 @@ A fonte da verdade e `frontend/src/lib/atalhos.ts` (`ATALHOS`: id, combinacao, r
 
 ## Ver registros relacionados
 
-- `verProdutos` Alt+Shift+P (marcas, categorias, unidades de medida). Alt+R ficou com `verContasReceber`, entao Produtos usa Shift.
+- `verProdutos` Alt+P (marcas, categorias, unidades de medida). Alt+P tambem e `adicionarParcela`, mas em outras telas.
+- `reembolsos` Alt+Shift+B (cliente): unico que mantem Shift, pois Alt+B e `sidebarRecolher` (global).
 
 ## Devolucao de venda
 
