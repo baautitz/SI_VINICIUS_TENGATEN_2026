@@ -188,10 +188,8 @@ function CidadesUpsertForm({
                 field={field}
                 label="DDD"
                 inputSize="small"
-                type="text"
-                inputMode="numeric"
+                mascara="9999"
                 readOnly={readOnly}
-                onChangeOverride={(val) => val.replace(/\D/g, "")}
                 getFieldError={getFieldError}
               />
             )}
