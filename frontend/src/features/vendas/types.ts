@@ -107,6 +107,16 @@ export const vendaParcelaSchema = z.object({
   valorParcela: z.coerce.number().positive("Valor da parcela deve ser maior que zero."),
 });
 
+export const vendaPagamentoSchema = z.object({
+  condicaoPagamentoId: z
+    .number({ required_error: "Método/Condição de Pagamento é obrigatório." })
+    .min(1, "Método/Condição de Pagamento é obrigatório."),
+  valor: z.coerce.number().positive("O valor de cada forma de pagamento deve ser maior que zero."),
+  parcelas: z
+    .array(vendaParcelaSchema)
+    .min(1, "A condição de pagamento selecionada deve gerar parcelas correspondentes."),
+});
+
 export const vendaBaseSchema = z.object({
   dataVenda: z.string().min(1, "Data da venda é obrigatória.").refine((v) => v <= todayBrasiliaISODate(), "A data da venda não pode ser futura."),
   clienteId: z
@@ -121,12 +131,9 @@ export const vendaBaseSchema = z.object({
     .nullable()
     .optional(),
   itens: z.array(vendaItemSchema).min(1, "A venda deve conter ao menos um item."),
-  condicaoPagamentoId: z
-    .number({ required_error: "Método/Condição de Pagamento é obrigatório." })
-    .min(1, "Método/Condição de Pagamento é obrigatório."),
-  parcelas: z
-    .array(vendaParcelaSchema)
-    .min(1, "A condição de pagamento selecionada deve gerar parcelas correspondentes."),
+  pagamentos: z
+    .array(vendaPagamentoSchema)
+    .min(1, "Informe ao menos uma forma de pagamento."),
 });
 
 export const vendaSchema = vendaBaseSchema.superRefine((data, ctx) => {
@@ -143,16 +150,24 @@ export const vendaSchema = vendaBaseSchema.superRefine((data, ctx) => {
 
   const totalVenda = data.itens.reduce((sum, item) => sum + (item.quantidade * item.valorUnitario - item.valorDesconto), 0);
 
-  if (data.condicaoPagamentoId && data.parcelas && data.parcelas.length > 0) {
-    const totalParcelas = data.parcelas.reduce((sum, p) => sum + p.valorParcela, 0);
-    if (Math.abs(totalParcelas - totalVenda) > 0.01) {
+  const totalPagamentos = data.pagamentos.reduce((sum, p) => sum + p.valor, 0);
+  if (Math.abs(totalPagamentos - totalVenda) > 0.01) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["pagamentos"],
+      message: `A soma das formas de pagamento (R$ ${totalPagamentos.toFixed(2)}) deve ser igual ao valor total da venda (R$ ${totalVenda.toFixed(2)}).`,
+    });
+  }
+  data.pagamentos.forEach((pagamento, index) => {
+    const totalParcelas = pagamento.parcelas.reduce((sum, p) => sum + p.valorParcela, 0);
+    if (Math.abs(totalParcelas - pagamento.valor) > 0.01) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["parcelas"],
-        message: `A soma das parcelas (R$ ${totalParcelas.toFixed(2)}) deve ser igual ao valor total da venda (R$ ${totalVenda.toFixed(2)}).`,
+        path: ["pagamentos", index, "parcelas"],
+        message: `A soma das parcelas (R$ ${totalParcelas.toFixed(2)}) deve ser igual ao valor da forma de pagamento (R$ ${pagamento.valor.toFixed(2)}).`,
       });
     }
-  }
+  });
 });
 
 export type VendaFormValues = z.infer<typeof vendaSchema>;

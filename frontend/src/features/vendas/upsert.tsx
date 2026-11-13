@@ -7,13 +7,22 @@ import { useState, useRef, useMemo, useCallback } from "react";
 import { WindowActions } from "@/ui/imperative";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FilePlus2 } from "lucide-react";
+import { FilePlus2, Plus } from "lucide-react";
 import { nfesApi } from "@/api/nfes";
 import { abrirNfe } from "@/features/nfes";
+import {
+  ehAVista,
+  entradaFaltante,
+  entradaMinimaExigida,
+  pagamentosCompletos,
+  parcelasDaLinha,
+  restante,
+  trocoDaLinha,
+} from "./pagamentos";
 import { CampoLinhaErro } from "./campo-linha-erro";
 import { ApiRequestError } from "@/utils/api-error";
 import { cn } from "@/lib/utils";
-import { Button } from "@/ui/primitives";
+import { Badge, Button } from "@/ui/primitives";
 import { HotkeyKbd } from "@/ui/primitives";
 import { Field, FieldLabel, FieldError } from "@/ui/primitives";
 import { NumberInput } from "@/ui/composites";
@@ -60,7 +69,7 @@ import { MovimentacoesUpsert } from "@/features/estoque/movimentacoes/upsert";
 import { useWindow, useWindowCommands, useUi, WindowCancelButton } from "@/ui/imperative";
 import { Spinner } from "@/ui/primitives";
 import { navigationCell } from "@/ui/keyboard-navigation";
-import { toLocalISODate, todayBrasiliaISODate, todayLocalISODate } from "@/utils/date-utils";
+import { todayBrasiliaISODate, todayLocalISODate } from "@/utils/date-utils";
 
 export interface VendasUpsertProps {
   editingItem: Venda | null;
@@ -100,13 +109,19 @@ export interface VendasCheckoutProps {
   subtotalGross: number;
   totalDiscount: number;
   totalNet: number;
-  initialCondicao: CondicaoPagamento | null;
   initialObservacao: string;
 }
 
 export interface VendasCheckoutResult {
-  condicao: CondicaoPagamento;
+  pagamentos: { condicao: CondicaoPagamento; valor: number }[];
   observacao: string;
+}
+
+interface LinhaPagamento {
+  key: number;
+  condicao: CondicaoPagamento | null;
+  valor: number;
+  recebido: number;
 }
 
 function VendasCheckout({
@@ -114,32 +129,62 @@ function VendasCheckout({
   subtotalGross,
   totalDiscount,
   totalNet,
-  initialCondicao,
   initialObservacao,
 }: VendasCheckoutProps) {
   const activeWindow = useWindow<VendasCheckoutResult>();
-  const [condicao, setCondicao] = useState<CondicaoPagamento | null>(
-    initialCondicao,
-  );
-  const [valorRecebido, setValorRecebido] = useState(0);
-  const [condicaoTocada, setCondicaoTocada] = useState(false);
+  const proximaChave = useRef(2);
+  const [linhas, setLinhas] = useState<LinhaPagamento[]>([
+    { key: 1, condicao: null, valor: totalNet, recebido: 0 },
+  ]);
+  const [tocado, setTocado] = useState(false);
 
-  const isDinheiro = condicao?.metodoPagamento?.permiteTroco ?? false;
-  const recebidoInsuficiente = isDinheiro && valorRecebido + 0.005 < totalNet;
-  const troco = isDinheiro ? Math.max(0, valorRecebido - totalNet) : 0;
-  const canFinish = !!condicao && totalNet > 0 && !recebidoInsuficiente;
+  const falta = restante(totalNet, linhas);
+  const entradaFalta = entradaFaltante(totalNet, linhas);
+  const trocoInsuficiente = (l: LinhaPagamento) =>
+    !!l.condicao?.metodoPagamento?.permiteTroco && l.recebido + 0.005 < l.valor;
+  const algumRecebidoInsuficiente = linhas.some(trocoInsuficiente);
+  const canFinish =
+    pagamentosCompletos(totalNet, linhas) &&
+    entradaFalta < 0.01 &&
+    !algumRecebidoInsuficiente;
+
+  const atualizar = useCallback(
+    (key: number, patch: Partial<LinhaPagamento>) =>
+      setLinhas((atuais) =>
+        atuais.map((l) => (l.key === key ? { ...l, ...patch } : l)),
+      ),
+    [],
+  );
+
+  const adicionar = useCallback(() => {
+    setTocado(true);
+    setLinhas((atuais) => [
+      ...atuais,
+      {
+        key: proximaChave.current++,
+        condicao: null,
+        valor: Math.max(0, restante(totalNet, atuais)),
+        recebido: 0,
+      },
+    ]);
+  }, [totalNet]);
+
+  const remover = (key: number) =>
+    setLinhas((atuais) =>
+      atuais.length > 1 ? atuais.filter((l) => l.key !== key) : atuais,
+    );
 
   // Campo não controlado: digitar não re-renderiza o checkout; a observação é
   // lida ao finalizar e ao consultar se há alterações não salvas.
   const observacaoRef = useRef<HTMLTextAreaElement | null>(null);
 
   const finish = useCallback(() => {
-    if (!condicao || totalNet <= 0 || recebidoInsuficiente) return;
+    if (!canFinish) return;
     activeWindow.resolve({
-      condicao,
+      pagamentos: linhas.map((l) => ({ condicao: l.condicao!, valor: l.valor })),
       observacao: observacaoRef.current?.value ?? "",
     });
-  }, [activeWindow, condicao, totalNet, recebidoInsuficiente]);
+  }, [activeWindow, canFinish, linhas]);
 
   useWindowCommands(
     useMemo(
@@ -154,8 +199,18 @@ function VendasCheckout({
             finish();
           },
         },
+        {
+          id: "vendas.checkout.adicionar-pagamento",
+          hotkey: combinacaoDe("adicionarPagamento"),
+          label: "Adicionar forma de pagamento",
+          enabled: totalNet > 0,
+          run: (event: KeyboardEvent) => {
+            event.preventDefault();
+            adicionar();
+          },
+        },
       ],
-      [canFinish, finish],
+      [canFinish, finish, adicionar, totalNet],
     ),
   );
 
@@ -163,12 +218,16 @@ function VendasCheckout({
     (element: HTMLDivElement | null) => {
       if (!element) return;
       activeWindow.setDirtyCheck(
-        () => !!condicao || (observacaoRef.current?.value.length ?? 0) > 0,
+        () =>
+          linhas.some((l) => !!l.condicao) ||
+          (observacaoRef.current?.value.length ?? 0) > 0,
       );
       return () => activeWindow.setDirtyCheck(null);
     },
-    [activeWindow, condicao],
+    [activeWindow, linhas],
   );
+
+  const completo = Math.abs(falta) < 0.01;
 
   return (
     <div ref={registerDirty} className="flex flex-col gap-5 py-2">
@@ -193,57 +252,171 @@ function VendasCheckout({
           <span className="text-lg">{formatCurrency(totalNet)}</span>
         </div>
       </div>
-      <div className="w-full">
-        <CondicaoPagamentoInput
-          name="checkoutCondicaoId"
-          required
-          label="Método de Pagamento"
-          initialItem={condicao}
-          onSelectItem={(item) => {
-            setCondicao(item);
-            setCondicaoTocada(true);
-          }}
-          onSelectId={() => {}}
-          error={
-            totalNet <= 0
-              ? "Venda com total zerado não pode ser finalizada: o sistema exige ao menos uma parcela. Ajuste os descontos."
-              : !condicao && condicaoTocada
-                ? "Selecione o método/condição de pagamento."
-                : undefined
-          }
-        />
-      </div>
-      {isDinheiro && (
-        <Field data-invalid={recebidoInsuficiente}>
-          <div className="flex items-center justify-between gap-4">
-            <FieldLabel htmlFor="venda-checkout-valor-recebido" required>
-              Valor recebido (R$)
-            </FieldLabel>
-            <NumberInput
-              id="venda-checkout-valor-recebido"
-              inputSize="full"
-              value={valorRecebido}
-              decimals={2}
-              inputMode="decimal"
-              onNumberChange={setValorRecebido}
-              className="h-8 w-48 text-right font-semibold"
-              aria-invalid={recebidoInsuficiente}
-            />
-          </div>
-          {recebidoInsuficiente ? (
-            <FieldError className="mt-1 block text-right">
-              O valor recebido é menor que o total da venda.
-            </FieldError>
-          ) : (
-            <div className="text-muted-foreground mt-1 flex justify-between text-sm">
-              <span>Troco:</span>
-              <span className="text-foreground font-semibold">
-                {formatCurrency(troco)}
-              </span>
-            </div>
-          )}
-        </Field>
+
+      {totalNet <= 0 && (
+        <FieldError>
+          Venda com total zerado não pode ser finalizada: o sistema exige ao
+          menos uma parcela. Ajuste os descontos.
+        </FieldError>
       )}
+
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-3">
+          <span className="font-semibold">Formas de pagamento</span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={adicionar}
+            disabled={totalNet <= 0}
+          >
+            <Plus /> Adicionar forma de pagamento{" "}
+            <HotkeyKbd hotkey={combinacaoDe("adicionarPagamento")} />
+          </Button>
+        </div>
+
+        {linhas.map((linha, index) => {
+          const aVista = ehAVista(linha.condicao);
+          const parcelas = linha.condicao?.condicoesPagamentosParcelas?.length ?? 1;
+          const permiteTroco = !!linha.condicao?.metodoPagamento?.permiteTroco;
+          const insuficiente = trocoInsuficiente(linha);
+          return (
+            <div
+              key={linha.key}
+              className="flex flex-col gap-3 rounded-lg border p-3"
+            >
+              <div className="flex items-start gap-3">
+                <div className="min-w-0 flex-1">
+                  <CondicaoPagamentoInput
+                    required
+                    name={`checkoutCondicaoId-${linha.key}`}
+                    label={
+                      linhas.length > 1
+                        ? `Pagamento ${index + 1}`
+                        : "Método de Pagamento"
+                    }
+                    initialItem={linha.condicao}
+                    onSelectItem={(item) => {
+                      setTocado(true);
+                      atualizar(linha.key, { condicao: item });
+                    }}
+                    onSelectId={() => {}}
+                    error={
+                      !linha.condicao && tocado
+                        ? "Selecione o método/condição de pagamento."
+                        : undefined
+                    }
+                  />
+                </div>
+                <Field className="w-40 shrink-0">
+                  <FieldLabel htmlFor={`venda-checkout-valor-${linha.key}`} required>
+                    Valor (R$)
+                  </FieldLabel>
+                  <NumberInput
+                    id={`venda-checkout-valor-${linha.key}`}
+                    inputSize="full"
+                    value={linha.valor}
+                    decimals={2}
+                    inputMode="decimal"
+                    onNumberChange={(valor) => atualizar(linha.key, { valor })}
+                    className="text-right font-semibold"
+                    aria-invalid={linha.valor <= 0}
+                  />
+                </Field>
+                {linhas.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="mt-6 shrink-0"
+                    aria-label={`Remover pagamento ${index + 1}`}
+                    onClick={() => remover(linha.key)}
+                  >
+                    <Trash2 />
+                  </Button>
+                )}
+              </div>
+
+              {linha.condicao && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Badge variant={aVista ? "success" : "secondary"}>
+                    {aVista
+                      ? linhas.length > 1
+                        ? "Entrada (à vista)"
+                        : "À vista"
+                      : `${parcelas}x`}
+                  </Badge>
+                  <span className="text-muted-foreground">
+                    {aVista
+                      ? "Entra como recebido na hora."
+                      : `Gera ${parcelas} parcela(s) a receber.`}
+                  </span>
+                </div>
+              )}
+
+              {permiteTroco && (
+                <Field data-invalid={insuficiente}>
+                  <div className="flex items-center justify-between gap-4">
+                    <FieldLabel htmlFor={`venda-checkout-recebido-${linha.key}`} required>
+                      Valor recebido (R$)
+                    </FieldLabel>
+                    <NumberInput
+                      id={`venda-checkout-recebido-${linha.key}`}
+                      inputSize="full"
+                      value={linha.recebido}
+                      decimals={2}
+                      inputMode="decimal"
+                      onNumberChange={(recebido) =>
+                        atualizar(linha.key, { recebido })
+                      }
+                      className="h-8 w-48 text-right font-semibold"
+                      aria-invalid={insuficiente}
+                    />
+                  </div>
+                  {insuficiente ? (
+                    <FieldError className="mt-1 block text-right">
+                      O valor recebido é menor que o valor deste pagamento.
+                    </FieldError>
+                  ) : (
+                    <div className="text-muted-foreground mt-1 flex justify-between text-sm">
+                      <span>Troco:</span>
+                      <span className="text-foreground font-semibold">
+                        {formatCurrency(trocoDaLinha(linha.valor, linha.recebido))}
+                      </span>
+                    </div>
+                  )}
+                </Field>
+              )}
+            </div>
+          );
+        })}
+
+        <div
+          className={cn(
+            "flex items-center justify-between rounded-lg border px-4 py-2.5 font-semibold",
+            completo
+              ? "border-success/40 bg-success/5 text-success"
+              : falta > 0
+                ? "border-amber-500/40 bg-amber-500/5 text-amber-600"
+                : "border-destructive/40 bg-destructive/5 text-destructive",
+          )}
+        >
+          <span>
+            {completo ? "Pagamento completo" : falta > 0 ? "Restante" : "Excedente"}
+          </span>
+          <span>{formatCurrency(completo ? 0 : Math.abs(falta))}</span>
+        </div>
+
+        {entradaFalta >= 0.01 && (
+          <FieldError>
+            A condição escolhida exige entrada mínima de{" "}
+            {entradaMinimaExigida(linhas).toLocaleString("pt-BR")}% do total em
+            pagamento à vista: faltam {formatCurrency(entradaFalta)} em
+            pagamentos à vista.
+          </FieldError>
+        )}
+      </div>
+
       <div className="w-full">
         <Field>
           <FieldLabel htmlFor="venda-checkout-observacao">
@@ -335,11 +508,14 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
       const payload = {
         ...value,
         dataVenda: saleDate.toISOString(),
-        parcelas: value.parcelas?.map((p) => ({
-          ...p,
-          dataVencimento: new Date(
-            p.dataVencimento + "T12:00:00",
-          ).toISOString(),
+        pagamentos: value.pagamentos.map((pagamento) => ({
+          ...pagamento,
+          parcelas: pagamento.parcelas.map((p) => ({
+            ...p,
+            dataVencimento: new Date(
+              p.dataVencimento + "T12:00:00",
+            ).toISOString(),
+          })),
         })),
       };
       return await vendasApi.create(payload);
@@ -347,12 +523,6 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     queryKey: ["vendas"],
     onSuccessCallback: () => activeWindow.resolve(true),
   });
-
-  interface ParcelaPreview {
-    numeroParcela: number;
-    dataVencimento: string;
-    valorParcela: number;
-  }
 
   const [itens, setItens] = useState<VendaItem[]>(() => {
     if (!editingItem || !editingItem.itens) return [];
@@ -483,7 +653,6 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
           subtotalGross,
           totalDiscount,
           totalNet,
-          initialCondicao: null,
           initialObservacao: form.getFieldValue("observacao") || "",
         },
         title: "Finalizar Venda",
@@ -505,7 +674,11 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
       clienteId: cliente?.id ?? 0,
       emitenteId: emitente?.id ?? 0,
       observacao: checkout.observacao,
-      condicaoPagamentoId: checkout.condicao.id,
+      pagamentos: checkout.pagamentos.map((p) => ({
+        condicaoPagamentoId: p.condicao.id,
+        valor: p.valor,
+        parcelas: parcelasDaLinha(p.condicao, p.valor, dataVenda),
+      })),
       itens: itens.map((i) => ({
         sku: i.sku,
         quantidade: i.quantidade,
@@ -518,7 +691,6 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
         permiteDecimais: i.permiteDecimais,
         estoqueAtual: i.estoqueAtual,
       })),
-      parcelas: buildParcelas(checkout.condicao),
     };
 
     const validationResult = vendaSchema.safeParse(payload);
@@ -811,42 +983,6 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     );
     item.valorDesconto = parseFloat((gross - item.valorTotal).toFixed(2));
     setItens(itens.map((it, i) => (i === index ? item : it)));
-  };
-
-  const buildParcelas = (payment: CondicaoPagamento): ParcelaPreview[] => {
-    if (totalNet <= 0) return [];
-    const baseDate = dataVenda ? new Date(dataVenda + "T12:00:00") : new Date();
-    const result: ParcelaPreview[] = [];
-    let count = 1;
-    const entradaPercent = payment.entradaMinimaPercentual ?? 0;
-    if (entradaPercent > 0) {
-      result.push({
-        numeroParcela: count++,
-        dataVencimento: toLocalISODate(baseDate),
-        valorParcela: parseFloat(
-          (totalNet * (entradaPercent / 100)).toFixed(2),
-        ),
-      });
-    }
-    (payment.condicoesPagamentosParcelas || []).forEach((item) => {
-      const venc = new Date(baseDate);
-      venc.setDate(baseDate.getDate() + item.prazoDias);
-      result.push({
-        numeroParcela: count++,
-        dataVencimento: toLocalISODate(venc),
-        valorParcela: parseFloat(
-          (totalNet * (item.percentual / 100)).toFixed(2),
-        ),
-      });
-    });
-    if (result.length) {
-      const difference =
-        totalNet - result.reduce((sum, item) => sum + item.valorParcela, 0);
-      result[result.length - 1].valorParcela = parseFloat(
-        (result[result.length - 1].valorParcela + difference).toFixed(2),
-      );
-    }
-    return result;
   };
 
   const registerDirty = () => {
