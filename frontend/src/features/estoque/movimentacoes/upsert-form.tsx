@@ -136,7 +136,6 @@ export function MovimentacoesUpsertForm({
       tipoMovimentacao: editingItem?.tipoMovimentacao ?? "ENTRADA",
       usuarioId: editingItem?.usuario?.id ?? null,
       motivo: editingItem?.motivo ?? "",
-      observacao: editingItem?.observacao ?? "",
       itens: [] as MovimentacaoEstoqueItemFormValues[],
     } as MovimentacaoEstoqueFormValues,
     onSubmit: async ({ value }) => {
@@ -538,19 +537,6 @@ export function MovimentacoesUpsertForm({
                   getFieldError={(name, errors) =>
                     validationErrors["motivo"] || getFieldError(name, errors)
                   }
-                  maxLength={500}
-                />
-              )}
-            </form.Field>
-            <form.Field name="observacao">
-              {(field) => (
-                <FormFieldUI
-                  field={field}
-                  label="Observação"
-                  inputSize="full"
-                  readOnly={readOnly}
-                  placeholder="Detalhes adicionais..."
-                  getFieldError={getFieldError}
                   maxLength={500}
                 />
               )}

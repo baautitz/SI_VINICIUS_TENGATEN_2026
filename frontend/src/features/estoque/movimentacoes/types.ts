@@ -23,7 +23,6 @@ export interface MovimentacaoEstoque {
   origemTipo: OrigemMovimentacao;
   origemId?: number | null;
   motivo?: string | null;
-  observacao?: string | null;
   estornada: boolean;
   usuario?: { id: number; nome: string } | null;
   movimentacoesEstoquesItens: MovimentacaoEstoqueItem[];
@@ -82,11 +81,6 @@ export const movimentacaoEstoqueSchema = z.object({
     .trim()
     .min(5, "Motivo deve ter pelo menos 5 caracteres.")
     .max(500, "Motivo deve ter no máximo 500 caracteres."),
-  observacao: z
-    .string()
-    .max(500, "Observação deve ter no máximo 500 caracteres.")
-    .nullable()
-    .optional(),
   itens: z
     .array(movimentacaoEstoqueItemSchema)
     .min(1, "A movimentação deve conter pelo menos um produto."),
