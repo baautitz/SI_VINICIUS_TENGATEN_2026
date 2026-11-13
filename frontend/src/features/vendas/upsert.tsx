@@ -391,21 +391,23 @@ function VendasCheckout({
           );
         })}
 
-        <div
-          className={cn(
-            "flex items-center justify-between rounded-lg border px-4 py-2.5 font-semibold",
-            completo
-              ? "border-success/40 bg-success/5 text-success"
-              : falta > 0
-                ? "border-amber-500/40 bg-amber-500/5 text-amber-600"
-                : "border-destructive/40 bg-destructive/5 text-destructive",
-          )}
-        >
-          <span>
-            {completo ? "Pagamento completo" : falta > 0 ? "Restante" : "Excedente"}
-          </span>
-          <span>{formatCurrency(completo ? 0 : Math.abs(falta))}</span>
-        </div>
+        {totalNet > 0 && (
+          <div
+            className={cn(
+              "flex items-center justify-between rounded-lg border px-4 py-2.5 font-semibold",
+              completo
+                ? "border-success/40 bg-success/5 text-success"
+                : falta > 0
+                  ? "border-amber-500/40 bg-amber-500/5 text-amber-600"
+                  : "border-destructive/40 bg-destructive/5 text-destructive",
+            )}
+          >
+            <span>
+              {completo ? "Pagamento completo" : falta > 0 ? "Restante" : "Excedente"}
+            </span>
+            <span>{formatCurrency(completo ? 0 : Math.abs(falta))}</span>
+          </div>
+        )}
 
         {entradaFalta >= 0.01 && (
           <FieldError>
