@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { placaValida } from "@/lib/placa"
 import type { Transportadora } from "@/features/parceiros/transportadoras/types"
 import type { Estado } from "@/features/localizacao/estados/types"
 
@@ -16,7 +17,10 @@ export interface Veiculo {
 }
 
 export const veiculoSchema = z.object({
-  placa: z.string().min(1, "Placa é obrigatória."),
+  placa: z
+    .string()
+    .min(1, "Placa é obrigatória.")
+    .refine(placaValida, "Placa inválida. Use o formato ABC1234 ou ABC1D23."),
   estadoId: z.number().min(1, "Estado é obrigatório."),
   transportadoraId: z.number().nullable().optional(),
   rntrc: z.string().optional(),

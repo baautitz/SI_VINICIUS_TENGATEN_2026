@@ -1,4 +1,5 @@
 using Backend.Core.Features.Parceiros.Commands;
+using Backend.Core.Common.Helpers;
 using FluentValidation;
 
 namespace Backend.Core.Features.Parceiros.Validators.Commands;
@@ -9,7 +10,8 @@ public class CriarVeiculoCommandValidator : AbstractValidator<CriarVeiculoComman
     {
         RuleFor(x => x.Placa)
             .NotEmpty().WithMessage("Placa é obrigatória.")
-            .MaximumLength(10).WithMessage("Placa deve ter no máximo 10 caracteres.");
+            .MaximumLength(10).WithMessage("Placa deve ter no máximo 10 caracteres.")
+            .Must(PlacaVeiculo.EhValida).WithMessage("Placa inválida. Use o formato ABC1234 ou ABC1D23.");
 
         RuleFor(x => x.EstadoId)
             .GreaterThan(0).WithMessage("Estado é obrigatório.");
