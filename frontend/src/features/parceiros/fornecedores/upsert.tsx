@@ -370,46 +370,6 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
                 </form.Field>
               </div>
             )}
-          </div>
-
-          <div className="flex flex-wrap items-start gap-4">
-            <div className="w-fit">
-              <form.Field
-                name="telefone"
-                validators={{ onChange: telefoneSchema(fornecedorSchema.shape.telefone, isBrasil) }}
-              >
-                {(field) => (
-                  <FormFieldUI
-                    field={field}
-                    label="Telefone"
-                    mascara={mascaraTelefone(isBrasil)}
-                    mascaraLivre
-                    getFieldError={getFieldError}
-                    inputSize="medium"
-                    readOnly={readOnly}
-                  />
-                )}
-              </form.Field>
-            </div>
-            <div className="min-w-75 flex-1">
-              <form.Field
-                name="email"
-                validators={{ onChange: fornecedorSchema.shape.email }}
-              >
-                {(field) => (
-                  <FormFieldUI
-                    field={field}
-                    label="E-mail"
-                    getFieldError={getFieldError}
-                    inputSize="full"
-                    readOnly={readOnly}
-                  />
-                )}
-              </form.Field>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-start gap-4">
             {tipoPessoa === TipoPessoa.FISICA && (
               <div className="w-fit">
                 <form.Field
@@ -456,6 +416,43 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
                     </Field>
                   );
                 }}
+              </form.Field>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-start gap-4">
+            <div className="w-fit">
+              <form.Field
+                name="telefone"
+                validators={{ onChange: telefoneSchema(fornecedorSchema.shape.telefone, isBrasil) }}
+              >
+                {(field) => (
+                  <FormFieldUI
+                    field={field}
+                    label="Telefone"
+                    mascara={mascaraTelefone(isBrasil)}
+                    mascaraLivre
+                    getFieldError={getFieldError}
+                    inputSize="medium"
+                    readOnly={readOnly}
+                  />
+                )}
+              </form.Field>
+            </div>
+            <div className="min-w-75 flex-1">
+              <form.Field
+                name="email"
+                validators={{ onChange: fornecedorSchema.shape.email }}
+              >
+                {(field) => (
+                  <FormFieldUI
+                    field={field}
+                    label="E-mail"
+                    getFieldError={getFieldError}
+                    inputSize="full"
+                    readOnly={readOnly}
+                  />
+                )}
               </form.Field>
             </div>
           </div>

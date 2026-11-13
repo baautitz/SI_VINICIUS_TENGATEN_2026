@@ -345,6 +345,54 @@ function ClientesUpsertForm({
                 </form.Field>
               </div>
             )}
+            {tipoPessoa === TipoPessoa.FISICA && (
+              <div className="w-fit">
+                <form.Field
+                  name="sexo"
+                  validators={{ onChange: clienteSchema.shape.sexo }}
+                >
+                  {(field) => (
+                    <SexoSelect
+                      name={field.name}
+                      error={getFieldError(field.name, field.state.meta.errors)}
+                      required={campoObrigatorio(field)}
+                      value={field.state.value ?? ""}
+                      onChange={(val) => field.handleChange(val)}
+                      inputSize="medium"
+                      disabled={readOnly}
+                    />
+                  )}
+                </form.Field>
+              </div>
+            )}
+            <div className="w-fit">
+              <form.Field
+                name="dataNascimento"
+                validators={{ onChange: clienteSchema.shape.dataNascimento }}
+              >
+                {(field) => {
+                  const error = getFieldError(field.name, field.state.meta.errors);
+                  return (
+                    <Field data-invalid={!!error} className="w-48">
+                      <FieldLabel htmlFor={field.name}>
+                        {tipoPessoa === TipoPessoa.FISICA ? "Data de Nascimento" : "Data de Fundação"}
+                      </FieldLabel>
+                      <DatePicker
+                        id={field.name}
+                        name={field.name}
+                        onBlur={field.handleBlur}
+                        value={field.state.value}
+                        onChange={(val) => field.handleChange(val || "")}
+                        readOnly={readOnly}
+                        max={todayBrasiliaISODate()}
+                        className={cn("h-8", error && "border-destructive")}
+                      />
+                      {error && <FieldError>{error}</FieldError>}
+                    </Field>
+                  );
+                }}
+              </form.Field>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-start gap-4">
@@ -397,57 +445,6 @@ function ClientesUpsertForm({
                     readOnly={readOnly}
                   />
                 )}
-              </form.Field>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-start gap-4">
-            {tipoPessoa === TipoPessoa.FISICA && (
-              <div className="w-fit">
-                <form.Field
-                  name="sexo"
-                  validators={{ onChange: clienteSchema.shape.sexo }}
-                >
-                  {(field) => (
-                    <SexoSelect
-                      name={field.name}
-                      error={getFieldError(field.name, field.state.meta.errors)}
-                      required={campoObrigatorio(field)}
-                      value={field.state.value ?? ""}
-                      onChange={(val) => field.handleChange(val)}
-                      inputSize="medium"
-                      disabled={readOnly}
-                    />
-                  )}
-                </form.Field>
-              </div>
-            )}
-            <div className="w-fit">
-              <form.Field
-                name="dataNascimento"
-                validators={{ onChange: clienteSchema.shape.dataNascimento }}
-              >
-                {(field) => {
-                  const error = getFieldError(field.name, field.state.meta.errors);
-                  return (
-                    <Field data-invalid={!!error} className="w-48">
-                      <FieldLabel htmlFor={field.name}>
-                        {tipoPessoa === TipoPessoa.FISICA ? "Data de Nascimento" : "Data de Fundação"}
-                      </FieldLabel>
-                      <DatePicker
-                        id={field.name}
-                        name={field.name}
-                        onBlur={field.handleBlur}
-                        value={field.state.value}
-                        onChange={(val) => field.handleChange(val || "")}
-                        readOnly={readOnly}
-                        max={todayBrasiliaISODate()}
-                        className={cn("h-8", error && "border-destructive")}
-                      />
-                      {error && <FieldError>{error}</FieldError>}
-                    </Field>
-                  );
-                }}
               </form.Field>
             </div>
           </div>
