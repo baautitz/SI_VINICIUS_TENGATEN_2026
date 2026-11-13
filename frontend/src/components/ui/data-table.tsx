@@ -546,7 +546,8 @@ export function DataTable<TData, TValue>({
                   }
                   tabIndex={hasKeyboardNav ? 0 : -1}
                   className={[
-                    "group border-b transition-colors last:border-0",
+                    // scroll-mt: a linha focada não para escondida atrás do cabeçalho fixo (h-9).
+                    "group scroll-mt-10 border-b transition-colors last:border-0",
                     hasKeyboardNav ? "cursor-pointer focus:outline-none" : "",
                     hasKeyboardNav && focusedRowIndex === index
                       ? "bg-primary/5 outline-primary relative z-10 outline-2 -outline-offset-2"
