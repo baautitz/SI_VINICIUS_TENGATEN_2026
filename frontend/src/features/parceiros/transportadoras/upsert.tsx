@@ -29,6 +29,7 @@ import { Pais } from "@/features/localizacao/paises";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
 import { Spinner } from "@/ui/primitives";
 import { combinacaoDe } from "@/lib/atalhos";
+import { campoObrigatorio } from "@/utils/campo-obrigatorio"
 
 export interface TransportadorasUpsertProps {
   editingItem: Transportadora | null;
@@ -259,6 +260,7 @@ function TransportadorasUpsertForm({
                       setTipoPessoa(val);
                     }}
                     error={getFieldError(field.name, field.state.meta.errors)}
+                    required={campoObrigatorio(field)}
                     inputSize="small"
                     disabled={readOnly}
                   />
@@ -277,6 +279,7 @@ function TransportadorasUpsertForm({
                     name={field.name}
                     label="Nacionalidade"
                     error={getFieldError(field.name, field.state.meta.errors)}
+                    required={campoObrigatorio(field)}
                     initialItem={editingItem?.nacionalidade ?? itensIniciais?.nacionalidade}
                     onSelectId={(id) => {
                       field.handleChange(id ?? 0);
@@ -445,6 +448,7 @@ function TransportadorasUpsertForm({
                     <SexoSelect
                       name={field.name}
                       error={getFieldError(field.name, field.state.meta.errors)}
+                      required={campoObrigatorio(field)}
                       value={field.state.value ?? ""}
                       onChange={(val) => field.handleChange(val)}
                       inputSize="medium"

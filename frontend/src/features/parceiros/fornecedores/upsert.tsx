@@ -31,6 +31,7 @@ import { TipoPessoa } from "@/api/types";
 import { Pais } from "@/features/localizacao/paises";
 import { useUi, useWindow, useWindowCommands } from "@/ui/imperative";
 import { Spinner } from "@/ui/primitives";
+import { campoObrigatorio } from "@/utils/campo-obrigatorio"
 
 export interface FornecedoresUpsertProps {
   editingItem: Fornecedor | null;
@@ -250,6 +251,7 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
                     }}
                     disabled={readOnly}
                     error={getFieldError(field.name, field.state.meta.errors)}
+                    required={campoObrigatorio(field)}
                     inputSize="small"
                   />
                 )}
@@ -267,6 +269,7 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
                     name={field.name}
                     label="Nacionalidade"
                     error={getFieldError(field.name, field.state.meta.errors)}
+                    required={campoObrigatorio(field)}
                     initialItem={editingItem?.nacionalidade ?? itensIniciais?.nacionalidade}
                     disabled={readOnly}
                     onSelectId={(id) => {
@@ -419,6 +422,7 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
                     <SexoSelect
                       name={field.name}
                       error={getFieldError(field.name, field.state.meta.errors)}
+                      required={campoObrigatorio(field)}
                       value={field.state.value ?? ""}
                       onChange={(val) => field.handleChange(val)}
                       inputSize="medium"
@@ -523,6 +527,7 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
               name={field.name}
               label="Condição de pagamento padrão"
               error={getFieldError(field.name, field.state.meta.errors)}
+              required={campoObrigatorio(field)}
               initialItem={(editingItem?.condicaoPagamento?.id ? editingItem.condicaoPagamento : null) ?? itensIniciais?.condicaoPagamento}
               onSelectItem={(item) => { itens.current.condicaoPagamento = item; }}
               onSelectId={(id) => field.handleChange(id)}

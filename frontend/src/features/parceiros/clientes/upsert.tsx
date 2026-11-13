@@ -32,6 +32,7 @@ import { TipoPessoa } from "@/api/types";
 import { Pais } from "@/features/localizacao/paises";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
 import { Spinner } from "@/ui/primitives";
+import { campoObrigatorio } from "@/utils/campo-obrigatorio"
 
 export interface ClientesUpsertProps {
   editingItem: Cliente | null;
@@ -231,6 +232,7 @@ function ClientesUpsertForm({
                       setTipoPessoa(val);
                     }}
                     error={getFieldError(field.name, field.state.meta.errors)}
+                    required={campoObrigatorio(field)}
                     inputSize="small"
                     disabled={readOnly}
                   />
@@ -247,6 +249,7 @@ function ClientesUpsertForm({
                     name={field.name}
                     label="Nacionalidade"
                     error={getFieldError(field.name, field.state.meta.errors)}
+                    required={campoObrigatorio(field)}
                     initialItem={editingItem?.nacionalidade}
                     onSelectId={(id) => {
                       field.handleChange(id ?? 0);
@@ -411,6 +414,7 @@ function ClientesUpsertForm({
                     <SexoSelect
                       name={field.name}
                       error={getFieldError(field.name, field.state.meta.errors)}
+                      required={campoObrigatorio(field)}
                       value={field.state.value ?? ""}
                       onChange={(val) => field.handleChange(val)}
                       inputSize="medium"
