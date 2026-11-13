@@ -28,6 +28,7 @@ import { fornecedorSchema, Fornecedor, FornecedorFormValues, ItensSelecionados }
 import { useQuery } from "@tanstack/react-query";
 import { fornecedoresApi } from "@/api/parceiros";
 import { TipoPessoa } from "@/api/types";
+import { documentoSchema, mascaraDocumento, mascaraTelefone, telefoneParaApi, telefoneSchema } from "@/features/parceiros/documento";
 import { Pais } from "@/features/localizacao/paises";
 import { useUi, useWindow, useWindowCommands } from "@/ui/imperative";
 import { Spinner } from "@/ui/primitives";
@@ -127,6 +128,7 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
         bairroId: value.bairroId || null,
         condicaoPagamentoId: value.condicaoPagamentoId || null,
         rgIe: isBrasil ? value.rgIe : "",
+        telefone: telefoneParaApi(value.telefone, isBrasil),
         sexo: value.tipoPessoa === TipoPessoa.FISICA ? value.sexo : "",
         dataNascimento: value.dataNascimento || null,
       };
@@ -326,14 +328,7 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
             <div className="w-fit">
               <form.Field
                 name="cpfCnpj"
-                validators={{
-                  onChange: ({ value }) => {
-                    if (!value || value.trim() === "") {
-                      return isBrasil ? "CPF/CNPJ é obrigatório." : "Documento é obrigatório.";
-                    }
-                    return undefined;
-                  },
-                }}
+                validators={{ onChange: documentoSchema(isBrasil, tipoPessoa) }}
               >
                 {(field) => {
                   let label = "Documento";
@@ -344,6 +339,7 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
                     <FormFieldUI
                       field={field}
                       label={label}
+                      mascara={mascaraDocumento(isBrasil, tipoPessoa)}
                       getFieldError={getFieldError}
                       inputSize="medium"
                       readOnly={readOnly}
@@ -380,12 +376,14 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
             <div className="w-fit">
               <form.Field
                 name="telefone"
-                validators={{ onChange: fornecedorSchema.shape.telefone }}
+                validators={{ onChange: telefoneSchema(fornecedorSchema.shape.telefone, isBrasil) }}
               >
                 {(field) => (
                   <FormFieldUI
                     field={field}
                     label="Telefone"
+                    mascara={mascaraTelefone(isBrasil)}
+                    mascaraLivre
                     getFieldError={getFieldError}
                     inputSize="medium"
                     readOnly={readOnly}

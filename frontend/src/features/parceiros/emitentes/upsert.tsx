@@ -21,6 +21,7 @@ import { emitenteSchema, Emitente, EmitenteFormValues } from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { emitentesApi } from "@/api/parceiros";
 import { TipoPessoa } from "@/api/types";
+import { documentoSchema, mascaraDocumento, mascaraTelefone, telefoneParaApi, telefoneSchema } from "@/features/parceiros/documento";
 import { Pais } from "@/features/localizacao/paises";
 import { Spinner } from "@/ui/primitives";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
@@ -119,6 +120,7 @@ function EmitentesUpsertForm({
         ...value,
         bairroId: value.bairroId || null,
         rgIe: isBrasil ? value.rgIe : "",
+        telefone: telefoneParaApi(value.telefone, isBrasil),
         sexo: value.tipoPessoa === TipoPessoa.FISICA ? value.sexo : "",
         dataNascimento: value.dataNascimento || null,
       };
@@ -291,14 +293,7 @@ function EmitentesUpsertForm({
             <div className="w-fit">
               <form.Field
                 name="cpfCnpj"
-                validators={{
-                  onChange: ({ value }) => {
-                    if (!value || value.trim() === "") {
-                      return isBrasil ? "CPF/CNPJ é obrigatório." : "Documento é obrigatório.";
-                    }
-                    return undefined;
-                  },
-                }}
+                validators={{ onChange: documentoSchema(isBrasil, tipoPessoa) }}
               >
                 {(field) => {
                   let label = "Documento";
@@ -309,6 +304,7 @@ function EmitentesUpsertForm({
                     <FormFieldUI
                       field={field}
                       label={label}
+                      mascara={mascaraDocumento(isBrasil, tipoPessoa)}
                       getFieldError={getFieldError}
                       inputSize="medium"
                       readOnly={readOnly}
@@ -379,12 +375,14 @@ function EmitentesUpsertForm({
             <div className="w-fit">
               <form.Field
                 name="telefone"
-                validators={{ onChange: emitenteSchema.shape.telefone }}
+                validators={{ onChange: telefoneSchema(emitenteSchema.shape.telefone, isBrasil) }}
               >
                 {(field) => (
                   <FormFieldUI
                     field={field}
                     label="Telefone"
+                    mascara={mascaraTelefone(isBrasil)}
+                    mascaraLivre
                     getFieldError={getFieldError}
                     inputSize="medium"
                     readOnly={readOnly}
