@@ -6,7 +6,7 @@ import { ShoppingBag } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/ui/composites";
 import { FeatureLayout } from "@/ui/composites";
-import { Badge } from "@/ui/primitives";
+import { StatusVendaBadge } from "./status-venda-badge";
 import { getActionsColumn, RowAction } from "@/utils/table-columns";
 import type { Venda } from "./types";
 import type { FeatureListProps } from "@/hooks/use-feature-orchestrator";
@@ -90,25 +90,7 @@ export function VendasList({
       accessorKey: "statusDevolucao",
       header: "Status",
       size: 100,
-      cell: ({ row }) => {
-        return (
-          <Badge
-            variant={
-              row.original.statusDevolucao === "TOTAL"
-                ? "destructive"
-                : row.original.statusDevolucao === "PARCIAL"
-                  ? "info"
-                  : "success"
-            }
-          >
-            {row.original.statusDevolucao === "TOTAL"
-              ? "Devolvida"
-              : row.original.statusDevolucao === "PARCIAL"
-                ? "Devolvida parcialmente"
-                : "Confirmada"}
-          </Badge>
-        );
-      },
+      cell: ({ row }) => <StatusVendaBadge status={row.original.statusDevolucao} />,
     },
     getActionsColumn<Venda>({
       onView,
