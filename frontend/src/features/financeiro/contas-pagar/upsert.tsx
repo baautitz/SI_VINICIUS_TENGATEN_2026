@@ -169,9 +169,9 @@ export function ContasPagarUpsertForm({ editingItem, readOnly = false }: ContasP
   useWindowCommands(commands);
 
   const erro = (n: string) => erros[n] ?? getFieldError(n, []);
-  const campo = (n: string, rotulo: string, el: React.ReactNode) => (
+  const campo = (n: string, rotulo: string, el: React.ReactNode, obrigatorio = false) => (
     <div className="flex flex-col gap-2">
-      <FieldLabel>{rotulo}</FieldLabel>
+      <FieldLabel required={obrigatorio}>{rotulo}</FieldLabel>
       {el}
       {erro(n) && <FieldError>{erro(n)}</FieldError>}
     </div>
@@ -228,7 +228,7 @@ export function ContasPagarUpsertForm({ editingItem, readOnly = false }: ContasP
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div className="md:col-span-2">
             {campo("descricao", "Descrição",
-              <Input value={descricao} onChange={(e) => setDescricao(e.target.value)} readOnly={somenteLeitura} inputSize="full" maxLength={150} />)}
+              <Input value={descricao} onChange={(e) => setDescricao(e.target.value)} readOnly={somenteLeitura} inputSize="full" maxLength={150} />, true)}
           </div>
           {!isEditMode &&
             campo("numeroDocumento", "Nº do documento",
@@ -241,6 +241,7 @@ export function ContasPagarUpsertForm({ editingItem, readOnly = false }: ContasP
               <FornecedorInput
                 name="fornecedorId"
                 error={erro("fornecedorId")}
+                required
                 initialItem={fornecedor}
                 onSelectId={() => undefined}
                 onSelectItem={setFornecedor}
@@ -264,7 +265,7 @@ export function ContasPagarUpsertForm({ editingItem, readOnly = false }: ContasP
                   onNumberChange={setValorTotal}
                   onBlur={() => gerar(valorTotal, condicao, dataEmissao)}
                   className="text-right font-semibold"
-                />)}
+                />, true)}
             </div>
             <CondicaoPagamentoInput
               name="condicaoPagamentoId"
@@ -282,7 +283,7 @@ export function ContasPagarUpsertForm({ editingItem, readOnly = false }: ContasP
         {isEditMode && (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {campo("dataVencimento", "Vencimento",
-              <DatePicker value={vencimento} onChange={(v) => setVencimento(v ?? "")} readOnly={somenteLeitura} />)}
+              <DatePicker value={vencimento} onChange={(v) => setVencimento(v ?? "")} readOnly={somenteLeitura} />, true)}
             {campo("valor", "Valor (R$)",
               <NumberInput
                 inputSize="full"
@@ -292,7 +293,7 @@ export function ContasPagarUpsertForm({ editingItem, readOnly = false }: ContasP
                 onNumberChange={setValor}
                 readOnly={somenteLeitura}
                 className="text-right font-semibold"
-              />)}
+              />, true)}
           </div>
         )}
 
