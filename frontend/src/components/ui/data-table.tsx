@@ -288,6 +288,19 @@ export function DataTable<TData, TValue>({
           fireAndForget(() => onEstornarRow(rowData));
         },
       },
+      ...(["paginaAnterior", "paginaSeguinte"] as const).map((atalho) => {
+        const destino = atalho === "paginaAnterior" ? pageIndex - 1 : pageIndex + 1;
+        return {
+          id: `table.${atalho === "paginaAnterior" ? "prev" : "next"}-page`,
+          hotkey: combinacaoDe(atalho),
+          label: atalho === "paginaAnterior" ? "Página anterior" : "Próxima página",
+          enabled: !loading && destino >= 1 && destino <= pageCount,
+          run: (event: KeyboardEvent) => {
+            event.preventDefault();
+            onPageChange(destino);
+          },
+        };
+      }),
       ...(["excluirLinha", "excluirLinhaBackspace"] as const).map((atalho) => ({
         id: `table.delete-row.${atalho === "excluirLinha" ? "delete" : "backspace"}`,
         hotkey: combinacaoDe(atalho),
@@ -309,7 +322,7 @@ export function DataTable<TData, TValue>({
         },
       })),
     ],
-    [activeSearchInputRef, colunasOrdenaveis.length, focusedRowIndex, onBaixarRow, onDeleteRow, onEditRow, onEstornarRow, onRowSelect, podeBaixarRow, podeEstornarRow, rows],
+    [activeSearchInputRef, colunasOrdenaveis.length, focusedRowIndex, loading, onBaixarRow, onDeleteRow, onEditRow, onEstornarRow, onPageChange, onRowSelect, pageCount, pageIndex, podeBaixarRow, podeEstornarRow, rows],
   );
 
   useWindowCommands(commands);
@@ -613,6 +626,7 @@ export function DataTable<TData, TValue>({
               size="icon-lg"
               onClick={() => onPageChange(pageIndex - 1)}
               disabled={pageIndex <= 1 || loading}
+              title={`Página anterior (${combinacaoDe("paginaAnterior")})`}
             >
               <span className="sr-only">Página anterior</span>
               <ChevronLeft />
@@ -622,6 +636,7 @@ export function DataTable<TData, TValue>({
               size="icon-lg"
               onClick={() => onPageChange(pageIndex + 1)}
               disabled={pageIndex >= pageCount || loading}
+              title={`Próxima página (${combinacaoDe("paginaSeguinte")})`}
             >
               <span className="sr-only">Próxima página</span>
               <ChevronRight />

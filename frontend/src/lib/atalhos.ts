@@ -40,6 +40,8 @@ export const ATALHOS = {
   confirmar: atalho("Alt+Enter", "Confirmar"),
   editarLinha: atalho("Alt+E", "Editar linha"),
   baixarLinha: atalho("Alt+A", "Baixar linha"),
+  paginaAnterior: atalho("Alt+ArrowUp", "Pagina anterior"),
+  paginaSeguinte: atalho("Alt+ArrowDown", "Proxima pagina"),
   abrirLinha: atalho("Enter", "Abrir linha"),
   excluirLinha: atalho("Delete", "Excluir linha"),
   excluirLinhaBackspace: atalho("Backspace", "Excluir linha (Backspace)"),
