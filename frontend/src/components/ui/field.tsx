@@ -116,7 +116,7 @@ function FieldLabel({
     >
       {children}
       {required && (
-        <span aria-hidden="true" data-slot="field-required" className="text-destructive">
+        <span aria-hidden="true" data-slot="field-required" className="-ml-1.5 text-destructive">
           *
         </span>
       )}
