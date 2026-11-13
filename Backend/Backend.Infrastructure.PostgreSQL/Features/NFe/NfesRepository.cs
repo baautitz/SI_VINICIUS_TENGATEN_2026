@@ -27,6 +27,7 @@ public class NfesRepository : INfesRepository
     private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
     {
         ["numero"] = "numero",
+        ["serie"] = "serie",
         ["tipo"] = "tipo_operacao::text",
         ["emissao"] = "data_emissao",
         ["chave"] = "chave_acesso",
