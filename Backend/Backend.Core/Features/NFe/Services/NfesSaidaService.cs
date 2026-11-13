@@ -39,6 +39,9 @@ public sealed class NfesSaidaService : BaseService
     public static bool EhConflito(IEnumerable<ResultadoErro> erros)
         => erros.Any(e => e.Code is VendaJaTemNfe or NfeEntradaNaoCancelavel or NfeNaoEmitida or NfeJaCancelada);
 
+    public Task<NfeAtiva?> ObterNfeAtivaDaVenda(int vendaId)
+        => _nfesRepository.ObterNfeEmitidaDaVenda(vendaId);
+
     public async Task<Resultado<Nfes>> EmitirDeVenda(int vendaId)
     {
         var venda = await _vendasService.ObterVendaPorId(vendaId);

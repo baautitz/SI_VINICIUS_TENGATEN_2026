@@ -65,6 +65,12 @@ public class NfesController : ControllerBase
         return CreatedAtAction(nameof(GetNfe), new { id = result.Data!.NfeId }, result);
     }
 
+    [HttpGet("api/vendas/{vendaId:int}/nfe")]
+    [ProducesResponseType(typeof(NfeAtiva), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<NfeAtiva>> NfeAtivaDaVenda(int vendaId)
+        => await _saidaService.ObterNfeAtivaDaVenda(vendaId) is { } ativa ? Ok(ativa) : NotFound();
+
     [HttpPost("api/vendas/{vendaId:int}/nfe")]
     [ProducesResponseType(typeof(Resultado<Nfes>), StatusCodes.Status201Created)]
     public async Task<ActionResult<Resultado<Nfes>>> EmitirDeVenda(int vendaId)
