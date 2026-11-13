@@ -138,6 +138,16 @@
     scroll-margin-block: 1.5rem;
   }
 
+  /* Texto não é selecionável com o mouse; campos editáveis continuam. */
+  body {
+    user-select: none;
+  }
+  input,
+  textarea,
+  [contenteditable]:not([contenteditable="false"]) {
+    user-select: text;
+  }
+
   * {
     @apply border-border outline-ring/50;
     }
