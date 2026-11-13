@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { comMilhares, editarNumero } from "@/lib/numero";
 import { Input, type InputProps } from "./input";
 
 interface NumberInputProps extends Omit<InputProps, "value" | "onChange"> {
@@ -11,13 +12,6 @@ interface NumberInputProps extends Omit<InputProps, "value" | "onChange"> {
   decimals?: number;
   allowNegative?: boolean;
 }
-
-// Máscara de milhares: o estado guarda "1234,50"; a tela mostra "1.234,50".
-const withThousands = (v: string) => {
-  const [int, frac] = v.split(",");
-  const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  return frac === undefined ? grouped : grouped + "," + frac;
-};
 
 const NumberInput = ({
   className,
@@ -79,56 +73,26 @@ const NumberInput = ({
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target;
-    const originalValue = input.value;
-    const selectionStart = input.selectionStart;
+    const input = e.currentTarget;
+    const evento = e.nativeEvent as InputEvent;
+    const edicao = editarNumero(
+      input.value,
+      input.selectionStart ?? input.value.length,
+      internalValue,
+      { decimais: decimals, negativo: allowNegative },
+      evento.data,
+      evento.inputType,
+    );
+    // Corrige texto e cursor no próprio evento: editar no meio não joga o cursor para o fim.
+    input.value = edicao.formatado;
+    input.setSelectionRange(edicao.cursor, edicao.cursor);
 
-    let val = originalValue;
-    // "." digitado vira vírgula; os pontos já presentes são da máscara.
-    if (
-      (e.nativeEvent as InputEvent).data === "." &&
-      selectionStart !== null
-    ) {
-      val =
-        val.slice(0, selectionStart - 1) + "," + val.slice(selectionStart);
-    }
-    const negative = allowNegative && val.trimStart().startsWith("-");
-    val = val.replace(/[^0-9,]/g, "");
-    if (negative) val = "-" + val;
-
-    const parts = val.split(",");
-    if (parts.length > 2) {
-      val = parts[0] + "," + parts.slice(1).join("");
-    }
-
-    if (decimals > 0) {
-      const splitVal = val.split(",");
-      if (splitVal.length === 2 && splitVal[1].length > decimals) {
-        val = splitVal[0] + "," + splitVal[1].substring(0, decimals);
-      }
-    } else {
-      val = val.replace(/,/g, "");
-    }
-
+    const val = edicao.valor;
     setInternalValue(val);
     onValueChange?.(val);
-    
+
     const numericValue = toNum(val);
     onNumberChange?.(isNaN(numericValue) ? 0 : numericValue);
-
-    if (selectionStart !== null) {
-      // Posiciona o cursor após o mesmo número de caracteres significativos.
-      let keep = originalValue.slice(0, selectionStart).replace(/[^0-9,-]/g, "").length;
-      const shown = withThousands(val);
-      let newPosition = 0;
-      while (newPosition < shown.length && keep > 0) {
-        if (shown[newPosition] !== ".") keep--;
-        newPosition++;
-      }
-      requestAnimationFrame(() => {
-        input.setSelectionRange(newPosition, newPosition);
-      });
-    }
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -163,7 +127,7 @@ const NumberInput = ({
       {...props}
       ref={ref}
       type="text"
-      value={withThousands(internalValue)}
+      value={comMilhares(internalValue)}
       onChange={handleChange}
       onBlur={handleBlur}
       onFocus={handleFocus}

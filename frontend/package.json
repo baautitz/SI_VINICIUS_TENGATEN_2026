@@ -11,6 +11,7 @@
     "test:documento-filtro": "node --no-warnings --experimental-strip-types scripts/tests/test-documento-filtro.mjs",
     "test:ordenacao": "node --no-warnings --experimental-strip-types scripts/tests/test-ordenacao.mjs",
     "test:mascara": "node --no-warnings --experimental-strip-types scripts/tests/test-mascara.mjs",
+    "test:numero": "node --no-warnings --experimental-strip-types scripts/tests/test-numero.mjs",
     "test:placa": "node --no-warnings --experimental-strip-types scripts/tests/test-placa.mjs",
     "test:debounce":"node --no-warnings --experimental-strip-types scripts/tests/test-debounce.mjs",
     "test:debounce-desmontar": "node scripts/tests/test-debounce-desmontar.mjs",
