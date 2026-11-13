@@ -10,6 +10,7 @@ import { contasPagarApi } from "@/api/financeiro";
 import { comprasApi } from "@/api/compras";
 import { vendasApi } from "@/api/vendas";
 import { VendaInput } from "@/components/entity-inputs/venda-input";
+import { SkuViewInput } from "@/components/entity-inputs/sku-view-input";
 import { CompraInput } from "@/components/entity-inputs/compra-input";
 import { TextoWindow, type TextoWindowProps } from "@/components/texto-window";
 import { Button, Field, FieldLabel, HotkeyKbd, Input, Kbd, Spinner, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Textarea } from "@/ui/primitives";
@@ -378,7 +379,7 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
                 return (
                   <TableRow key={i.numeroItem}>
                     <TableCell>{i.numeroItem}</TableCell>
-                    {campo(0, "SKU", i.sku.sku)}
+                    <TableCell><SkuViewInput name={`nfe-sku-${i.numeroItem}`} sku={i.sku.sku} /></TableCell>
                     {campo(1, "Descrição", i.descricaoItem)}
                     {campo(2, "Quantidade", Number(i.quantidade).toLocaleString("pt-BR"), true)}
                     {campo(3, "Unidade", i.unidadeMedida.sigla)}
