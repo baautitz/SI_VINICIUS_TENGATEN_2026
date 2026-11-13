@@ -25,6 +25,7 @@ import { Pais } from "@/features/localizacao/paises";
 import { Spinner } from "@/ui/primitives";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
 import { combinacaoDe } from "@/lib/atalhos";
+import { campoObrigatorio } from "@/utils/campo-obrigatorio"
 
 export interface EmitentesUpsertProps {
   editingItem: Emitente | null;
@@ -222,6 +223,7 @@ function EmitentesUpsertForm({
                     }}
                     disabled={readOnly}
                     error={getFieldError(field.name, field.state.meta.errors)}
+                    required={campoObrigatorio(field)}
                     inputSize="small"
                   />
                 )}
@@ -237,6 +239,7 @@ function EmitentesUpsertForm({
                     name={field.name}
                     label="Nacionalidade"
                     error={getFieldError(field.name, field.state.meta.errors)}
+                    required={campoObrigatorio(field)}
                     initialItem={editingItem?.nacionalidade}
                     onSelectId={(id) => {
                       field.handleChange(id ?? 0);
@@ -418,6 +421,7 @@ function EmitentesUpsertForm({
                     <SexoSelect
                       name={field.name}
                       error={getFieldError(field.name, field.state.meta.errors)}
+                      required={campoObrigatorio(field)}
                       value={field.state.value ?? ""}
                       onChange={(val) => field.handleChange(val)}
                       inputSize="medium"

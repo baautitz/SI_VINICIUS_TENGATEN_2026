@@ -185,6 +185,7 @@ function BairrosUpsertForm({
                 <CidadeInput
                   name={field.name}
                   error={error}
+                  required
                   initialItem={editingItem?.cidade}
                   disabled={readOnly}
                   onSelectId={(id) =>

@@ -43,6 +43,7 @@ import { cn } from "@/lib/utils";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
 import { Spinner } from "@/ui/primitives";
 import { navigationCell } from "@/ui/keyboard-navigation";
+import { campoObrigatorio } from "@/utils/campo-obrigatorio";
 
 export interface CondicoesUpsertProps {
   editingItem: CondicaoPagamento | null;
@@ -401,6 +402,7 @@ function CondicoesUpsertForm({
                             <MetodoPagamentoInput
                               name={field.name}
                               error={error}
+                              required={campoObrigatorio(field)}
                               initialItem={editingItem?.metodoPagamento ?? null}
                               onSelectCodigo={(codigo) =>
                                 field.handleChange(codigo ?? "")

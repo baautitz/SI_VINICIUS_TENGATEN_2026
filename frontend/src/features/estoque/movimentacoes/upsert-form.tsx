@@ -498,7 +498,7 @@ export function MovimentacoesUpsertForm({
                     <form.Field name="tipoMovimentacao">
                       {(field) => (
                         <Field>
-                          <FieldLabel htmlFor={field.name}>
+                          <FieldLabel htmlFor={field.name} required>
                             Tipo de Movimentação
                           </FieldLabel>
                           <Select
@@ -532,6 +532,7 @@ export function MovimentacoesUpsertForm({
                 <FormFieldUI
                   field={field}
                   label="Motivo"
+                  required
                   inputSize="full"
                   readOnly={readOnly}
                   placeholder="Perda, avaria, uso interno, acerto..."
@@ -571,6 +572,7 @@ export function MovimentacoesUpsertForm({
                           key={skuInputKey}
                           name="add-sku"
                           label="Itens da Movimentação"
+                          required
                           onSelectSku={handleSkuAdded}
                         />
                       </div>

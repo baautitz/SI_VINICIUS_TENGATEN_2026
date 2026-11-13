@@ -33,7 +33,7 @@ export function CancelarNfeWindow({ numero }: { numero: number }) {
         O cancelamento da NF-e {numero} é apenas fiscal: não desfaz a venda, o estoque nem o financeiro. Esta ação não pode ser desfeita.
       </p>
       <Field>
-        <FieldLabel htmlFor="nfe-justificativa">Justificativa</FieldLabel>
+        <FieldLabel htmlFor="nfe-justificativa" required>Justificativa</FieldLabel>
         <Textarea
           id="nfe-justificativa"
           autoFocus

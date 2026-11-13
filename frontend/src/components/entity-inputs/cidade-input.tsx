@@ -13,6 +13,7 @@ interface CidadeInputProps {
   name: string
   label?: string
   error?: string
+  required?: boolean
   disabled?: boolean
   initialItem?: Cidade | null
   onSelectId: (id: number | null) => void
@@ -23,6 +24,7 @@ export function CidadeInput({
   name,
   label = "Cidade",
   error,
+  required,
   disabled = false,
   initialItem,
   onSelectId,
@@ -34,6 +36,7 @@ export function CidadeInput({
       name={name}
       label={label}
       error={error}
+      required={required}
       disabled={disabled}
       initialItem={initialItem}
       onSelectId={onSelectId}

@@ -13,6 +13,7 @@ interface BairroInputProps {
   name: string
   label?: string
   error?: string
+  required?: boolean
   disabled?: boolean
   initialItem?: Bairro | null
   onSelectId: (id: number | null) => void
@@ -23,6 +24,7 @@ export function BairroInput({
   name,
   label = "Bairro",
   error,
+  required,
   disabled = false,
   initialItem,
   onSelectId,
@@ -34,6 +36,7 @@ export function BairroInput({
       name={name}
       label={label}
       error={error}
+      required={required}
       disabled={disabled}
       initialItem={initialItem}
       onSelectId={onSelectId}

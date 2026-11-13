@@ -982,6 +982,7 @@ function CompraForm({
               ) : (
                 <FornecedorInput
                   name="compra-fornecedor"
+                  required
                   initialItem={fornecedor}
                   onSelectItem={(f) => {
                     setFornecedor(f);
@@ -1007,6 +1008,7 @@ function CompraForm({
                         <TransportadoraInput
                           key={transportadoraEscolhida?.id ?? "sem"}
                           name="compra-transportadora"
+                          required={freteTerceiro > 0}
                           initialItem={transportadoraEscolhida ?? null}
                           onSelectId={setTransportadoraId}
                           label="Transportadora do frete"
@@ -1091,7 +1093,7 @@ function CompraForm({
               <div className="flex w-full flex-row gap-2">
                 <div className="w-[20%]">
                   <Field>
-                    <FieldLabel>Data da Compra</FieldLabel>
+                    <FieldLabel required>Data da Compra</FieldLabel>
                     <DatePicker
                       value={dataCompra}
                       onChange={mudarChegada}
@@ -1106,6 +1108,7 @@ function CompraForm({
                 <div className="w-[80%]">
                   <EmitenteInput
                     name="compra-emitente"
+                    required
                     initialItem={emitente}
                     onSelectItem={setEmitente}
                     onSelectId={() => {}}
@@ -1392,7 +1395,7 @@ function CompraForm({
                   </div>
                   {freteTerceiro > 0 && !readOnly && (
                     <Field className="w-64">
-                      <FieldLabel>Vencimento do frete de terceiro</FieldLabel>
+                      <FieldLabel required>Vencimento do frete de terceiro</FieldLabel>
                       <DatePicker
                         value={vencFrete}
                         min={dataCompra}

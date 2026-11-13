@@ -183,7 +183,7 @@ export function EstornoWindow({ pergunta, aviso }: EstornoWindowProps) {
       <p className="text-destructive text-sm font-semibold">{aviso}</p>
       <p className="text-sm">{pergunta}</p>
       <Field data-invalid={!!error}>
-        <FieldLabel htmlFor="motivo-estorno">Motivo do Estorno</FieldLabel>
+        <FieldLabel htmlFor="motivo-estorno" required>Motivo do Estorno</FieldLabel>
         <Textarea
           id="motivo-estorno"
           ref={registerMotivo}

@@ -153,7 +153,7 @@ export function BaixaParcelaWindow({
 
         <Field data-invalid={!!error}>
           <div className="flex items-center justify-between">
-            <FieldLabel className="text-right font-semibold">
+            <FieldLabel required className="text-right font-semibold">
               {getFieldLabel()}
             </FieldLabel>
             <NumberInput

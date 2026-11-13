@@ -230,7 +230,7 @@ export function DevolucaoCompraWindow({ compraId, total: devolucaoTotal }: Devol
         />
       </Field>
       <Field data-invalid={!!error}>
-        <FieldLabel htmlFor="motivo-devolucao-compra">Motivo da Devolução de compra</FieldLabel>
+        <FieldLabel htmlFor="motivo-devolucao-compra" required>Motivo da Devolução de compra</FieldLabel>
         <Textarea
           id="motivo-devolucao-compra"
           ref={registerMotivo}

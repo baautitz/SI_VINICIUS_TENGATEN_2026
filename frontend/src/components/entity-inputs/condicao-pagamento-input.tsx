@@ -11,6 +11,7 @@ interface CondicaoPagamentoInputProps {
   name: string;
   label?: string;
   error?: string;
+  required?: boolean;
   initialItem?: CondicaoPagamento | null;
   onSelectId: (id: number | null) => void;
   onSelectItem?: (item: CondicaoPagamento | null) => void;
@@ -21,6 +22,7 @@ export function CondicaoPagamentoInput({
   name,
   label = "Condição de Pagamento",
   error,
+  required,
   initialItem,
   onSelectId,
   onSelectItem,
@@ -32,6 +34,7 @@ export function CondicaoPagamentoInput({
       name={name}
       label={label}
       error={error}
+      required={required}
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={async (item) => {

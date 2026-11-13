@@ -10,6 +10,7 @@ interface UnidadeMedidaInputProps {
   name: string
   label?: string
   error?: string
+  required?: boolean
   disabled?: boolean
   initialItem?: UnidadeMedida | null
   onSelectId: (id: number | null) => void
@@ -20,6 +21,7 @@ export function UnidadeMedidaInput({
   name,
   label = "Unidade de Medida",
   error,
+  required,
   disabled = false,
   initialItem,
   onSelectId,
@@ -31,6 +33,7 @@ export function UnidadeMedidaInput({
       name={name}
       label={label}
       error={error}
+      required={required}
       disabled={disabled}
       initialItem={initialItem}
       onSelectId={onSelectId}

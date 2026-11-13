@@ -12,6 +12,7 @@ interface ClienteInputProps {
   name: string;
   label?: string;
   error?: string;
+  required?: boolean;
   initialItem?: Cliente | null;
   onSelectId: (id: number | null) => void;
   onSelectItem?: (item: Cliente | null) => void;
@@ -22,6 +23,7 @@ export function ClienteInput({
   name,
   label = "Cliente",
   error,
+  required,
   initialItem,
   onSelectId,
   onSelectItem,
@@ -33,6 +35,7 @@ export function ClienteInput({
       name={name}
       label={label}
       error={error}
+      required={required}
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}

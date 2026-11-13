@@ -61,7 +61,7 @@ export function EstornarDevolucaoWindow({ devolucaoId }: EstornarDevolucaoWindow
         estorne o pagamento primeiro. A devolução fica registrada como estornada. Esta ação não pode ser desfeita.
       </p>
       <Field>
-        <FieldLabel htmlFor="devolucao-motivo-estorno">Motivo do estorno</FieldLabel>
+        <FieldLabel htmlFor="devolucao-motivo-estorno" required>Motivo do estorno</FieldLabel>
         <Textarea
           id="devolucao-motivo-estorno"
           autoFocus

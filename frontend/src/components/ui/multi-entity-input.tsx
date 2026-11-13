@@ -28,6 +28,7 @@ interface MultiEntityInputProps {
   label: string;
   placeholder?: string;
   error?: string;
+  required?: boolean;
   selectedItems: MultiEntityItem[];
   availableItems: MultiEntityItem[];
   onChange: (items: MultiEntityItem[]) => void;
@@ -43,6 +44,7 @@ export function MultiEntityInput({
   label,
   placeholder = "Buscar...",
   error,
+  required,
   selectedItems,
   availableItems,
   onChange,
@@ -66,7 +68,7 @@ export function MultiEntityInput({
 
   return (
     <Field data-invalid={!!error} className="w-full">
-      <FieldLabel htmlFor={name}>{label}</FieldLabel>
+      <FieldLabel htmlFor={name} required={required}>{label}</FieldLabel>
 
       <div className="w-full flex gap-1 items-start">
         <div className="flex-1">

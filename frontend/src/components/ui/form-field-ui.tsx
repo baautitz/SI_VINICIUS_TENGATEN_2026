@@ -2,6 +2,7 @@ import React from "react"
 import { Field, FieldLabel, FieldError } from "@/ui/primitives"
 import { Input, type InputProps } from "@/ui/primitives"
 import { NumberInput } from "@/ui/composites"
+import { campoObrigatorio } from "@/utils/campo-obrigatorio"
 
 interface FormFieldUIProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -11,6 +12,7 @@ interface FormFieldUIProps {
   inputSize?: "small" | "medium" | "large" | "full"
   type?: React.HTMLInputTypeAttribute
   decimals?: number
+  required?: boolean
 }
 
 export function FormFieldUI({
@@ -20,6 +22,7 @@ export function FormFieldUI({
   inputSize = "full",
   type = "text",
   decimals = 2,
+  required,
   onChangeOverride,
   ...props
 }: FormFieldUIProps &
@@ -32,7 +35,7 @@ export function FormFieldUI({
 
   return (
     <Field data-invalid={!!error}>
-      <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+      <FieldLabel htmlFor={field.name} required={required ?? campoObrigatorio(field)}>{label}</FieldLabel>
       {isNumeric ? (
         <NumberInput
           id={field.name}

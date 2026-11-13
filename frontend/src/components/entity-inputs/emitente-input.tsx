@@ -12,6 +12,7 @@ interface EmitenteInputProps {
   name: string;
   label?: string;
   error?: string;
+  required?: boolean;
   initialItem?: Emitente | null;
   onSelectId: (id: number | null) => void;
   onSelectItem?: (item: Emitente | null) => void;
@@ -24,6 +25,7 @@ export function EmitenteInput({
   name,
   label = "Emitente",
   error,
+  required,
   initialItem,
   onSelectId,
   onSelectItem,
@@ -48,6 +50,7 @@ export function EmitenteInput({
       name={name}
       label={label}
       error={error}
+      required={required}
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}

@@ -17,6 +17,7 @@ import { veiculosApi } from "@/api/parceiros";
 import { useWindow, useWindowCommands } from "@/ui/imperative";
 import { Spinner } from "@/ui/primitives";
 import { combinacaoDe } from "@/lib/atalhos";
+import { campoObrigatorio } from "@/utils/campo-obrigatorio";
 
 export interface VeiculosUpsertProps {
   editingItem: Veiculo | null;
@@ -201,6 +202,7 @@ function VeiculosUpsertForm({
                     <EstadoInput
                       name={field.name}
                       error={error}
+                      required={campoObrigatorio(field)}
                       disabled={readOnly}
                       initialItem={editingItem?.estado}
                       onSelectId={(id) => field.handleChange(id ?? 0)}

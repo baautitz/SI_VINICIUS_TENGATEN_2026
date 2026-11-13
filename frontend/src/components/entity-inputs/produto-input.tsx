@@ -10,6 +10,7 @@ interface ProdutoInputProps {
   name: string
   label?: string
   error?: string
+  required?: boolean
   initialItem?: Produto | null
   onSelectId: (id: number | null) => void
   onSelectItem?: (item: Produto | null) => void
@@ -20,6 +21,7 @@ export function ProdutoInput({
   name,
   label = "Produto",
   error,
+  required,
   initialItem,
   onSelectId,
   onSelectItem,
@@ -31,6 +33,7 @@ export function ProdutoInput({
       name={name}
       label={label}
       error={error}
+      required={required}
       disabled={disabled}
       initialItem={initialItem}
       onSelectId={onSelectId}

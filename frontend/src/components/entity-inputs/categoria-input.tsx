@@ -10,6 +10,7 @@ interface CategoriaInputProps {
   name: string
   label?: string
   error?: string
+  required?: boolean
   disabled?: boolean
   initialItem?: Categoria | null
   onSelectId: (id: number | null) => void
@@ -20,6 +21,7 @@ export function CategoriaInput({
   name,
   label = "Categoria",
   error,
+  required,
   disabled = false,
   initialItem,
   onSelectId,
@@ -31,6 +33,7 @@ export function CategoriaInput({
       name={name}
       label={label}
       error={error}
+      required={required}
       disabled={disabled}
       initialItem={initialItem}
       onSelectId={onSelectId}

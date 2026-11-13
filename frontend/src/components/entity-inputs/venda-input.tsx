@@ -12,6 +12,7 @@ interface VendaInputProps {
   name: string;
   label?: string;
   error?: string;
+  required?: boolean;
   initialItem?: Venda | null;
   onSelectId: (id: number | null) => void;
   onSelectItem?: (item: Venda | null) => void;
@@ -22,6 +23,7 @@ export function VendaInput({
   name,
   label = "Venda",
   error,
+  required,
   initialItem,
   onSelectId,
   onSelectItem,
@@ -33,6 +35,7 @@ export function VendaInput({
       name={name}
       label={label}
       error={error}
+      required={required}
       initialItem={initialItem}
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}

@@ -15,6 +15,7 @@ interface SexoSelectProps {
   name: string;
   label?: string;
   error?: string;
+  required?: boolean;
   value: string;
   onChange: (value: string) => void;
   inputSize?: "small" | "medium" | "large" | "full";
@@ -25,6 +26,7 @@ export function SexoSelect({
   name,
   label = "Sexo",
   error,
+  required,
   value,
   onChange,
   inputSize = "full",
@@ -32,7 +34,7 @@ export function SexoSelect({
 }: SexoSelectProps) {
   return (
     <Field data-invalid={!!error}>
-      <FieldLabel htmlFor={name}>{label}</FieldLabel>
+      <FieldLabel htmlFor={name} required={required}>{label}</FieldLabel>
       <Select
         value={value || "NONE"}
         onValueChange={(val) => onChange(val === "NONE" ? "" : val)}

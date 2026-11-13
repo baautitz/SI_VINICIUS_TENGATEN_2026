@@ -41,6 +41,7 @@ import { AtributoChaveInput } from "@/components/entity-inputs/atributo-chave-in
 import { AtributoValorMultiInput } from "@/components/entity-inputs/atributo-valor-multi-input";
 import { useWindow, useWindowCommands, useUi } from "@/ui/imperative";
 import { navigationCell } from "@/ui/keyboard-navigation";
+import { campoObrigatorio } from "@/utils/campo-obrigatorio"
 
 export interface ProdutosUpsertProps {
   editingItem: Produto | null;
@@ -545,6 +546,7 @@ function ProdutosUpsertForm({
                     name={field.name}
                     label="Categoria"
                     error={getFieldError(field.name, field.state.meta.errors)}
+                    required={campoObrigatorio(field)}
                     initialItem={editingItem?.categoria}
                     disabled={readOnly}
                     onSelectId={(id) => field.handleChange(id as number)}
@@ -570,6 +572,7 @@ function ProdutosUpsertForm({
                     name={field.name}
                     label="Marca"
                     error={getFieldError(field.name, field.state.meta.errors)}
+                    required={campoObrigatorio(field)}
                     initialItem={editingItem?.marca}
                     disabled={readOnly}
                     onSelectId={(id) => field.handleChange(id as number)}
@@ -597,6 +600,7 @@ function ProdutosUpsertForm({
                       name={field.name}
                       label="Unidade de Medida"
                       error={getFieldError(field.name, field.state.meta.errors)}
+                      required={campoObrigatorio(field)}
                       initialItem={editingItem?.unidadeMedida}
                       disabled={readOnly || unidadeBloqueada}
                       onSelectItem={(item) => {

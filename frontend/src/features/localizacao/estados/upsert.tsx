@@ -210,6 +210,7 @@ function EstadosUpsertForm({
                 <PaisInput
                   name={field.name}
                   error={error}
+                  required
                   initialItem={editingItem?.pais}
                   disabled={readOnly}
                   onSelectId={(id) =>

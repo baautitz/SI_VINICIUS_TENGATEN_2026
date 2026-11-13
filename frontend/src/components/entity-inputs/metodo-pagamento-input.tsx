@@ -11,6 +11,7 @@ interface MetodoPagamentoInputProps {
   name: string;
   label?: string;
   error?: string;
+  required?: boolean;
   initialItem?: MetodoPagamento | null;
   onSelectCodigo: (codigo: string | null) => void;
   onSelectItem?: (item: MetodoPagamento | null) => void;
@@ -21,6 +22,7 @@ export function MetodoPagamentoInput({
   name,
   label = "Método de Pagamento",
   error,
+  required,
   initialItem,
   onSelectCodigo,
   onSelectItem,
@@ -32,6 +34,7 @@ export function MetodoPagamentoInput({
       name={name}
       label={label}
       error={error}
+      required={required}
       initialItem={initialItem}
       onSelectId={onSelectCodigo}
       onSelectItem={onSelectItem}
