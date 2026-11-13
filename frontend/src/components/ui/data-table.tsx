@@ -288,12 +288,12 @@ export function DataTable<TData, TValue>({
           fireAndForget(() => onEstornarRow(rowData));
         },
       },
-      ...(["paginaAnterior", "paginaSeguinte"] as const).map((atalho) => {
-        const destino = atalho === "paginaAnterior" ? pageIndex - 1 : pageIndex + 1;
+      ...(["anterior", "seguinte"] as const).map((atalho) => {
+        const destino = atalho === "anterior" ? pageIndex - 1 : pageIndex + 1;
         return {
-          id: `table.${atalho === "paginaAnterior" ? "prev" : "next"}-page`,
+          id: `table.${atalho === "anterior" ? "prev" : "next"}-page`,
           hotkey: combinacaoDe(atalho),
-          label: atalho === "paginaAnterior" ? "Página anterior" : "Próxima página",
+          label: atalho === "anterior" ? "Página anterior" : "Próxima página",
           enabled: !loading && destino >= 1 && destino <= pageCount,
           run: (event: KeyboardEvent) => {
             event.preventDefault();
@@ -626,7 +626,7 @@ export function DataTable<TData, TValue>({
               size="icon-lg"
               onClick={() => onPageChange(pageIndex - 1)}
               disabled={pageIndex <= 1 || loading}
-              title={`Página anterior (${combinacaoDe("paginaAnterior")})`}
+              title={`Página anterior (${combinacaoDe("anterior")})`}
             >
               <span className="sr-only">Página anterior</span>
               <ChevronLeft />
@@ -636,7 +636,7 @@ export function DataTable<TData, TValue>({
               size="icon-lg"
               onClick={() => onPageChange(pageIndex + 1)}
               disabled={pageIndex >= pageCount || loading}
-              title={`Próxima página (${combinacaoDe("paginaSeguinte")})`}
+              title={`Próxima página (${combinacaoDe("seguinte")})`}
             >
               <span className="sr-only">Próxima página</span>
               <ChevronRight />

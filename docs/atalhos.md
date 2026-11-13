@@ -8,8 +8,8 @@ A fonte da verdade e `frontend/src/lib/atalhos.ts` (`ATALHOS`: id, combinacao, r
 
 ## Navegacao e confirmacao
 
-- `confirmar` Alt+Enter, `etapaAnterior` Alt+ArrowLeft, `etapaSeguinte` Alt+ArrowRight.
-- Tabelas: `ordenar` Alt+J abre o menu de ordenacao pelo teclado (↑ ↓ coluna, ← → modo, Enter fecha). `abrirLinha` Enter, `editarLinha` Alt+E, `excluirLinha` Delete. `paginaAnterior` Alt+ArrowUp e `paginaSeguinte` Alt+ArrowDown paginam a tabela (Alt+ArrowLeft/Right ja sao `etapaAnterior`/`etapaSeguinte`). `excluirLinhaBackspace` (Backspace) e a segunda combinacao da mesma acao, com id proprio para manter a unicidade.
+- `confirmar` Alt+Enter, `anterior` Alt+ArrowLeft, `seguinte` Alt+ArrowRight (etapa do wizard ou pagina da tabela; telas distintas, mesmo sentido).
+- Tabelas: `ordenar` Alt+J abre o menu de ordenacao pelo teclado (↑ ↓ coluna, ← → modo, Enter fecha). `abrirLinha` Enter, `editarLinha` Alt+E, `excluirLinha` Delete. `anterior`/`seguinte` (Alt+ArrowLeft/Right) paginam a tabela. `excluirLinhaBackspace` (Backspace) e a segunda combinacao da mesma acao, com id proprio para manter a unicidade.
 
 ## Ver registros relacionados
 
