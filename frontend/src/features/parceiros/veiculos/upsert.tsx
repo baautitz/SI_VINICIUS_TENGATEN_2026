@@ -7,6 +7,7 @@ import { Button } from "@/ui/primitives";
 import { FieldLabel } from "@/ui/primitives";
 import { Input } from "@/ui/primitives";
 import { FormFieldUI } from "@/ui/composites";
+import { MASCARAS } from "@/lib/mascara";
 import { TransportadoraInput } from "@/components/entity-inputs/transportadora-input";
 import { EstadoInput } from "@/components/entity-inputs/estado-input";
 import { useForm } from "@tanstack/react-form";
@@ -181,6 +182,7 @@ function VeiculosUpsertForm({
                   <FormFieldUI
                     field={field}
                     label="Placa"
+                    mascara={MASCARAS.placa}
                     getFieldError={getFieldError}
                     inputSize="small"
                     readOnly={readOnly}
