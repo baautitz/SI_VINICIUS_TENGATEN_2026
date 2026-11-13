@@ -35,7 +35,7 @@ export function CompraInput({ name, label = "Compra", initialItem, onSelectId }:
         })
       }
       modalTitle="Selecionar Compra"
-      getDisplayLabel={(item) => `#${item.id} - ${item.fornecedor?.nomeRazaosocial ?? ""}`}
+      getDisplayLabel={(item) => item.fornecedor?.nomeRazaosocial ?? ""}
       getSearchTerm={(item) => String(item.id)}
       getId={(item) => item.id}
       fetchById={async (id) => {
