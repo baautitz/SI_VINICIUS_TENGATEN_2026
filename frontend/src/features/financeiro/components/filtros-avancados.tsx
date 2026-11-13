@@ -5,7 +5,8 @@ import { combinacaoDe } from "@/lib/atalhos";
 import React from "react";
 import { SlidersHorizontal } from "lucide-react";
 import { Button, Input, Popover, PopoverContent, PopoverTrigger, HotkeyKbd } from "@/ui/primitives";
-import { DatePicker, NumberInput } from "@/ui/composites";
+import { DatePicker, MaskedInput, NumberInput } from "@/ui/composites";
+import { MASCARAS, type Mascara } from "@/lib/mascara";
 import { useWindowCommands } from "@/ui/imperative";
 import { NavigationScope } from "@/ui/keyboard-navigation";
 
@@ -40,11 +41,11 @@ export const filtrosAvancadosParaApi = (f: FiltrosAvancados) => ({
   valorMaximo: f.valorMaximo ? f.valorMaximo.replace(",", ".") : undefined,
 });
 
-type Campo = { chave: keyof FiltrosAvancados; rotulo: string; type: "text" | "date" | "number" };
+type Campo = { chave: keyof FiltrosAvancados; rotulo: string; type: "text" | "date" | "number"; mascara?: Mascara };
 
 // Cada grupo vira uma linha; o par De/Até fica lado a lado.
 const grupos: { titulo: string; campos: Campo[] }[] = [
-  { titulo: "Contraparte", campos: [{ chave: "cpfCnpj", rotulo: "CPF/CNPJ", type: "text" }] },
+  { titulo: "Contraparte", campos: [{ chave: "cpfCnpj", rotulo: "CPF/CNPJ", type: "text", mascara: MASCARAS.cpfCnpj }] },
   {
     titulo: "Vencimento",
     campos: [
@@ -136,6 +137,17 @@ export function FiltrosAvancadosPopover({ valor, onChange }: {
                         aria-label={rotulo}
                         placeholder={c.rotulo}
                         className="w-full text-right"
+                        value={rascunho[c.chave]}
+                        onValueChange={(v) => alterar({ ...rascunho, [c.chave]: v })}
+                      />
+                    );
+                  if (c.mascara)
+                    return (
+                      <MaskedInput
+                        key={c.chave}
+                        aria-label={rotulo}
+                        placeholder={c.rotulo}
+                        mascara={c.mascara}
                         value={rascunho[c.chave]}
                         onValueChange={(v) => alterar({ ...rascunho, [c.chave]: v })}
                       />
