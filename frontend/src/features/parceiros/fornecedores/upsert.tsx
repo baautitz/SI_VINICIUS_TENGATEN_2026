@@ -291,7 +291,7 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
                 {(field) => (
                   <FormFieldUI
                     field={field}
-                    label="Nome / Razão Social"
+                    label={tipoPessoa === TipoPessoa.FISICA ? "Nome" : "Razão Social"}
                     getFieldError={getFieldError}
                     inputSize="full"
                     readOnly={readOnly}
@@ -312,7 +312,7 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
                 {(field) => (
                   <FormFieldUI
                     field={field}
-                    label="Apelido / Nome Fantasia"
+                    label={tipoPessoa === TipoPessoa.FISICA ? "Apelido" : "Nome Fantasia"}
                     getFieldError={getFieldError}
                     inputSize="full"
                     readOnly={readOnly}
