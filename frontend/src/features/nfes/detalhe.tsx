@@ -255,6 +255,9 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
   useWindowCommands([
     { id: "nfe.xml", hotkey: combinacaoDe("verXml"), label: "Ver XML", run: (e) => { e.preventDefault(); void acoes.verXml(); } },
     { id: "nfe.baixar", hotkey: combinacaoDe("baixarXml"), label: "Baixar XML", run: (e) => { e.preventDefault(); void acoes.baixar(); } },
+    ...(nfe.vendaId ? [{ id: "nfe.venda", hotkey: combinacaoDe("verVendaNfe"), label: "Ver venda", run: (e: KeyboardEvent) => { e.preventDefault(); void abrirVenda(); } }] : []),
+    ...(nfe.compraId ? [{ id: "nfe.compra", hotkey: combinacaoDe("verCompraNfe"), label: "Ver compra", run: (e: KeyboardEvent) => { e.preventDefault(); void abrirCompra(); } }] : []),
+    ...(podeCancelar ? [{ id: "nfe.cancelar", hotkey: combinacaoDe("cancelarNfe"), label: "Cancelar NF-e", run: (e: KeyboardEvent) => { e.preventDefault(); void acoes.cancelar(); } }] : []),
     { id: "nfe.imprimir", hotkey: combinacaoDe("imprimir"), label: "Imprimir DANFE", run: (e) => { e.preventDefault(); void imprimir(); } },
   ]);
 
@@ -266,15 +269,15 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
           <Button type="button" variant="outline" onClick={() => void acoes.baixar()}><Download /> Baixar XML <HotkeyKbd hotkey={combinacaoDe("baixarXml")} /></Button>
           <Button type="button" variant="outline" onClick={() => void imprimir()}><Printer /> Imprimir DANFE <HotkeyKbd hotkey={combinacaoDe("imprimir")} /></Button>
           {nfe.vendaId && (
-            <Button type="button" variant="outline" onClick={() => void abrirVenda()}><ShoppingBag /> Venda #{nfe.vendaId}</Button>
+            <Button type="button" variant="outline" onClick={() => void abrirVenda()}><ShoppingBag /> Venda #{nfe.vendaId} <HotkeyKbd hotkey={combinacaoDe("verVendaNfe")} /></Button>
           )}
           {nfe.compraId && (
-            <Button type="button" variant="outline" onClick={() => void abrirCompra()}><ReceiptText /> Compra #{nfe.compraId}</Button>
+            <Button type="button" variant="outline" onClick={() => void abrirCompra()}><ReceiptText /> Compra #{nfe.compraId} <HotkeyKbd hotkey={combinacaoDe("verCompraNfe")} /></Button>
           )}
           {!podeCancelar && <span role="status" className="text-muted-foreground self-center text-sm">{motivo}</span>}
         </div>
         <Button type="button" variant="destructive" disabled={!podeCancelar} title={podeCancelar ? undefined : motivo} onClick={() => void acoes.cancelar()}>
-          <Ban /> Cancelar NF-e
+          <Ban /> Cancelar NF-e <HotkeyKbd hotkey={combinacaoDe("cancelarNfe")} />
         </Button>
         <Button type="button" variant="outline" onClick={fechar}>Fechar <Kbd>Esc</Kbd></Button>
       </WindowActions>
