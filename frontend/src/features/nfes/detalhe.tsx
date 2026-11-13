@@ -8,6 +8,8 @@ import { WindowActions } from "@/ui/imperative";
 import { nfesApi } from "@/api/nfes";
 import { contasPagarApi } from "@/api/financeiro";
 import { comprasApi } from "@/api/compras";
+import { vendasApi } from "@/api/vendas";
+import { VendaInput } from "@/components/entity-inputs/venda-input";
 import { CompraInput } from "@/components/entity-inputs/compra-input";
 import { TextoWindow, type TextoWindowProps } from "@/components/texto-window";
 import { Button, Field, FieldLabel, HotkeyKbd, Input, Kbd, Spinner, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Textarea } from "@/ui/primitives";
@@ -217,6 +219,11 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
     queryFn: () => comprasApi.getById(nfe.compraId!),
     enabled: !!nfe.compraId,
   });
+  const { data: vendaDaNfe } = useQuery({
+    queryKey: ["vendas", "detail", nfe.vendaId],
+    queryFn: () => vendasApi.getById(nfe.vendaId!),
+    enabled: !!nfe.vendaId,
+  });
   const parcelasDaCompra = contasDaCompra?.itens ?? [];
   const abrirCompra = async () => {
     if (!nfe.compraId) return;
@@ -272,11 +279,19 @@ function Corpo({ nfe, alterada, acoes, podeCancelar, motivo }: {
       </WindowActions>
 
       <div className="flex min-h-0 flex-1 flex-col gap-4 -mx-1 overflow-auto px-1">
-        <Bloco titulo={`NF-e ${nfe.numero} · série ${nfe.serie} · ${tipoLabels[nfe.tipoOperacao]}`}>
+        <Bloco titulo={`NF-e nº ${nfe.numero} · Série ${nfe.serie} · ${tipoLabels[nfe.tipoOperacao]}`}>
           <div className="grid grid-cols-2 items-end gap-3 md:grid-cols-4">
             <Dado rotulo="Situação" valor={statusLabels[nfe.statusNfe]} />
             <Dado rotulo="Emissão" valor={formatToLocal(nfe.dataEmissao)} />
-            {nfe.vendaId && <Dado rotulo="Venda" valor={`#${nfe.vendaId}`} />}
+            {nfe.vendaId && (
+              <VendaInput
+                key={vendaDaNfe?.id ?? "carregando"}
+                name="nfe-venda"
+                disabled
+                initialItem={vendaDaNfe ?? null}
+                onSelectId={() => {}}
+              />
+            )}
             {nfe.compraId && (
               <CompraInput
                 key={compraDaNfe?.id ?? "carregando"}
