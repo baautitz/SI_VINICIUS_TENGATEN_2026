@@ -23,6 +23,13 @@ export const nfesApi = {
     if (!res.ok) throw new Error("Não foi possível obter o XML da NF-e.");
     return res.text();
   },
+  ativaDaVenda: async (vendaId: number) => {
+    try {
+      return await http.get<{ nfeId: number; chaveAcesso: string }>(`/api/vendas/${vendaId}/nfe`);
+    } catch {
+      return null;
+    }
+  },
   emitirDeVenda: (vendaId: number) => http.post<Resultado<Nfe>>(`/api/vendas/${vendaId}/nfe`, {}),
   cancelar: (id: number, justificativa: string) =>
     http.post<Resultado<Nfe>>(`/api/nfes/${id}/cancelar`, { justificativa }),

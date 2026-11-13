@@ -461,8 +461,18 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
   // A venda é recarregada quando uma devolução é registrada ou estornada (invalidação de ["vendas"]).
   const statusDevolucao = editingItem?.statusDevolucao;
 
+  const { data: nfeAtiva } = useQuery({
+    queryKey: ["nfes", "venda", editingItem?.id],
+    queryFn: () => nfesApi.ativaDaVenda(editingItem!.id),
+    enabled: !!editingItem,
+  });
+
   const gerarNfe = async () => {
     if (gerandoNfe || !editingItem) return;
+    if (nfeAtiva) {
+      await abrirNfe(ui, nfeAtiva.nfeId);
+      return;
+    }
     setGerandoNfe(true);
     try {
       const r = await nfesApi.emitirDeVenda(editingItem.id);
@@ -762,7 +772,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     {
       id: "vendas.gerar-nfe",
       hotkey: combinacaoDe("gerar"),
-      label: "Gerar NF-e",
+      label: nfeAtiva ? "Ver NF-e" : "Gerar NF-e",
       enabled: readOnly && !!editingItem,
       run: (event: KeyboardEvent) => {
         event.preventDefault();
@@ -1025,7 +1035,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
               <FileText /> Observação <HotkeyKbd hotkey={combinacaoDe("verObservacao")} />
             </Button>
             <Button type="button" variant="outline" disabled={gerandoNfe} onClick={gerarNfe}>
-              <FilePlus2 /> {gerandoNfe ? "Gerando..." : "Gerar NF-e"} <HotkeyKbd hotkey={combinacaoDe("gerar")} />
+              <FilePlus2 /> {gerandoNfe ? "Gerando..." : nfeAtiva ? "Ver NF-e" : "Gerar NF-e"} <HotkeyKbd hotkey={combinacaoDe("gerar")} />
             </Button>
           </div>
         )}
