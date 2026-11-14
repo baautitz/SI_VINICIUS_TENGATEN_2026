@@ -96,9 +96,9 @@ public class BalancosRepository : IBalancosRepository
 
     private Task InserirItens(int balancoId, IEnumerable<BalancosItens> itens)
         => _session.Connection.ExecuteAsync(
-            @"INSERT INTO balancos_itens (balanco_id, sku, quantidade_sistema, quantidade_contada)
-              VALUES (@BalancoId, @Sku, @QuantidadeSistema, @QuantidadeContada);",
-            itens.Select(i => new { BalancoId = balancoId, i.Sku, i.QuantidadeSistema, i.QuantidadeContada }),
+            @"INSERT INTO balancos_itens (balanco_id, sku, quantidade_sistema, quantidade_contada, motivo_divergencia, recontado)
+              VALUES (@BalancoId, @Sku, @QuantidadeSistema, @QuantidadeContada, @MotivoDivergencia::motivo_movimentacao_estoque_enum, @Recontado);",
+            itens.Select(i => new { BalancoId = balancoId, i.Sku, i.QuantidadeSistema, i.QuantidadeContada, MotivoDivergencia = i.MotivoDivergencia?.ToString(), i.Recontado }),
             transaction: _session.Transaction);
 
     private async Task<List<Balancos>> Montar(List<BalancoDbRow> rows)
@@ -107,7 +107,8 @@ public class BalancosRepository : IBalancosRepository
 
         const string itensSql = @"
             SELECT bi.id, bi.balanco_id AS BalancoId, bi.sku, bi.quantidade_sistema AS QuantidadeSistema,
-                   bi.quantidade_contada AS QuantidadeContada, u.sigla AS UnidadeMedidaSigla,
+                   bi.quantidade_contada AS QuantidadeContada, bi.motivo_divergencia::text AS MotivoDivergencia, bi.recontado AS Recontado,
+                   u.sigla AS UnidadeMedidaSigla,
                    p.produto || COALESCE((SELECT ' - ' || string_agg(sav.valor, ' / ' ORDER BY sav.id)
                                           FROM skus_atributos_valores_relacionamento savr
                                           JOIN sku_atributos_valores sav ON sav.id = savr.valor_id
@@ -130,7 +131,8 @@ public class BalancosRepository : IBalancosRepository
                 : null;
             var balanco = new Balancos(row.Id, row.DataAbertura, row.DataFechamento, row.Status, row.Observacao, usuario);
             foreach (var i in itens.GetValueOrDefault(row.Id) ?? new List<ItemDbRow>())
-                balanco.AdicionarItem(new BalancosItens(i.Id, i.Sku, i.ProdutoNome, i.UnidadeMedidaSigla, i.QuantidadeSistema, i.QuantidadeContada));
+                balanco.AdicionarItem(new BalancosItens(i.Id, i.Sku, i.ProdutoNome, i.UnidadeMedidaSigla, i.QuantidadeSistema, i.QuantidadeContada,
+                    string.IsNullOrEmpty(i.MotivoDivergencia) ? null : Enum.Parse<MotivoMovimentacaoEstoque>(i.MotivoDivergencia), i.Recontado));
             return balanco;
         }).ToList();
     }
@@ -139,5 +141,5 @@ public class BalancosRepository : IBalancosRepository
         int? UsuarioId, string? UsuarioNome, string? UsuarioCpfCnpj, string? UsuarioEmail, string? UsuarioTelefone,
         string? UsuarioUsuario, string? UsuarioSenha, bool? UsuarioAtivo);
 
-    private sealed record ItemDbRow(int Id, int BalancoId, string Sku, decimal QuantidadeSistema, decimal? QuantidadeContada, string UnidadeMedidaSigla, string ProdutoNome);
+    private sealed record ItemDbRow(int Id, int BalancoId, string Sku, decimal QuantidadeSistema, decimal? QuantidadeContada, string? MotivoDivergencia, bool Recontado, string UnidadeMedidaSigla, string ProdutoNome);
 }

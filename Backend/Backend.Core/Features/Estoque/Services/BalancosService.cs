@@ -11,6 +11,7 @@ using Backend.Core.Features.Estoque.Commands;
 using Backend.Core.Features.Estoque.Entities;
 using Backend.Core.Features.Estoque.Entities.Enums;
 using Backend.Core.Features.Estoque.Repositories;
+using Backend.Core.Features.NFe.Services;
 
 namespace Backend.Core.Features.Estoque.Services;
 
@@ -21,14 +22,17 @@ public sealed class BalancosService : BaseService
     private readonly IUsuariosRepository _usuariosRepository;
     private readonly MovimentacoesEstoquesService _movimentacoesService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly NfesBaixaEstoqueService _nfesBaixa;
 
     public BalancosService(
         IBalancosRepository balancosRepository,
         ISkusRepository skusRepository,
         IUsuariosRepository usuariosRepository,
         MovimentacoesEstoquesService movimentacoesService,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        NfesBaixaEstoqueService nfesBaixa)
     {
+        _nfesBaixa = nfesBaixa;
         _balancosRepository = balancosRepository;
         _skusRepository = skusRepository;
         _usuariosRepository = usuariosRepository;
@@ -135,14 +139,24 @@ public sealed class BalancosService : BaseService
             if (!sku.AceitaQuantidade(linha.QuantidadeContada))
                 return (null, new ResultadoErro("QUANTIDADE_FRACIONADA", $"O SKU '{sku.Sku}' usa a unidade {sku.Produto!.UnidadeMedida.Sigla}, que não permite quantidade fracionada.", $"itens.{i}.quantidadeContada"));
 
-            itens.Add(new BalancosItens(0, sku.Sku, sku.NomeExibicao, sku.Produto!.UnidadeMedida.Sigla, sku.Estoque, linha.QuantidadeContada));
+            MotivoMovimentacaoEstoque? motivo = null;
+            if (!string.IsNullOrWhiteSpace(linha.MotivoDivergencia))
+            {
+                if (!Enum.TryParse<MotivoMovimentacaoEstoque>(linha.MotivoDivergencia, true, out var parsed) || !Enum.IsDefined(parsed))
+                    return (null, new ResultadoErro("MOTIVO_INVALIDO", $"Motivo da divergência inválido para o SKU '{sku.Sku}'.", $"itens.{i}.motivoDivergencia"));
+                motivo = parsed;
+            }
+
+            itens.Add(new BalancosItens(0, sku.Sku, sku.NomeExibicao, sku.Produto!.UnidadeMedida.Sigla, sku.Estoque, linha.QuantidadeContada, motivo, linha.Recontado));
         }
 
         return (itens, null);
     }
 
-    // Fecha o balanço: cada diferença vira uma movimentação (ENTRADA para sobra, SAIDA para falta) com origem BALANCO.
-    public async Task<Resultado<Balancos>> Fechar(int id)
+    // Fecha o balanço (ADR 0006): toda divergência precisa estar justificada. Falta exige motivo; sobra exige recontagem e
+    // motivo (erro de contagem ou outros). Cada grupo (sentido + motivo) vira uma movimentação com origem BALANCO, e a falta por
+    // perda/avaria, furto/roubo ou vencimento emite a NF-e de baixa. A sobra entra sem NF-e, documentada pelo próprio balanço.
+    public async Task<Resultado<Balancos>> Fechar(int id, FecharBalancoCommand? command = null)
     {
         var balanco = await _balancosRepository.ObterBalancoPorId(id);
         if (balanco == null)
@@ -154,8 +168,8 @@ public sealed class BalancosService : BaseService
             {
                 _unitOfWork.BeginTransaction();
 
-                var entrada = new MovimentacoesEstoques(TipoMovimentacaoEstoque.ENTRADA, OrigemMovimentacaoEstoque.BALANCO, id, $"Sobra apurada no balanço #{id}", balanco.Usuario);
-                var saida = new MovimentacoesEstoques(TipoMovimentacaoEstoque.SAIDA, OrigemMovimentacaoEstoque.BALANCO, id, $"Falta apurada no balanço #{id}", balanco.Usuario);
+                var grupos = new Dictionary<(TipoMovimentacaoEstoque Tipo, MotivoMovimentacaoEstoque Motivo), MovimentacoesEstoques>();
+                var erros = new List<ResultadoErro>();
 
                 foreach (var item in balanco.Itens.Where(i => i.QuantidadeContada.HasValue))
                 {
@@ -164,20 +178,49 @@ public sealed class BalancosService : BaseService
 
                     item.AtualizarQuantidadeSistema(sku.Estoque);
                     var diferenca = item.Diferenca!.Value;
-                    if (diferenca > 0) entrada.AdicionarItem(sku, diferenca, sku.CustoMedio);
-                    else if (diferenca < 0) saida.AdicionarItem(sku, -diferenca, sku.CustoMedio);
+                    if (diferenca == 0) continue;
+
+                    var erro = ErroDeDivergencia(item, diferenca);
+                    if (erro != null)
+                    {
+                        erros.Add(erro);
+                        continue;
+                    }
+
+                    var tipo = diferenca > 0 ? TipoMovimentacaoEstoque.ENTRADA : TipoMovimentacaoEstoque.SAIDA;
+                    var motivo = item.MotivoDivergencia!.Value;
+                    if (!grupos.TryGetValue((tipo, motivo), out var movimentacao))
+                    {
+                        var rotulo = tipo == TipoMovimentacaoEstoque.ENTRADA ? "Sobra" : "Falta";
+                        movimentacao = new MovimentacoesEstoques(tipo, OrigemMovimentacaoEstoque.BALANCO, id,
+                            $"{rotulo} apurada no balanço #{id} ({motivo})", balanco.Usuario, motivo);
+                        grupos[(tipo, motivo)] = movimentacao;
+                    }
+                    movimentacao.AdicionarItem(sku, Math.Abs(diferenca), sku.CustoMedio);
+                }
+
+                if (erros.Count == 0 && command?.EmitenteId is null && grupos.Keys.Any(g => GeraBaixa(g.Tipo, g.Motivo)))
+                    erros.Add(new ResultadoErro("EMITENTE_OBRIGATORIO", "Informe o emitente da NF-e de baixa.", "emitenteId"));
+
+                if (erros.Count > 0)
+                {
+                    _unitOfWork.Rollback();
+                    return Resultado<Balancos>.Falha(erros);
                 }
 
                 balanco.Fechar();
 
-                foreach (var mov in new[] { entrada, saida }.Where(m => m.MovimentacoesEstoquesItens.Any()))
+                foreach (var (chave, movimentacao) in grupos)
                 {
-                    var resultado = await _movimentacoesService.Registrar(mov);
+                    var resultado = await _movimentacoesService.Registrar(movimentacao);
                     if (!resultado.Success)
                     {
                         _unitOfWork.Rollback();
                         return Resultado<Balancos>.Falha(resultado.Errors!);
                     }
+
+                    if (GeraBaixa(chave.Tipo, chave.Motivo))
+                        await _nfesBaixa.EmitirBaixa(resultado.Data!, command!.EmitenteId!.Value);
                 }
 
                 await _balancosRepository.AtualizarBalanco(balanco);
@@ -190,6 +233,32 @@ public sealed class BalancosService : BaseService
                 throw;
             }
         });
+    }
+
+    private static bool GeraBaixa(TipoMovimentacaoEstoque tipo, MotivoMovimentacaoEstoque motivo)
+        => tipo == TipoMovimentacaoEstoque.SAIDA && motivo.GeraNfeDeBaixa();
+
+    // Regra da divergência: falta pede um dos quatro motivos de perda; sobra pede recontagem e motivo de contagem ou outros.
+    private static ResultadoErro? ErroDeDivergencia(BalancosItens item, decimal diferenca)
+    {
+        const string campo = "itens";
+        if (item.MotivoDivergencia is null)
+            return new ResultadoErro("MOTIVO_DIVERGENCIA_OBRIGATORIO",
+                $"SKU '{item.Sku}': informe o motivo {(diferenca < 0 ? "da falta" : "da sobra")}.", campo);
+
+        if (diferenca < 0)
+            return item.MotivoDivergencia == MotivoMovimentacaoEstoque.OUTROS
+                ? new ResultadoErro("MOTIVO_FALTA_INVALIDO",
+                    $"SKU '{item.Sku}': falta só pode ter motivo perda/avaria, furto/roubo, vencimento ou erro de contagem.", campo)
+                : null;
+
+        if (item.MotivoDivergencia is not (MotivoMovimentacaoEstoque.ERRO_DE_CONTAGEM or MotivoMovimentacaoEstoque.OUTROS))
+            return new ResultadoErro("MOTIVO_SOBRA_INVALIDO",
+                $"SKU '{item.Sku}': sobra só pode ter motivo erro de contagem ou outros.", campo);
+
+        return item.Recontado
+            ? null
+            : new ResultadoErro("RECONTAGEM_OBRIGATORIA", $"SKU '{item.Sku}': sobra exige recontagem antes de fechar o balanço.", campo);
     }
 
     // Aberto: só descarta. Fechado: estorna as movimentações geradas (exige motivo) e cancela.
