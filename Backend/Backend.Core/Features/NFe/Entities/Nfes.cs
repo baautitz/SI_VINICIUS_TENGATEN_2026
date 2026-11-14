@@ -47,6 +47,7 @@ public class Nfes
     public int? NfeReferenciadaId { get; private set; }
     public int? DevolucaoId { get; private set; }
     public int? DevolucaoCompraId { get; private set; }
+    public int? MovimentacaoEstoqueId { get; private set; }
     // Só na geração do XML (refNFe): a chave da nota referenciada não é coluna, vem de nfe_referenciada_id.
     [System.Text.Json.Serialization.JsonIgnore]
     public string? ChaveReferenciada { get; private set; }
@@ -294,6 +295,68 @@ public class Nfes
         return nfe;
     }
 
+    // NF-e emitida pela loja para si mesma a partir de uma Movimentação de estoque: a baixa (saída, sem nota referenciada)
+    // ou o estorno da baixa (entrada, referenciando a nota de baixa). A loja é também a destinatária. Sem pagamentos nem impostos.
+    public static Nfes CriarBaixaEstoque(
+        FinalidadeNfe finalidade, int numero, short serie, DateTime dataEmissao, string chaveAcesso,
+        Emitentes emitente, IEnumerable<NfesItens> itens, int movimentacaoEstoqueId,
+        int? nfeReferenciadaId, string? chaveReferenciada)
+    {
+        if (finalidade is not (FinalidadeNfe.BAIXA_ESTOQUE or FinalidadeNfe.ESTORNO_BAIXA_ESTOQUE))
+            throw new DomainException("A finalidade da NF-e de baixa de estoque deve ser baixa ou estorno da baixa.");
+        var baixa = finalidade == FinalidadeNfe.BAIXA_ESTOQUE;
+        if (chaveAcesso is not { Length: 44 })
+            throw new DomainException("Chave de acesso deve ter 44 dígitos.");
+        if (numero <= 0)
+            throw new DomainException("Número da nota fiscal é obrigatório.");
+        if (baixa && nfeReferenciadaId is not null)
+            throw new DomainException("A NF-e de baixa não referencia outra nota.");
+        if (!baixa && (nfeReferenciadaId is null || chaveReferenciada is not { Length: 44 }))
+            throw new DomainException("O estorno da baixa deve referenciar a NF-e de baixa.");
+        var lista = itens?.ToList() ?? new List<NfesItens>();
+        if (lista.Count == 0)
+            throw new DomainException("A nota fiscal deve conter ao menos um item.");
+
+        var nfe = new Nfes
+        {
+            TipoOperacao = baixa ? TipoOperacao.SAIDA : TipoOperacao.ENTRADA,
+            StatusNfe = StatusNfe.EMITIDA,
+            Finalidade = finalidade,
+            ChaveAcesso = chaveAcesso,
+            ChaveReferenciada = chaveReferenciada,
+            NfeReferenciadaId = nfeReferenciadaId,
+            MovimentacaoEstoqueId = movimentacaoEstoqueId,
+            Numero = numero,
+            Serie = serie,
+            DataEmissao = dataEmissao,
+            Emitente = emitente ?? throw new DomainException("Emitente é obrigatório."),
+            EmitenteNomeRazaosocial = TextNormalization.Truncate(TextNormalization.Normalize(emitente.NomeRazaoSocial), 150)!,
+            EmitenteCpfCnpj = emitente.CpfCnpj,
+            EmitenteRgIe = emitente.RgIe,
+            EmitenteApelidoNomefantasia = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(emitente.ApelidoNomeFantasia), 100),
+            EmitenteEndereco = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(emitente.Logradouro + (string.IsNullOrWhiteSpace(emitente.Numero) ? "" : $", {emitente.Numero}")), 150),
+            EmitenteBairro = TextNormalization.Truncate(emitente.Bairro?.Bairro, 100),
+            EmitenteTelefone = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(emitente.Telefone), 20),
+            EmitenteEmail = TextNormalization.Truncate(TextNormalization.NormalizeOrNull(emitente.Email), 254),
+        };
+
+        // Destinatário é o próprio emitente: o snapshot cliente_* repete os dados da loja.
+        nfe.ClienteNomeRazaosocial = nfe.EmitenteNomeRazaosocial;
+        nfe.ClienteCpfCnpj = emitente.CpfCnpj;
+        nfe.ClienteRgIe = emitente.RgIe;
+        nfe.ClienteApelidoNomefantasia = nfe.EmitenteApelidoNomefantasia;
+        nfe.ClienteEndereco = nfe.EmitenteEndereco;
+        nfe.ClienteBairro = nfe.EmitenteBairro;
+        nfe.ClienteTelefone = nfe.EmitenteTelefone;
+        nfe.ClienteEmail = nfe.EmitenteEmail;
+
+        nfe._itens.AddRange(lista);
+        nfe.ValorProdutos = lista.Sum(i => Math.Round(i.Quantidade * i.ValorUnitario, 2, MidpointRounding.AwayFromZero));
+        nfe.ValorTotal = nfe.ValorProdutos;
+        nfe.XmlDocumento = NfeXmlGerador.Gerar(nfe);
+        return nfe;
+    }
+
     // Saída: RASCUNHO com chave -> EMITIDA, guardando o XML gerado na emissão.
     public void Emitir(string xmlDocumento)
     {
@@ -315,6 +378,8 @@ public class Nfes
     // Cancelamento fiscal: não desfaz a venda, o estoque nem o financeiro.
     public void Cancelar(string justificativa, DateTime? quando = null)
     {
+        if (Finalidade is FinalidadeNfe.BAIXA_ESTOQUE or FinalidadeNfe.ESTORNO_BAIXA_ESTOQUE)
+            throw new DomainException("NF-e de baixa de estoque não pode ser cancelada: o estorno da movimentação emite a nota de estorno da baixa.");
         if (Finalidade != FinalidadeNfe.NORMAL)
             throw new DomainException("NF-e de devolução não pode ser cancelada: o estorno da devolução emite a nota de estorno.");
         if (TipoOperacao != TipoOperacao.SAIDA)

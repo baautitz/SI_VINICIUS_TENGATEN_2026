@@ -79,6 +79,8 @@ public static partial class NfeXmlGerador
         {
             Entities.Enums.FinalidadeNfe.DEVOLUCAO => saida ? ("DEVOLUCAO DE COMPRA", "5202") : ("DEVOLUCAO DE VENDA", "1202"),
             Entities.Enums.FinalidadeNfe.ESTORNO_DEVOLUCAO => saida ? ("ESTORNO DE DEVOLUCAO DE VENDA", "5949") : ("ESTORNO DE DEVOLUCAO DE COMPRA", "1949"),
+            Entities.Enums.FinalidadeNfe.BAIXA_ESTOQUE => ("BAIXA DE ESTOQUE", "5927"),
+            Entities.Enums.FinalidadeNfe.ESTORNO_BAIXA_ESTOQUE => ("ESTORNO DE BAIXA DE ESTOQUE", "1949"),
             _ => ("VENDA", "5102"),
         };
     }
