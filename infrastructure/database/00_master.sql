@@ -50,6 +50,10 @@ SET search_path TO projeto_sistemas, public;
 \ir compras/schema/devolucoes_compra.sql
 \ir compras/schema/fornecedores_skus.sql
 
+\ir estoque/schema/movimentacoes_estoque.sql
+\ir estoque/schema/movimentacoes_estoque_itens.sql
+\ir estoque/schema/balancos.sql
+
 \ir nfe/schema/nfe_tipos.sql
 \ir nfe/schema/nfes_table.sql
 \ir nfe/schema/nfes_informacoes_adicionais.sql
@@ -57,9 +61,6 @@ SET search_path TO projeto_sistemas, public;
 \ir nfe/schema/nfes_itens.sql
 \ir nfe/schema/nfes_pagamentos.sql
 
-\ir estoque/schema/movimentacoes_estoque.sql
-\ir estoque/schema/movimentacoes_estoque_itens.sql
-\ir estoque/schema/balancos.sql
 
 \ir financeiro/schema/financeiro_tipos.sql
 \ir financeiro/schema/contas_pagar.sql

@@ -37,6 +37,8 @@ CREATE TABLE IF NOT EXISTS nfes (
   nfe_referenciada_id INTEGER,
   devolucao_id INTEGER,
   devolucao_compra_id INTEGER,
+  -- NF-e de baixa de estoque (e de estorno da baixa): emitida pela loja para si mesma, vinculada à Movimentação.
+  movimentacao_estoque_id INTEGER,
   justificativa_cancelamento VARCHAR(255),
   data_cancelamento TIMESTAMP WITH TIME ZONE,
   -- XML original da NF-e de entrada importada, guardado sem alteração.
@@ -69,7 +71,8 @@ CREATE TABLE IF NOT EXISTS nfes (
   CONSTRAINT nfes_compra_fk FOREIGN KEY (compra_id) REFERENCES compras (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT nfes_nfe_referenciada_fk FOREIGN KEY (nfe_referenciada_id) REFERENCES nfes (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT nfes_devolucao_fk FOREIGN KEY (devolucao_id) REFERENCES devolucoes (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT nfes_devolucao_compra_fk FOREIGN KEY (devolucao_compra_id) REFERENCES devolucoes_compra (id) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT nfes_devolucao_compra_fk FOREIGN KEY (devolucao_compra_id) REFERENCES devolucoes_compra (id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT nfes_movimentacao_estoque_fk FOREIGN KEY (movimentacao_estoque_id) REFERENCES movimentacoes_estoque (id) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
 -- Migração de bancos já criados (CREATE TABLE IF NOT EXISTS não altera tabela existente).
@@ -107,7 +110,7 @@ END $$;
 ALTER TABLE nfes DROP CONSTRAINT IF EXISTS nfes_origem_ck;
 ALTER TABLE nfes ADD CONSTRAINT nfes_origem_ck CHECK (
   (
-    finalidade = 'NORMAL' AND nfe_referenciada_id IS NULL AND devolucao_id IS NULL AND devolucao_compra_id IS NULL
+    finalidade = 'NORMAL' AND nfe_referenciada_id IS NULL AND devolucao_id IS NULL AND devolucao_compra_id IS NULL AND movimentacao_estoque_id IS NULL
     AND (
       (tipo_operacao = 'SAIDA' AND compra_id IS NULL AND cliente_id IS NOT NULL AND fornecedor_id IS NULL)
       OR (tipo_operacao = 'ENTRADA' AND compra_id IS NOT NULL AND venda_id IS NULL AND fornecedor_id IS NOT NULL AND cliente_id IS NULL)
@@ -115,10 +118,21 @@ ALTER TABLE nfes ADD CONSTRAINT nfes_origem_ck CHECK (
   )
   OR (
     -- Devolução de venda tem o cliente como contraparte; devolução de compra, o fornecedor. Nunca ligada a venda/compra.
-    finalidade <> 'NORMAL' AND nfe_referenciada_id IS NOT NULL AND venda_id IS NULL AND compra_id IS NULL
+    finalidade IN ('DEVOLUCAO', 'ESTORNO_DEVOLUCAO') AND nfe_referenciada_id IS NOT NULL AND venda_id IS NULL AND compra_id IS NULL AND movimentacao_estoque_id IS NULL
     AND (
       (cliente_id IS NOT NULL AND fornecedor_id IS NULL AND devolucao_id IS NOT NULL AND devolucao_compra_id IS NULL)
       OR (fornecedor_id IS NOT NULL AND cliente_id IS NULL AND devolucao_compra_id IS NOT NULL AND devolucao_id IS NULL)
+    )
+  )
+  OR (
+    -- Baixa de estoque: a loja é a destinatária (sem cliente nem fornecedor), ligada só à Movimentação.
+    -- A baixa é saída e não referencia nota; o estorno da baixa é entrada e referencia a nota de baixa.
+    finalidade IN ('BAIXA_ESTOQUE', 'ESTORNO_BAIXA_ESTOQUE') AND movimentacao_estoque_id IS NOT NULL
+    AND venda_id IS NULL AND compra_id IS NULL AND cliente_id IS NULL AND fornecedor_id IS NULL
+    AND devolucao_id IS NULL AND devolucao_compra_id IS NULL
+    AND (
+      (finalidade = 'BAIXA_ESTOQUE' AND tipo_operacao = 'SAIDA' AND nfe_referenciada_id IS NULL)
+      OR (finalidade = 'ESTORNO_BAIXA_ESTOQUE' AND tipo_operacao = 'ENTRADA' AND nfe_referenciada_id IS NOT NULL)
     )
   )
 );
@@ -136,6 +150,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS nfes_devolucao_finalidade_uq
   ON nfes (devolucao_id, finalidade) WHERE devolucao_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS nfes_devolucao_compra_finalidade_uq
   ON nfes (devolucao_compra_id, finalidade) WHERE devolucao_compra_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS nfes_movimentacao_estoque_finalidade_uq
+  ON nfes (movimentacao_estoque_id, finalidade) WHERE movimentacao_estoque_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS nfes_venda_emitida_uq
   ON nfes (venda_id) WHERE status_nfe = 'EMITIDA';
 CREATE UNIQUE INDEX IF NOT EXISTS nfes_compra_uq
