@@ -103,6 +103,7 @@ public static class DependencyInjection
         services.AddScoped<Backend.Core.Features.NFe.Services.NfesImportacaoService>();
         services.AddScoped<Backend.Core.Features.NFe.Services.NfesSaidaService>();
         services.AddScoped<Backend.Core.Features.NFe.Services.NfesDevolucaoService>();
+        services.AddScoped<Backend.Core.Features.NFe.Services.NfesBaixaEstoqueService>();
 
         services.AddScoped<ITransportadorasRepository, TransportadorasRepository>();
         services.AddScoped<TransportadorasService>();

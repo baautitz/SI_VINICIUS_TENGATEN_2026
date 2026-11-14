@@ -2,11 +2,13 @@ using System.Collections.Generic;
 
 namespace Backend.Core.Features.Estoque.Commands;
 
-// Lançamento manual: a origem é sempre MANUAL e o motivo é obrigatório.
+// Lançamento manual: sempre saída, de origem MANUAL. O motivo tipado e o texto do motivo são obrigatórios;
+// o emitente é obrigatório quando o motivo gera NF-e de baixa (perda/avaria, furto/roubo, vencimento).
 public record CriarMovimentacaoCommand(
-    string TipoMovimentacao,
+    string MotivoTipo,
     int? UsuarioId,
     string Motivo,
+    int? EmitenteId,
     List<MovimentacaoItemCommand> Itens
 );
 

@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS movimentacoes_estoque (
   origem_id INTEGER,
   usuario_id INTEGER,
   motivo VARCHAR(500),
+  motivo_tipo motivo_movimentacao_estoque_enum,
   CONSTRAINT movimentacoes_estoque_usuario_fk
     FOREIGN KEY (usuario_id)
     REFERENCES usuarios (id)
@@ -20,7 +21,10 @@ CREATE TABLE IF NOT EXISTS movimentacoes_estoque (
   CONSTRAINT movimentacoes_estoque_origem_ck
     CHECK (origem_tipo = 'MANUAL' OR origem_id IS NOT NULL),
   CONSTRAINT movimentacoes_estoque_motivo_ck
-    CHECK (origem_tipo NOT IN ('MANUAL', 'ESTORNO') OR LENGTH(TRIM(COALESCE(motivo, ''))) >= 5)
+    CHECK (origem_tipo NOT IN ('MANUAL', 'ESTORNO') OR LENGTH(TRIM(COALESCE(motivo, ''))) >= 5),
+  -- Não existe entrada manual; a saída manual tem motivo tipado (erro de contagem só existe no balanço).
+  CONSTRAINT movimentacoes_estoque_manual_ck
+    CHECK (origem_tipo <> 'MANUAL' OR (tipo_movimentacao = 'SAIDA' AND motivo_tipo IS NOT NULL AND motivo_tipo <> 'ERRO_DE_CONTAGEM'))
 );
 
 CREATE INDEX IF NOT EXISTS movimentacoes_estoque_origem_idx
