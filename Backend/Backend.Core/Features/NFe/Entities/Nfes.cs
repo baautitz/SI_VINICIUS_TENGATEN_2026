@@ -302,24 +302,25 @@ public class Nfes
         Emitentes emitente, IEnumerable<NfesItens> itens, int movimentacaoEstoqueId,
         int? nfeReferenciadaId, string? chaveReferenciada)
     {
-        if (finalidade is not (FinalidadeNfe.BAIXA_ESTOQUE or FinalidadeNfe.ESTORNO_BAIXA_ESTOQUE))
-            throw new DomainException("A finalidade da NF-e de baixa de estoque deve ser baixa ou estorno da baixa.");
-        var baixa = finalidade == FinalidadeNfe.BAIXA_ESTOQUE;
+        if (!finalidade.EhDeAjusteDeEstoque())
+            throw new DomainException("A finalidade deve ser de baixa de estoque, de entrada de ajuste de inventário ou o estorno de uma delas.");
+        var baixa = finalidade is FinalidadeNfe.BAIXA_ESTOQUE or FinalidadeNfe.ENTRADA_AJUSTE_INVENTARIO; // nota original, sem referência
+        var saida = finalidade is FinalidadeNfe.BAIXA_ESTOQUE or FinalidadeNfe.ESTORNO_ENTRADA_AJUSTE_INVENTARIO;
         if (chaveAcesso is not { Length: 44 })
             throw new DomainException("Chave de acesso deve ter 44 dígitos.");
         if (numero <= 0)
             throw new DomainException("Número da nota fiscal é obrigatório.");
         if (baixa && nfeReferenciadaId is not null)
-            throw new DomainException("A NF-e de baixa não referencia outra nota.");
+            throw new DomainException("A NF-e original do ajuste não referencia outra nota.");
         if (!baixa && (nfeReferenciadaId is null || chaveReferenciada is not { Length: 44 }))
-            throw new DomainException("O estorno da baixa deve referenciar a NF-e de baixa.");
+            throw new DomainException("O estorno deve referenciar a NF-e original do ajuste.");
         var lista = itens?.ToList() ?? new List<NfesItens>();
         if (lista.Count == 0)
             throw new DomainException("A nota fiscal deve conter ao menos um item.");
 
         var nfe = new Nfes
         {
-            TipoOperacao = baixa ? TipoOperacao.SAIDA : TipoOperacao.ENTRADA,
+            TipoOperacao = saida ? TipoOperacao.SAIDA : TipoOperacao.ENTRADA,
             StatusNfe = StatusNfe.EMITIDA,
             Finalidade = finalidade,
             ChaveAcesso = chaveAcesso,
@@ -378,8 +379,8 @@ public class Nfes
     // Cancelamento fiscal: não desfaz a venda, o estoque nem o financeiro.
     public void Cancelar(string justificativa, DateTime? quando = null)
     {
-        if (Finalidade is FinalidadeNfe.BAIXA_ESTOQUE or FinalidadeNfe.ESTORNO_BAIXA_ESTOQUE)
-            throw new DomainException("NF-e de baixa de estoque não pode ser cancelada: o estorno da movimentação emite a nota de estorno da baixa.");
+        if (Finalidade.EhDeAjusteDeEstoque())
+            throw new DomainException("NF-e de ajuste de estoque não pode ser cancelada: o estorno da movimentação emite a nota de estorno.");
         if (Finalidade != FinalidadeNfe.NORMAL)
             throw new DomainException("NF-e de devolução não pode ser cancelada: o estorno da devolução emite a nota de estorno.");
         if (TipoOperacao != TipoOperacao.SAIDA)

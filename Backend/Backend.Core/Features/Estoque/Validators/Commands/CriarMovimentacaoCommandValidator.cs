@@ -15,7 +15,7 @@ public sealed class CriarMovimentacaoCommandValidator : AbstractValidator<CriarM
             .IsEnumName(typeof(MotivoMovimentacaoEstoque), caseSensitive: false)
             .WithMessage("Motivo da movimentação inválido.")
             .WithErrorCode("MOTIVO_TIPO_INVALIDO")
-            .Must(m => !System.Enum.TryParse<MotivoMovimentacaoEstoque>(m, true, out var motivo) || motivo.GeraNfeDeBaixa())
+            .Must(m => !System.Enum.TryParse<MotivoMovimentacaoEstoque>(m, true, out var motivo) || motivo is MotivoMovimentacaoEstoque.PERDA_AVARIA or MotivoMovimentacaoEstoque.FURTO_ROUBO or MotivoMovimentacaoEstoque.VENCIMENTO)
             .WithMessage("Toda saída manual exige NF-e de baixa: use perda/avaria, furto/roubo ou vencimento. Erro de contagem e outros só existem no balanço.")
             .WithErrorCode("MOTIVO_TIPO_INVALIDO");
 
