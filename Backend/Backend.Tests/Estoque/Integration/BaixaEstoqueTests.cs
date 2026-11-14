@@ -99,15 +99,18 @@ public class BaixaEstoqueTests
         Assert.Equal(1, await Escalar<int>("SELECT COUNT(*) FROM nfes WHERE finalidade = 'BAIXA_ESTOQUE';"));
     }
 
-    [Fact]
-    public async Task Saida_por_outros_baixa_o_estoque_sem_emitir_nota()
+    [Theory]
+    [InlineData("OUTROS")]
+    [InlineData("ERRO_DE_CONTAGEM")]
+    public async Task Saida_manual_sem_nota_e_recusada_e_nao_mexe_no_estoque(string motivo)
     {
         await Cenario();
 
-        var r = await Saida("OUTROS", 2, null);
+        var r = await Saida(motivo, 2, null);
 
-        Assert.True(r.Success, r.Errors?.FirstOrDefault()?.Message);
-        Assert.Equal(8m, await Estoque());
+        Assert.False(r.Success);
+        Assert.Contains(r.Errors!, e => e.Code == "MOTIVO_TIPO_INVALIDO");
+        Assert.Equal(10m, await Estoque());
         Assert.Equal(0, await Escalar<int>("SELECT COUNT(*) FROM nfes;"));
     }
 
@@ -166,18 +169,6 @@ public class BaixaEstoqueTests
         Assert.Contains("<CFOP>1949</CFOP>", (string)estorno.xml_documento);
         Assert.Contains($"<refNFe>{(string)notaBaixa.chave_acesso}</refNFe>", (string)estorno.xml_documento);
         Assert.Equal("EMITIDA", (string)notaBaixa.status_nfe.ToString());
-    }
-
-    [Fact]
-    public async Task Estorno_de_saida_sem_nota_nao_emite_nfe()
-    {
-        await Cenario();
-        var saida = await Saida("OUTROS", 2, null);
-
-        var r = await Servico<Resultado<MovimentacoesEstoques>, MovimentacoesEstoquesService>(s => s.Estornar(saida.Data!.Id, new EstornarMovimentacaoCommand("Lançado por engano")));
-
-        Assert.True(r.Success);
-        Assert.Equal(0, await Escalar<int>("SELECT COUNT(*) FROM nfes;"));
     }
 
     // ---- Balanço -------------------------------------------------------------------------------------
