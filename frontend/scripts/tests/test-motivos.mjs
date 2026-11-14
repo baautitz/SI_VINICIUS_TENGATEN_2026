@@ -53,15 +53,15 @@ assert.match(erroDaDivergencia(item(10, 12, "ERRO_DE_CONTAGEM", false)), /recont
 assert.equal(erroDaDivergencia(item(10, 12, "ERRO_DE_CONTAGEM", true)), null);
 assert.equal(erroDaDivergencia(item(10, 12, "OUTROS", true)), null);
 
-// Itens com baixa: só falta por perda, furto ou vencimento.
 const lista = [item(10, 8, "PERDA_AVARIA"), item(10, 9, "ERRO_DE_CONTAGEM"), item(10, 12, "ERRO_DE_CONTAGEM", true), item(10, 10, null)];
-assert.equal(itensComBaixa(lista).length, 1);
+assert.equal(itensComBaixa(lista).length, 3);
 
 // Resumo do fechamento: erros das divergências; emitente só quando há baixa a emitir.
 assert.deepEqual(resumoDoFechamento([item(10, 10, null)], null), { erros: [], exigeEmitente: false });
-assert.deepEqual(resumoDoFechamento([item(10, 9, "ERRO_DE_CONTAGEM")], null), { erros: [], exigeEmitente: false });
+assert.deepEqual(resumoDoFechamento([item(10, 9, "ERRO_DE_CONTAGEM")], 3), { erros: [], exigeEmitente: true });
+assert.deepEqual(resumoDoFechamento([item(10, 12, "OUTROS", true)], null), { erros: ["Informe o emitente da NF-e de ajuste de estoque."], exigeEmitente: true });
 assert.deepEqual(resumoDoFechamento([item(10, 8, "PERDA_AVARIA")], 3), { erros: [], exigeEmitente: true });
-assert.deepEqual(resumoDoFechamento([item(10, 8, "PERDA_AVARIA")], null), { erros: ["Informe o emitente da NF-e de baixa."], exigeEmitente: true });
+assert.deepEqual(resumoDoFechamento([item(10, 8, "PERDA_AVARIA")], null), { erros: ["Informe o emitente da NF-e de ajuste de estoque."], exigeEmitente: true });
 assert.equal(resumoDoFechamento([item(10, 8, null), item(10, 12, "OUTROS", false)], null).erros.length, 2);
 // Com divergência sem motivo, o erro do item vem antes do pedido de emitente.
 assert.equal(resumoDoFechamento([item(10, 8, "PERDA_AVARIA"), item(10, 8, null)], null).erros.length, 1);
