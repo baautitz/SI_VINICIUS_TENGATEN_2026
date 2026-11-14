@@ -37,7 +37,7 @@ END $$;
 
 DO $$
 BEGIN
-  CREATE TYPE projeto_sistemas.finalidade_nfe_enum AS ENUM ('NORMAL', 'DEVOLUCAO', 'ESTORNO_DEVOLUCAO');
+  CREATE TYPE projeto_sistemas.finalidade_nfe_enum AS ENUM ('NORMAL', 'DEVOLUCAO', 'ESTORNO_DEVOLUCAO', 'BAIXA_ESTOQUE', 'ESTORNO_BAIXA_ESTOQUE');
 EXCEPTION
   WHEN duplicate_object THEN NULL;
 END $$;
