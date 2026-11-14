@@ -1,3 +1,5 @@
+import type { MotivoMovimentacao } from "@/features/estoque/motivos";
+
 export type StatusBalanco = "ABERTO" | "FECHADO" | "CANCELADO";
 
 export interface BalancoItem {
@@ -8,6 +10,8 @@ export interface BalancoItem {
   quantidadeSistema: number;
   quantidadeContada?: number | null;
   diferenca?: number | null;
+  motivoDivergencia?: MotivoMovimentacao | null;
+  recontado?: boolean;
 }
 
 export interface Balanco {
