@@ -52,7 +52,7 @@ Lançamento do razão de estoque, de entrada ou de saída, que nunca é alterado
 _Avoid_: Lançamento de estoque, ajuste manual (ambíguo com Ajuste de inventário)
 
 **Motivo da movimentação**:
-Tipo obrigatório de toda saída manual e de toda falta do Balanço: perda/avaria, furto/roubo, vencimento, erro de contagem ou outros. Perda/avaria, furto/roubo e vencimento geram NF-e de baixa; os demais são ajuste interno, sem nota. O texto livre do motivo continua como complemento.
+Tipo obrigatório de toda saída manual (perda/avaria, furto/roubo ou vencimento, todos com NF-e de baixa) e de toda divergência do Balanço (falta: também erro de contagem; sobra: erro de contagem ou outros). Erro de contagem e outros são ajuste interno, sem nota, e não existem na saída manual. O texto livre do motivo continua como complemento.
 
 **Baixa de estoque**:
 Saída de Itens por perda/avaria, furto/roubo ou vencimento, amparada por NF-e de baixa. É a única forma de tirar mercadoria do estoque sem Venda nem Devolução de compra.
