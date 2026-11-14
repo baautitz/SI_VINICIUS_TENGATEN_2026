@@ -16,7 +16,7 @@ for (const m of ["PERDA_AVARIA", "FURTO_ROUBO", "VENCIMENTO"]) assert.equal(gera
 for (const m of ["ERRO_DE_CONTAGEM", "OUTROS", "", null, undefined]) assert.equal(geraNfeDeBaixa(m), false, String(m));
 
 // Listas de motivos: erro de contagem só existe no balanço; falta nunca é "outros"; sobra nunca é perda.
-assert.deepEqual(motivosSaidaManual, ["PERDA_AVARIA", "FURTO_ROUBO", "VENCIMENTO", "OUTROS"]);
+assert.deepEqual(motivosSaidaManual, ["PERDA_AVARIA", "FURTO_ROUBO", "VENCIMENTO"]);
 assert.deepEqual(motivosFalta, ["PERDA_AVARIA", "FURTO_ROUBO", "VENCIMENTO", "ERRO_DE_CONTAGEM"]);
 assert.deepEqual(motivosSobra, ["ERRO_DE_CONTAGEM", "OUTROS"]);
 assert.deepEqual(motivosDaDivergencia(-1), motivosFalta);
