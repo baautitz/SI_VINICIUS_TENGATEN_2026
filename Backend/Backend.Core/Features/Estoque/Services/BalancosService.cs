@@ -154,8 +154,9 @@ public sealed class BalancosService : BaseService
     }
 
     // Fecha o balanço (ADR 0006): toda divergência precisa estar justificada. Falta exige motivo; sobra exige recontagem e
-    // motivo (erro de contagem ou outros). Cada grupo (sentido + motivo) vira uma movimentação com origem BALANCO, e a falta por
-    // perda/avaria, furto/roubo ou vencimento emite a NF-e de baixa. A sobra entra sem NF-e, documentada pelo próprio balanço.
+    // motivo (erro de contagem ou outros). Cada grupo (sentido + motivo) vira uma movimentação com origem BALANCO, e, no Paraná
+    // (SEFA/PR, Consulta 3/2024), toda divergência tem nota: a falta emite a NF-e de baixa (5.927) e a sobra, a entrada de ajuste de
+    // inventário (1.949).
     public async Task<Resultado<Balancos>> Fechar(int id, FecharBalancoCommand? command = null)
     {
         var balanco = await _balancosRepository.ObterBalancoPorId(id);
@@ -199,8 +200,8 @@ public sealed class BalancosService : BaseService
                     movimentacao.AdicionarItem(sku, Math.Abs(diferenca), sku.CustoMedio);
                 }
 
-                if (erros.Count == 0 && command?.EmitenteId is null && grupos.Keys.Any(g => GeraBaixa(g.Tipo, g.Motivo)))
-                    erros.Add(new ResultadoErro("EMITENTE_OBRIGATORIO", "Informe o emitente da NF-e de baixa.", "emitenteId"));
+                if (erros.Count == 0 && command?.EmitenteId is null && grupos.Count > 0)
+                    erros.Add(new ResultadoErro("EMITENTE_OBRIGATORIO", "Informe o emitente da NF-e de ajuste de estoque.", "emitenteId"));
 
                 if (erros.Count > 0)
                 {
@@ -219,8 +220,10 @@ public sealed class BalancosService : BaseService
                         return Resultado<Balancos>.Falha(resultado.Errors!);
                     }
 
-                    if (GeraBaixa(chave.Tipo, chave.Motivo))
+                    if (chave.Tipo == TipoMovimentacaoEstoque.SAIDA)
                         await _nfesBaixa.EmitirBaixa(resultado.Data!, command!.EmitenteId!.Value);
+                    else
+                        await _nfesBaixa.EmitirEntradaDeAjuste(resultado.Data!, command!.EmitenteId!.Value);
                 }
 
                 await _balancosRepository.AtualizarBalanco(balanco);
@@ -234,9 +237,6 @@ public sealed class BalancosService : BaseService
             }
         });
     }
-
-    private static bool GeraBaixa(TipoMovimentacaoEstoque tipo, MotivoMovimentacaoEstoque motivo)
-        => tipo == TipoMovimentacaoEstoque.SAIDA && motivo.GeraNfeDeBaixa();
 
     // Regra da divergência: falta pede um dos quatro motivos de perda; sobra pede recontagem e motivo de contagem ou outros.
     private static ResultadoErro? ErroDeDivergencia(BalancosItens item, decimal diferenca)
