@@ -48,14 +48,14 @@ _Avoid_: Nota de crédito, cancelamento da nota
 Nota Fiscal emitida no Estorno de devolução, no sentido oposto ao da NF-e de devolução e referenciando-a. Só existe se a Devolução emitiu NF-e de devolução.
 
 **Movimentação**:
-Lançamento do razão de estoque, de entrada ou de saída, que nunca é alterado depois de lançado: a correção é outra Movimentação (o estorno). A Movimentação manual aceita só saída; a entrada de estoque vem da Compra, de retornos (devolução de venda, estorno) e do ajuste de inventário positivo do Balanço.
+Lançamento do razão de estoque, de entrada ou de saída, que nunca é alterado depois de lançado: a correção é outra Movimentação (o estorno). A Movimentação manual aceita só saída; a entrada de estoque vem da Compra, de retornos (devolução de venda, estorno) e do ajuste de inventário positivo do Balanço (com NF-e de entrada de ajuste).
 _Avoid_: Lançamento de estoque, ajuste manual (ambíguo com Ajuste de inventário)
 
 **Motivo da movimentação**:
-Tipo obrigatório de toda saída manual (perda/avaria, furto/roubo ou vencimento, todos com NF-e de baixa) e de toda divergência do Balanço (falta: também erro de contagem; sobra: erro de contagem ou outros). Erro de contagem e outros são ajuste interno, sem nota, e não existem na saída manual. O texto livre do motivo continua como complemento.
+Tipo obrigatório de toda saída manual (perda/avaria, furto/roubo ou vencimento, todos com NF-e de baixa) e de toda divergência do Balanço (falta: também erro de contagem; sobra: erro de contagem ou outros). Erro de contagem e outros só existem no Balanço, e a nota de toda divergência segue a regra do Ajuste de inventário. O texto livre do motivo continua como complemento.
 
 **Baixa de estoque**:
-Saída de Itens por perda/avaria, furto/roubo ou vencimento, amparada por NF-e de baixa. É a única forma de tirar mercadoria do estoque sem Venda nem Devolução de compra.
+Saída de Itens por perda/avaria, furto/roubo, vencimento ou falta apurada no Balanço, amparada por NF-e de baixa. É a única forma de tirar mercadoria do estoque sem Venda nem Devolução de compra.
 _Avoid_: Baixa de parcela (outro sentido, financeiro)
 
 **NF-e de baixa**:
@@ -63,7 +63,7 @@ Nota Fiscal de saída emitida pela loja para uma Baixa de estoque, finalidade ba
 _Avoid_: Nota de perda, nota de ajuste
 
 **Ajuste de inventário**:
-Correção do saldo feita pelo fechamento do Balanço. A falta vira saída com Motivo da movimentação (Baixa de estoque quando for perda, furto ou vencimento). A sobra só é aceita após recontagem e vira entrada sem NF-e, documentada pelo próprio Balanço.
+Correção do saldo feita pelo fechamento do Balanço. A falta vira saída com Motivo da movimentação e NF-e de baixa. A sobra só é aceita após recontagem e vira entrada com NF-e de entrada de ajuste de inventário (CFOP 1.949, posição da SEFA/PR).
 _Avoid_: Acerto de estoque, regularização de sobra
 
 **Recontagem**:
