@@ -16,6 +16,7 @@ public interface INfesRepository
     public Task<NfeAtiva?> ObterNfeEmitidaDaCompra(int compraId);
     // NF-e de devolução (ou de estorno) emitida para a Devolução de venda ou de compra informada.
     public Task<NfeAtiva?> ObterNfeDaDevolucao(int? devolucaoId, int? devolucaoCompraId, FinalidadeNfe finalidade);
+    public Task<NfeAtiva?> ObterNfeDaMovimentacao(int movimentacaoEstoqueId, FinalidadeNfe finalidade);
     // Próximo número da série para o emitente; exige transação aberta (advisory lock até o commit).
     public Task<int> ProximoNumeroSaida(int emitenteId, short serie);
     // false = nada atualizado (a NF-e deixou de estar EMITIDA entre a leitura e o UPDATE).

@@ -55,7 +55,7 @@ public class NfesRepository : INfesRepository
                    n.valor_produtos, n.valor_desconto, n.valor_frete, n.valor_seguro,
                    n.valor_outras_despesas, n.valor_total, n.venda_id, n.compra_id,
                    n.justificativa_cancelamento, n.data_cancelamento,
-                   n.finalidade, n.nfe_referenciada_id, n.devolucao_id, n.devolucao_compra_id,
+                   n.finalidade, n.nfe_referenciada_id, n.devolucao_id, n.devolucao_compra_id, n.movimentacao_estoque_id,
                    e.id AS EmitenteId, e.id AS Id, e.nome_razaosocial, e.cpf_cnpj, e.ativo,
                    c.id AS ClienteId, c.id AS Id, c.nome_razaosocial, c.cpf_cnpj, c.ativo,
                    f.id AS FornecedorId, f.id AS Id, f.nome_razaosocial, f.cpf_cnpj, f.ativo
@@ -157,7 +157,7 @@ public class NfesRepository : INfesRepository
                    n.valor_produtos, n.valor_desconto, n.valor_frete, n.valor_seguro,
                    n.valor_outras_despesas, n.valor_total, n.venda_id, n.compra_id,
                    n.justificativa_cancelamento, n.data_cancelamento,
-                   n.finalidade, n.nfe_referenciada_id, n.devolucao_id, n.devolucao_compra_id,
+                   n.finalidade, n.nfe_referenciada_id, n.devolucao_id, n.devolucao_compra_id, n.movimentacao_estoque_id,
                     e.id AS EmitenteId, e.id AS Id, e.nome_razaosocial, e.cpf_cnpj, e.apelido_nomefantasia, e.logradouro, e.numero,
                     e.telefone, e.email, e.rg_ie, e.inscricao_municipal, e.regime_tributario,
                     e.ativo, e.criado_em, e.observacao,
@@ -264,7 +264,7 @@ public class NfesRepository : INfesRepository
                 valor_produtos, valor_desconto, valor_frete, valor_seguro,
                 valor_outras_despesas, valor_total,
                 emitente_id, cliente_id, fornecedor_id, venda_id, compra_id, xml_documento,
-                finalidade, nfe_referenciada_id, devolucao_id, devolucao_compra_id)
+                finalidade, nfe_referenciada_id, devolucao_id, devolucao_compra_id, movimentacao_estoque_id)
             VALUES (
                 @ChaveAcesso, @Numero, @Serie, @DataEmissao, @DataSaida,
                 @EmitenteNomeRazaosocial, @EmitenteCpfCnpj, @EmitenteRgIe,
@@ -277,7 +277,7 @@ public class NfesRepository : INfesRepository
                 @ValorProdutos, @ValorDesconto, @ValorFrete, @ValorSeguro,
                 @ValorOutrasDespesas, @ValorTotal,
                 @EmitenteId, @ClienteId, @FornecedorId, @VendaId, @CompraId, @XmlDocumento,
-                @Finalidade::finalidade_nfe_enum, @NfeReferenciadaId, @DevolucaoId, @DevolucaoCompraId)
+                @Finalidade::finalidade_nfe_enum, @NfeReferenciadaId, @DevolucaoId, @DevolucaoCompraId, @MovimentacaoEstoqueId)
             RETURNING id;";
 
         int idGerado;
@@ -325,7 +325,8 @@ public class NfesRepository : INfesRepository
                 Finalidade = nfe.Finalidade.ToString(),
                 nfe.NfeReferenciadaId,
                 nfe.DevolucaoId,
-                nfe.DevolucaoCompraId
+                nfe.DevolucaoCompraId,
+                nfe.MovimentacaoEstoqueId
             },
             transaction: _session.Transaction);
         }
@@ -492,6 +493,12 @@ public class NfesRepository : INfesRepository
               WHERE finalidade = @Finalidade::finalidade_nfe_enum AND status_nfe = 'EMITIDA'
                 AND devolucao_id IS NOT DISTINCT FROM @DevolucaoId AND devolucao_compra_id IS NOT DISTINCT FROM @DevolucaoCompraId;",
             new { Finalidade = finalidade.ToString(), DevolucaoId = devolucaoId, DevolucaoCompraId = devolucaoCompraId }, transaction: _session.Transaction);
+
+    public Task<NfeAtiva?> ObterNfeDaMovimentacao(int movimentacaoEstoqueId, FinalidadeNfe finalidade)
+        => _session.Connection.QuerySingleOrDefaultAsync<NfeAtiva?>(
+            @"SELECT id AS NfeId, chave_acesso AS ChaveAcesso FROM nfes
+              WHERE movimentacao_estoque_id = @MovimentacaoEstoqueId AND finalidade = @Finalidade::finalidade_nfe_enum AND status_nfe = 'EMITIDA';",
+            new { MovimentacaoEstoqueId = movimentacaoEstoqueId, Finalidade = finalidade.ToString() }, transaction: _session.Transaction);
 
     public async Task<int> ProximoNumeroSaida(int emitenteId, short serie)
     {
