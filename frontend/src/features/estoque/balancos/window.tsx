@@ -365,7 +365,7 @@ function BalancoForm({
             <div className="min-w-64">
               <EmitenteInput
                 name="balanco-emitente"
-                label="Emitente da NF-e de baixa"
+                label="Emitente da NF-e de ajuste de estoque"
                 required
                 usarPadrao
                 onSelectId={setEmitenteId}

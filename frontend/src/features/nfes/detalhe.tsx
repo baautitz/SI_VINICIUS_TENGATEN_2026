@@ -198,6 +198,8 @@ function motivoSemCancelarNfe(nfe: Nfe): string {
   if (nfe.finalidade === "DEVOLUCAO") return "NF-e de devolução não é cancelada: o estorno da devolução emite a nota de estorno.";
   if (nfe.finalidade === "ESTORNO_DEVOLUCAO") return "NF-e de estorno de devolução não pode ser cancelada.";
   if (nfe.finalidade === "BAIXA_ESTOQUE") return "NF-e de baixa de estoque não é cancelada: o estorno da movimentação emite a nota de estorno da baixa.";
+  if (nfe.finalidade === "ENTRADA_AJUSTE_INVENTARIO") return "NF-e de ajuste de inventário não é cancelada: o cancelamento do balanço emite a nota de estorno.";
+  if (nfe.finalidade === "ESTORNO_ENTRADA_AJUSTE_INVENTARIO") return "NF-e de estorno de ajuste de inventário não pode ser cancelada.";
   if (nfe.finalidade === "ESTORNO_BAIXA_ESTOQUE") return "NF-e de estorno de baixa de estoque não pode ser cancelada.";
   return nfe.tipoOperacao === "ENTRADA" ? "NF-e de entrada não é cancelada diretamente: estorne a compra." : "Somente NF-e emitida pode ser cancelada.";
 }

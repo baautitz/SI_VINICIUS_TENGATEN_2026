@@ -53,9 +53,9 @@ export function erroDaDivergencia(item: ItemDivergente): string | null {
   return null;
 }
 
-/** Itens do balanço que exigem NF-e de baixa: falta por perda, furto ou vencimento. */
+/** Itens do balanço que exigem NF-e: toda divergência (falta emite a baixa; sobra, a entrada de ajuste de inventário). */
 export function itensComBaixa(itens: ItemDivergente[]): ItemDivergente[] {
-  return itens.filter((i) => (diferencaDoItem(i) ?? 0) < 0 && geraNfeDeBaixa(i.motivoDivergencia));
+  return itens.filter((i) => (diferencaDoItem(i) ?? 0) !== 0);
 }
 
 export interface ResumoFechamento {
@@ -67,6 +67,6 @@ export interface ResumoFechamento {
 export function resumoDoFechamento(itens: ItemDivergente[], emitenteId: number | null | undefined): ResumoFechamento {
   const erros = itens.map(erroDaDivergencia).filter((e): e is string => e !== null);
   const exigeEmitente = itensComBaixa(itens).length > 0;
-  if (exigeEmitente && !emitenteId && erros.length === 0) erros.push("Informe o emitente da NF-e de baixa.");
+  if (exigeEmitente && !emitenteId && erros.length === 0) erros.push("Informe o emitente da NF-e de ajuste de estoque.");
   return { erros, exigeEmitente };
 }
