@@ -127,12 +127,14 @@ ALTER TABLE nfes ADD CONSTRAINT nfes_origem_ck CHECK (
   OR (
     -- Baixa de estoque: a loja é a destinatária (sem cliente nem fornecedor), ligada só à Movimentação.
     -- A baixa é saída e não referencia nota; o estorno da baixa é entrada e referencia a nota de baixa.
-    finalidade IN ('BAIXA_ESTOQUE', 'ESTORNO_BAIXA_ESTOQUE') AND movimentacao_estoque_id IS NOT NULL
+    finalidade IN ('BAIXA_ESTOQUE', 'ESTORNO_BAIXA_ESTOQUE', 'ENTRADA_AJUSTE_INVENTARIO', 'ESTORNO_ENTRADA_AJUSTE_INVENTARIO') AND movimentacao_estoque_id IS NOT NULL
     AND venda_id IS NULL AND compra_id IS NULL AND cliente_id IS NULL AND fornecedor_id IS NULL
     AND devolucao_id IS NULL AND devolucao_compra_id IS NULL
     AND (
       (finalidade = 'BAIXA_ESTOQUE' AND tipo_operacao = 'SAIDA' AND nfe_referenciada_id IS NULL)
       OR (finalidade = 'ESTORNO_BAIXA_ESTOQUE' AND tipo_operacao = 'ENTRADA' AND nfe_referenciada_id IS NOT NULL)
+      OR (finalidade = 'ENTRADA_AJUSTE_INVENTARIO' AND tipo_operacao = 'ENTRADA' AND nfe_referenciada_id IS NULL)
+      OR (finalidade = 'ESTORNO_ENTRADA_AJUSTE_INVENTARIO' AND tipo_operacao = 'SAIDA' AND nfe_referenciada_id IS NOT NULL)
     )
   )
 );
