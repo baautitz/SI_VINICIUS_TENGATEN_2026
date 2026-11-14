@@ -24,6 +24,10 @@ import { navigationCell } from "@/ui/keyboard-navigation";
 import { combinacaoDe } from "@/lib/atalhos";
 import { cn } from "@/lib/utils";
 import { statusBalancoLabels } from "./types";
+import { Checkbox } from "@/ui/primitives";
+import { EmitenteInput } from "@/components/entity-inputs/emitente-input";
+import { MotivoMovimentacaoSelect } from "@/components/motivo-movimentacao-select";
+import { diferencaDoItem, motivosDaDivergencia, resumoDoFechamento, type MotivoMovimentacao } from "@/features/estoque/motivos";
 
 export interface BalancoWindowProps {
   /** null = novo balanço. */
@@ -37,7 +41,19 @@ interface ItemLinha {
   permiteDecimais: boolean;
   quantidadeSistema: number;
   quantidadeContada: number;
+  motivoDivergencia: MotivoMovimentacao | null;
+  recontado: boolean;
 }
+
+const paraDivergente = (i: ItemLinha) => ({
+  sku: i.sku,
+  quantidadeSistema: i.quantidadeSistema,
+  quantidadeContada: i.quantidadeContada,
+  motivoDivergencia: i.motivoDivergencia,
+  recontado: i.recontado,
+});
+
+const semMotivo = (item: ItemLinha, diferenca: number) => diferenca !== 0 && item.motivoDivergencia === null;
 
 const fmt = (n: number) =>
   n.toLocaleString("pt-BR", { maximumFractionDigits: 4 });
@@ -87,10 +103,13 @@ function BalancoForm({
           !Number.isInteger(i.quantidadeContada ?? 0),
         quantidadeSistema: Number(i.quantidadeSistema),
         quantidadeContada: Number(i.quantidadeContada ?? 0),
+        motivoDivergencia: i.motivoDivergencia ?? null,
+        recontado: i.recontado ?? false,
       })) ?? [],
   );
   const [skuInputKey, setSkuInputKey] = React.useState(0);
   const [busy, setBusy] = React.useState(false);
+  const [emitenteId, setEmitenteId] = React.useState<number | null>(null);
   const skuInputRef = React.useRef<HTMLInputElement>(null);
 
   // Adicionar item remonta o SkuInput (nova key); a ref devolve o foco depois da troca do DOM.
@@ -142,25 +161,36 @@ function BalancoForm({
           quantidadeContada: Number(
             quantidade.toFixed(permiteDecimais ? 4 : 0),
           ),
+          motivoDivergencia: null,
+          recontado: false,
         },
       ];
     });
     setSkuInputKey((k) => k + 1);
   };
 
+  // Mudar a contagem pode trocar falta por sobra (ou zerar a diferença): o motivo que já não vale é descartado.
   const atualizarContagem = (index: number, valor: number) =>
     setItens((atual) =>
-      atual.map((item, i) =>
-        i === index
-          ? {
-              ...item,
-              quantidadeContada: Number(
-                Number(valor || 0).toFixed(item.permiteDecimais ? 4 : 0),
-              ),
-            }
-          : item,
-      ),
+      atual.map((item, i) => {
+        if (i !== index) return item;
+        const contada = Number(Number(valor || 0).toFixed(item.permiteDecimais ? 4 : 0));
+        const diferenca = Number((contada - item.quantidadeSistema).toFixed(4));
+        const motivoValido =
+          item.motivoDivergencia !== null && motivosDaDivergencia(diferenca).includes(item.motivoDivergencia);
+        return {
+          ...item,
+          quantidadeContada: contada,
+          motivoDivergencia: motivoValido ? item.motivoDivergencia : null,
+          recontado: diferenca > 0 ? item.recontado : false,
+        };
+      }),
     );
+
+  const atualizarItem = (index: number, parcial: Partial<ItemLinha>) =>
+    setItens((atual) => atual.map((item, i) => (i === index ? { ...item, ...parcial } : item)));
+
+  const fechamento = resumoDoFechamento(itens.map(paraDivergente), emitenteId);
 
   const removerItem = async (index: number) => {
     const item = itens[index];
@@ -186,10 +216,15 @@ function BalancoForm({
     }
     const payload = {
       observacao: observacao.trim() || null,
-      itens: itens.map((i) => ({
-        sku: i.sku,
-        quantidadeContada: i.quantidadeContada,
-      })),
+      itens: itens.map((i) => {
+        const diverge = (diferencaDoItem(paraDivergente(i)) ?? 0) !== 0;
+        return {
+          sku: i.sku,
+          quantidadeContada: i.quantidadeContada,
+          motivoDivergencia: diverge ? i.motivoDivergencia : null,
+          recontado: diverge && i.recontado,
+        };
+      }),
     };
     const res = balancoId
       ? await balancosApi.update(balancoId, payload)
@@ -224,16 +259,24 @@ function BalancoForm({
 
   const fecharBalanco = () =>
     run(async () => {
+      if (fechamento.erros.length > 0) {
+        ui.feedback.notify({
+          type: "warning",
+          title: "Não dá para finalizar o balanço.",
+          description: fechamento.erros.slice(0, 3).join(" ") + (fechamento.erros.length > 3 ? ` (+${fechamento.erros.length - 3})` : ""),
+        });
+        return;
+      }
       const ok = await ui.windows.confirm({
         title: "Finalizar balanço?",
         description:
-          "As diferenças entre a contagem e o saldo atual serão lançadas como movimentações de estoque (origem Balanço). Esta ação não pode ser desfeita, só estornada.",
+          "As diferenças entre a contagem e o saldo atual serão lançadas como movimentações de estoque (origem Balanço). Faltas por perda, furto ou vencimento emitem NF-e de baixa; sobras entram sem nota. Esta ação não pode ser desfeita, só estornada.",
         confirmLabel: "Finalizar balanço",
       });
       if (!ok) return;
       const id = await salvar();
       if (id === null) return;
-      const res = await balancosApi.fechar(id);
+      const res = await balancosApi.fechar(id, emitenteId);
       if (res.success === false) {
         ui.feedback.notifyError(res, {
           fallbackTitle: "Não foi possível finalizar o balanço.",
@@ -318,6 +361,17 @@ function BalancoForm({
               />
             </div>
           )}
+          {!readOnly && fechamento.exigeEmitente && (
+            <div className="min-w-64">
+              <EmitenteInput
+                name="balanco-emitente"
+                label="Emitente da NF-e de baixa"
+                required
+                usarPadrao
+                onSelectId={setEmitenteId}
+              />
+            </div>
+          )}
           <Field className="min-w-64 flex-1">
             <FieldLabel htmlFor="balanco-observacao">Observação</FieldLabel>
             <Input
@@ -354,6 +408,8 @@ function BalancoForm({
                   <TableHead className="w-36 text-right">Sistema</TableHead>
                   <TableHead className="min-w-40 text-right">Contado</TableHead>
                   <TableHead className="w-36 text-right">Diferença</TableHead>
+                  <TableHead className="min-w-48">Motivo</TableHead>
+                  <TableHead className="w-28 text-center">Recontado</TableHead>
                   {!readOnly && (
                     <TableHead className="w-14 text-center">Ação</TableHead>
                   )}
@@ -363,7 +419,7 @@ function BalancoForm({
                 {itens.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={readOnly ? 5 : 6}
+                      colSpan={readOnly ? 7 : 8}
                       className="text-muted-foreground py-8 text-center"
                     >
                       Nenhum item adicionado ainda.
@@ -439,13 +495,39 @@ function BalancoForm({
                             )}
                           />
                         </TableCell>
+                        <TableCell>
+                          {diferenca !== 0 && (
+                            <MotivoMovimentacaoSelect
+                              name={`balanco-motivo-${item.sku}`}
+                              label={`Motivo de ${item.sku}`}
+                              compacto
+                              opcoes={motivosDaDivergencia(diferenca)}
+                              value={item.motivoDivergencia}
+                              onChange={(motivo) => atualizarItem(index, { motivoDivergencia: motivo })}
+                              disabled={readOnly}
+                              error={semMotivo(item, diferenca) ? "Informe o motivo." : undefined}
+                              triggerProps={navigationCell({ grid: "balanco-itens", row: index, column: 3 })}
+                            />
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {diferenca > 0 && (
+                            <Checkbox
+                              {...navigationCell({ grid: "balanco-itens", row: index, column: 4 })}
+                              aria-label={`Recontado ${item.sku}`}
+                              checked={item.recontado}
+                              disabled={readOnly}
+                              onCheckedChange={(marcado) => atualizarItem(index, { recontado: marcado === true })}
+                            />
+                          )}
+                        </TableCell>
                         {!readOnly && (
                           <TableCell className="text-center">
                             <Button
                               {...navigationCell({
                                 grid: "balanco-itens",
                                 row: index,
-                                column: 3,
+                                column: 5,
                               })}
                               type="button"
                               variant="outline"

@@ -20,7 +20,7 @@ export const estoqueApi = {
 
 export interface BalancoPayload {
   observacao?: string | null;
-  itens: { sku: string; quantidadeContada: number }[];
+  itens: { sku: string; quantidadeContada: number; motivoDivergencia?: string | null; recontado?: boolean }[];
 }
 
 export const balancosApi = {
@@ -29,7 +29,9 @@ export const balancosApi = {
   getById: (id: number) => http.get<Balanco>(`/api/estoque/balancos/${id}`),
   create: (data: BalancoPayload) => http.post<Resultado<Balanco>>("/api/estoque/balancos", data),
   update: (id: number, data: BalancoPayload) => http.put<Resultado<Balanco>>(`/api/estoque/balancos/${id}`, data),
-  fechar: (id: number) => http.post<Resultado<Balanco>>(`/api/estoque/balancos/${id}/fechar`, {}),
+  // O emitente só é exigido quando alguma falta gera NF-e de baixa.
+  fechar: (id: number, emitenteId?: number | null) =>
+    http.post<Resultado<Balanco>>(`/api/estoque/balancos/${id}/fechar`, { emitenteId: emitenteId ?? null }),
   cancelar: (id: number, motivo?: string) =>
     http.post<Resultado<Balanco>>(`/api/estoque/balancos/${id}/cancelar`, { motivo: motivo ?? null }),
 };
