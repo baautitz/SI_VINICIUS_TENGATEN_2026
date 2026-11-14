@@ -11,7 +11,7 @@ export const motivoMovimentacaoLabels: Record<MotivoMovimentacao, string> = {
 };
 
 // Saída manual: erro de contagem só existe no balanço.
-export const motivosSaidaManual: MotivoMovimentacao[] = ["PERDA_AVARIA", "FURTO_ROUBO", "VENCIMENTO", "OUTROS"];
+export const motivosSaidaManual: MotivoMovimentacao[] = ["PERDA_AVARIA", "FURTO_ROUBO", "VENCIMENTO"];
 export const motivosFalta: MotivoMovimentacao[] = ["PERDA_AVARIA", "FURTO_ROUBO", "VENCIMENTO", "ERRO_DE_CONTAGEM"];
 export const motivosSobra: MotivoMovimentacao[] = ["ERRO_DE_CONTAGEM", "OUTROS"];
 
