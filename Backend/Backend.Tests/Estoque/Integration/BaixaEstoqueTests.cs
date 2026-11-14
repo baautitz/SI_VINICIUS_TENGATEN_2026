@@ -234,16 +234,16 @@ public class BaixaEstoqueTests
     }
 
     [Fact]
-    public async Task Falta_por_erro_de_contagem_e_ajuste_interno_sem_nota_nem_emitente()
+    public async Task Falta_por_erro_de_contagem_tambem_emite_nfe_de_baixa()
     {
-        await Cenario();
+        var emitente = await Cenario();
         var id = await Balanco(contada: 9, motivo: "ERRO_DE_CONTAGEM");
 
-        var r = await Fechar(id);
+        var r = await Fechar(id, emitente);
 
         Assert.True(r.Success, r.Errors?.FirstOrDefault()?.Message);
         Assert.Equal(9m, await Estoque());
-        Assert.Equal(0, await Escalar<int>("SELECT COUNT(*) FROM nfes;"));
+        Assert.Equal(1, await Escalar<int>("SELECT COUNT(*) FROM nfes WHERE finalidade = 'BAIXA_ESTOQUE' AND tipo_operacao = 'SAIDA';"));
     }
 
     [Fact]
@@ -282,17 +282,44 @@ public class BaixaEstoqueTests
     }
 
     [Fact]
-    public async Task Sobra_recontada_entra_no_estoque_sem_emitir_nota()
+    public async Task Sobra_recontada_entra_no_estoque_e_emite_nfe_de_entrada_de_ajuste()
     {
-        await Cenario();
+        var emitente = await Cenario();
         var id = await Balanco(contada: 12, motivo: "ERRO_DE_CONTAGEM", recontado: true);
 
-        var r = await Fechar(id);
+        var r = await Fechar(id, emitente);
 
         Assert.True(r.Success, r.Errors?.FirstOrDefault()?.Message);
         Assert.Equal(12m, await Estoque());
         Assert.Equal("ENTRADA", await Escalar<string>("SELECT tipo_movimentacao::text FROM movimentacoes_estoque;"));
-        Assert.Equal(0, await Escalar<int>("SELECT COUNT(*) FROM nfes;"));
+        Assert.Equal(1, await Escalar<int>("SELECT COUNT(*) FROM nfes WHERE finalidade = 'ENTRADA_AJUSTE_INVENTARIO' AND tipo_operacao = 'ENTRADA';"));
+    }
+
+    [Fact]
+    public async Task Sobra_sem_emitente_nao_fecha_o_balanco()
+    {
+        await Cenario();
+        var id = await Balanco(contada: 12, motivo: "OUTROS", recontado: true);
+
+        var r = await Fechar(id);
+
+        Assert.False(r.Success);
+        Assert.Contains(r.Errors!, e => e.Code == "EMITENTE_OBRIGATORIO");
+        Assert.Equal(10m, await Estoque());
+    }
+
+    [Fact]
+    public async Task Cancelar_balanco_com_sobra_emite_nfe_de_estorno_do_ajuste()
+    {
+        var emitente = await Cenario();
+        var id = await Balanco(contada: 12, motivo: "OUTROS", recontado: true);
+        Assert.True((await Fechar(id, emitente)).Success);
+
+        var r = await Servico<Resultado<Balancos>, BalancosService>(s => s.Cancelar(id, new CancelarBalancoCommand("Balanço feito no dia errado")));
+
+        Assert.True(r.Success, r.Errors?.FirstOrDefault()?.Message);
+        Assert.Equal(10m, await Estoque());
+        Assert.Equal(1, await Escalar<int>("SELECT COUNT(*) FROM nfes WHERE finalidade = 'ESTORNO_ENTRADA_AJUSTE_INVENTARIO' AND tipo_operacao = 'SAIDA';"));
     }
 
     [Fact]

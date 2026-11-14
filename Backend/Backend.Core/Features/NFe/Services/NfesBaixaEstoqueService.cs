@@ -28,15 +28,22 @@ public sealed class NfesBaixaEstoqueService
     public Task<NfeAtiva> EmitirBaixa(MovimentacoesEstoques movimentacao, int emitenteId)
         => Emitir(FinalidadeNfe.BAIXA_ESTOQUE, movimentacao, emitenteId, null);
 
-    // Só emite se a movimentação original teve NF-e de baixa; devolve null quando não há nota a estornar.
+    // Sobra do balanço: entrada de ajuste de inventário (CFOP 1.949), sem destaque de imposto (SEFA/PR, Consulta 3/2024).
+    public Task<NfeAtiva> EmitirEntradaDeAjuste(MovimentacoesEstoques movimentacao, int emitenteId)
+        => Emitir(FinalidadeNfe.ENTRADA_AJUSTE_INVENTARIO, movimentacao, emitenteId, null);
+
+    // Só emite se a movimentação original teve NF-e (baixa ou entrada de ajuste); devolve null quando não há nota a estornar.
     public async Task<NfeAtiva?> EmitirEstornoDaBaixa(MovimentacoesEstoques original)
     {
-        var baixa = await _nfesRepository.ObterNfeDaMovimentacao(original.Id, FinalidadeNfe.BAIXA_ESTOQUE);
+        var (finalidadeOriginal, finalidadeEstorno) = original.TipoMovimentacao == Estoque.Entities.Enums.TipoMovimentacaoEstoque.SAIDA
+            ? (FinalidadeNfe.BAIXA_ESTOQUE, FinalidadeNfe.ESTORNO_BAIXA_ESTOQUE)
+            : (FinalidadeNfe.ENTRADA_AJUSTE_INVENTARIO, FinalidadeNfe.ESTORNO_ENTRADA_AJUSTE_INVENTARIO);
+        var baixa = await _nfesRepository.ObterNfeDaMovimentacao(original.Id, finalidadeOriginal);
         if (baixa is null) return null;
 
         var nota = await _nfesRepository.ObterNfePorId(baixa.NfeId)
-            ?? throw new DomainException("NF-e de baixa da movimentação não encontrada.");
-        return await Emitir(FinalidadeNfe.ESTORNO_BAIXA_ESTOQUE, original, nota.Emitente.Id, baixa);
+            ?? throw new DomainException("NF-e da movimentação não encontrada.");
+        return await Emitir(finalidadeEstorno, original, nota.Emitente.Id, baixa);
     }
 
     private async Task<NfeAtiva> Emitir(FinalidadeNfe finalidade, MovimentacoesEstoques movimentacao, int emitenteId, NfeAtiva? referenciada)
