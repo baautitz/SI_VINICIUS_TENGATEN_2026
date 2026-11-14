@@ -38,3 +38,17 @@ BEGIN
 EXCEPTION
   WHEN duplicate_object THEN NULL;
 END $$;
+
+-- Motivo tipado de toda saída manual e de toda divergência do balanço (ADR 0006).
+DO $$
+BEGIN
+  CREATE TYPE projeto_sistemas.motivo_movimentacao_estoque_enum AS ENUM (
+    'PERDA_AVARIA',
+    'FURTO_ROUBO',
+    'VENCIMENTO',
+    'ERRO_DE_CONTAGEM',
+    'OUTROS'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;

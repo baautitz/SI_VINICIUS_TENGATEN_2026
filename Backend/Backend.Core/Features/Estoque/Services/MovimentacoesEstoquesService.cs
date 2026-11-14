@@ -15,6 +15,7 @@ using Backend.Core.Features.Estoque.Entities;
 using Backend.Core.Features.Estoque.Entities.Enums;
 using Backend.Core.Features.Estoque.Repositories;
 using Backend.Core.Features.Estoque.Validators.Commands;
+using Backend.Core.Features.NFe.Services;
 
 namespace Backend.Core.Features.Estoque.Services;
 
@@ -24,13 +25,16 @@ public sealed class MovimentacoesEstoquesService : BaseService
     private readonly ISkusRepository _skusRepository;
     private readonly IUsuariosRepository _usuariosRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly NfesBaixaEstoqueService? _nfesBaixa;
 
     public MovimentacoesEstoquesService(
         IMovimentacoesEstoquesRepository movimentacoesRepository,
         ISkusRepository skusRepository,
         IUsuariosRepository usuariosRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        NfesBaixaEstoqueService? nfesBaixa = null)
     {
+        _nfesBaixa = nfesBaixa;
         _movimentacoesRepository = movimentacoesRepository;
         _skusRepository = skusRepository;
         _usuariosRepository = usuariosRepository;
@@ -51,7 +55,8 @@ public sealed class MovimentacoesEstoquesService : BaseService
     public Task<MovimentacoesEstoques?> ObterMovimentacaoPorId(int id)
         => _movimentacoesRepository.ObterMovimentacaoPorId(id);
 
-    // Lançamento manual (perda, avaria, uso interno, acerto...). Efetiva na hora; correção só por estorno.
+    // Lançamento manual: sempre saída, com motivo tipado (ADR 0006). Perda/avaria, furto/roubo e vencimento emitem NF-e de baixa
+    // na mesma transação. Efetiva na hora; correção só por estorno.
     public async Task<Resultado<MovimentacoesEstoques>> CriarMovimentacao(CriarMovimentacaoCommand command)
     {
         var validation = new CriarMovimentacaoCommandValidator().Validate(command);
@@ -62,8 +67,8 @@ public sealed class MovimentacoesEstoquesService : BaseService
         if (command.UsuarioId.HasValue && usuario == null)
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("USUARIO_INEXISTENTE", "O usuário informado não existe.", "UsuarioId"));
 
-        Enum.TryParse<TipoMovimentacaoEstoque>(command.TipoMovimentacao, true, out var tipo);
-        var movimentacao = new MovimentacoesEstoques(tipo, OrigemMovimentacaoEstoque.MANUAL, null, command.Motivo, usuario);
+        Enum.TryParse<MotivoMovimentacaoEstoque>(command.MotivoTipo, true, out var motivoTipo);
+        var movimentacao = new MovimentacoesEstoques(TipoMovimentacaoEstoque.SAIDA, OrigemMovimentacaoEstoque.MANUAL, null, command.Motivo, usuario, motivoTipo);
 
         foreach (var itemCommand in command.Itens)
         {
@@ -74,7 +79,8 @@ public sealed class MovimentacoesEstoquesService : BaseService
             movimentacao.AdicionarItem(sku, itemCommand.Quantidade, itemCommand.CustoUnitario ?? sku.CustoMedio);
         }
 
-        return await ExecutarEmTransacao(movimentacao, null);
+        return await ExecutarEmTransacao(movimentacao, null,
+            motivoTipo.GeraNfeDeBaixa() ? registrada => EmitirBaixa(registrada, command.EmitenteId!.Value) : null);
     }
 
     public async Task<Resultado<MovimentacoesEstoques>> Estornar(int id, EstornarMovimentacaoCommand command)
@@ -111,8 +117,19 @@ public sealed class MovimentacoesEstoquesService : BaseService
             return Resultado<MovimentacoesEstoques>.Falha(new ResultadoErro("MOVIMENTACAO_JA_ESTORNADA", "Esta movimentação já foi estornada."));
 
         var (estorno, custosARestaurar) = MontarEstorno(original, motivo);
-        return await ExecutarEmTransacao(estorno, custosARestaurar);
+        // O estorno de uma baixa com NF-e emite a nota de estorno da baixa na mesma transação.
+        return await ExecutarEmTransacao(estorno, custosARestaurar, _ => EmitirEstornoDaBaixa(original));
     }
+
+    private async Task EmitirBaixa(MovimentacoesEstoques registrada, int emitenteId)
+    {
+        if (_nfesBaixa is null)
+            throw new DomainException("A emissão da NF-e de baixa não está disponível.");
+        await _nfesBaixa.EmitirBaixa(registrada, emitenteId);
+    }
+
+    private Task EmitirEstornoDaBaixa(MovimentacoesEstoques original)
+        => _nfesBaixa is null ? Task.CompletedTask : _nfesBaixa.EmitirEstornoDaBaixa(original);
 
     // O estorno só devolve o custo médio de antes da entrada se ela foi a última movimentação do SKU, e só
     // zera o saldo se o item ainda está em estoque. Registrar() não confere a ordem (só impede saldo negativo),
@@ -157,6 +174,7 @@ public sealed class MovimentacoesEstoquesService : BaseService
             var resultado = await Registrar(estorno, custosARestaurar);
             if (!resultado.Success)
                 throw new DomainException(resultado.Errors!.First().Message);
+            await EmitirEstornoDaBaixa(original);
         }
     }
 
@@ -228,7 +246,9 @@ public sealed class MovimentacoesEstoquesService : BaseService
         return (estorno, custos);
     }
 
-    private async Task<Resultado<MovimentacoesEstoques>> ExecutarEmTransacao(MovimentacoesEstoques movimentacao, IReadOnlyDictionary<string, (decimal CustoMedio, decimal? CustoUltimaCompra)>? custosARestaurar)
+    // `aposRegistrar` roda dentro da transação, depois que a movimentação foi gravada (NF-e de baixa e de estorno da baixa).
+    private async Task<Resultado<MovimentacoesEstoques>> ExecutarEmTransacao(MovimentacoesEstoques movimentacao, IReadOnlyDictionary<string, (decimal CustoMedio, decimal? CustoUltimaCompra)>? custosARestaurar,
+        Func<MovimentacoesEstoques, Task>? aposRegistrar = null)
     {
         return await ExecuteResultAsync(async () =>
         {
@@ -236,6 +256,7 @@ public sealed class MovimentacoesEstoquesService : BaseService
             {
                 _unitOfWork.BeginTransaction();
                 var resultado = await Registrar(movimentacao, custosARestaurar);
+                if (resultado.Success && aposRegistrar is not null) await aposRegistrar(resultado.Data!);
                 if (resultado.Success) _unitOfWork.Commit(); else _unitOfWork.Rollback();
                 return resultado;
             }

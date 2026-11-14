@@ -16,6 +16,7 @@ public class MovimentacoesEstoques
     public OrigemMovimentacaoEstoque OrigemTipo { get; private set; }
     public int? OrigemId { get; private set; }
     public string? Motivo { get; private set; }
+    public MotivoMovimentacaoEstoque? MotivoTipo { get; private set; }
     public Usuarios? Usuario { get; private set; }
     public bool Estornada { get; private set; }
     public IReadOnlyCollection<MovimentacoesEstoquesItens> MovimentacoesEstoquesItens => _itens.AsReadOnly();
@@ -27,7 +28,8 @@ public class MovimentacoesEstoques
         OrigemMovimentacaoEstoque origemTipo,
         int? origemId = null,
         string? motivo = null,
-        Usuarios? usuario = null)
+        Usuarios? usuario = null,
+        MotivoMovimentacaoEstoque? motivoTipo = null)
     {
         if (origemTipo != OrigemMovimentacaoEstoque.MANUAL && origemId is null)
             throw new DomainException("A origem da movimentação é obrigatória.");
@@ -37,7 +39,17 @@ public class MovimentacoesEstoques
             && (motivo is null || motivo.Length < 5))
             throw new DomainException("Motivo é obrigatório e deve ter pelo menos 5 caracteres.");
 
+        // Não existe entrada manual; a saída manual tem motivo tipado (erro de contagem só existe no balanço).
+        if (origemTipo == OrigemMovimentacaoEstoque.MANUAL)
+        {
+            if (tipoMovimentacao != TipoMovimentacaoEstoque.SAIDA)
+                throw new DomainException("Não existe entrada manual de estoque: a entrada vem da compra ou de um retorno.");
+            if (motivoTipo is null or MotivoMovimentacaoEstoque.ERRO_DE_CONTAGEM)
+                throw new DomainException("Informe o motivo: perda/avaria, furto/roubo, vencimento ou outros.");
+        }
+
         TipoMovimentacao = tipoMovimentacao;
+        MotivoTipo = motivoTipo;
         OrigemTipo = origemTipo;
         OrigemId = origemId;
         Motivo = motivo;
@@ -53,8 +65,9 @@ public class MovimentacoesEstoques
         int? origemId,
         string? motivo,
         Usuarios? usuario,
-        bool estornada)
-        : this(tipoMovimentacao, origemTipo, origemId, motivo, usuario)
+        bool estornada,
+        MotivoMovimentacaoEstoque? motivoTipo = null)
+        : this(tipoMovimentacao, origemTipo, origemId, motivo, usuario, motivoTipo)
     {
         Id = id;
         DataMovimentacao = dataMovimentacao;

@@ -8,12 +8,21 @@ public sealed class CriarMovimentacaoCommandValidator : AbstractValidator<CriarM
 {
     public CriarMovimentacaoCommandValidator()
     {
-        RuleFor(x => x.TipoMovimentacao)
-            .NotEmpty().WithMessage("Tipo de movimentação é obrigatório.")
-            .WithErrorCode("TIPO_MOVIMENTACAO_OBRIGATORIO")
-            .IsEnumName(typeof(TipoMovimentacaoEstoque), caseSensitive: false)
-            .WithMessage("Tipo de movimentação inválido.")
-            .WithErrorCode("TIPO_MOVIMENTACAO_INVALIDO");
+        // Não existe entrada manual: a entrada vem da Compra e dos retornos (ADR 0006).
+        RuleFor(x => x.MotivoTipo)
+            .NotEmpty().WithMessage("Motivo da movimentação é obrigatório.")
+            .WithErrorCode("MOTIVO_TIPO_OBRIGATORIO")
+            .IsEnumName(typeof(MotivoMovimentacaoEstoque), caseSensitive: false)
+            .WithMessage("Motivo da movimentação inválido.")
+            .WithErrorCode("MOTIVO_TIPO_INVALIDO")
+            .Must(m => !string.Equals(m, nameof(MotivoMovimentacaoEstoque.ERRO_DE_CONTAGEM), System.StringComparison.OrdinalIgnoreCase))
+            .WithMessage("Erro de contagem só existe no balanço; numa saída manual use perda/avaria, furto/roubo, vencimento ou outros.")
+            .WithErrorCode("MOTIVO_TIPO_INVALIDO");
+
+        RuleFor(x => x.EmitenteId)
+            .NotNull().WithMessage("Informe o emitente da NF-e de baixa.")
+            .WithErrorCode("EMITENTE_OBRIGATORIO")
+            .When(x => System.Enum.TryParse<MotivoMovimentacaoEstoque>(x.MotivoTipo, true, out var motivo) && motivo.GeraNfeDeBaixa());
 
         RuleFor(x => x.Motivo)
             .NotEmpty().WithMessage("Motivo é obrigatório.")
