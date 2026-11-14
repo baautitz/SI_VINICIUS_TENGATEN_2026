@@ -42,8 +42,8 @@ public class BalancosController : ControllerBase
         => Responder(await _balancosService.AtualizarBalanco(id, command));
 
     [HttpPost("{id:int}/fechar")]
-    public async Task<ActionResult<Resultado<Balancos>>> Fechar(int id)
-        => Responder(await _balancosService.Fechar(id));
+    public async Task<ActionResult<Resultado<Balancos>>> Fechar(int id, [FromBody] FecharBalancoCommand? command)
+        => Responder(await _balancosService.Fechar(id, command));
 
     [HttpPost("{id:int}/cancelar")]
     public async Task<ActionResult<Resultado<Balancos>>> Cancelar(int id, [FromBody] CancelarBalancoCommand? command)

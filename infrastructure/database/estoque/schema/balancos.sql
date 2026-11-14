@@ -22,6 +22,9 @@ CREATE TABLE IF NOT EXISTS balancos_itens (
   sku VARCHAR(50) NOT NULL,
   quantidade_sistema NUMERIC(14, 4) NOT NULL,
   quantidade_contada NUMERIC(14, 4),
+  -- Motivo da falta ou da sobra e se o item foi recontado; o fechamento confere os dois contra a diferença.
+  motivo_divergencia motivo_movimentacao_estoque_enum,
+  recontado BOOLEAN NOT NULL DEFAULT FALSE,
   CONSTRAINT balancos_itens_balanco_fk
     FOREIGN KEY (balanco_id)
     REFERENCES balancos (id)

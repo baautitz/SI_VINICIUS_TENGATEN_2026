@@ -1,4 +1,5 @@
 using Backend.Core.Common.Exceptions;
+using Backend.Core.Features.Estoque.Entities.Enums;
 
 namespace Backend.Core.Features.Estoque.Entities;
 
@@ -11,11 +12,17 @@ public class BalancosItens
     public decimal QuantidadeSistema { get; private set; }
     public decimal? QuantidadeContada { get; private set; }
     public decimal? Diferenca => QuantidadeContada - QuantidadeSistema;
+    // Por que o item diverge do saldo e se foi recontado; o fechamento confere os dois contra o sinal da diferença.
+    public MotivoMovimentacaoEstoque? MotivoDivergencia { get; private set; }
+    public bool Recontado { get; private set; }
 
     protected BalancosItens() { }
 
-    public BalancosItens(int id, string sku, string produtoNome, string unidadeMedidaSigla, decimal quantidadeSistema, decimal? quantidadeContada)
+    public BalancosItens(int id, string sku, string produtoNome, string unidadeMedidaSigla, decimal quantidadeSistema, decimal? quantidadeContada,
+        MotivoMovimentacaoEstoque? motivoDivergencia = null, bool recontado = false)
     {
+        MotivoDivergencia = motivoDivergencia;
+        Recontado = recontado;
         Id = id;
         Sku = sku;
         ProdutoNome = produtoNome;
