@@ -16,6 +16,7 @@ import {
 } from "./types";
 import { FeatureListProps } from "@/hooks/use-feature-orchestrator";
 import { formatToLocal } from "@/utils/date-utils";
+import { motivoMovimentacaoLabels } from "@/features/estoque/motivos";
 import { getActionsColumn, RowAction } from "@/utils/table-columns";
 
 interface MovimentacoesListProps extends Omit<FeatureListProps<MovimentacaoEstoque>, "onEdit" | "onDelete"> {
@@ -87,7 +88,7 @@ export function MovimentacoesList({
       header: "Motivo",
       cell: ({ row }) => (
         <span className="text-muted-foreground block max-w-xs truncate">
-          {row.original.motivo || "-"}
+          {[row.original.motivoTipo && motivoMovimentacaoLabels[row.original.motivoTipo], row.original.motivo].filter(Boolean).join(" · ") || "-"}
         </span>
       ),
     },

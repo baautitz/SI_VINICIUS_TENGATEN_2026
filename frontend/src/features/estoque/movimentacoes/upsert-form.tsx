@@ -15,7 +15,7 @@ import React, { useCallback, useRef, useState } from "react";
 import { combinacaoDe } from "@/lib/atalhos";
 import { cn } from "@/lib/utils";
 import { Button } from "@/ui/primitives";
-import { Field, FieldGroup, FieldLabel } from "@/ui/primitives";
+import { FieldGroup, FieldLabel } from "@/ui/primitives";
 import { NumberInput } from "@/ui/composites";
 import { Input } from "@/ui/primitives";
 
@@ -41,13 +41,6 @@ import { SkuViewInput } from "@/components/entity-inputs/sku-view-input";
 import { SkuInput } from "@/components/entity-inputs/sku-input";
 import { Sku, getFullSkuName } from "@/features/catalogo/skus/types";
 import { Trash2 } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/ui/primitives";
 import { useWindow, useWindowCommands, useUi, WindowCancelButton } from "@/ui/imperative";
 import {
   MovimentacaoEstoque,
@@ -55,9 +48,13 @@ import {
   MovimentacaoEstoqueItemFormValues,
   movimentacaoEstoqueSchema,
   origemMovimentacaoLabels,
+  tipoMovimentacaoLabels,
   podeEstornar,
 } from "./types";
 import { ItemLinha } from "./upsert";
+import { geraNfeDeBaixa, motivosSaidaManual } from "@/features/estoque/motivos";
+import { MotivoMovimentacaoSelect } from "@/components/motivo-movimentacao-select";
+import { EmitenteInput } from "@/components/entity-inputs/emitente-input";
 import { navigationCell } from "@/ui/keyboard-navigation";
 
 interface MovimentacoesUpsertFormProps {
@@ -73,6 +70,8 @@ export function MovimentacoesUpsertForm({
 }: MovimentacoesUpsertFormProps) {
   const activeWindow = useWindow<true>();
   const ui = useUi();
+  // Lançamento novo é sempre saída (não existe entrada manual); movimentação já lançada mostra o próprio tipo.
+  const tipoMovimentacao = editingItem?.tipoMovimentacao ?? "SAIDA";
 
   const [itens, setItens] = useState<ItemLinha[]>(() => {
     return (
@@ -142,7 +141,8 @@ export function MovimentacoesUpsertForm({
         }),
     },
     defaultValues: {
-      tipoMovimentacao: editingItem?.tipoMovimentacao ?? "ENTRADA",
+      motivoTipo: editingItem?.motivoTipo ?? "",
+      emitenteId: null as number | null,
       usuarioId: editingItem?.usuario?.id ?? null,
       motivo: editingItem?.motivo ?? "",
       itens: [] as MovimentacaoEstoqueItemFormValues[],
@@ -161,6 +161,7 @@ export function MovimentacoesUpsertForm({
 
       const payload: MovimentacaoEstoqueFormValues = {
         ...value,
+        emitenteId: geraNfeDeBaixa(value.motivoTipo) ? value.emitenteId : null,
         itens: cleanItens,
       };
 
@@ -187,26 +188,6 @@ export function MovimentacoesUpsertForm({
     event.preventDefault();
     event.stopPropagation();
     await form.handleSubmit();
-  };
-
-  const handleTipoMovimentacaoChange = async (val: string) => {
-    form.setFieldValue(
-      "tipoMovimentacao",
-      val as MovimentacaoEstoqueFormValues["tipoMovimentacao"],
-    );
-    if (!readOnly) {
-      setItens((prev) =>
-        prev.map((item) => {
-          if (val === "SAIDA") {
-            return { ...item, custoUnitario: item.custoMedio ?? 0 };
-          }
-          if (val === "ENTRADA") {
-            return { ...item, custoUnitario: item.custoUltimaCompra ?? 0 };
-          }
-          return item;
-        }),
-      );
-    }
   };
 
   const registerDirty = React.useCallback(() => {
@@ -298,7 +279,7 @@ export function MovimentacoesUpsertForm({
   const handleSkuAdded = (skuRes: Sku | null, qtdeAdicionada: number = 1) => {
     if (!skuRes) return;
 
-    const tipoMov = form.getFieldValue("tipoMovimentacao");
+    const tipoMov = tipoMovimentacao;
     const custoInicial =
       tipoMov === "SAIDA"
         ? Number(Number(skuRes.custoMedio || 0).toFixed(2))
@@ -497,41 +478,55 @@ export function MovimentacoesUpsertForm({
               </div>
             )}
 
-            <form.Subscribe
-              selector={(state) => [state.values.tipoMovimentacao]}
-            >
-              {() => (
-                <>
-                  <div className="flex w-48 flex-col gap-2">
-                    <form.Field name="tipoMovimentacao">
-                      {(field) => (
-                        <Field>
-                          <FieldLabel htmlFor={field.name} required>
-                            Tipo de Movimentação
-                          </FieldLabel>
-                          <Select
-                            value={field.state.value}
-                            onValueChange={handleTipoMovimentacaoChange}
-                            disabled={readOnly}
-                          >
-                            <SelectTrigger
-                              id={field.name}
-                              className="h-8 w-full rounded-lg"
-                            >
-                              <SelectValue placeholder="Selecione o tipo..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="ENTRADA">Entrada</SelectItem>
-                              <SelectItem value="SAIDA">Saída</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </Field>
-                      )}
-                    </form.Field>
-                  </div>
-                </>
-              )}
-            </form.Subscribe>
+            {editingItem && (
+              <div className="flex w-40 flex-col gap-2">
+                <FieldLabel>Tipo</FieldLabel>
+                <Input
+                  readOnly
+                  aria-label="Tipo"
+                  value={tipoMovimentacaoLabels[editingItem.tipoMovimentacao] ?? editingItem.tipoMovimentacao}
+                />
+              </div>
+            )}
+
+            <div className="flex w-56 flex-col gap-2">
+              <form.Field name="motivoTipo">
+                {(field) => (
+                  <MotivoMovimentacaoSelect
+                    name={field.name}
+                    required={!editingItem}
+                    opcoes={motivosSaidaManual}
+                    value={field.state.value}
+                    onChange={(v) => field.handleChange(v)}
+                    disabled={readOnly}
+                    error={validationErrors["motivoTipo"] || getFieldError(field.name, field.state.meta.errors)}
+                  />
+                )}
+              </form.Field>
+            </div>
+
+            {!readOnly && (
+              <form.Subscribe selector={(state) => [state.values.motivoTipo]}>
+                {([motivoTipo]) =>
+                  geraNfeDeBaixa(motivoTipo) ? (
+                    <div className="min-w-72 flex-1">
+                      <form.Field name="emitenteId">
+                        {(field) => (
+                          <EmitenteInput
+                            name={field.name}
+                            label="Emitente da NF-e de baixa"
+                            required
+                            usarPadrao
+                            onSelectId={(id) => field.handleChange(id)}
+                            error={validationErrors["emitenteId"] || getFieldError(field.name, field.state.meta.errors)}
+                          />
+                        )}
+                      </form.Field>
+                    </div>
+                  ) : null
+                }
+              </form.Subscribe>
+            )}
           </FieldGroup>
 
           <FieldGroup className="grid grid-cols-1 gap-4">
@@ -539,11 +534,11 @@ export function MovimentacoesUpsertForm({
               {(field) => (
                 <FormFieldUI
                   field={field}
-                  label="Motivo"
+                  label="Detalhe do motivo"
                   required
                   inputSize="full"
                   readOnly={readOnly}
-                  placeholder="Perda, avaria, uso interno, acerto..."
+                  placeholder="Detalhe o que aconteceu (mínimo de 5 caracteres)"
                   getFieldError={(name, errors) =>
                     validationErrors["motivo"] || getFieldError(name, errors)
                   }
@@ -553,8 +548,8 @@ export function MovimentacoesUpsertForm({
             </form.Field>
           </FieldGroup>
 
-          <form.Subscribe selector={(state) => [state.values.tipoMovimentacao]}>
-            {([tipoMovimentacao]) => {
+          <form.Subscribe selector={(state) => [state.values.motivoTipo]}>
+            {() => {
               const comCusto = true;
 
               return (

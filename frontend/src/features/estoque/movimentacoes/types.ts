@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Sku } from "@/features/catalogo/skus/types";
+import { geraNfeDeBaixa, motivosSaidaManual, type MotivoMovimentacao } from "@/features/estoque/motivos";
 
 export interface MovimentacaoEstoqueItem {
   id: number;
@@ -23,6 +24,7 @@ export interface MovimentacaoEstoque {
   origemTipo: OrigemMovimentacao;
   origemId?: number | null;
   motivo?: string | null;
+  motivoTipo?: MotivoMovimentacao | null;
   estornada: boolean;
   usuario?: { id: number; nome: string } | null;
   movimentacoesEstoquesItens: MovimentacaoEstoqueItem[];
@@ -71,10 +73,13 @@ export const movimentacaoEstoqueItemSchema = z.object({
     .default(0),
 });
 
+// Lançamento manual é sempre saída: a entrada vem da compra e dos retornos (ADR 0006).
 export const movimentacaoEstoqueSchema = z.object({
-  tipoMovimentacao: z.enum(["ENTRADA", "SAIDA"], {
-    required_error: "Selecione o tipo de movimentação.",
+  motivoTipo: z.enum(motivosSaidaManual as [MotivoMovimentacao, ...MotivoMovimentacao[]], {
+    required_error: "Selecione o motivo da movimentação.",
+    invalid_type_error: "Selecione o motivo da movimentação.",
   }),
+  emitenteId: z.number().nullable().optional(),
   usuarioId: z.number().nullable().optional(),
   motivo: z
     .string({ required_error: "Motivo é obrigatório." })
@@ -84,6 +89,9 @@ export const movimentacaoEstoqueSchema = z.object({
   itens: z
     .array(movimentacaoEstoqueItemSchema)
     .min(1, "A movimentação deve conter pelo menos um produto."),
+}).superRefine((valores, ctx) => {
+  if (geraNfeDeBaixa(valores.motivoTipo) && !valores.emitenteId)
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["emitenteId"], message: "Informe o emitente da NF-e de baixa." });
 });
 
 export type MovimentacaoEstoqueItemFormValues = z.infer<
