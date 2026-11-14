@@ -18,7 +18,7 @@ public class QuantidadeDecimalTests
     }
 
     private static MovimentacoesEstoques Movimentacao()
-        => new(TipoMovimentacaoEstoque.SAIDA, OrigemMovimentacaoEstoque.MANUAL, null, "Motivo de teste", null, MotivoMovimentacaoEstoque.OUTROS);
+        => new(TipoMovimentacaoEstoque.SAIDA, OrigemMovimentacaoEstoque.MANUAL, null, "Motivo de teste", null, MotivoMovimentacaoEstoque.PERDA_AVARIA);
 
     [Theory]
     [InlineData(false, 2, true)]
