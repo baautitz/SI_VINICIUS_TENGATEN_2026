@@ -1,5 +1,5 @@
 export type TipoOperacaoNfe = "ENTRADA" | "SAIDA";
-export type FinalidadeNfe = "NORMAL" | "DEVOLUCAO" | "ESTORNO_DEVOLUCAO";
+export type FinalidadeNfe = "NORMAL" | "DEVOLUCAO" | "ESTORNO_DEVOLUCAO" | "BAIXA_ESTOQUE" | "ESTORNO_BAIXA_ESTOQUE";
 export type StatusNfe = "RASCUNHO" | "EMITIDA" | "CANCELADA";
 
 export interface NfeResumo {
@@ -84,6 +84,8 @@ export const finalidadeLabels: Record<FinalidadeNfe, string> = {
   NORMAL: "",
   DEVOLUCAO: "Devolução",
   ESTORNO_DEVOLUCAO: "Estorno de devolução",
+  BAIXA_ESTOQUE: "Baixa de estoque",
+  ESTORNO_BAIXA_ESTOQUE: "Estorno de baixa de estoque",
 };
 
 export const modalidadeFreteLabels: Record<string, string> = {
