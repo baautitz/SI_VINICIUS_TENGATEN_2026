@@ -9,15 +9,17 @@ import type { RelatedAction } from "@/components/related-actions";
 import { vendasApi } from "@/api/vendas";
 import { CompraWindow, type CompraWindowProps } from "@/features/compras/upsert";
 import { VendasUpsertForm } from "@/features/vendas/upsert";
+import { DevolucaoCompraDetalheWindow, type DevolucaoCompraDetalheWindowProps } from "@/features/devolucoes-compra/detalhe";
 import { BalancoWindow, type BalancoWindowProps } from "@/features/estoque/balancos/window";
 
 /** Tipos de documento que originam títulos financeiros e movimentações de estoque. */
-export type OrigemDocumento = "COMPRA" | "VENDA" | "DEVOLUCAO_VENDA" | "BALANCO";
+export type OrigemDocumento = "COMPRA" | "VENDA" | "DEVOLUCAO_VENDA" | "DEVOLUCAO_COMPRA" | "BALANCO";
 
 const rotulos: Record<OrigemDocumento, string> = {
   COMPRA: "Compra",
   VENDA: "Venda",
   DEVOLUCAO_VENDA: "Devolução de venda",
+  DEVOLUCAO_COMPRA: "Devolução de compra",
   BALANCO: "Balanço",
 };
 
@@ -50,6 +52,13 @@ export function useOrigemAction(origemTipo: string | null | undefined, origemId:
           VendasUpsertForm,
           "Detalhes da Venda",
         );
+      case "DEVOLUCAO_COMPRA":
+        return ui.windows.open<true, DevolucaoCompraDetalheWindowProps>({
+          component: DevolucaoCompraDetalheWindow,
+          props: { devolucaoId: origemId },
+          title: `Devolução de compra #${origemId}`,
+          size: "medium",
+        });
       case "BALANCO":
         return ui.windows.open<"saved" | "closed", BalancoWindowProps>({
           component: BalancoWindow,
@@ -64,6 +73,7 @@ export function useOrigemAction(origemTipo: string | null | undefined, origemId:
     COMPRA: <ShoppingBag className="size-4" />,
     VENDA: <ShoppingCart className="size-4" />,
     DEVOLUCAO_VENDA: <Undo2 className="size-4" />,
+    DEVOLUCAO_COMPRA: <Undo2 className="size-4" />,
     BALANCO: <ListChecks className="size-4" />,
   };
 
