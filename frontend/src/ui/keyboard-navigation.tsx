@@ -321,10 +321,19 @@ export function KeyboardNavigationProvider({ children }: { children: React.React
       }
 
       const scope = findScopeForTarget(target, scopesRef.current)
-      if (!scope) return
-
-      const source = findNavigationElement(target)
-      if (!source || !isEligible(source)) return
+      const source = scope ? findNavigationElement(target) : null
+      if (!scope || !source || !isEligible(source)) {
+        // Foco numa linha ou fora de qualquer campo: a seta horizontal rola a tabela larga.
+        if (
+          (direction === "left" || direction === "right") &&
+          !isEditableTextEntry(target) &&
+          scrollHorizontalmente(target, direction)
+        ) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+        return
+      }
 
       // A seta vertical parte sempre da borda esquerda do campo atual: o destino
       // depende só de onde o foco está, não do caminho feito até ali.
@@ -334,6 +343,17 @@ export function KeyboardNavigationProvider({ children }: { children: React.React
         scope.root,
         source.getBoundingClientRect().left,
       )
+      // O destino esta fora da tabela larga (ex.: a sidebar) mas ainda ha colunas a revelar: rola antes de focar.
+      if (destination && destination !== source && (direction === "left" || direction === "right")) {
+        const rolavel = rolavelNaDirecao(source, direction)
+        if (rolavel && !rolavel.contains(destination)) {
+          rolarUmPasso(rolavel, direction)
+          event.preventDefault()
+          event.stopPropagation()
+          return
+        }
+      }
+
       if (!destination || destination === source) {
         if (direction === "forward" || direction === "backward") {
           event.preventDefault()
@@ -381,19 +401,30 @@ function cursorNaBorda(target: HTMLElement, direction: "left" | "right"): boolea
   return direction === "left" ? inicio === 0 : fim === target.value.length
 }
 
-/** Rola o ancestral com scroll horizontal mais proximo meia largura na direcao; devolve se rolou. */
-function scrollHorizontalmente(source: Element, direction: "left" | "right"): boolean {
+/** Ancestral com scroll horizontal que ainda pode rolar na direcao (ou null). */
+function rolavelNaDirecao(source: Element, direction: "left" | "right"): HTMLElement | null {
   for (let el = source.parentElement; el; el = el.parentElement) {
     const overflowX = getComputedStyle(el).overflowX
     if ((overflowX !== "auto" && overflowX !== "scroll") || el.scrollWidth <= el.clientWidth) continue
     const maximo = el.scrollWidth - el.clientWidth
-    const passo = Math.max(80, el.clientWidth / 2)
-    const alvo = direction === "left" ? Math.max(0, el.scrollLeft - passo) : Math.min(maximo, el.scrollLeft + passo)
-    if (Math.round(alvo) === Math.round(el.scrollLeft)) continue
-    el.scrollTo({ left: alvo })
-    return true
+    if (direction === "left" ? el.scrollLeft > 1 : el.scrollLeft < maximo - 1) return el
   }
-  return false
+  return null
+}
+
+/** Rola meia largura do contêiner na direcao. */
+function rolarUmPasso(el: HTMLElement, direction: "left" | "right") {
+  const maximo = el.scrollWidth - el.clientWidth
+  const passo = Math.max(80, el.clientWidth / 2)
+  el.scrollTo({ left: direction === "left" ? Math.max(0, el.scrollLeft - passo) : Math.min(maximo, el.scrollLeft + passo) })
+}
+
+/** Rola o ancestral com scroll horizontal mais proximo na direcao; devolve se rolou. */
+function scrollHorizontalmente(source: Element, direction: "left" | "right"): boolean {
+  const el = rolavelNaDirecao(source, direction)
+  if (!el) return false
+  rolarUmPasso(el, direction)
+  return true
 }
 
 const NAVIGABLE_SELECTOR = [
