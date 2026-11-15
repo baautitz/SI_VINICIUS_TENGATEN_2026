@@ -6,7 +6,7 @@ import {
   RelatedActions,
   type RelatedAction,
 } from "@/components/related-actions";
-import { ClipboardList, Undo2 } from "lucide-react";
+import { ArrowRight, ClipboardList, Undo2 } from "lucide-react";
 import { formatToLocal } from "@/utils/date-utils";
 
 import { HotkeyKbd } from "@/ui/primitives";
@@ -690,16 +690,18 @@ export function MovimentacoesUpsertForm({
                                       column: 0,
                                     })}
                                   >
-                                    <Input
-                                      inputSize="full"
-                                      readOnly
-                                      aria-label={`Estoque do item ${item.sku}`}
-                                      value={`${item.estoqueAtual != null ? fmtQtd(item.estoqueAtual, item.permiteDecimais) : "-"} → ${fmtQtd(estoqueApos, item.permiteDecimais)}`}
+                                    <div
+                                      role="text"
+                                      aria-label={`Estoque do item ${item.sku}: de ${item.estoqueAtual != null ? fmtQtd(item.estoqueAtual, item.permiteDecimais) : "sem saldo"} para ${fmtQtd(estoqueApos, item.permiteDecimais)}`}
                                       className={cn(
-                                        "text-right font-bold",
+                                        "flex h-8 w-full items-center justify-end gap-1.5 rounded-lg border border-input bg-field-disabled px-2.5 text-base font-bold md:text-sm",
                                         estoqueApos < 0 && "text-destructive",
                                       )}
-                                    />
+                                    >
+                                      <span>{item.estoqueAtual != null ? fmtQtd(item.estoqueAtual, item.permiteDecimais) : "-"}</span>
+                                      <ArrowRight aria-hidden className="size-3.5 shrink-0 opacity-60" />
+                                      <span>{fmtQtd(estoqueApos, item.permiteDecimais)}</span>
+                                    </div>
                                   </div>
                                 </TableCell>
 
