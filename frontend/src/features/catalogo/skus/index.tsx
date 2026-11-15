@@ -7,8 +7,7 @@ import { useUi } from "@/ui/imperative";
 import { useFeatureList } from "@/hooks/use-feature-list";
 import { skusApi, produtosApi } from "@/api/catalogo";
 import {
-  ProdutosUpsert,
-  type ProdutosUpsertProps,
+  abrirProdutoUpsert,
 } from "@/features/catalogo/produtos/upsert";
 import type { Produto } from "@/features/catalogo/produtos/types";
 import { SkusList } from "./list";
@@ -60,15 +59,7 @@ export function SkusFeature({
     editingItem: Produto | null,
     readOnly = false,
   ) => {
-    const result = await ui.windows.open<true, ProdutosUpsertProps>({
-      component: ProdutosUpsert,
-      props: { editingItem, readOnly },
-      title: readOnly
-        ? "Visualizar Produto"
-        : editingItem
-          ? "Editar Produto"
-          : "Novo Produto",
-    });
+    const result = await abrirProdutoUpsert(ui, { editingItem, readOnly });
 
     if (result.status === "confirmed") {
       await invalidate();

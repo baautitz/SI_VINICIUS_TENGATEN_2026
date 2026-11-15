@@ -49,6 +49,19 @@ export interface ProdutosUpsertProps {
   readOnly?: boolean;
 }
 
+/**
+ * Abre a janela do produto. Título e tamanho são decididos aqui, pelo próprio modal: quem chama
+ * (lista, SKU de linha, seletor) só diz qual produto e se é só leitura.
+ */
+export function abrirProdutoUpsert(ui: ReturnType<typeof useUi>, { editingItem, readOnly = false }: ProdutosUpsertProps) {
+  return ui.windows.open<true, ProdutosUpsertProps>({
+    component: ProdutosUpsert,
+    props: { editingItem, readOnly },
+    title: readOnly ? "Visualizar Produto" : editingItem ? "Editar Produto" : "Novo Produto",
+    size: "full",
+  });
+}
+
 interface ProdutosUpsertFormProps {
   editingItem: Produto | null;
   readOnly?: boolean;
