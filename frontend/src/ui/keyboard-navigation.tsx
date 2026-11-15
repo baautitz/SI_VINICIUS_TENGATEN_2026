@@ -327,7 +327,7 @@ export function KeyboardNavigationProvider({ children }: { children: React.React
         if (
           (direction === "left" || direction === "right") &&
           !isEditableTextEntry(target) &&
-          scrollHorizontalmente(target, direction)
+          rolarContainer(target, direction)
         ) {
           event.preventDefault()
           event.stopPropagation()
@@ -343,8 +343,9 @@ export function KeyboardNavigationProvider({ children }: { children: React.React
         scope.root,
         source.getBoundingClientRect().left,
       )
-      // O destino esta fora da tabela larga (ex.: a sidebar) mas ainda ha colunas a revelar: rola antes de focar.
-      if (destination && destination !== source && (direction === "left" || direction === "right")) {
+      // O destino esta fora do contêiner com scroll (tabela, listagem, janela) mas ainda ha conteudo a revelar
+      // na direcao da seta: rola antes de focar.
+      if (destination && destination !== source && isSetaDirecional(direction)) {
         const rolavel = rolavelNaDirecao(source, direction)
         if (rolavel && !rolavel.contains(destination)) {
           rolarUmPasso(rolavel, direction)
@@ -358,10 +359,10 @@ export function KeyboardNavigationProvider({ children }: { children: React.React
         if (direction === "forward" || direction === "backward") {
           event.preventDefault()
         }
-        // Sem campo na direcao, mas ha colunas escondidas: rola o contêiner para revela-las.
+        // Sem campo na direcao, mas ha conteudo escondido: rola o contêiner para revela-lo.
         if (
-          (direction === "left" || direction === "right") &&
-          scrollHorizontalmente(source, direction)
+          isSetaDirecional(direction) &&
+          rolarContainer(source, direction)
         ) {
           event.preventDefault()
           event.stopPropagation()
@@ -401,26 +402,43 @@ function cursorNaBorda(target: HTMLElement, direction: "left" | "right"): boolea
   return direction === "left" ? inicio === 0 : fim === target.value.length
 }
 
-/** Ancestral com scroll horizontal que ainda pode rolar na direcao (ou null). */
-function rolavelNaDirecao(source: Element, direction: "left" | "right"): HTMLElement | null {
+type SetaDirecional = "up" | "down" | "left" | "right"
+
+function isSetaDirecional(direction: NavigationDirection): direction is SetaDirecional {
+  return direction === "up" || direction === "down" || direction === "left" || direction === "right"
+}
+
+/** Ancestral com scroll no eixo da seta que ainda pode rolar na direcao (ou null). */
+function rolavelNaDirecao(source: Element, direction: SetaDirecional): HTMLElement | null {
+  const horizontal = direction === "left" || direction === "right"
+  const recuando = direction === "left" || direction === "up"
   for (let el = source.parentElement; el; el = el.parentElement) {
-    const overflowX = getComputedStyle(el).overflowX
-    if ((overflowX !== "auto" && overflowX !== "scroll") || el.scrollWidth <= el.clientWidth) continue
-    const maximo = el.scrollWidth - el.clientWidth
-    if (direction === "left" ? el.scrollLeft > 1 : el.scrollLeft < maximo - 1) return el
+    const estilo = getComputedStyle(el)
+    const overflow = horizontal ? estilo.overflowX : estilo.overflowY
+    const total = horizontal ? el.scrollWidth : el.scrollHeight
+    const visivel = horizontal ? el.clientWidth : el.clientHeight
+    if ((overflow !== "auto" && overflow !== "scroll") || total <= visivel) continue
+    const posicao = horizontal ? el.scrollLeft : el.scrollTop
+    if (recuando ? posicao > 1 : posicao < total - visivel - 1) return el
   }
   return null
 }
 
-/** Rola meia largura do contêiner na direcao. */
-function rolarUmPasso(el: HTMLElement, direction: "left" | "right") {
-  const maximo = el.scrollWidth - el.clientWidth
-  const passo = Math.max(80, el.clientWidth / 2)
-  el.scrollTo({ left: direction === "left" ? Math.max(0, el.scrollLeft - passo) : Math.min(maximo, el.scrollLeft + passo) })
+/** Rola meio contêiner na direcao. */
+function rolarUmPasso(el: HTMLElement, direction: SetaDirecional) {
+  const horizontal = direction === "left" || direction === "right"
+  const total = horizontal ? el.scrollWidth : el.scrollHeight
+  const visivel = horizontal ? el.clientWidth : el.clientHeight
+  const posicao = horizontal ? el.scrollLeft : el.scrollTop
+  const passo = Math.max(80, visivel / 2)
+  const alvo = direction === "left" || direction === "up"
+    ? Math.max(0, posicao - passo)
+    : Math.min(total - visivel, posicao + passo)
+  el.scrollTo(horizontal ? { left: alvo } : { top: alvo })
 }
 
-/** Rola o ancestral com scroll horizontal mais proximo na direcao; devolve se rolou. */
-function scrollHorizontalmente(source: Element, direction: "left" | "right"): boolean {
+/** Rola o ancestral com scroll mais proximo na direcao; devolve se rolou. */
+function rolarContainer(source: Element, direction: SetaDirecional): boolean {
   const el = rolavelNaDirecao(source, direction)
   if (!el) return false
   rolarUmPasso(el, direction)
