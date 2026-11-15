@@ -68,6 +68,9 @@ public sealed class DevolucoesCompraService : BaseService
         return devolucao;
     }
 
+    public Task<ResultadoPaginado<DTOs.DevolucaoCompraResumo>> PesquisarDevolucoes(string termo, int pagina = 1, int tamanhoDaPagina = 20, int? compraId = null)
+        => _devolucoesRepository.PesquisarDevolucoes(termo, pagina, tamanhoDaPagina, compraId);
+
     public Task<IReadOnlyList<DevolucaoCompra>> ObterDevolucoesPorCompra(int compraId)
         => _devolucoesRepository.ObterDevolucoesPorCompra(compraId);
 

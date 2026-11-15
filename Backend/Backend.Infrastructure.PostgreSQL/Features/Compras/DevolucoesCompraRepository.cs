@@ -1,3 +1,5 @@
+using Backend.Core.Common.Results;
+using Backend.Core.Features.Compras.DTOs;
 using Backend.Core.Features.Compras.Entities;
 using Backend.Core.Features.Compras.Entities.Enums;
 using Backend.Core.Features.Compras.Repositories;
@@ -9,10 +11,51 @@ namespace Backend.Infrastructure.PostgreSQL.Features.Compras;
 public class DevolucoesCompraRepository : IDevolucoesCompraRepository
 {
     private readonly DbSession _session;
+    private readonly IOrdenacaoSolicitada? _ordenacao;
 
-    public DevolucoesCompraRepository(DbSession session)
+    public DevolucoesCompraRepository(DbSession session, IOrdenacaoSolicitada? ordenacao = null)
     {
         _session = session;
+        _ordenacao = ordenacao;
+    }
+
+    // Lista branca dos campos que a tela pode pedir (nome na API -> expressão SQL).
+    private static readonly IReadOnlyDictionary<string, string> CamposOrdenaveis = new Dictionary<string, string>
+    {
+        ["id"] = "d.id",
+        ["status"] = "d.status::text",
+        ["dataDevolucao"] = "d.data_devolucao",
+        ["compraId"] = "d.compra_id",
+        ["fornecedorNome"] = "unaccent(lower(f.nome_razaosocial))",
+        ["valorTotal"] = "d.valor_total",
+        ["motivo"] = "unaccent(lower(d.motivo))",
+    };
+
+    private string Ordem => OrdenacaoListagem.Resolver(_ordenacao, CamposOrdenaveis, "d.id", "d.data_devolucao DESC, d.id DESC");
+
+    public async Task<ResultadoPaginado<DevolucaoCompraResumo>> PesquisarDevolucoes(string termo, int pagina = 1, int tamanhoDaPagina = 20, int? compraId = null)
+    {
+        const string from = @"
+            FROM devolucoes_compra d
+            JOIN compras c ON c.id = d.compra_id
+            JOIN fornecedores f ON f.id = c.fornecedor_id
+            WHERE (unaccent(d.id::text) ILIKE unaccent(@Termo::text) OR unaccent(d.compra_id::text) ILIKE unaccent(@Termo::text)
+                   OR unaccent(f.nome_razaosocial::text) ILIKE unaccent(@Termo::text) OR unaccent(d.motivo::text) ILIKE unaccent(@Termo::text))
+              AND (@CompraId::int IS NULL OR d.compra_id = @CompraId::int)";
+
+        var param = new { Termo = $"%{termo}%", CompraId = compraId, TamanhoDaPagina = tamanhoDaPagina, Offset = (pagina - 1) * tamanhoDaPagina };
+
+        var total = await _session.Connection.ExecuteScalarAsync<int>($"SELECT COUNT(*) {from};", param, transaction: _session.Transaction);
+
+        var itens = (await _session.Connection.QueryAsync<DevolucaoCompraResumo>(
+            $@"SELECT d.id AS Id, d.compra_id AS CompraId, f.nome_razaosocial AS FornecedorNome, d.data_devolucao AS DataDevolucao,
+                      d.valor_total AS ValorTotal, d.motivo AS Motivo, d.status AS Status
+               {from}
+               ORDER BY {Ordem}
+               LIMIT @TamanhoDaPagina OFFSET @Offset;",
+            param, transaction: _session.Transaction)).ToList();
+
+        return new ResultadoPaginado<DevolucaoCompraResumo>(itens, total, pagina, tamanhoDaPagina);
     }
 
     private const string SelecaoDevolucao = "SELECT id, compra_id AS CompraId, data_devolucao AS DataDevolucao, motivo AS Motivo, valor_total AS ValorTotal, status AS Status, estornado_em AS EstornadoEm, motivo_estorno AS MotivoEstorno FROM devolucoes_compra";

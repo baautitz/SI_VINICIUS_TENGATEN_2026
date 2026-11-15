@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Backend.Core.Common.Results;
 using Backend.Core.Features.Compras.Commands;
+using Backend.Core.Features.Compras.DTOs;
 using Backend.Core.Features.Compras.Entities;
 using Backend.Core.Features.Compras.Services;
 using Microsoft.AspNetCore.Http;
@@ -19,6 +20,10 @@ public class DevolucoesCompraController : ControllerBase
     {
         _service = service;
     }
+
+    [HttpGet("api/devolucoes-compra")]
+    public Task<ResultadoPaginado<DevolucaoCompraResumo>> GetDevolucoes([FromQuery] string? search, [FromQuery] int? compraId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        => _service.PesquisarDevolucoes(search ?? "", page, pageSize, compraId);
 
     [HttpGet("api/compras/{compraId:int}/devolucoes")]
     public Task<IReadOnlyList<DevolucaoCompra>> GetDevolucoesDaCompra(int compraId)
