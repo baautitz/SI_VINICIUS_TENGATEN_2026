@@ -202,7 +202,8 @@ Regras para que a mesma ação tenha sempre o mesmo rótulo, ícone, variant e a
 | Visualizar | Eye | outline | icon-sm | | só quando não há Editar |
 | Excluir | Trash2 | destructive | icon-sm | Delete | confirmação obrigatória |
 | Remover item de formulário | Trash2 ou X | outline | icon-sm | | rótulo "Remover" |
-| Estornar / Devolver | Undo2 | outline (abre janela) / destructive (confirma) | icon-sm | Alt+Z na janela; Delete na listagem | Delete na listagem = ação destrutiva da linha (excluir ou estornar), sempre com janela/confirmação (decidido) |
+| Estornar | Undo2 | outline (abre janela) / destructive (confirma) | icon-sm | Alt+Z na janela; Delete na listagem | Delete na listagem = ação destrutiva da linha (excluir ou estornar), sempre com janela/confirmação (decidido) |
+| Devolver (itens) | PackageMinus na linha | outline (abre janela) / destructive (confirma) | icon-sm | | Ícone próprio: lado a lado com Estornar, duas setas curvas parecidas confundiam. Os títulos e menus de Devoluções seguem com Undo2 |
 | Cancelar documento | Ban | destructive | default/icon-sm | sem tecla única | com motivo |
 | Reabrir baixa de parcela | RotateCcw | outline | icon-sm | | |
 | Baixar título | Check | success | icon-sm | Alt+A (linha focada) | verde só pelo token `success` |
