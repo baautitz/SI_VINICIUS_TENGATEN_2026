@@ -310,10 +310,12 @@ export function KeyboardNavigationProvider({ children }: { children: React.React
 
       // A clicked/F2 field is in cursor mode. Keep horizontal arrows native
       // so the caret can move; vertical arrows and Tab still navigate fields.
+      // Com o cursor ja na borda do texto, a seta nao teria o que mover: ai ela navega (ou rola a tabela).
       if (
         isEditableTextEntry(target) &&
         target.dataset.navigationEditing === "true" &&
-        (direction === "left" || direction === "right")
+        (direction === "left" || direction === "right") &&
+        !cursorNaBorda(target, direction)
       ) {
         return
       }
@@ -362,6 +364,21 @@ export function KeyboardNavigationProvider({ children }: { children: React.React
       {children}
     </NavigationContext.Provider>
   )
+}
+
+/** O cursor de texto esta na borda da seta (inicio para esquerda, fim para direita), sem selecao. */
+function cursorNaBorda(target: HTMLElement, direction: "left" | "right"): boolean {
+  if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) return false
+  let inicio: number | null = null
+  let fim: number | null = null
+  try {
+    inicio = target.selectionStart
+    fim = target.selectionEnd
+  } catch {
+    return false
+  }
+  if (inicio === null || fim === null || inicio !== fim) return false
+  return direction === "left" ? inicio === 0 : fim === target.value.length
 }
 
 /** Rola o ancestral com scroll horizontal mais proximo meia largura na direcao; devolve se rolou. */
