@@ -118,6 +118,21 @@ public class ComprasEstornoTests
     }
 
     [Fact]
+    public async Task Compra_com_devolucao_ativa_e_recusada_com_uma_mensagem_que_aponta_a_devolucao()
+    {
+        var c = new Cenario();
+        typeof(CompraItens).GetProperty(nameof(CompraItens.QuantidadeDevolvida))!.SetValue(c.Compra.Itens.First(), 2m);
+
+        var r = await c.Service.Estornar(7, new EstornarCompraCommand("Compra lançada errada"));
+
+        var erro = Assert.Single(r.Errors!);
+        Assert.Equal("ESTORNO_COM_DEVOLUCAO", erro.Code);
+        Assert.Contains("Estorne as devoluções", erro.Message);
+        Assert.Equal(0, c.Marcadas);
+        Assert.Empty(c.MovimentacoesCriadas);
+    }
+
+    [Fact]
     public async Task Estorno_de_movimentacao_antiga_mantem_custo_da_ultima_compra()
     {
         var c = new Cenario(semUltimaCompra: true);

@@ -129,6 +129,11 @@ public sealed class ComprasService : BaseService
         if (command!.UsuarioId.HasValue && await _usuariosRepository.ObterUsuarioPorId(command.UsuarioId.Value) is null)
             return Resultado<Compra>.Falha(new ResultadoErro("USUARIO_INEXISTENTE", "O usuário informado não existe.", "UsuarioId"));
 
+        // Devolução ativa já tirou os itens do estoque e abateu as parcelas: o caminho é desfazê-la antes, na ordem inversa.
+        if (compra.Itens.Any(i => i.QuantidadeDevolvida > 0))
+            return Resultado<Compra>.Falha(new ResultadoErro("ESTORNO_COM_DEVOLUCAO",
+                "Esta compra tem devolução ao fornecedor. Estorne as devoluções (menu Compras > Devoluções de compra) e, se houver parcelas pagas, os pagamentos; depois estorne a compra.", "CompraId"));
+
         return await ExecuteResultAsync(async () =>
         {
             try
