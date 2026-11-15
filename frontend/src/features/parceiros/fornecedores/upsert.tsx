@@ -399,7 +399,7 @@ function FornecedoresUpsertForm({ editingItem, readOnly = false, controlado, val
                   const error = getFieldError(field.name, field.state.meta.errors);
                   return (
                     <Field data-invalid={!!error} className="w-48">
-                      <FieldLabel htmlFor={field.name}>
+                      <FieldLabel htmlFor={field.name} required={campoObrigatorio(field)}>
                         {tipoPessoa === TipoPessoa.FISICA ? "Data de Nascimento" : "Data de Fundação"}
                       </FieldLabel>
                       <DatePicker
