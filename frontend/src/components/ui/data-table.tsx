@@ -428,7 +428,7 @@ export function DataTable<TData, TValue>({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 key={headerGroup.id}
-                className="border-b hover:bg-transparent"
+                className="hover:bg-transparent"
               >
                 {headerGroup.headers.map((header) => {
                   const campo = header.column.columnDef.meta?.campoOrdenacao;
@@ -481,7 +481,7 @@ export function DataTable<TData, TValue>({
               totalItems !== undefined &&
               totalItems > table.getRowModel().rows.length &&
               onSelectAllAcrossPagesChange && (
-                <TableRow className="bg-muted/30 hover:bg-muted/30 border-b">
+                <TableRow className="bg-muted/30 hover:bg-muted/30 [&>td]:border-b">
                   <TableCell
                     colSpan={columns.length}
                     className="text-center text-sm"
