@@ -16,6 +16,8 @@ interface CondicaoPagamentoInputProps {
   onSelectId: (id: number | null) => void;
   onSelectItem?: (item: CondicaoPagamento | null) => void;
   disabled?: boolean;
+  /** Rótulo só para leitor de tela (campo em linha de lista com cabeçalho de coluna). */
+  hideLabel?: boolean;
 }
 
 export function CondicaoPagamentoInput({
@@ -27,12 +29,14 @@ export function CondicaoPagamentoInput({
   onSelectId,
   onSelectItem,
   disabled = false,
+  hideLabel = false,
 }: CondicaoPagamentoInputProps) {
   const ui = useUi();
   return (
     <EntityInput<CondicaoPagamento, CondicaoPagamento>
       name={name}
       label={label}
+      hideLabel={hideLabel}
       error={error}
       required={required}
       initialItem={initialItem}
