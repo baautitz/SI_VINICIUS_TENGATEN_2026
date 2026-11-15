@@ -150,6 +150,16 @@ export function DataTable<TData, TValue>({
   const [focusedRowIndex, setFocusedRowIndex] = React.useState<number | null>(
     null,
   );
+
+  // Linha recriada ou foco levado para fora (ex.: uma janela abriu): a marca de linha focada nao fica presa.
+  React.useEffect(() => {
+    const aoFocar = (event: FocusEvent) => {
+      const alvo = event.target
+      if (alvo instanceof Element && !alvo.closest("[data-navigation-list-item]")) setFocusedRowIndex(null)
+    }
+    document.addEventListener("focusin", aoFocar)
+    return () => document.removeEventListener("focusin", aoFocar)
+  }, [])
   const navigationRootRef = React.useRef<HTMLDivElement>(null);
   const internalSearchInputRef = React.useRef<HTMLInputElement>(null);
   const activeSearchInputRef = searchInputRef || internalSearchInputRef;

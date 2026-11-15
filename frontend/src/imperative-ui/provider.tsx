@@ -57,8 +57,46 @@ interface WindowRuntimeValue {
 const WindowManagerContext = createContext<WindowManager | null>(null)
 const WindowRuntimeContext = createContext<WindowRuntimeValue | null>(null)
 
+// Linha da listagem e rotulo do controle que abriu a janela: se a tabela recriar a linha (refetch), o foco volta ao equivalente.
+const descritorDeFoco = new WeakMap<object, { linha: number; rotulo: string }>()
+
+function memorizarFoco(el: HTMLElement) {
+  const tr = el.closest("[data-navigation-list-item]")
+  const rotulo = el.getAttribute("aria-label") ?? el.getAttribute("title")
+  if (!tr || !rotulo) return
+  const linhas = Array.from(document.querySelectorAll("[data-navigation-list-item]")).filter((l) => !l.closest("[role=dialog]"))
+  const linha = linhas.indexOf(tr)
+  if (linha >= 0) descritorDeFoco.set(el, { linha, rotulo })
+}
+
+function equivalenteDoFoco(target: object): HTMLElement | null {
+  const d = descritorDeFoco.get(target)
+  if (!d) return null
+  const linha = Array.from(document.querySelectorAll("[data-navigation-list-item]")).filter((l) => !l.closest("[role=dialog]"))[d.linha]
+  const botao = Array.from(linha?.querySelectorAll<HTMLElement>("[aria-label], [title]") ?? []).find(
+    (e) => (e.getAttribute("aria-label") ?? e.getAttribute("title")) === d.rotulo,
+  )
+  return botao ?? null
+}
+
 function restoreFocusTarget(target: FocusTarget | null, windowChanged: () => boolean = () => false): void {
-  if (!target || !target.isConnected) return
+  if (!target) return
+  if (!target.isConnected) {
+    // A linha pode ter sido recriada: procura o controle equivalente por alguns quadros.
+    if (typeof window === "undefined" || !descritorDeFoco.has(target)) return
+    let tentativas = 0
+    const procurar = () => {
+      if (windowChanged()) return
+      const novo = equivalenteDoFoco(target)
+      if (novo && !novo.closest("[inert]")) {
+        try { novo.focus() } catch { /* controle pode ter sido desabilitado */ }
+        return
+      }
+      if (++tentativas < 30) window.requestAnimationFrame(procurar)
+    }
+    window.requestAnimationFrame(procurar)
+    return
+  }
   const isBlocked = () =>
     typeof HTMLElement !== "undefined" &&
     target instanceof HTMLElement &&
@@ -138,7 +176,9 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
 
   const captureFocus = useCallback((): FocusTarget | null => {
     if (typeof document === "undefined") return null
-    return document.activeElement instanceof HTMLElement ? document.activeElement : null
+    if (!(document.activeElement instanceof HTMLElement)) return null
+    memorizarFoco(document.activeElement)
+    return document.activeElement
   }, [])
 
   const open = useCallback(
