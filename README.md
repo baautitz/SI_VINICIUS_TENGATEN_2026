@@ -113,7 +113,3 @@ infra.js                             comandos de infra e de desenvolvimento
 - [docs/adr](docs/adr): decisões de arquitetura e de produto, com o motivo de cada uma.
 - [docs/atalhos.md](docs/atalhos.md): atalhos de teclado das telas.
 - [frontend/docs](frontend/docs): regras de feedback e de layout da interface.
-
-## Contribuindo
-
-Commits seguem Conventional Commits em português (`tipo(escopo): descrição`), um assunto por commit. Os detalhes estão no [CLAUDE.md](CLAUDE.md). As tarefas ficam nas issues do GitHub.
