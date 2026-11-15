@@ -3,7 +3,7 @@
 import { combinacaoDe } from "@/lib/atalhos";
 import React from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Receipt, RefreshCw, Trash2, TriangleAlert, Undo2 } from "lucide-react";
+import { Boxes, Plus, Receipt, RefreshCw, Trash2, TriangleAlert, Undo2 } from "lucide-react";
 import { WindowActions, WindowCancelButton } from "@/ui/imperative";
 import { fornecedoresApi, transportadorasApi } from "@/api/parceiros";
 import { FornecedoresUpsert } from "@/features/parceiros/fornecedores/upsert";
@@ -14,6 +14,9 @@ import { CadastroSugeridoCard, valoresDoCadastroSugerido, erroDoCadastro } from 
 import { fornecedorSchema, type ItensSelecionados } from "@/features/parceiros/fornecedores/types";
 import { transportadoraSchema } from "@/features/parceiros/transportadoras/types";
 import { comprasApi } from "@/api/compras";
+import { estoqueApi } from "@/api/estoque";
+import { MovimentacoesUpsert } from "@/features/estoque/movimentacoes/upsert";
+import { useRelated, mapItens } from "@/hooks/use-related";
 import { capturarFocoDeRemocao } from "@/ui/foco-remocao";
 import { condicoesApi } from "@/api/financeiro";
 import { skusApi } from "@/api/catalogo";
@@ -289,6 +292,7 @@ function CompraForm({
 }) {
   const activeWindow = useWindow<true>();
   const ui = useUi();
+  const related = useRelated();
   const queryClient = useQueryClient();
   const readOnly = !!compra;
   const podeEstornar = !!compra && !compra.estornada;
@@ -1024,6 +1028,20 @@ function CompraForm({
                     title: `Parcelas da compra #${compra.id}`,
                     size: "full",
                   }),
+              },
+              {
+                id: "compras.movimentacoes",
+                hotkey: combinacaoDe("verMovimentacao"),
+                label: "Movimentação de estoque",
+                icon: <Boxes className="size-4" />,
+                run: () =>
+                  related.openList(
+                    () => estoqueApi.listByOrigem("COMPRA", compra.id).then(mapItens((x) => ({ id: x.id, descricao: `Movimentação #${x.id}`, detalhe: x.tipoMovimentacao }))),
+                    estoqueApi.getById,
+                    MovimentacoesUpsert,
+                    "Visualizar Movimentação de Estoque",
+                    "Compra sem movimentação de estoque.",
+                  ),
               },
             ]}
           />
