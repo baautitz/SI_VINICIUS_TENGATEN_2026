@@ -1363,7 +1363,7 @@ function CompraForm({
               ) : (
                 <>
               <div className="rounded-lg border bg-card overflow-x-auto">
-                <Table pageScroll className="min-w-300" aria-label="Itens da compra">
+                <Table pageScroll className="min-w-316" aria-label="Itens da compra">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-10">#</TableHead>
@@ -1374,10 +1374,10 @@ function CompraForm({
                       <TableHead className="w-28 text-right">
                         Quantidade
                       </TableHead>
-                      <TableHead className="w-28 text-right">
+                      <TableHead className="w-36 text-right">
                         Valor unit.
                       </TableHead>
-                      <TableHead className="w-24 text-right">
+                      <TableHead className="w-32 text-right">
                         Desconto unit.
                       </TableHead>
                       <TableHead className="w-28 text-right">
