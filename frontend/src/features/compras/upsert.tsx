@@ -49,6 +49,7 @@ import { DatePicker, NumberInput } from "@/ui/composites";
 import { navigationCell } from "@/ui/keyboard-navigation";
 import { todayLocalISODate, todayBrasiliaISODate, toLocalISODate } from "@/utils/date-utils";
 import { cn } from "@/lib/utils";
+import { useRolarAoAdicionar } from "@/hooks/use-rolar-ao-adicionar";
 import { ItensXml } from "./itens-xml";
 import {
   descontoLinha,
@@ -428,6 +429,9 @@ function CompraForm({
     ],
     onSuccessCallback: () => activeWindow.resolve(true),
   });
+
+  const itensRef = useRolarAoAdicionar(itens.length);
+  const parcelasRef = useRolarAoAdicionar(parcelas.length);
 
   const atualizar = (key: number, patch: Partial<Linha>) =>
     setItens((a) => a.map((i) => (i.key === key ? { ...i, ...patch } : i)));
@@ -1218,7 +1222,7 @@ function CompraForm({
                       {!readOnly && !modoXml && <TableHead className="w-12" />}
                     </TableRow>
                   </TableHeader>
-                  <TableBody>
+                  <TableBody ref={itensRef}>
                     {itens.length === 0 && (
                       <TableRow>
                         <TableCell
@@ -1447,7 +1451,7 @@ function CompraForm({
                             <TableHead className="w-12" />
                           </TableRow>
                         </TableHeader>
-                        <TableBody>
+                        <TableBody ref={parcelasRef}>
                           {parcelas.length === 0 && (
                             <TableRow>
                               <TableCell colSpan={4} className="text-muted-foreground py-6 text-center">

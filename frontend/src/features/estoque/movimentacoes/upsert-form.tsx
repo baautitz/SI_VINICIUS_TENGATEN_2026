@@ -14,6 +14,7 @@ import { WindowActions } from "@/ui/imperative";
 import React, { useCallback, useRef, useState } from "react";
 import { combinacaoDe } from "@/lib/atalhos";
 import { cn } from "@/lib/utils";
+import { useRolarAoAdicionar } from "@/hooks/use-rolar-ao-adicionar";
 import { Button } from "@/ui/primitives";
 import { FieldGroup, FieldLabel } from "@/ui/primitives";
 import { NumberInput } from "@/ui/composites";
@@ -419,6 +420,7 @@ export function MovimentacoesUpsertForm({
         ]
       : [];
   const acoesRelacionadas: RelatedAction[] = [...origemActions, ...verEstorno];
+  const itensRef = useRolarAoAdicionar(itens.length);
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
@@ -609,7 +611,7 @@ export function MovimentacoesUpsertForm({
                           )}
                         </TableRow>
                       </TableHeader>
-                      <TableBody>
+                      <TableBody ref={itensRef}>
                         {itens.length === 0 ? (
                           <TableRow>
                             <TableCell

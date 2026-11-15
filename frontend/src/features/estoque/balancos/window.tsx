@@ -23,6 +23,7 @@ import { NumberInput } from "@/ui/composites";
 import { navigationCell } from "@/ui/keyboard-navigation";
 import { combinacaoDe } from "@/lib/atalhos";
 import { cn } from "@/lib/utils";
+import { useRolarAoAdicionar } from "@/hooks/use-rolar-ao-adicionar";
 import { statusBalancoLabels } from "./types";
 import { Checkbox } from "@/ui/primitives";
 import { EmitenteInput } from "@/components/entity-inputs/emitente-input";
@@ -325,6 +326,8 @@ function BalancoForm({
     ),
   );
 
+  const itensRef = useRolarAoAdicionar(itens.length);
+
   return (
     <div className="flex flex-col gap-4">
       <WindowActions>
@@ -415,7 +418,7 @@ function BalancoForm({
                   )}
                 </TableRow>
               </TableHeader>
-              <TableBody>
+              <TableBody ref={itensRef}>
                 {itens.length === 0 ? (
                   <TableRow>
                     <TableCell

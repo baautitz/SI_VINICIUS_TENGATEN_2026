@@ -22,6 +22,7 @@ import {
 import { CampoLinhaErro } from "./campo-linha-erro";
 import { ApiRequestError } from "@/utils/api-error";
 import { cn } from "@/lib/utils";
+import { useRolarAoAdicionar } from "@/hooks/use-rolar-ao-adicionar";
 import { Badge, Button } from "@/ui/primitives";
 import { HotkeyKbd } from "@/ui/primitives";
 import { Field, FieldLabel, FieldError } from "@/ui/primitives";
@@ -1013,6 +1014,8 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
     return () => activeWindow.setDirtyCheck(null);
   };
 
+  const itensRef = useRolarAoAdicionar(itens.length);
+
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
       <WindowActions>
@@ -1185,7 +1188,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
                         )}
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <TableBody ref={itensRef}>
                       {itens.length === 0 && (
                         <TableRow>
                           <TableCell colSpan={readOnly ? 7 : 8} className="text-muted-foreground text-center">
