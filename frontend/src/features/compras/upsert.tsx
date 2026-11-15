@@ -488,7 +488,10 @@ function CompraForm({
     if (valorNota <= 0) {
       ui.feedback.notify({
         type: "error",
-        title: "Informe os itens antes de gerar as parcelas.",
+        title:
+          itens.length === 0
+            ? "Adicione os itens antes de gerar as parcelas."
+            : "O valor da nota está zerado. Informe o valor unitário dos itens para gerar as parcelas.",
       });
       return;
     }
@@ -522,7 +525,10 @@ function CompraForm({
     if (parcelas.length === 0 || valorNota <= 0) {
       ui.feedback.notify({
         type: "error",
-        title: "Adicione ao menos uma parcela e informe os itens para redistribuir.",
+        title:
+          parcelas.length === 0
+            ? "Adicione ao menos uma parcela para redistribuir."
+            : "O valor da nota está zerado. Informe o valor unitário dos itens para redistribuir.",
       });
       return;
     }
