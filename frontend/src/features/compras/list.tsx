@@ -68,7 +68,7 @@ export function ComprasList({
         if (compraSemSaldoDevolvivel(c)) return <Badge variant="secondary">Devolvida</Badge>;
         if (c.itens.some((i) => Number(i.quantidadeDevolvida) > 0))
           return <Badge variant="outline">Devolvida parcialmente</Badge>;
-        return null;
+        return <Badge variant="success">Confirmada</Badge>;
       },
     },
     {
