@@ -1177,7 +1177,7 @@ function CompraForm({
                 />
               ) : (
                 <>
-              <div className="rounded-lg border bg-card overflow-clip">
+              <div className="rounded-lg border bg-card overflow-x-auto">
                 <Table pageScroll className="min-w-300" aria-label="Itens da compra">
                   <TableHeader>
                     <TableRow>
