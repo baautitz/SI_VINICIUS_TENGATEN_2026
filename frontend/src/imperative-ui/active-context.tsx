@@ -57,7 +57,7 @@ export const WindowFooterContext = createContext<HTMLElement | null>(null)
 export function WindowActions({ children }: { children: ReactNode }) {
   const slot = useContext(WindowFooterContext)
   const content = (
-    <div data-window-actions className="flex justify-end gap-2">
+    <div data-window-actions className="flex flex-wrap justify-end gap-2">
       {children}
     </div>
   )
