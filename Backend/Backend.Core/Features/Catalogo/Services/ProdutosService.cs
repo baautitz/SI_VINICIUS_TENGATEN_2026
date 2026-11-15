@@ -38,6 +38,16 @@ public sealed class ProdutosService : BaseService
         _unitOfWork = unitOfWork;
     }
 
+    // Codigo gerado do SKU: {produto}{indice}. Pula os que ja existem (digitados a mao ou de variacoes apagadas).
+    private async Task<string> ProximoCodigoLivre(int produtoId, Func<int> proximoIndice)
+    {
+        while (true)
+        {
+            var codigo = $"{produtoId}{proximoIndice()}";
+            if (await _skusRepository.ObterSkuPorSku(codigo) == null) return codigo;
+        }
+    }
+
     public Task<ResultadoPaginado<Produtos>> ObterProdutos(string? search, int pagina = 1, int tamanhoPagina = 20, int? categoriaId = null, int? marcaId = null, int? unidadeMedidaId = null)
     {
         if (string.IsNullOrWhiteSpace(search))
@@ -82,7 +92,7 @@ public sealed class ProdutosService : BaseService
             foreach (var skuCommand in command.Skus)
             {
                 var skuCode = string.IsNullOrWhiteSpace(skuCommand.Sku) 
-                    ? $"{criado.Id}{skuIndex++}" 
+                    ? await ProximoCodigoLivre(criado.Id, () => skuIndex++)
                     : skuCommand.Sku!;
 
                 var sku = new Skus(skuCode, skuCommand.Preco, 0, skuCommand.Ativo, skuCommand.GtinEan);
@@ -180,7 +190,7 @@ public sealed class ProdutosService : BaseService
                 foreach (var skuCommand in command.Skus)
                 {
                     var isNew = string.IsNullOrWhiteSpace(skuCommand.Sku);
-                    var skuCode = isNew ? $"{id}{skuIndex++}" : skuCommand.Sku!;
+                    var skuCode = isNew ? await ProximoCodigoLivre(id, () => skuIndex++) : skuCommand.Sku!;
 
                     var sku = new Skus(skuCode, skuCommand.Preco, 0, skuCommand.Ativo, skuCommand.GtinEan);
                     if (skuCommand.AtributoValorIds != null && skuCommand.AtributoValorIds.Any())
