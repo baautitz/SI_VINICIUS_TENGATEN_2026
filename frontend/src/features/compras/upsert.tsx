@@ -640,8 +640,10 @@ function CompraForm({
   // Igual às parcelas de contas a pagar/receber: lança quantas precisar (o saldo restante, ou zero);
   // a divergência com a nota aparece nos próprios lançamentos e em "Redistribuir" (atalho `distribuir`).
   const adicionarParcela = () => {
-    const base = new Date(dataCompra + "T12:00:00");
-    base.setDate(base.getDate() + (parcelas.length + 1) * 30);
+    // 30 dias depois do ultimo vencimento (ou da compra, sem parcelas); nao conta parcelas, pois a 1a pode ser a vista.
+    const ultimo = parcelas.reduce((m, p) => (p.dataVencimento > m ? p.dataVencimento : m), dataCompra);
+    const base = new Date(ultimo + "T12:00:00");
+    base.setDate(base.getDate() + 30);
     setParcelas((p) => [
       ...p,
       {
