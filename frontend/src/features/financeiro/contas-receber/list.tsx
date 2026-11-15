@@ -3,7 +3,7 @@
 import { origemTituloLabels } from "../origem";
 import React from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Button } from "@/ui/primitives";
+import { Badge, Button } from "@/ui/primitives";
 import { DataTable, FeatureLayout, FeatureHeader } from "@/ui/composites";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/primitives";
 import { getActionsColumn, RowAction } from "@/utils/table-columns";
@@ -77,12 +77,12 @@ export function ContasReceberList({
         return (
           <button
             type="button"
-            className="text-left hover:underline"
+            className="flex items-center gap-2 text-left"
             title="Ver todas as parcelas deste documento"
             onClick={() => onFiltrosChange({ documento: documentoDeContaReceber(i) })}
           >
-            <span className="text-muted-foreground">{origemTituloLabels[i.origemTipo] ?? i.origemTipo}</span>{" "}
-            <span className="font-semibold text-foreground">{i.numeroDocumento}</span>
+            <Badge variant="outline">{origemTituloLabels[i.origemTipo] ?? i.origemTipo}</Badge>
+            <span className="font-medium text-foreground hover:underline">{i.numeroDocumento}</span>
           </button>
         );
       },
