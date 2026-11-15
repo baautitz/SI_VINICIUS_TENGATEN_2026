@@ -433,7 +433,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       <div className="bg-card relative flex max-h-full flex-1 flex-col overflow-hidden rounded-xl border">
-        <Table>
+        <Table className={rows.length === 0 ? "flex-1" : undefined}>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
@@ -594,9 +594,10 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="text-muted-foreground h-full text-center"
+                  className="text-muted-foreground h-full px-0 py-12 text-center align-middle"
                 >
-                  Nenhum resultado encontrado.
+                  {/* Tabela mais larga que a área visível: a mensagem fica presa à esquerda, com a largura visível (100cqw), para centrar no que se vê. */}
+                  <div className="sticky left-0 w-[100cqw] max-w-full">Nenhum resultado encontrado.</div>
                 </TableCell>
               </TableRow>
             )}

@@ -19,7 +19,7 @@ function Table({
     <div
       data-slot="table-container"
       className={cn(
-        "relative flex w-full flex-col",
+        "relative flex w-full flex-col [container-type:inline-size]",
         pageScroll ? "overflow-visible" : "min-h-0 flex-1 overflow-auto",
       )}
     >
