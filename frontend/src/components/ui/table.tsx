@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 function Table({
   className,
   pageScroll = false,
+  fill = false,
   ...props
 }: React.ComponentProps<"table"> & {
   /**
@@ -14,19 +15,22 @@ function Table({
    * em relação à área rolável de fora. Sem isso a tabela é o próprio container de rolagem.
    */
   pageScroll?: boolean;
+  /** Ocupa a altura do pai: o espaço que sobra fica entre as linhas e o rodapé (totalizador colado embaixo). */
+  fill?: boolean;
 }) {
   return (
     <div
       data-slot="table-container"
       className={cn(
         "relative flex w-full flex-col [container-type:inline-size]",
+        fill && "flex-1",
         // O corpo da janela tem p-1 (4px): o sticky gruda dentro desse respiro e as linhas apareciam passando por cima do cabeçalho.
         pageScroll ? "overflow-visible [&_thead]:-top-1" : "min-h-0 flex-1 overflow-auto",
       )}
     >
       <table
         data-slot="table"
-        className={cn("w-full caption-bottom border-separate border-spacing-0 text-sm", className)}
+        className={cn("w-full caption-bottom border-separate border-spacing-0 text-sm", fill && "h-full", className)}
         {...props}
       />
     </div>
