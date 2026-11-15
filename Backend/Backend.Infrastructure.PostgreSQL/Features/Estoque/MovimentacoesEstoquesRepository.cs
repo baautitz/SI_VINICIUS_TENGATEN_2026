@@ -70,6 +70,9 @@ public class MovimentacoesEstoquesRepository : IMovimentacoesEstoquesRepository
             FROM movimentacoes_estoque me
             JOIN movimentacoes_estoque_itens mei ON mei.movimentacao_estoque_id = me.id
             WHERE me.id > @MovimentacaoId AND mei.sku = ANY(@Skus)
+              -- Par que se anula (movimentação posterior e o estorno dela) não muda o custo médio: não bloqueia.
+              AND NOT EXISTS (SELECT 1 FROM movimentacoes_estoque e WHERE e.origem_tipo = 'ESTORNO' AND e.origem_id = me.id AND e.id > @MovimentacaoId)
+              AND NOT (me.origem_tipo = 'ESTORNO' AND me.origem_id > @MovimentacaoId)
             ORDER BY mei.sku, me.id;",
             new { MovimentacaoId = movimentacaoId, Skus = skus.ToArray() }, transaction: _session.Transaction)).ToList();
 
