@@ -4,6 +4,7 @@ import * as React from "react";
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronsUpDown } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { HotkeyKbd, Kbd } from "@/components/ui/kbd";
 import type { Ordenacao } from "@/lib/ordenacao";
 
 export interface ColunaOrdenavel {
@@ -100,7 +101,14 @@ export function OrdenarMenu({
           </div>
         );
       })}
-      <p className="text-muted-foreground border-t px-2 pt-1.5 pb-1 text-xs">↑ ↓ coluna · ← → modo · Enter fecha</p>
+      <p className="text-muted-foreground flex flex-wrap items-center gap-x-1.5 gap-y-1 border-t px-2 pt-1.5 pb-1 text-xs">
+        <HotkeyKbd hotkey="ArrowUp+ArrowDown" />
+        <span>coluna</span>
+        <HotkeyKbd hotkey="ArrowLeft+ArrowRight" />
+        <span>modo</span>
+        <Kbd>Enter</Kbd>
+        <span>fecha</span>
+      </p>
     </div>
   );
 }

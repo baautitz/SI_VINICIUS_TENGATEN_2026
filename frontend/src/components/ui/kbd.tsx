@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight } from "lucide-react"
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -26,6 +26,8 @@ function KbdGroup({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 const KEY_ICONS: Record<string, React.ReactNode> = {
+  ArrowUp: <ArrowUp className="size-3" />,
+  ArrowDown: <ArrowDown className="size-3" />,
   ArrowLeft: <ArrowLeft className="size-3" />,
   ArrowRight: <ArrowRight className="size-3" />,
 }
