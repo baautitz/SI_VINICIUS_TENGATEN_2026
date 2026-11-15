@@ -16,6 +16,27 @@ public class RateioCompraTests
     }
 
     [Fact]
+    public void Residuo_e_distribuido_um_centavo_por_item_e_nao_acumulado_no_primeiro()
+    {
+        // 13,64 em 10 itens iguais: 1,364 cada. Piso 1,36 (soma 13,60); sobram 4 centavos, um para 4 itens.
+        var r = RateioCompra.Ratear(Enumerable.Repeat(10m, 10).ToArray(), 13.64m);
+
+        Assert.Equal(13.64m, r.Sum());
+        Assert.Equal(0.01m, r.Max() - r.Min());
+        Assert.Equal(4, r.Count(x => x == 1.37m));
+        Assert.Equal(6, r.Count(x => x == 1.36m));
+    }
+
+    [Fact]
+    public void Residuo_vai_primeiro_para_o_maior_resto_e_nao_para_o_maior_item()
+    {
+        // 10,00 em [10,20,0]: 3,333.. e 6,666.. -> o centavo que sobra vai para o de maior resto (o segundo).
+        var r = RateioCompra.Ratear(new[] { 10m, 20m, 0m }, 10m);
+
+        Assert.Equal(new[] { 3.33m, 6.67m, 0m }, r);
+    }
+
+    [Fact]
     public void Soma_do_rateio_sempre_fecha_exata_e_custo_bate_com_tolerancia()
     {
         var qtds = new[] { 3m, 7m, 1.5m, 11m };

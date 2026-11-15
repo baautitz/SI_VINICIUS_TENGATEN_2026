@@ -32,4 +32,10 @@ assert.equal(valores.reduce((s, v) => s + v, 0), 85);
 const rat = ratearCompra(valores, 8.5);
 assert.deepEqual(rat, [4.5, 4]);
 assert.equal(rat.reduce((s, v) => s + v, 0), 8.5);
+// residuo distribuido 1 centavo por item (maior resto primeiro), sem acumular no primeiro
+const iguais = ratearCompra(Array(10).fill(10), 13.64);
+assert.equal(Math.round(iguais.reduce((s, v) => s + v, 0) * 100), 1364);
+assert.equal(iguais.filter((v) => v === 1.37).length, 4);
+assert.equal(iguais.filter((v) => v === 1.36).length, 6);
+assert.deepEqual(ratearCompra([10, 20, 0], 10), [3.33, 6.67, 0]);
 console.log("ok");

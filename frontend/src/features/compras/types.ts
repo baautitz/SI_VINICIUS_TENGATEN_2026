@@ -207,15 +207,23 @@ export function ratearCompra(
 ): number[] {
   const total = valoresItens.reduce((s, v) => s + v, 0);
   if (total <= 0) return valoresItens.map(() => 0);
-  const rateios = valoresItens.map((v) =>
-    round2((despesasLiquidas * v) / total),
+  // Maior resto, em centavos inteiros (espelha o RateioCompra do backend): cada item recebe o piso da sua
+  // parte; os centavos que sobram vao um a um para os de maior resto (empate: maior valor, depois a ordem).
+  const exatos = valoresItens.map((v) => (despesasLiquidas * 100 * v) / total);
+  const pisos = exatos.map((e) => Math.floor(e + 1e-9));
+  const sobra = Math.round(despesasLiquidas * 100) - pisos.reduce((s, p) => s + p, 0);
+  const receberao = new Set(
+    valoresItens
+      .map((_, i) => i)
+      .sort(
+        (a, b) =>
+          exatos[b] - pisos[b] - (exatos[a] - pisos[a]) ||
+          valoresItens[b] - valoresItens[a] ||
+          a - b,
+      )
+      .slice(0, Math.max(0, sobra)),
   );
-  const residuo = round2(despesasLiquidas - rateios.reduce((s, r) => s + r, 0));
-  if (residuo !== 0) {
-    const maior = valoresItens.indexOf(Math.max(...valoresItens));
-    rateios[maior] = round2(rateios[maior] + residuo);
-  }
-  return rateios;
+  return pisos.map((p, i) => (p + (receberao.has(i) ? 1 : 0)) / 100);
 }
 
 export const moeda = (n: number) =>
