@@ -274,6 +274,120 @@ export function KeyboardNavigationProvider({ children }: { children: React.React
     }
   }, [])
 
+  // Recuperacao de foco (keyboard first): fechar janela/popup/menu, erro com toast, botao desabilitado
+  // durante a requisicao ou elemento removido deixam o foco em <body>, e so o mouse o recuperava.
+  // Mantemos o historico dos ultimos controles focados; quando o foco se perde sem ter sido por clique,
+  // devolvemos ao mais recente que ainda existe e esta disponivel (ex.: o campo de antes de abrir a janela).
+  React.useEffect(() => {
+    const HISTORY_MAX = 20
+    const WAIT_DISABLED_MS = 5000
+    let history: HTMLElement[] = []
+    let armed = false
+    let lostSince = 0
+    let lastPointerAt = 0
+    let frame: number | null = null
+
+    const focoPerdido = () => {
+      const active = document.activeElement
+      return !active || active === document.body || active === document.documentElement
+    }
+
+    const inActiveScope = (element: HTMLElement) =>
+      findScopeForTarget(element, scopesRef.current) !== null
+
+    const fallbackInScope = (): HTMLElement | null => {
+      const scope = scopesRef.current
+        .filter((item) => item.active && item.root.isConnected)
+        .sort((a, b) => b.priority - a.priority)[0]
+      if (!scope) return null
+      return (
+        collectCandidates(scope.root).find(
+          (candidate) => !candidate.element.closest("[data-navigation-sidebar='true']"),
+        )?.element ?? null
+      )
+    }
+
+    const check = () => {
+      frame = null
+      if (!armed) return
+      if (!focoPerdido()) {
+        lostSince = 0
+        return
+      }
+      if (!document.hasFocus() || Date.now() - lastPointerAt < 400) return
+      if (!lostSince) lostSince = Date.now()
+
+      history = history.filter((element) => element.isConnected)
+      let target: HTMLElement | null = null
+      for (let i = history.length - 1; i >= 0; i--) {
+        const element = history[i]
+        if (isEligible(element) && inActiveScope(element)) {
+          target = element
+          break
+        }
+        // Ainda existe mas indisponivel (desabilitado durante a requisicao): espera voltar antes de desistir dele.
+        if (Date.now() - lostSince < WAIT_DISABLED_MS && !element.closest("[aria-hidden='true'], [inert]")) {
+          schedule(250)
+          return
+        }
+      }
+      target ??= fallbackInScope()
+      if (!target) return
+      lostSince = 0
+      markKeyboardFocus()
+      target.focus({ preventScroll: true })
+    }
+
+    const schedule = (delay = 0) => {
+      if (frame !== null) return
+      if (delay > 0) {
+        frame = window.setTimeout(() => requestAnimationFrame(check), delay) as unknown as number
+      } else {
+        frame = requestAnimationFrame(check)
+      }
+    }
+
+    const handleFocusIn = (event: FocusEvent) => {
+      const target = event.target
+      if (!(target instanceof HTMLElement)) return
+      armed = true
+      lostSince = 0
+      if (!isEligible(target)) return
+      history = history.filter((element) => element !== target && element.isConnected)
+      history.push(target)
+      if (history.length > HISTORY_MAX) history.shift()
+    }
+    const handleFocusOut = (event: FocusEvent) => {
+      if (!event.relatedTarget) schedule()
+    }
+    const handlePointer = () => {
+      lastPointerAt = Date.now()
+      armed = false
+      lostSince = 0
+    }
+
+    const observer = new MutationObserver(() => schedule())
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["disabled", "aria-disabled", "inert", "aria-hidden", "hidden"],
+    })
+    document.addEventListener("focusin", handleFocusIn, true)
+    document.addEventListener("focusout", handleFocusOut, true)
+    document.addEventListener("pointerdown", handlePointer, true)
+    return () => {
+      observer.disconnect()
+      if (frame !== null) {
+        cancelAnimationFrame(frame)
+        clearTimeout(frame)
+      }
+      document.removeEventListener("focusin", handleFocusIn, true)
+      document.removeEventListener("focusout", handleFocusOut, true)
+      document.removeEventListener("pointerdown", handlePointer, true)
+    }
+  }, [])
+
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!event.isComposing) {
