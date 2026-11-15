@@ -131,6 +131,7 @@ _Avoid_: Parcela paga (deixa de fora a parcial e o abatimento)
 **Estorno de devolução**:
 Desfazimento de uma Devolução de venda ou de compra, com motivo: os Itens saem de novo do estoque, os Abatimentos são desfeitos nas parcelas a receber e o Reembolso é cancelado, se existir. O estorno é barrado se o Reembolso já tiver baixa. A Devolução de venda fica registrada como estornada e libera o saldo devolvível dos Itens.
 Na Devolução de compra vale o espelho: os Itens voltam ao estoque, os Abatimentos são desfeitos nas parcelas a pagar e o Reembolso do fornecedor é cancelado, barrado se já tiver recebimento.
+A Devolução de compra se consulta e se estorna em Compras > Devoluções de compra; ela nasce na tela de Compras. Compra com Devolução ativa não pode ser estornada: a ordem do desfazimento é inversa à da criação (estornar a Devolução, estornar os pagamentos, estornar a Compra).
 _Avoid_: Cancelamento de devolução, exclusão de devolução
 
 **Unidade de medida**:
