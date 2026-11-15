@@ -36,8 +36,23 @@ export interface Compra {
   }>;
 }
 
+export type StatusDevolucaoCompra = "ATIVA" | "ESTORNADA";
+
+export interface DevolucaoCompraResumo {
+  id: number;
+  compraId: number;
+  fornecedorNome: string;
+  dataDevolucao: string;
+  valorTotal: number;
+  motivo: string;
+  status: StatusDevolucaoCompra;
+}
+
 export interface DevolucaoCompra {
   id: number;
+  status: StatusDevolucaoCompra;
+  estornadoEm?: string | null;
+  motivoEstorno?: string | null;
   compraId: number;
   dataDevolucao: string;
   motivo: string;

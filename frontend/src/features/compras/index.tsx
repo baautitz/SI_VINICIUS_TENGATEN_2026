@@ -113,7 +113,7 @@ export function ComprasFeature() {
     try {
       const res = await comprasApi.createDevolucao(c.id, result.value);
       await Promise.all(
-        ["compras", "skus", "produtos", "movimentacoes", "contas-pagar", "nfes"].map((k) =>
+        ["compras", "devolucoes-compra", "skus", "produtos", "movimentacoes", "contas-pagar", "nfes"].map((k) =>
           queryClient.invalidateQueries({ queryKey: [k] }),
         ),
       );
