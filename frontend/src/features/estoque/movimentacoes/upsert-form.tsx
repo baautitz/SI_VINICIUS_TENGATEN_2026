@@ -422,7 +422,7 @@ export function MovimentacoesUpsertForm({
   const acoesRelacionadas: RelatedAction[] = [...origemActions, ...verEstorno];
   const itensRef = useRolarAoAdicionar(itens.length);
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex h-full min-h-0 flex-col gap-4">
       <WindowActions>
         {estornarAqui && (
           <Button
@@ -459,11 +459,11 @@ export function MovimentacoesUpsertForm({
           </form.Subscribe>
         )}
       </WindowActions>
-      <div aria-label={title}>
+      <div aria-label={title} className="flex min-h-0 flex-1 flex-col">
         <form
           ref={registerDirty}
           id="upsert-movimentacao"
-          className="flex flex-col gap-6"
+          className="flex min-h-0 flex-1 flex-col gap-6"
           onSubmit={handleFormSubmit}
         >
           <FieldGroup className="flex flex-row flex-wrap items-end gap-4">
@@ -555,7 +555,7 @@ export function MovimentacoesUpsertForm({
               const comCusto = true;
 
               return (
-                <div className="flex flex-col gap-3 border-t pt-4">
+                <div className="flex min-h-0 flex-1 flex-col gap-3 border-t pt-4">
                   {!readOnly && (
                     <div className="flex flex-col gap-2">
                       <div className="max-w-md">
@@ -579,8 +579,8 @@ export function MovimentacoesUpsertForm({
                     </Alert>
                   )}
 
-                  <div className="bg-card overflow-clip rounded-lg border">
-                    <Table pageScroll>
+                  <div className="bg-card flex min-h-0 flex-1 flex-col overflow-clip rounded-lg border">
+                    <Table pageScroll fill>
                       <TableHeader>
                         <TableRow>
                           <TableHead className="min-w-40">SKU</TableHead>
@@ -846,6 +846,9 @@ export function MovimentacoesUpsertForm({
                             );
                           })
                         )}
+                        <TableRow aria-hidden="true" className="h-full hover:bg-transparent">
+                          <TableCell colSpan={readOnly ? 7 : 8} className="border-b-0 p-0" />
+                        </TableRow>
                       </TableBody>
                       {comCusto && itens.length > 0 && (
                         <TableFooter>

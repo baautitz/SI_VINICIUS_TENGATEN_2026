@@ -329,7 +329,7 @@ function BalancoForm({
   const itensRef = useRolarAoAdicionar(itens.length);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex h-full min-h-0 flex-col gap-4">
       <WindowActions>
         <WindowCancelButton readOnly={readOnly} />
         {!readOnly && (
@@ -351,7 +351,7 @@ function BalancoForm({
         )}
       </WindowActions>
 
-      <div ref={registerDirty} className="flex flex-col gap-6">
+      <div ref={registerDirty} className="flex min-h-0 flex-1 flex-col gap-6">
         <div className="flex flex-row flex-wrap items-end gap-4">
           {balanco && (
             <div className="flex w-fit flex-col gap-2">
@@ -388,7 +388,7 @@ function BalancoForm({
           </Field>
         </div>
 
-        <div className="flex flex-col gap-3 border-t pt-4">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 border-t pt-4">
           {!readOnly && (
             <div className="max-w-md">
               <SkuInput
@@ -402,7 +402,7 @@ function BalancoForm({
             </div>
           )}
 
-          <div className="bg-card overflow-clip rounded-lg border">
+          <div className="bg-card flex min-h-0 flex-1 flex-col overflow-clip rounded-lg border">
             <Table pageScroll>
               <TableHeader>
                 <TableRow>
