@@ -55,6 +55,14 @@ export function useDevolucaoFlow() {
     });
     if (result.status !== "confirmed") return false;
 
+    const unidades = result.value.itens.reduce((s, i) => s + Number(i.quantidade), 0);
+    const confirmou = await ui.windows.confirm({
+      title: `Confirmar devolução da venda #${venda.id}`,
+      description: `Devolver ${unidades} unidade(s) em ${result.value.itens.length} item(ns)? Os itens voltam ao estoque, o valor abate as parcelas a receber (ou vira reembolso ao cliente) e, se a venda tiver NF-e, é emitida a NF-e de devolução. Para desfazer, só estornando a devolução.`,
+      confirmLabel: "Devolver",
+    });
+    if (!confirmou) return false;
+
     try {
       const res = await vendasApi.createDevolucao(venda.id, result.value);
       await invalidate();

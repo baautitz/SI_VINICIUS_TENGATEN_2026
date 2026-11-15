@@ -110,6 +110,14 @@ export function ComprasFeature() {
     });
     if (result.status !== "confirmed") return;
 
+    const unidades = result.value.itens.reduce((s, i) => s + Number(i.quantidade), 0);
+    const confirmou = await ui.windows.confirm({
+      title: `Confirmar devolução da compra #${c.id}`,
+      description: `Devolver ${unidades} unidade(s) em ${result.value.itens.length} item(ns) ao fornecedor? Os itens saem do estoque, o valor abate as parcelas a pagar (ou vira reembolso do fornecedor) e, se a compra tiver NF-e, é emitida a NF-e de devolução. Para desfazer, só estornando a devolução.`,
+      confirmLabel: "Devolver",
+    });
+    if (!confirmou) return;
+
     try {
       const res = await comprasApi.createDevolucao(c.id, result.value);
       await Promise.all(
