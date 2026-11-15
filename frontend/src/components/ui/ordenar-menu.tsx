@@ -4,6 +4,7 @@ import * as React from "react";
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronsUpDown } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { markKeyboardFocus } from "@/ui/keyboard-navigation";
 import { HotkeyKbd, Kbd } from "@/components/ui/kbd";
 import type { Ordenacao } from "@/lib/ordenacao";
 
@@ -41,7 +42,20 @@ export function OrdenarMenu({
   );
 
   React.useEffect(() => {
+    // Quem tinha o foco antes de abrir (campo de pesquisa, botao Ordenar...) o recebe de volta ao fechar,
+    // por Enter, Esc ou clique fora; senao o foco cai em <body> e so o mouse o recupera.
+    const origem = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     ref.current?.focus();
+    return () => {
+      requestAnimationFrame(() => {
+        const ativo = document.activeElement;
+        const perdido = !ativo || ativo === document.body;
+        if (perdido && origem?.isConnected) {
+          markKeyboardFocus();
+          origem.focus({ preventScroll: true });
+        }
+      });
+    };
   }, []);
 
   const girar = (passo: 1 | -1) => {
