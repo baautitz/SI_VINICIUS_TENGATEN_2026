@@ -336,6 +336,14 @@ export function KeyboardNavigationProvider({ children }: { children: React.React
         if (direction === "forward" || direction === "backward") {
           event.preventDefault()
         }
+        // Sem campo na direcao, mas ha colunas escondidas: rola o contêiner para revela-las.
+        if (
+          (direction === "left" || direction === "right") &&
+          scrollHorizontalmente(source, direction)
+        ) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
         return
       }
 
@@ -354,6 +362,21 @@ export function KeyboardNavigationProvider({ children }: { children: React.React
       {children}
     </NavigationContext.Provider>
   )
+}
+
+/** Rola o ancestral com scroll horizontal mais proximo meia largura na direcao; devolve se rolou. */
+function scrollHorizontalmente(source: Element, direction: "left" | "right"): boolean {
+  for (let el = source.parentElement; el; el = el.parentElement) {
+    const overflowX = getComputedStyle(el).overflowX
+    if ((overflowX !== "auto" && overflowX !== "scroll") || el.scrollWidth <= el.clientWidth) continue
+    const maximo = el.scrollWidth - el.clientWidth
+    const passo = Math.max(80, el.clientWidth / 2)
+    const alvo = direction === "left" ? Math.max(0, el.scrollLeft - passo) : Math.min(maximo, el.scrollLeft + passo)
+    if (Math.round(alvo) === Math.round(el.scrollLeft)) continue
+    el.scrollTo({ left: alvo })
+    return true
+  }
+  return false
 }
 
 const NAVIGABLE_SELECTOR = [
