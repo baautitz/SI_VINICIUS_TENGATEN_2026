@@ -165,8 +165,13 @@ public sealed class DevolucoesCompraService : BaseService
         var saida = new MovimentacoesEstoques(
             TipoMovimentacaoEstoque.SAIDA, OrigemMovimentacaoEstoque.DEVOLUCAO_COMPRA, criada.Id,
             motivo: $"Devolução nº {criada.Id} da compra nº {compra.Id}");
-        foreach (var item in criada.Itens)
-            saida.AdicionarItem(skus[item.Sku], item.Quantidade, item.CustoUnitario);
+        // Linhas do mesmo SKU saem numa linha só, ao custo ponderado pelas quantidades.
+        foreach (var g in criada.Itens.GroupBy(i => i.Sku))
+        {
+            var quantidade = g.Sum(i => i.Quantidade);
+            var custo = Math.Round(g.Sum(i => i.Quantidade * i.CustoUnitario) / quantidade, RateioCompra.CasasCusto, MidpointRounding.AwayFromZero);
+            saida.AdicionarItem(skus[g.Key], quantidade, custo);
+        }
 
         var estoque = await _estoqueService.Registrar(saida);
         if (!estoque.Success)

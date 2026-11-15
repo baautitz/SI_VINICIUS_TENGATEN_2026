@@ -37,7 +37,7 @@ public class DevolucaoCompraTests
         public UowFake Uow = new();
         public DevolucoesCompraService Service;
 
-        public Cenario(decimal estoque = 10, decimal jaDevolvido = 0, bool estornada = false)
+        public Cenario(decimal estoque = 10, decimal jaDevolvido = 0, bool estornada = false, bool segundaLinhaMesmoSku = false)
         {
             Sku = new Skus("SKU-1", 10m, estoque: estoque, custoMedio: 5m, custoUltimaCompra: 5m);
             var produto = Instancia<Produtos>();
@@ -50,7 +50,8 @@ public class DevolucaoCompraTests
             var item = new CompraItens(10, 5m, 0, Sku) { Id = 11 };
             typeof(CompraItens).GetProperty(nameof(CompraItens.QuantidadeDevolvida))!.SetValue(item, jaDevolvido);
             Compra = new Compra(DateTime.UtcNow, Instancia<Emitentes>(), Instancia<Fornecedores>(),
-                new[] { item }, 0, 0, 0, 0, 0, null, null) { Id = 7 };
+                segundaLinhaMesmoSku ? new[] { item, new CompraItens(10, 5m, 0, Sku) { Id = 12 } } : new[] { item },
+                0, 0, 0, 0, 0, null, null) { Id = 7 };
             if (estornada) Compra.Estornar("compra lancada errada", null);
 
             var skus = Criar<ISkusRepository>(h => h["ObterSkuPorSku"] = _ => Sku);
@@ -110,6 +111,20 @@ public class DevolucaoCompraTests
         Assert.Equal(TipoMovimentacaoEstoque.SAIDA, saida.TipoMovimentacao);
         Assert.Equal(OrigemMovimentacaoEstoque.DEVOLUCAO_COMPRA, saida.OrigemTipo);
         Assert.Equal(3, saida.OrigemId);
+    }
+
+    [Fact]
+    public async Task Compra_com_o_mesmo_sku_em_duas_linhas_devolve_as_duas_numa_saida_so()
+    {
+        var c = new Cenario(estoque: 20, segundaLinhaMesmoSku: true);
+        var r = await c.Service.CriarDevolucao(7, new CriarDevolucaoCompraCommand("Produto veio com defeito",
+            new[] { new CriarDevolucaoCompraItemCommand(11, 2), new CriarDevolucaoCompraItemCommand(12, 3) }));
+
+        Assert.True(r.Success);
+        var saida = Assert.Single(c.Movimentacoes);
+        var item = Assert.Single(saida.MovimentacoesEstoquesItens);
+        Assert.Equal(5m, item.Quantidade);
+        Assert.Equal(15, c.Sku.Estoque);
     }
 
     private static ContasPagar ParcelaPagar(int numero, decimal valor, int diasParaVencer, decimal pago = 0)
