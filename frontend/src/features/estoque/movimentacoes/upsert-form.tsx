@@ -491,6 +491,8 @@ export function MovimentacoesUpsertForm({
               </div>
             )}
 
+            {/* Motivo categorizado so existe na saida manual; movimentacao gerada por devolucao, venda etc. nao tem. */}
+            {(!editingItem || editingItem.motivoTipo) && (
             <div className="flex w-56 flex-col gap-2">
               <form.Field name="motivoTipo">
                 {(field) => (
@@ -506,6 +508,7 @@ export function MovimentacoesUpsertForm({
                 )}
               </form.Field>
             </div>
+            )}
 
             {!readOnly && (
               <form.Subscribe selector={(state) => [state.values.motivoTipo]}>
