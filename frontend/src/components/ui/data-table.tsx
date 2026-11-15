@@ -476,7 +476,7 @@ export function DataTable<TData, TValue>({
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody className="overflow-y-scroll">
+          <TableBody>
             {table.getIsAllPageRowsSelected() &&
               totalItems !== undefined &&
               totalItems > table.getRowModel().rows.length &&
