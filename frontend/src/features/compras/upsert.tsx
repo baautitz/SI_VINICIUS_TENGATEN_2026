@@ -578,7 +578,7 @@ function CompraForm({
     codigosSku.map((codigo, i) => [codigo, skusLancados[i]?.data] as const),
   );
 
-  // Valor unitario informado ao lado do SKU: o produto entra ja com ele (senao, o custo da ultima compra).
+  // Valor unitario informado ao lado do SKU: o produto entra ja com ele (senao, o custo da ultima compra). Permanece entre adicoes.
   const [valorAdicao, setValorAdicao] = React.useState(0);
 
   const adicionarSku = (sku: Sku | null, quantidade = 1) => {
@@ -602,7 +602,6 @@ function CompraForm({
         permiteDecimais: !!sku.produto?.unidadeMedida?.permiteDecimais,
       },
     ]);
-    setValorAdicao(0);
     setSkuInputKey((k) => k + 1);
   };
 
