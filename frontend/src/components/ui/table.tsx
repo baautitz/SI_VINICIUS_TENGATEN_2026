@@ -20,7 +20,8 @@ function Table({
       data-slot="table-container"
       className={cn(
         "relative flex w-full flex-col [container-type:inline-size]",
-        pageScroll ? "overflow-visible" : "min-h-0 flex-1 overflow-auto",
+        // O corpo da janela tem p-1 (4px): o sticky gruda dentro desse respiro e as linhas apareciam passando por cima do cabeçalho.
+        pageScroll ? "overflow-visible [&_thead]:-top-1" : "min-h-0 flex-1 overflow-auto",
       )}
     >
       <table
