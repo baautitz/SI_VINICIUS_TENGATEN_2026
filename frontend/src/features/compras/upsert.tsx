@@ -578,6 +578,9 @@ function CompraForm({
     codigosSku.map((codigo, i) => [codigo, skusLancados[i]?.data] as const),
   );
 
+  // Valor unitario informado ao lado do SKU: o produto entra ja com ele (senao, o custo da ultima compra).
+  const [valorAdicao, setValorAdicao] = React.useState(0);
+
   const adicionarSku = (sku: Sku | null, quantidade = 1) => {
     if (!sku) return;
     if (quantidade <= 0) {
@@ -594,11 +597,12 @@ function CompraForm({
         sku: sku.sku,
         produtoNome: getFullSkuName(sku),
         quantidade,
-        valorUnitario: Number(sku.custoUltimaCompra) || 0,
+        valorUnitario: valorAdicao > 0 ? valorAdicao : Number(sku.custoUltimaCompra) || 0,
         descontoUnitario: 0,
         permiteDecimais: !!sku.produto?.unidadeMedida?.permiteDecimais,
       },
     ]);
+    setValorAdicao(0);
     setSkuInputKey((k) => k + 1);
   };
 
@@ -1305,13 +1309,29 @@ function CompraForm({
           {etapa === 2 && (
             <>
               {!readOnly && !modoXml && (
-                <SkuInput
-                  ref={setSkuInput}
-                  key={skuInputKey}
-                  name="compra-add-sku"
-                  label="Adicionar Produto"
-                  onSelectSku={adicionarSku}
-                />
+                <div className="flex items-end gap-3">
+                  <div className="min-w-0 flex-1">
+                    <SkuInput
+                      ref={setSkuInput}
+                      key={skuInputKey}
+                      name="compra-add-sku"
+                      label="Adicionar Produto"
+                      onSelectSku={adicionarSku}
+                    />
+                  </div>
+                  <Field className="w-44 shrink-0">
+                    <FieldLabel htmlFor="compra-valor-adicao">Valor unit. (R$)</FieldLabel>
+                    <NumberInput
+                      id="compra-valor-adicao"
+                      value={valorAdicao}
+                      decimals={4}
+                      inputSize="full"
+                      inputMode="decimal"
+                      className="text-right"
+                      onNumberChange={(n) => setValorAdicao(Number.isNaN(n) ? 0 : n)}
+                    />
+                  </Field>
+                </div>
               )}
 
               {modoXml ? (
