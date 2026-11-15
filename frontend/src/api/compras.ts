@@ -5,6 +5,7 @@ import type {
   Compra,
   CriarDevolucaoCompraValues,
   DevolucaoCompra,
+  DevolucaoCompraResumo,
   CriarCompraPayload,
   ImportarNfePayload,
   ImportarNfeResultado,
@@ -25,6 +26,13 @@ export const comprasApi = {
     http.post<Resultado<DevolucaoCompra>>(`/api/compras/${compraId}/devolucoes`, data),
   listDevolucoes: (compraId: number) =>
     http.get<DevolucaoCompra[]>(`/api/compras/${compraId}/devolucoes`),
+  searchDevolucoes: ({ search, compraId, page = 1, pageSize = 50, ordenacao = null }: { search?: string; compraId?: number; page?: number; pageSize?: number; ordenacao?: Ordenacao | null } = {}) =>
+    http.get<PaginatedResult<DevolucaoCompraResumo>>(
+      `/api/devolucoes-compra?search=${encodeURIComponent(search ?? "")}${compraId ? `&compraId=${compraId}` : ""}&page=${page}&pageSize=${pageSize}${paramsDeOrdenacao(ordenacao)}`,
+    ),
+  getDevolucaoById: (id: number) => http.get<DevolucaoCompra>(`/api/devolucoes-compra/${id}`),
+  estornarDevolucao: (id: number, motivo: string) =>
+    http.post<Resultado<DevolucaoCompra>>(`/api/devolucoes-compra/${id}/estornar`, { motivo }),
   previaNfe: (xml: string, emitenteId?: number) =>
     http.post<Resultado<PreviaNfe>>("/api/nfes/importar/previa", {
       xml,
