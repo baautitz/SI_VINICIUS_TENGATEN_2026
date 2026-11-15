@@ -60,7 +60,7 @@ import {
   type VendaItem,
   type VendaFormValues,
 } from "./types";
-import { Trash2, Boxes, Receipt, FileText, Undo2 } from "lucide-react";
+import { Check, Trash2, Boxes, Receipt, FileText, Undo2 } from "lucide-react";
 import { DevolucoesFeature, type DevolucoesFeatureProps } from "@/features/devolucoes";
 import { useDevolucaoFlow } from "./devolucao-flow";
 import { estoqueApi } from "@/api/estoque";
@@ -71,6 +71,9 @@ import { useWindow, useWindowCommands, useUi, WindowCancelButton } from "@/ui/im
 import { Spinner } from "@/ui/primitives";
 import { navigationCell } from "@/ui/keyboard-navigation";
 import { todayBrasiliaISODate, todayLocalISODate } from "@/utils/date-utils";
+
+// Colunas da lista de pagamentos: forma, tipo (à vista ou parcelas), valor, recebido, troco e remover.
+const GRADE_PAGAMENTO = "grid grid-cols-[minmax(0,1fr)_5rem_8rem_8rem_6rem_2rem] items-center gap-2";
 
 export interface VendasUpsertProps {
   editingItem: Venda | null;
@@ -276,26 +279,33 @@ function VendasCheckout({
           </Button>
         </div>
 
-        {linhas.map((linha, index) => {
-          const aVista = ehAVista(linha.condicao);
-          const parcelas = linha.condicao?.condicoesPagamentosParcelas?.length ?? 1;
-          const permiteTroco = !!linha.condicao?.metodoPagamento?.permiteTroco;
-          const insuficiente = trocoInsuficiente(linha);
-          return (
-            <div
-              key={linha.key}
-              className="flex flex-col gap-3 rounded-lg border p-3"
-            >
-              <div className="flex items-start gap-3">
-                <div className="min-w-0 flex-1">
+        <div className="flex flex-col rounded-lg border">
+          <div
+            className={cn(
+              GRADE_PAGAMENTO,
+              "text-muted-foreground border-b px-3 py-2 text-xs font-semibold uppercase tracking-wider",
+            )}
+          >
+            <span>Forma de pagamento</span>
+            <span>Tipo</span>
+            <span className="text-right">Valor (R$)</span>
+            <span className="text-right">Recebido (R$)</span>
+            <span className="text-right">Troco</span>
+            <span />
+          </div>
+          {linhas.map((linha, index) => {
+            const aVista = ehAVista(linha.condicao);
+            const parcelas = linha.condicao?.condicoesPagamentosParcelas?.length ?? 1;
+            const permiteTroco = !!linha.condicao?.metodoPagamento?.permiteTroco;
+            const insuficiente = trocoInsuficiente(linha);
+            return (
+              <div key={linha.key} className="flex flex-col gap-1 border-b px-3 py-2 last:border-b-0">
+                <div className={GRADE_PAGAMENTO}>
                   <CondicaoPagamentoInput
                     required
+                    hideLabel
                     name={`checkoutCondicaoId-${linha.key}`}
-                    label={
-                      linhas.length > 1
-                        ? `Pagamento ${index + 1}`
-                        : "Método de Pagamento"
-                    }
+                    label={`Forma de pagamento ${index + 1}`}
                     initialItem={linha.condicao}
                     onSelectItem={(item) => {
                       setTocado(true);
@@ -308,13 +318,16 @@ function VendasCheckout({
                         : undefined
                     }
                   />
-                </div>
-                <Field className="w-40 shrink-0">
-                  <FieldLabel htmlFor={`venda-checkout-valor-${linha.key}`} required>
-                    Valor (R$)
-                  </FieldLabel>
+                  {linha.condicao ? (
+                    <Badge variant={aVista ? "success" : "secondary"} className="w-fit">
+                      {aVista ? "À vista" : `${parcelas}x`}
+                    </Badge>
+                  ) : (
+                    <span />
+                  )}
                   <NumberInput
                     id={`venda-checkout-valor-${linha.key}`}
+                    aria-label={`Valor do pagamento ${index + 1}`}
                     inputSize="full"
                     value={linha.valor}
                     decimals={2}
@@ -323,92 +336,70 @@ function VendasCheckout({
                     className="text-right font-semibold"
                     aria-invalid={linha.valor <= 0}
                   />
-                </Field>
-                {linhas.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="mt-6 shrink-0"
-                    aria-label={`Remover pagamento ${index + 1}`}
-                    onClick={() => remover(linha.key)}
-                  >
-                    <Trash2 />
-                  </Button>
-                )}
-              </div>
-
-              {linha.condicao && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Badge variant={aVista ? "success" : "secondary"}>
-                    {aVista
-                      ? linhas.length > 1
-                        ? "Entrada (à vista)"
-                        : "À vista"
-                      : `${parcelas}x`}
-                  </Badge>
-                  <span className="text-muted-foreground">
-                    {aVista
-                      ? "Entra como recebido na hora."
-                      : `Gera ${parcelas} parcela(s) a receber.`}
-                  </span>
-                </div>
-              )}
-
-              {permiteTroco && (
-                <Field data-invalid={insuficiente}>
-                  <div className="flex items-center justify-between gap-4">
-                    <FieldLabel htmlFor={`venda-checkout-recebido-${linha.key}`} required>
-                      Valor recebido (R$)
-                    </FieldLabel>
+                  {permiteTroco ? (
                     <NumberInput
                       id={`venda-checkout-recebido-${linha.key}`}
+                      aria-label={`Valor recebido do pagamento ${index + 1}`}
                       inputSize="full"
                       value={linha.recebido}
                       decimals={2}
                       inputMode="decimal"
-                      onNumberChange={(recebido) =>
-                        atualizar(linha.key, { recebido })
-                      }
-                      className="h-8 w-48 text-right font-semibold"
+                      onNumberChange={(recebido) => atualizar(linha.key, { recebido })}
+                      className="text-right font-semibold"
                       aria-invalid={insuficiente}
                     />
-                  </div>
-                  {insuficiente ? (
-                    <FieldError className="mt-1 block text-right">
-                      O valor recebido é menor que o valor deste pagamento.
-                    </FieldError>
                   ) : (
-                    <div className="text-muted-foreground mt-1 flex justify-between text-sm">
-                      <span>Troco:</span>
-                      <span className="text-foreground font-semibold">
-                        {formatCurrency(trocoDaLinha(linha.valor, linha.recebido))}
-                      </span>
-                    </div>
+                    <span className="text-muted-foreground text-right">-</span>
                   )}
-                </Field>
-              )}
+                  <span className="text-right font-semibold">
+                    {permiteTroco && !insuficiente
+                      ? formatCurrency(trocoDaLinha(linha.valor, linha.recebido))
+                      : "-"}
+                  </span>
+                  {linhas.length > 1 ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Remover pagamento ${index + 1}`}
+                      onClick={() => remover(linha.key)}
+                    >
+                      <Trash2 />
+                    </Button>
+                  ) : (
+                    <span />
+                  )}
+                </div>
+                {insuficiente && (
+                  <FieldError>O valor recebido é menor que o valor deste pagamento.</FieldError>
+                )}
+              </div>
+            );
+          })}
+          {totalNet > 0 && (
+            <div className={cn(GRADE_PAGAMENTO, "bg-muted/40 border-t px-3 py-2.5 text-sm font-semibold")}>
+              <span>Total dos pagamentos</span>
+              <span />
+              <span className="text-right">{formatCurrency(totalNet - falta)}</span>
+              <span
+                className={cn(
+                  "col-span-3 flex items-center justify-end gap-1.5",
+                  completo ? "text-success" : falta > 0 ? "text-amber-600" : "text-destructive",
+                )}
+              >
+                {completo ? (
+                  <>
+                    <Check className="size-4" /> Completo
+                  </>
+                ) : falta > 0 ? (
+                  `Faltam ${formatCurrency(falta)}`
+                ) : (
+                  `Excede ${formatCurrency(Math.abs(falta))}`
+                )}
+              </span>
             </div>
-          );
-        })}
-
-        {totalNet > 0 && (
-          <div
-            className={cn(
-              "flex items-center justify-between rounded-lg border px-4 py-2.5 font-semibold",
-              completo
-                ? "border-success/40 bg-success/5 text-success"
-                : falta > 0
-                  ? "border-amber-500/40 bg-amber-500/5 text-amber-600"
-                  : "border-destructive/40 bg-destructive/5 text-destructive",
-            )}
-          >
-            <span>
-              {completo ? "Pagamento completo" : falta > 0 ? "Restante" : "Excedente"}
-            </span>
-            <span>{formatCurrency(completo ? 0 : Math.abs(falta))}</span>
-          </div>
-        )}
+          )}
+        </div>
 
         {entradaFalta >= 0.01 && (
           <FieldError>
@@ -678,7 +669,7 @@ function VendasFormBody({ editingItem, readOnly }: VendasFormBodyProps) {
           initialObservacao: form.getFieldValue("observacao") || "",
         },
         title: "Finalizar Venda",
-        size: "medium",
+        size: "large",
       });
       if (checkout.status === "confirmed")
         await handleFinalSubmit(checkout.value);
