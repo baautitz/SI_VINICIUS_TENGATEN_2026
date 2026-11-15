@@ -41,7 +41,7 @@ export default function RootLayout({
                   <NavigationScope id="application-shell">
                     <div className="flex h-screen w-full">
                       <AppSidebar />
-                      <main className="flex flex-1 flex-col bg-slate-50/50 p-6 dark:bg-slate-900/10">
+                      <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-slate-50/50 p-6 dark:bg-slate-900/10">
                         {children}
                       </main>
                     </div>
