@@ -9,8 +9,9 @@ import { combinacaoDe } from "@/lib/atalhos";
 interface FeatureHeaderProps {
   title: string;
   icon?: React.ReactNode;
-  onAdd: () => void | Promise<void>;
-  addButtonLabel: string;
+  /** Sem `onAdd` não há botão de criar (listagens cujo registro nasce em outra tela, como a devolução de compra). */
+  onAdd?: () => void | Promise<void>;
+  addButtonLabel?: string;
   /** Ações secundárias, lado a lado com o botão principal. */
   actions?: React.ReactNode;
 }
@@ -26,10 +27,11 @@ export function FeatureHeader({
     {
       id: `feature.header.${title}.create`,
       hotkey: combinacaoDe("novo"),
-      label: addButtonLabel,
+      label: addButtonLabel ?? "",
+      enabled: !!onAdd,
       run: (event) => {
         event.preventDefault();
-        fireAndForget(onAdd);
+        if (onAdd) fireAndForget(onAdd);
       },
     },
   ]);
@@ -47,11 +49,13 @@ export function FeatureHeader({
 
       <div className="flex items-center gap-2">
         {actions}
-        <Button onClick={() => fireAndForget(onAdd)} className="gap-2 rounded-lg shadow-sm">
-          <Plus className="h-4 w-4" />
-          {addButtonLabel}{" "}
-          <HotkeyKbd hotkey={combinacaoDe("novo")} />
-        </Button>
+        {onAdd && (
+          <Button onClick={() => fireAndForget(onAdd)} className="gap-2 rounded-lg shadow-sm">
+            <Plus className="h-4 w-4" />
+            {addButtonLabel}{" "}
+            <HotkeyKbd hotkey={combinacaoDe("novo")} />
+          </Button>
+        )}
       </div>
     </div>
   );
