@@ -122,6 +122,9 @@ export function useWindowCommands(
       hotkey: command.hotkey,
       callback: (event: KeyboardEvent) => {
         if (!allowedRef.current.has(key) || command.enabled === false) return
+        // Tecla segurada repete o keydown: salvar/abrir/fechar disparariam em rajada (janela abre e fecha
+        // sem parar). So atalhos de seta (paginar, mudar de etapa) aceitam repeticao.
+        if (event.repeat && !String(command.hotkey).includes("Arrow")) return
         fireAndForget(() => command.run(event))
       },
       options: {
