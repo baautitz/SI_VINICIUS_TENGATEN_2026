@@ -119,6 +119,133 @@ export function CompraWindow(props: CompraWindowProps) {
 }
 
 let proximaChave = 1;
+
+interface LinhaItemCompraProps {
+  item: Linha;
+  idx: number;
+  rateio: number;
+  custo: number;
+  total: number;
+  precoVenda: number | null;
+  custoUltimaCompra: number | null;
+  readOnly: boolean;
+  modoXml: boolean;
+  onAtualizar: (key: number, patch: Partial<Linha>) => void;
+  onRemover: (key: number) => void;
+}
+
+// Memoizada: digitar numa linha so re-renderiza as linhas cujo item, rateio ou custo mudaram.
+const LinhaItemCompra = React.memo(function LinhaItemCompra({
+  item,
+  idx,
+  rateio,
+  custo,
+  total,
+  precoVenda,
+  custoUltimaCompra,
+  readOnly,
+  modoXml,
+  onAtualizar,
+  onRemover,
+}: LinhaItemCompraProps) {
+  const status = item.sku
+    ? item.sku === item.skuOriginal
+      ? "VINCULADO"
+      : "ESCOLHIDO"
+    : item.sugestao
+      ? "SUGERIDO"
+      : "PENDENTE";
+  const numCell = (
+    col: number,
+    valor: number,
+    onChange: (n: number) => void,
+    dec: number,
+    off = false,
+  ) => (
+    <NumberInput
+      {...navigationCell({ grid: "compra-itens", row: idx, column: col })}
+      value={valor}
+      decimals={dec}
+      inputSize="full"
+      inputMode="decimal"
+      className="text-right"
+      readOnly={readOnly || modoXml || off}
+      onNumberChange={(n) => onChange(Number.isNaN(n) ? 0 : n)}
+    />
+  );
+  return (
+    <TableRow
+      data-sem-sku={!item.sku && !readOnly ? "" : undefined}
+      className={!item.sku && !readOnly ? "bg-destructive/10" : undefined}
+    >
+      <TableCell>{item.numeroItem ?? idx + 1}</TableCell>
+      <TableCell>
+        {item.sku ? <SkuViewInput name={`compra-sku-${idx}`} sku={item.sku} /> : null}
+      </TableCell>
+      <TableCell>
+        <div className="flex flex-col gap-1">
+          <span>{item.descricao ?? item.produtoNome}</span>
+          {modoXml && (
+            <Badge
+              variant={
+                status === "PENDENTE"
+                  ? "destructive"
+                  : status === "SUGERIDO"
+                    ? "secondary"
+                    : "outline"
+              }
+              className="w-fit"
+            >
+              {status}
+            </Badge>
+          )}
+        </div>
+      </TableCell>
+      <TableCell>
+        {numCell(1, item.quantidade, (n) => onAtualizar(item.key, { quantidade: n }), item.permiteDecimais ? 4 : 0)}
+      </TableCell>
+      <TableCell>
+        {numCell(2, item.valorUnitario, (n) => onAtualizar(item.key, { valorUnitario: n }), 4)}
+      </TableCell>
+      <TableCell>
+        {numCell(3, item.descontoUnitario, (n) => onAtualizar(item.key, { descontoUnitario: n }), 4)}
+        {descontoUnitarioExcedePreco(item.valorUnitario, item.descontoUnitario) && (
+          <p role="alert" className="text-destructive mt-1 text-sm">
+            Maior que o preço unitário.
+          </p>
+        )}
+      </TableCell>
+      <TableCell className="text-right">{precoVenda !== null ? moeda(precoVenda) : "-"}</TableCell>
+      <TableCell className="text-right">
+        {custoUltimaCompra !== null ? moeda(custoUltimaCompra) : "-"}
+      </TableCell>
+      <TableCell className="text-right">{moeda(rateio)}</TableCell>
+      <TableCell className="text-right font-bold">
+        {new Intl.NumberFormat("pt-BR", {
+          style: "currency",
+          currency: "BRL",
+          minimumFractionDigits: 4,
+        }).format(custo)}
+      </TableCell>
+      <TableCell className="text-right font-bold">{moeda(total)}</TableCell>
+      {readOnly && <TableCell className="text-right">{item.saldoDevolvivel ?? 0}</TableCell>}
+      {!readOnly && !modoXml && (
+        <TableCell>
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="outline"
+            title="Remover item"
+            aria-label="Remover"
+            onClick={() => onRemover(item.key)}
+          >
+            <Trash2 />
+          </Button>
+        </TableCell>
+      )}
+    </TableRow>
+  );
+});
 const ETAPAS = ["Fornecedor e transporte", "Dados gerais", "Produtos", "Custos e pagamento"];
 
 function gerarParcelas(
@@ -433,8 +560,11 @@ function CompraForm({
   const itensRef = useRolarAoAdicionar(itens.length);
   const parcelasRef = useRolarAoAdicionar(parcelas.length);
 
-  const atualizar = (key: number, patch: Partial<Linha>) =>
-    setItens((a) => a.map((i) => (i.key === key ? { ...i, ...patch } : i)));
+  const atualizar = React.useCallback(
+    (key: number, patch: Partial<Linha>) =>
+      setItens((a) => a.map((i) => (i.key === key ? { ...i, ...patch } : i))),
+    [],
+  );
 
   // Preço de venda e custo da última compra atuais de cada SKU lançado (só leitura).
   const codigosSku = Array.from(new Set(itens.map((i) => i.sku).filter((c): c is string => !!c)));
@@ -483,6 +613,12 @@ function CompraForm({
     if (ok) setItens((a) => a.filter((i) => i.key !== key));
     restaurarFoco();
   };
+  // Referencia estavel para a linha memoizada nao re-renderizar quando outra linha muda.
+  const removerItemRef = React.useRef(removerItem);
+  React.useEffect(() => {
+    removerItemRef.current = removerItem;
+  });
+  const onRemoverItem = React.useCallback((key: number) => void removerItemRef.current(key), []);
 
   const recalcularParcelas = () => {
     if (valorNota <= 0) {
@@ -1247,142 +1383,23 @@ function CompraForm({
                         (item.quantidade > 0
                           ? (valoresItens[idx] + rateio) / item.quantidade
                           : 0);
-                      const status = item.sku
-                        ? item.sku === item.skuOriginal
-                          ? "VINCULADO"
-                          : "ESCOLHIDO"
-                        : item.sugestao
-                          ? "SUGERIDO"
-                          : "PENDENTE";
-                      const numCell = (
-                        col: number,
-                        valor: number,
-                        onChange: (n: number) => void,
-                        dec: number,
-                        off = false,
-                      ) => (
-                        <NumberInput
-                          {...navigationCell({
-                            grid: "compra-itens",
-                            row: idx,
-                            column: col,
-                          })}
-                          value={valor}
-                          decimals={dec}
-                          inputSize="full"
-                          inputMode="decimal"
-                          className="text-right"
-                          readOnly={readOnly || modoXml || off}
-                          onNumberChange={(n) =>
-                            onChange(Number.isNaN(n) ? 0 : n)
-                          }
-                        />
-                      );
+                      const preco = item.sku ? precosPorSku.get(item.sku) : undefined;
+                      const custoUltima = Number(preco?.custoUltimaCompra);
                       return (
-                        <TableRow
+                        <LinhaItemCompra
                           key={item.key}
-                          data-sem-sku={!item.sku && !readOnly ? "" : undefined}
-                          className={!item.sku && !readOnly ? "bg-destructive/10" : undefined}
-                        >
-                          <TableCell>
-                            {item.numeroItem ?? idx + 1}
-                          </TableCell>
-                          <TableCell>
-                            {item.sku ? (
-                              <SkuViewInput name={`compra-sku-${idx}`} sku={item.sku} />
-                            ) : null}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col gap-1">
-                              <span>{item.descricao ?? item.produtoNome}</span>
-                              {modoXml && (
-                                <Badge
-                                  variant={
-                                    status === "PENDENTE"
-                                      ? "destructive"
-                                      : status === "SUGERIDO"
-                                        ? "secondary"
-                                        : "outline"
-                                  }
-                                  className="w-fit"
-                                >
-                                  {status}
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {numCell(
-                              1,
-                              item.quantidade,
-                              (n) => atualizar(item.key, { quantidade: n }),
-                              item.permiteDecimais ? 4 : 0,
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {numCell(
-                              2,
-                              item.valorUnitario,
-                              (n) => atualizar(item.key, { valorUnitario: n }),
-                              4,
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {numCell(
-                              3,
-                              item.descontoUnitario,
-                              (n) => atualizar(item.key, { descontoUnitario: n }),
-                              4,
-                            )}
-                            {descontoUnitarioExcedePreco(item.valorUnitario, item.descontoUnitario) && (
-                              <p role="alert" className="text-destructive mt-1 text-sm">
-                                Maior que o preço unitário.
-                              </p>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {item.sku && precosPorSku.get(item.sku)
-                              ? moeda(Number(precosPorSku.get(item.sku)!.preco))
-                              : "-"}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {Number(precosPorSku.get(item.sku ?? "")?.custoUltimaCompra) > 0
-                              ? moeda(Number(precosPorSku.get(item.sku ?? "")!.custoUltimaCompra))
-                              : "-"}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {moeda(rateio)}
-                          </TableCell>
-                          <TableCell className="text-right font-bold">
-                            {new Intl.NumberFormat("pt-BR", {
-                              style: "currency",
-                              currency: "BRL",
-                              minimumFractionDigits: 4,
-                            }).format(custo)}
-                          </TableCell>
-                          <TableCell className="text-right font-bold">
-                            {moeda(valoresItens[idx])}
-                          </TableCell>
-                          {readOnly && (
-                            <TableCell className="text-right">
-                              {item.saldoDevolvivel ?? 0}
-                            </TableCell>
-                          )}
-                          {!readOnly && !modoXml && (
-                            <TableCell>
-                              <Button
-                                type="button"
-                                size="icon-sm"
- variant="outline"
- title="Remover item"
- aria-label="Remover"
-                                onClick={() => void removerItem(item.key)}
-                              >
-                                <Trash2 />
-                              </Button>
-                            </TableCell>
-                          )}
-                        </TableRow>
+                          item={item}
+                          idx={idx}
+                          rateio={rateio}
+                          custo={custo}
+                          total={valoresItens[idx]}
+                          precoVenda={preco ? Number(preco.preco) : null}
+                          custoUltimaCompra={custoUltima > 0 ? custoUltima : null}
+                          readOnly={readOnly}
+                          modoXml={modoXml}
+                          onAtualizar={atualizar}
+                          onRemover={onRemoverItem}
+                        />
                       );
                     })}
                   </TableBody>
