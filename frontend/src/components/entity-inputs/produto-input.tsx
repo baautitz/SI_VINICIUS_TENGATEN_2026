@@ -1,7 +1,7 @@
 "use client"
 import React from "react"
 import { useUi } from "@/ui/imperative";
-import { ProdutosUpsert } from "@/features/catalogo/produtos/upsert";
+import { abrirProdutoUpsert } from "@/features/catalogo/produtos/upsert";
 import { EntityInput } from "@/ui/composites"
 import { ProdutosFeature, Produto } from "@/features/catalogo/produtos"
 import { produtosApi } from "@/api/catalogo"
@@ -39,7 +39,7 @@ export function ProdutoInput({
       onSelectId={onSelectId}
       onSelectItem={onSelectItem}
       onView={(item, readOnly) =>
-        ui.windows.open({ component: ProdutosUpsert, props: { editingItem: item, readOnly }, title: readOnly ? "Visualizar Produto" : "Editar Produto", size: "full" })}
+        abrirProdutoUpsert(ui, { editingItem: item, readOnly })}
       modalTitle="Selecionar Produto"
       getDisplayLabel={(item) => item?.produto ?? ""}
       getSearchTerm={(item) => item.produto}

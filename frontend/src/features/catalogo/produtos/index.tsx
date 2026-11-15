@@ -6,8 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUi } from "@/ui/imperative";
 import { useFeatureList } from "@/hooks/use-feature-list";
 import { ProdutosList } from "./list";
-import { ProdutosUpsert } from "./upsert";
-import type { ProdutosUpsertProps } from "./upsert";
+import { abrirProdutoUpsert } from "./upsert";
 import { Produto } from "./types";
 import { produtosApi } from "@/api/catalogo";
 
@@ -52,12 +51,7 @@ export function ProdutosFeature({
   };
 
   const openCreate = async () => {
-    const result = await ui.windows.open<true, ProdutosUpsertProps>({
-      component: ProdutosUpsert,
-      size: "large",
-      props: { editingItem: null },
-      title: "Novo Produto",
-    });
+    const result = await abrirProdutoUpsert(ui, { editingItem: null });
     if (result.status === "confirmed") {
       await invalidate();
       ui.feedback.notify({ type: "success", title: "Produto criado com sucesso." });
@@ -65,12 +59,7 @@ export function ProdutosFeature({
   };
 
   const openEdit = async (item: Produto) => {
-    const result = await ui.windows.open<true, ProdutosUpsertProps>({
-      component: ProdutosUpsert,
-      size: "large",
-      props: { editingItem: item },
-      title: "Editar Produto",
-    });
+    const result = await abrirProdutoUpsert(ui, { editingItem: item });
     if (result.status === "confirmed") {
       await invalidate();
       ui.feedback.notify({ type: "success", title: "Produto atualizado com sucesso." });
@@ -78,12 +67,7 @@ export function ProdutosFeature({
   };
 
   const openView = async (item: Produto) => {
-    await ui.windows.open<true, ProdutosUpsertProps>({
-      component: ProdutosUpsert,
-      size: "large",
-      props: { editingItem: item, readOnly: true },
-      title: "Visualizar Produto",
-    });
+    await abrirProdutoUpsert(ui, { editingItem: item, readOnly: true });
   };
 
   const deleteProduto = async (item: Produto) => {

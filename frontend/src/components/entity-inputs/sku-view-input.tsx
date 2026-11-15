@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useUi } from "@/ui/imperative";
 import { EntityInput } from "@/ui/composites";
 import { skusApi, produtosApi } from "@/api/catalogo";
-import { ProdutosUpsert } from "@/features/catalogo/produtos/upsert";
+import { abrirProdutoUpsert } from "@/features/catalogo/produtos/upsert";
 import type { Sku } from "@/features/catalogo/skus/types";
 
 /**
@@ -34,12 +34,7 @@ export function SkuViewInput({ sku, name }: { sku: string; name: string }) {
           if (!s.produto?.id) return;
           try {
             const produto = await produtosApi.getById(s.produto.id);
-            await ui.windows.open({
-              component: ProdutosUpsert,
-              props: { editingItem: produto, readOnly: false },
-              title: "Editar Produto",
-              size: "full",
-            });
+            await abrirProdutoUpsert(ui, { editingItem: produto });
           } catch (error) {
             ui.feedback.notifyError(error, {
               fallbackTitle: "Não foi possível abrir o produto.",
